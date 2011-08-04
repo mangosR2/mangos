@@ -3984,6 +3984,7 @@ bool ChatHandler::HandleReviveCommand(char* args)
 
 bool ChatHandler::HandleAuraCommand(char* args)
 {
+    /*
     Unit *target = getSelectedUnit();
     if (!target)
     {
@@ -3994,6 +3995,37 @@ bool ChatHandler::HandleAuraCommand(char* args)
 
     // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
     uint32 spellID = ExtractSpellIdFromLink(&args);
+    */
+
+    
+    Player* target = NULL;
+
+    // number or [name] Shift-click form |color|Hspell:spell_id|h[name]|h|r or Htalent form
+    uint32 spellID = ExtractSpellIdFromLink(&args);
+
+    char* px = args;
+    std::string name;
+
+    if(strlen(args)>0)
+    {
+            name = ExtractPlayerNameFromLink(&px);
+            if(name.empty())
+            {
+                    PSendSysMessage(LANG_PLAYER_NOT_FOUND);
+                    SetSentErrorMessage(true);
+                    return false;
+            }
+            target = sObjectMgr.GetPlayer(name.c_str());
+    }
+    else target = (Player*)getSelectedUnit();
+
+    if(!target)
+    {
+            PSendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
+            SetSentErrorMessage(true);
+            return false;
+    }
+    
 
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellID);
     if (!spellInfo)
@@ -4007,7 +4039,8 @@ bool ChatHandler::HandleAuraCommand(char* args)
         return false;
     }
 
-    SpellAuraHolder *holder = CreateSpellAuraHolder(spellInfo, target, m_session->GetPlayer());
+    //SpellAuraHolder *holder = CreateSpellAuraHolder(spellInfo, target, m_session->GetPlayer());
+    SpellAuraHolder *holder = CreateSpellAuraHolder(spellInfo, target, NULL);
 
     for(uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
