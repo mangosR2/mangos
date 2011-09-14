@@ -257,3 +257,39 @@ UPDATE `spell_dbc` SET
 `AttributesEx` = `AttributesEx` &~ 128, 
 `Comment` = 'Replacement for spell 59043 ("Непроглядная ночь")' 
 WHERE `Id` = 59043;
+
+-- spell's 70856 - 70861 are negative (debuff's)
+-- 
+DELETE FROM `spell_dbc` WHERE `Id` IN (70856, 70857, 70858, 70859, 70860, 70861);
+INSERT INTO `spell_dbc` ( `Id`, `Category`, `Dispel`, `Mechanic`, `Attributes`, `AttributesEx`, `AttributesEx2`, `AttributesEx3`, `AttributesEx4`, `AttributesEx5`, `AttributesEx6`, `AttributesEx7`, `Stances`, `StancesNot`, `Targets`, `CasterAuraSpell`, `TargetAuraSpell`, `ExcludeCasterAuraSpell`, `ExcludeTargetAuraSpell`, `CastingTimeIndex`, `RecoveryTime`, `CategoryRecoveryTime`, `InterruptFlags`, `AuraInterruptFlags`, `ProcFlags`, `ProcChance`, `ProcCharges`, `MaxLevel`, `BaseLevel`, `SpellLevel`, `DurationIndex`, `RangeIndex`, `StackAmount`, `EquippedItemClass`, `EquippedItemSubClassMask`, `EquippedItemInventoryTypeMask`, `Effect1`, `Effect2`, `Effect3`, `EffectDieSides1`, `EffectDieSides2`, `EffectDieSides3`, `EffectRealPointsPerLevel1`, `EffectRealPointsPerLevel2`, `EffectRealPointsPerLevel3`, `EffectBasePoints1`, `EffectBasePoints2`, `EffectBasePoints3`, `EffectMechanic1`, `EffectMechanic2`, `EffectMechanic3`, `EffectImplicitTargetA1`, `EffectImplicitTargetA2`, `EffectImplicitTargetA3`, `EffectImplicitTargetB1`, `EffectImplicitTargetB2`, `EffectImplicitTargetB3`, `EffectRadiusIndex1`, `EffectRadiusIndex2`, `EffectRadiusIndex3`, `EffectApplyAuraName1`, `EffectApplyAuraName2`, `EffectApplyAuraName3`, `EffectAmplitude1`, `EffectAmplitude2`, `EffectAmplitude3`, `EffectMultipleValue1`, `EffectMultipleValue2`, `EffectMultipleValue3`, `EffectMiscValue1`, `EffectMiscValue2`, `EffectMiscValue3`, `EffectMiscValueB1`, `EffectMiscValueB2`, `EffectMiscValueB3`, `EffectTriggerSpell1`, `EffectTriggerSpell2`, `EffectTriggerSpell3`, `EffectSpellClassMaskA1`, `EffectSpellClassMaskA2`, `EffectSpellClassMaskA3`, `EffectSpellClassMaskB1`, `EffectSpellClassMaskB2`, `EffectSpellClassMaskB3`, `EffectSpellClassMaskC1`, `EffectSpellClassMaskC2`, `EffectSpellClassMaskC3`, `SpellIconID`, `Comment`, `MaxTargetLevel`, `SpellFamilyName`, `SpellFamilyFlags1`, `SpellFamilyFlags2`, `SpellFamilyFlags3`, `MaxAffectedTargets`, `DmgClass`, `PreventionType`, `DmgMultiplier1`, `DmgMultiplier2`, `DmgMultiplier3`, `AreaGroupId`, `SchoolMask` ) VALUES
+(70856, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 16 ),
+(70857, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1 ),
+(70858, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1 ),
+(70859, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 16 ),
+(70860, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 16 ),
+(70861, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 524288, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 101, 0, 0, 0, 0, 39, 13, 0, -1, 0, 0, 3, 5, 6, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 25, 25, 0, 87, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3260, "", 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 16 );
+
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70856 ("Телепорт в Молельню Проклятых")' 
+WHERE `Id` = 70856;
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70857 ("Телепорт на Черепной вал")' 
+WHERE `Id` = 70857;
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70858 ("Телепорт к Подъему Смертоносного")' 
+WHERE `Id` = 70858;
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70859 ("Телепорт на верхний ярус")' 
+WHERE `Id` = 70859;
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70860 ("Телепорт к Ледяному Трону")' 
+WHERE `Id` = 70860;
+UPDATE `spell_dbc` SET 
+`AttributesEx` = 136, 
+`Comment` = 'Replacement for spell 70861 ("Телепорт в Логово Синдрагосы")' 
+WHERE `Id` = 70861;
