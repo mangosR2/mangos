@@ -3485,7 +3485,12 @@ void Spell::cast(bool skipCheck)
                 if (Aura *aur = m_caster->GetAura(70847, EFFECT_INDEX_0))
                 {
                     if (roll_chance_i(aur->GetModifier()->m_amount))
+                    {
                         AddTriggeredSpell(70849);           // Extra Charge!
+                        // Slam! trigger Slam GCD Reduced . Sudden Death trigger Execute GCD Reduced
+                        int32 gcd_spell=m_spellInfo->Id==46916 ? 71072 : 71069;
+                        AddPrecastSpell(gcd_spell);
+                    }
                 }
             }
             break;
