@@ -1,3 +1,4 @@
+/!40101 SET SQL_MODE=''/;
 -- Stormshield
 DELETE FROM `spell_dbc` WHERE `Id` = 64187;
 INSERT INTO `spell_dbc`
