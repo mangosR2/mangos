@@ -1,8 +1,8 @@
 -- Isle of Conquest
 -- use these 2 queries only if you want to enable IoC by direct queueing it
--- DELETE FROM battleground_template WHERE id = 30;
--- INSERT INTO battleground_template (id, MinPlayersPerTeam, MaxPlayersPerTeam, AllianceStartLoc, AllianceStartO, HordeStartLoc, HordeStartO) VALUES
--- (30, 10, 40, 1485, 0, 1486, 3.14159);
+DELETE FROM battleground_template WHERE id = 30;
+INSERT INTO battleground_template (id, MinPlayersPerTeam, MaxPlayersPerTeam, AllianceStartLoc, AllianceStartO, HordeStartLoc, HordeStartO) VALUES
+(30, 10, 40, 1485, 0, 1486, 3.14159);
 
 SET names utf8;
 DELETE FROM mangos_string WHERE entry BETWEEN 20079 AND 20103;
