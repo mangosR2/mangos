@@ -14,3 +14,10 @@ Instructions for EXISTING DBs:
 
 Instructions for Every Official DBs Update:
 1. Apply custom_rerun_every_YTDB_update.sql
+
+Guid :
+Name                            Creature                   GameObject
+The Ring of valor               0                          200001 - 200016
+Dalaran Arena                   0                          200020 - 200026
+Isle of Conquest                200001 - 200069            200030 - 200168
+Strand of the Ancients          200080 - 200115            200180 - 200357
