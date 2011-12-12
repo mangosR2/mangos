@@ -80,7 +80,10 @@ class PrioritizeHealthUnitWraper
 public:
     explicit PrioritizeHealthUnitWraper(Unit* unit) : i_unit(unit)
     {
-        i_percent = unit->GetHealth() * 100 / unit->GetMaxHealth();
+        if (!unit || unit->GetMaxHealth() == 0)
+            i_percent = 100;
+        else
+            i_percent = unit->GetHealth() * 100 / unit->GetMaxHealth();
     }
     Unit* getUnit() const { return i_unit; }
     uint32 getPercent() const { return i_percent; }
@@ -1440,16 +1443,10 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         }
         else
         {
-            if (!m_spellAuraHolder || m_spellAuraHolder->IsDeleted())
-                return;
-
             m_spellAuraHolder->SetInUse(false);
 
-            if (m_spellAuraHolder->IsInUse())
-            {
-                m_spellAuraHolder->SetDeleted();
+            if (!m_spellAuraHolder->IsDeleted())
                 unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder);
-            }
         }
     }
 }
@@ -3410,6 +3407,15 @@ void Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura)
     // else triggered with cast time will execute execute at next tick or later
     // without adding to cast type slot
     // will not show cast bar but will show effects at casting time etc
+
+    if (m_spellInfo->speed > 0.0f && GetCastTime())
+    {
+        Unit* procTarget = m_targets.getUnitTarget();
+        if (!procTarget)
+            procTarget = m_caster;
+
+        m_caster->ProcDamageAndSpell(procTarget, m_procAttacker, 0, PROC_EX_CAST_END, 0, m_attackType, m_spellInfo);
+    }
 }
 
 void Spell::cancel()
@@ -3815,7 +3821,9 @@ void Spell::cast(bool skipCheck)
         // critical hit related part is currently done on hit so proc there,
         // 0 damage since any damage based procs should be on hit
         // 0 victim proc since there is no victim proc dependent on successfull cast for caster
-        m_caster->ProcDamageAndSpell(procTarget, m_procAttacker, 0, PROC_EX_CAST_END, 0, m_attackType, m_spellInfo);
+        // if m_casttime > 0  proc already maked in prepare()
+        if (!GetCastTime())
+            m_caster->ProcDamageAndSpell(procTarget, m_procAttacker, 0, PROC_EX_CAST_END, 0, m_attackType, m_spellInfo);
     }
     else
     {

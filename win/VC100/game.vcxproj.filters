@@ -171,7 +171,7 @@
     <ClCompile Include="..\..\src\game\LFGMgr.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-	<ClCompile Include="..\..\src\game\LFG.cpp">
+    <ClCompile Include="..\..\src\game\LFG.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\LootHandler.cpp">
@@ -243,7 +243,7 @@
     <ClCompile Include="..\..\src\game\Spell.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-	<ClCompile Include="..\..\src\game\SpellClassMask.h">
+    <ClCompile Include="..\..\src\game\SpellClassMask.h">
       <Filter>World/Handlers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\SpellAuras.cpp">
@@ -562,19 +562,19 @@
     <ClCompile Include="..\..\src\game\PlayerBot\PlayerbotWarriorAI.cpp">
       <Filter>playerbot</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WardenHandler.cpp">
+    <ClCompile Include="..\..\src\game\warden\WardenHandler.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WardenBase.cpp">
+    <ClCompile Include="..\..\src\game\warden\WardenBase.cpp">
       <Filter>Warden</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WardenDataStorage.cpp">
+    <ClCompile Include="..\..\src\game\warden\WardenDataStorage.cpp">
       <Filter>Warden</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WardenMac.cpp">
+    <ClCompile Include="..\..\src\game\warden\WardenMac.cpp">
       <Filter>Warden</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WardenWin.cpp">
+    <ClCompile Include="..\..\src\game\warden\WardenWin.cpp">
       <Filter>Warden</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\movement\MoveSplineInit.cpp">
@@ -741,7 +741,7 @@
     <ClInclude Include="..\..\src\game\Spell.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-	<ClInclude Include="..\..\src\game\SpellClassMask.h">
+    <ClInclude Include="..\..\src\game\SpellClassMask.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\SpellAuraDefines.h">
@@ -1090,25 +1090,25 @@
     <ClInclude Include="..\..\src\game\PlayerBot\PlayerbotWarriorAI.h">
       <Filter>playerbot</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenHandler.h">
+    <ClInclude Include="..\..\src\game\warden\WardenHandler.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenBase.h">
+    <ClInclude Include="..\..\src\game\warden\WardenBase.h">
       <Filter>Warden</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenDataStorage.h">
+    <ClInclude Include="..\..\src\game\warden\WardenDataStorage.h">
       <Filter>Warden</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenMac.h">
+    <ClInclude Include="..\..\src\game\warden\WardenMac.h">
       <Filter>Warden</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenModuleMac.h">
+    <ClInclude Include="..\..\src\game\warden\WardenModuleMac.h">
       <Filter>Warden</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenWin.h">
+    <ClInclude Include="..\..\src\game\warden\WardenWin.h">
       <Filter>Warden</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WardenModuleWin.h">
+    <ClInclude Include="..\..\src\game\warden\WardenModuleWin.h">
       <Filter>Warden</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\movement\MoveSpline.h">

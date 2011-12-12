@@ -810,11 +810,10 @@ void Aura::AreaAuraUpdate(uint32 diff)
                     Unit::SpellAuraHolderBounds spair = i_target->GetSpellAuraHolderBounds(GetId());
                     for(Unit::SpellAuraHolderMap::const_iterator i = spair.first; i != spair.second; ++i)
                     {
-                        SpellAuraHolderPtr holder = i->second;
-                        if (!holder || holder->IsDeleted())
+                        if (!i->second || i->second->IsDeleted())
                             continue;
 
-                        Aura* aur = holder->GetAuraByEffectIndex(m_effIndex);
+                        Aura* aur = i->second->GetAuraByEffectIndex(m_effIndex);
 
                         if (!aur)
                             continue;
@@ -3729,6 +3728,10 @@ void Aura::HandleAuraWaterWalk(bool apply, bool Real)
     if(!Real)
         return;
 
+    // do not remove unit flag if there are more than this auraEffect of that kind on unit on unit
+    if (!apply && GetTarget()->HasAuraType(SPELL_AURA_WATER_WALK))
+        return;
+
     WorldPacket data;
     if (apply)
         data.Initialize(SMSG_MOVE_WATER_WALK, 8+4);
@@ -3744,7 +3747,13 @@ void Aura::HandleAuraFeatherFall(bool apply, bool Real)
     // only at real add/remove aura
     if(!Real)
         return;
+
     Unit *target = GetTarget();
+
+    // do not remove unit flag if there are more than this auraEffect of that kind on unit on unit
+    if (!apply && target->HasAuraType(SPELL_AURA_FEATHER_FALL))
+        return;
+
     WorldPacket data;
     if (apply)
         data.Initialize(SMSG_MOVE_FEATHER_FALL, 8+4);
@@ -3782,6 +3791,10 @@ void Aura::HandleAuraHover(bool apply, bool Real)
 {
     // only at real add/remove aura
     if(!Real)
+        return;
+
+    // do not remove unit flag if there are more than this auraEffect of that kind on unit on unit
+    if (!apply && GetTarget()->HasAuraType(SPELL_AURA_HOVER))
         return;
 
     WorldPacket data;
@@ -5743,18 +5756,17 @@ void Aura::HandleAuraModSchoolImmunity(bool apply, bool Real)
         Unit::SpellAuraHolderMap& Auras = target->GetSpellAuraHolderMap();
         for(Unit::SpellAuraHolderMap::iterator iter = Auras.begin(); iter != Auras.end(); ++iter)
         {
-            SpellAuraHolderPtr holder = iter->second;
-            if (!holder || holder->IsDeleted())
+            if (!iter->second || iter->second->IsDeleted())
                 continue;
 
-            SpellEntry const *spell = holder->GetSpellProto();
+            SpellEntry const* spell = iter->second->GetSpellProto();
 
             if((GetSpellSchoolMask(spell) & school_mask)//Check for school mask
                 && !( spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)   //Spells unaffected by invulnerability
-                && !holder->IsPositive()                //Don't remove positive spells
+                && !iter->second->IsPositive()                //Don't remove positive spells
                 && spell->Id != GetId() )               //Don't remove self
             {
-                toRemoveSpellList.insert(holder->GetId());
+                toRemoveSpellList.insert(iter->second->GetId());
             }
         }
         for (std::set<uint32>::iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
@@ -9544,9 +9556,6 @@ void Aura::HandleAuraControlVehicle(bool apply, bool Real)
 
     if (apply)
     {
-        if (caster->GetTypeId() == TYPEID_PLAYER)
-            ((Player*)caster)->RemovePet(PET_SAVE_AS_CURRENT);
-
         // TODO: find a way to make this work properly
         // some spells seem like store vehicle seat info in basepoints, but not true for all of them, so... ;/
         int32 seat = -1;
@@ -9576,9 +9585,6 @@ void Aura::HandleAuraControlVehicle(bool apply, bool Real)
 
         if (caster->GetVehicle() == target->GetVehicleKit())
             caster->ExitVehicle();
-
-        if (caster->GetTypeId() == TYPEID_PLAYER)
-            ((Player*)caster)->ResummonPetTemporaryUnSummonedIfAny();
     }
 }
 
@@ -9872,7 +9878,8 @@ void Aura::HandleAuraStopNaturalManaRegen(bool apply, bool Real)
     if (!Real)
         return;
 
-    GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER, !apply && !GetTarget()->IsUnderLastManaUseEffect());
+    if (GetTarget()->getPowerType() == POWER_MANA)
+        GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER, !apply && !GetTarget()->IsUnderLastManaUseEffect());
 }
 
 bool Aura::IsLastAuraOnHolder()
@@ -9965,9 +9972,12 @@ void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
         DEBUG_LOG("SpellAuraHolder::AddAura attempt to add aura (effect %u) to holder of spell %u, but holder already have active aura!", index, GetId());
         RemoveAura(index);
     }
-    AuraStorage::iterator itr = m_aurasStorage.find(index);
-    if (itr != m_aurasStorage.end())
-        m_aurasStorage.erase(index);
+    if (!m_aurasStorage.empty())
+    {
+        AuraStorage::iterator itr = m_aurasStorage.find(index);
+        if (itr != m_aurasStorage.end())
+            m_aurasStorage.erase(itr);
+    }
 
     m_aurasStorage.insert(std::make_pair(index,aura));
     m_auraFlags |= (1 << index);
@@ -9982,12 +9992,14 @@ void SpellAuraHolder::CleanupsBeforeDelete()
 {
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
         RemoveAura(SpellEffectIndex(i));
-    m_aurasStorage.clear();
+
+    if (!m_aurasStorage.empty())
+        m_aurasStorage.clear();
 }
 
 Aura* SpellAuraHolder::GetAuraByEffectIndex(SpellEffectIndex index)
 {
-    if (m_auraFlags & (1 << index))
+    if (m_auraFlags & (1 << index) && !m_aurasStorage.empty())
     {
         AuraStorage::iterator itr = m_aurasStorage.find(index);
         if (itr != m_aurasStorage.end())
@@ -9998,7 +10010,7 @@ Aura* SpellAuraHolder::GetAuraByEffectIndex(SpellEffectIndex index)
 
 Aura const* SpellAuraHolder::GetAura(SpellEffectIndex index) const
 {
-    if (m_auraFlags & (1 << index))
+    if (m_auraFlags & (1 << index) && !m_aurasStorage.empty())
     {
         AuraStorage::const_iterator itr = m_aurasStorage.find(index);
         if (itr != m_aurasStorage.end())
@@ -11460,6 +11472,9 @@ void SpellAuraHolder::HandleSpellSpecificBoostsForward(bool apply)
     Unit* pCaster = GetCaster();
     if (!pCaster)
         pCaster = m_target;
+
+    if (!pCaster)
+        return;
 
     uint32 procFlag = apply ? PROC_FLAG_ON_AURA_APPLY : PROC_FLAG_ON_AURA_FADE;
     uint32 procEx   = 0;

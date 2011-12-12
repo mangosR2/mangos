@@ -101,7 +101,8 @@ enum BG_SA_GoId
     BG_SA_GO_GATES_MAUVE_AMETHYST       = 190723,
     BG_SA_GO_GATES_RED_SUN              = 190726,
     BG_SA_GO_GATES_YELLOW_MOON          = 190727,
-    BG_SA_GO_TITAN_RELIC                = 192829
+    BG_SA_GO_TITAN_RELIC_A              = 194082,   // spawned titan relic when allies attack
+    BG_SA_GO_TITAN_RELIC_H              = 194083
 };
 
 enum BG_SA_GoType
@@ -130,6 +131,7 @@ enum BG_SA_Events
     SA_EVENT_ADD_GO         = 11,       // flagpoles, defender portals
     SA_EVENT_ADD_VECH_E     = 12,       // east base demolishers
     SA_EVENT_ADD_VECH_W     = 13,       // west base demolishers
+    SA_EVENT_ADD_RELIC      = 14        // titan relic
 };
 
 enum BG_SA_Boats

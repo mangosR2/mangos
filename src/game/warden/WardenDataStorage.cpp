@@ -18,7 +18,7 @@
 
 #include "Common.h"
 #include "WorldPacket.h"
-#include "WorldSession.h"
+#include "../WorldSession.h"
 #include "Log.h"
 #include "ProgressBar.h"
 #include "Database/DatabaseEnv.h"

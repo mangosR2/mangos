@@ -28,7 +28,7 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (7294, 467, 2947);
 INSERT INTO `spell_bonus_data`(`entry`,`direct_bonus`,`dot_bonus`,`ap_bonus`,`ap_dot_bonus`,`comments`) VALUES
     ( 467, 0.033, 0, 0, 0,'Druid - Thorns'),
     (7294, 0.033, 0, 0, 0,'Paladin - Retribution Aura'),
-	(2947, 0.033, 0, 0, 0,'Warlock - Fire Shield (Imp)');
+    (2947, 0.033, 0, 0, 0,'Warlock - Fire Shield (Imp)');
 
 -- Item's
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (16614, 45055, 60488);
@@ -36,3 +36,10 @@ INSERT INTO `spell_bonus_data`(`entry`,`direct_bonus`,`dot_bonus`,`ap_bonus`,`ap
 (16614, 0, 0, 0, 0, 'Item - Storm Gauntlets - Lightning Strike'),
 (45055, 0, 0, 0, 0, 'Item - Timbal''s Focusing Crystal'),
 (60488, 0, 0, 0, 0, 'Item - Extract of Necromatic Power');
+
+-- pet attack's by say1981
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (17253,16827,49966);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+    (17253, 0, 0, 0.08, 0, 'Bite (Rank 1) - Hunter pet'),
+    (16827, 0, 0, 0.08, 0, 'Claw (Rank 1) - Hunter pet'),
+    (49966, 0, 0, 0.08, 0, 'Smack (Rank 1) - Hunter pet');

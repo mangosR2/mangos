@@ -604,7 +604,8 @@ void Master::_OnSignal(int s)
                     sLog.outError("VMSS:: /BackTrace for map %u: ",mapPair->nMapId);
 
                     if (Map* map = sMapMgr.FindMap(mapPair->nMapId, mapPair->nInstanceId))
-                        map->SetBroken(true);
+                        if (!sWorld.getConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST) || counter > 0)
+                            map->SetBroken(true);
 
                     sMapMgr.GetMapUpdater()->MapBrokenEvent(mapPair);
 

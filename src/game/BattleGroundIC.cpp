@@ -35,10 +35,8 @@
 * BattleGround Isle of Conquest:
 * TODO:
 *   - Fix Vehicles on Transports; teleporting from ground onto transports; transports disappearing after relog
-*   - Vehicles have some very low range when damaging gates, Ram doesnt even cause dmg
-*   - Seaforium charge causes damage only when the player that put it is within ~30yd at the explode
-*   - Add scripts to bosses
-*   - Implement Siege Engine
+*   - Add scripts to bosses (Crushing Leap, Rage)
+*   - Correct spawn of Siege Engine
 *   - If a base is owned by a team and a vehicle from the base IS being used, it should not disappear if the opposite team caps the base
 *   - Fix buffs from owning quarry / refinery for +15% siege dmg (they are given correctly, just dont work)
 */
@@ -850,10 +848,10 @@ void BattleGroundIC::HandleBuffs()
                 }
             }
             // parachute handling
-            if (!plr->IsFalling())
+            float height = plr->GetPositionZ();
+            if (height >= 180)
                 continue;
 
-            float height = plr->GetPositionZ();
             if (height < 180 && height > 140 && (!plr->HasAura(SPELL_PARACHUTE)))
                 plr->CastSpell(plr, SPELL_PARACHUTE, true);
         }

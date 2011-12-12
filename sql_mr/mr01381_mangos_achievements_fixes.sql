@@ -3,7 +3,7 @@
 DELETE FROM achievement_criteria_requirement WHERE criteria_id IN 
 (608, 609, 610, 1242, 1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 
  1815, 1816, 1817, 1818, 1819, 1920, 1921, 1922, 1923, 1825, 1826, 4227, 5726, 5728, 5734,
-5735, 5736, 5737, 5738, 5739, 5809, 5810, 7020, 8587, 8588, 8589, 8590, 8599, 8600, 8601, 8602, 8607, 8608, 8609,
+5735, 5736, 5737, 5738, 5739, 5809, 5810, 7020, 7625, 7628, 8587, 8588, 8589, 8590, 8599, 8600, 8601, 8602, 8607, 8608, 8609,
 8610, 8615, 8616, 8617, 8618);
 
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (608, 11);
@@ -58,6 +58,8 @@ INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (5
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`, `value1`) VALUES (7020, 6, 4571);
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`, `value1`) VALUES (7020, 7, 23335);
 
+INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (7625, 11);
+INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (7628, 11);
 
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (8587, 11);
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (8588, 11);

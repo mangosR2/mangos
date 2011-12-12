@@ -20,15 +20,15 @@
 #include "Auth/WardenKeyGeneration.h"
 #include "Common.h"
 #include "WorldPacket.h"
-#include "WorldSession.h"
+#include "../WorldSession.h"
 #include "Log.h"
-#include "Opcodes.h"
+#include "../Opcodes.h"
 #include "ByteBuffer.h"
 #include <openssl/md5.h>
 #include "ProgressBar.h"
 #include "Database/DatabaseEnv.h"
-#include "World.h"
-#include "Player.h"
+#include "../World.h"
+#include "../Player.h"
 #include "Util.h"
 #include "WardenWin.h"
 #include "WardenModuleWin.h"
@@ -211,6 +211,9 @@ void WardenWin::RequestData()
 
     SendDataId.clear();
 
+    // always! this is SpeedHack on WEH
+    SendDataId.push_back(385);
+
     for (int i = 0; i < 3; ++i)                             // for now include 3 MEM_CHECK's
     {
         if (MemCheck.empty())
@@ -223,7 +226,8 @@ void WardenWin::RequestData()
     ByteBuffer buff;
     buff << uint8(WARDEN_SMSG_CHEAT_CHECKS_REQUEST);
 
-    for (int i = 0; i < 5; ++i)                             // for now include 5 random checks
+    int maxSize = 8 - MemCheck.size();
+    for (int i = 0; i < maxSize; ++i)                             // for now include 5 random checks
     {
         id = irand(1, maxid - 1);
         wd = WardenDataStorage.GetWardenDataById(id);

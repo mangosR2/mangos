@@ -5844,16 +5844,18 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
     Unit::SpellAuraHolderMap const& auras = unitTarget->GetSpellAuraHolderMap();
     for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
     {
-        SpellAuraHolderPtr holder = itr->second;
-        if ((1<<holder->GetSpellProto()->Dispel) & dispelMask)
+        if (!itr->second || !itr->second->IsDeleted())
+            continue;
+
+        if ((1 << itr->second->GetSpellProto()->Dispel) & dispelMask)
         {
-            if (holder->GetSpellProto()->Dispel == DISPEL_MAGIC)
+            if (itr->second->GetSpellProto()->Dispel == DISPEL_MAGIC)
             {
                 bool positive = true;
-                if (!holder->IsPositive())
+                if (!itr->second->IsPositive())
                     positive = false;
                 else
-                    positive = (holder->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_NEGATIVE)==0;
+                    positive = (itr->second->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_NEGATIVE)==0;
 
                 // do not remove positive auras if friendly target
                 //               negative auras if non-friendly target
@@ -5861,14 +5863,14 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
                     continue;
             }
             // Unholy Blight prevents dispel of diseases from target
-            else if (holder->GetSpellProto()->Dispel == DISPEL_DISEASE)
+            else if (itr->second->GetSpellProto()->Dispel == DISPEL_DISEASE)
                 if (unitTarget->HasAura(50536))
                     continue;
 
-            if (holder->GetAuraCharges() > 1)
-                dispel_list.push_back(std::pair<SpellAuraHolderPtr ,uint32>(holder, holder->GetAuraCharges()));
+            if (itr->second->GetAuraCharges() > 1)
+                dispel_list.push_back(std::pair<SpellAuraHolderPtr ,uint32>(itr->second, itr->second->GetAuraCharges()));
             else
-                dispel_list.push_back(std::pair<SpellAuraHolderPtr ,uint32>(holder, holder->GetStackAmount()));
+                dispel_list.push_back(std::pair<SpellAuraHolderPtr ,uint32>(itr->second, itr->second->GetStackAmount()));
         }
     }
     // Ok if exist some buffs for dispel try dispel it
@@ -7869,17 +7871,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true, NULL, NULL, unitTarget->GetObjectGuid(), m_spellInfo);
                     return;
                 }
-                case 43375:
-                case 43972:                                // Mixing Blood for Quest 11306
+                case 43375:                                 // Mixing Vrykul Blood
+                case 43972:                                 // Mixing Blood for Quest 11306
                 {
-                    switch(urand(0, 3))
-                    {
-                        case 0 : m_caster->CastSpell(m_caster, 43378, true); break;
-                        case 1 : m_caster->CastSpell(m_caster, 43376, true); break;
-                        case 2 : m_caster->CastSpell(m_caster, 43377, true); break;
-                        case 3 : m_caster->CastSpell(m_caster, 43970, true); break;
-                    }
-                    break;
+                    if (!unitTarget)
+                        return;
+
+                    uint32 triggeredSpell[] = {43376, 43378, 43970, 43377};
+
+                    unitTarget->CastSpell(unitTarget, triggeredSpell[urand(0, 3)], true);
+                    return;
                 }
                 case 44436:                                 // Tricky Treat
                 {

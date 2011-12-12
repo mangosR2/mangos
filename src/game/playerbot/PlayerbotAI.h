@@ -112,7 +112,7 @@ public:
         COMBAT_RANGED               = 0x02              // class is ranged attacker
     };
 
-    // masters orders that should be obeyed by the AI during the updteAI routine
+    // masters orders that should be obeyed by the AI during the updateAI routine
     // the master will auto set the target of the bot
     enum CombatOrderType
     {
@@ -283,7 +283,8 @@ public:
     // finds nearby creatures, whose UNIT_NPC_FLAGS match the flags specified in item list m_itemIds
     void findNearbyCreature();
 
-    void MakeSpellLink(const SpellEntry *sInfo, std::ostringstream &out, Player* player = NULL);
+    void MakeSpellLink(const SpellEntry *sInfo, std::ostringstream &out);
+    void MakeWeaponSkillLink(const SpellEntry *sInfo, std::ostringstream &out, uint32 skillid);
 
     // currently bots only obey commands from the master
     bool canObeyCommandFrom(const Player& player) const;
@@ -297,7 +298,6 @@ public:
 
     bool CanReceiveSpecificSpell(uint8 spec, Unit* target) const;
 
-    bool PickPocket(Unit* pTarget);
     bool HasTool(uint32 TC);
     bool HasSpellReagents(uint32 spellId);
 
@@ -373,7 +373,7 @@ public:
     bool IsInQuestCreatureList(uint32 id) { return m_needCreatureOrGOList.find(id) != m_needCreatureOrGOList.end(); };
     bool IsItemUseful(uint32 itemid);
     void SendOrders(Player& player);
-    bool FollowCheckTeleport(WorldObject &obj);
+    bool DoTeleport(WorldObject &obj);
     void DoLoot();
     void DoFlight();
     void GetTaxi(ObjectGuid guid, BotTaxiNode& nodes);
@@ -414,7 +414,7 @@ public:
     void GameObjectLocalization(std::string& gameobjectName, const uint32 entry) const;
 
     uint8 GetFreeBagSpace() const;
-    void SellGarbage(bool verbose = true);
+    void SellGarbage(bool listNonTrash = true, bool bDetailTrashSold = false, bool verbose = true);
     void Sell(const uint32 itemid);
     void AddAuction(const uint32 itemid, Creature* aCreature);
     void ListAuctions();
@@ -425,6 +425,7 @@ public:
     bool Withdraw(const uint32 itemid);
     bool Deposit(const uint32 itemid);
     void BankBalance();
+    std::string Cash(uint32 copper);
 
 private:
     // ****** Closed Actions ********************************

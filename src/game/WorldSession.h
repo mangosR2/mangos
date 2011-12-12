@@ -30,7 +30,7 @@
 #include "LFGMgr.h"
 #include "AuctionHouseMgr.h"
 #include "Item.h"
-#include "WardenBase.h"
+#include "warden/WardenBase.h"
 
 struct ItemPrototype;
 struct AuctionEntry;

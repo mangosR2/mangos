@@ -8725,6 +8725,8 @@ void ObjectMgr::LoadTrainers(char const* tableName, bool isTemplates)
         trainerSpell.reqSkillValue = fields[4].GetUInt32();
         trainerSpell.reqLevel      = fields[5].GetUInt32();
 
+        trainerSpell.isProvidedReqLevel = trainerSpell.reqLevel > 0;
+
         // calculate learned spell for profession case when stored cast-spell
         trainerSpell.learnedSpell = spell;
         for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -8746,7 +8748,7 @@ void ObjectMgr::LoadTrainers(char const* tableName, bool isTemplates)
         }
 
         // already checked as valid spell so exist.
-        SpellEntry const *learnSpellinfo = sSpellStore.LookupEntry(trainerSpell.learnedSpell);
+        SpellEntry const* learnSpellinfo = sSpellStore.LookupEntry(trainerSpell.learnedSpell);
         if (SpellMgr::IsProfessionSpell(trainerSpell.learnedSpell))
         {
             data.trainerType = 2;

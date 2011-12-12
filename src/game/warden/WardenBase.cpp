@@ -18,14 +18,14 @@
 
 #include "Common.h"
 #include "WorldPacket.h"
-#include "WorldSession.h"
+#include "../WorldSession.h"
 #include "Log.h"
-#include "Opcodes.h"
+#include "../Opcodes.h"
 #include "ByteBuffer.h"
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-#include "World.h"
-#include "Player.h"
+#include "../World.h"
+#include "../Player.h"
 #include "Util.h"
 #include "WardenBase.h"
 #include "WardenWin.h"

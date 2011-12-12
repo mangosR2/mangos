@@ -68,7 +68,7 @@
 #include "CharacterDatabaseCleaner.h"
 #include "CreatureLinkingMgr.h"
 #include "LFGMgr.h"
-#include "WardenDataStorage.h"
+#include "warden/WardenDataStorage.h"
 
 INSTANTIATE_SINGLETON_1( World );
 
@@ -453,10 +453,11 @@ void World::LoadConfigSettings(bool reload)
     // VMSS system
     setConfig(CONFIG_BOOL_VMSS_ENABLE,                "VMSS.Enable", false);
     setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
-    setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",3600);
-    setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",0);
+    setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
+    setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
     setConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD,   "VMSS.FreezeCheckPeriod",1000);
-    setConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME,    "VMSS.MapFreezeDetectTime",1000);
+    setConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME,    "VMSS.MapFreezeDetectTime",2000);
+    setConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST,          "VMSS.TrySkipFirstThreadBreak", false);
 
     ///- Read all rates from the config file
     setConfigPos(CONFIG_FLOAT_RATE_HEALTH, "Rate.Health", 1.0f);

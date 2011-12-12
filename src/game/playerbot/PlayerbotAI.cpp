@@ -443,8 +443,8 @@ void PlayerbotAI::SendNotEquipList(Player& /*player*/)
             }
     }
 
-    TellMaster("Here's all the items in my inventory that I can equip.");
     ChatHandler ch(GetMaster());
+    bool bAnyEquippable = false;
 
     const std::string descr[] = { "head", "neck", "shoulders", "body", "chest",
                                   "waist", "legs", "feet", "wrists", "hands", "finger1", "finger2",
@@ -456,24 +456,28 @@ void PlayerbotAI::SendNotEquipList(Player& /*player*/)
     {
         if (equip[equipSlot] == NULL)
             continue;
+
+        if (!bAnyEquippable)
+        {
+            TellMaster("Here's all the items in my inventory that I can equip:");
+            bAnyEquippable = true;
+        }
+
         std::list<Item*>* itemListForEqSlot = equip[equipSlot];
         std::ostringstream out;
         out << descr[equipSlot] << ": ";
         for (std::list<Item*>::iterator it = itemListForEqSlot->begin(); it != itemListForEqSlot->end(); ++it)
         {
-            const ItemPrototype* const pItemProto = (*it)->GetProto();
-
-            std::string itemName = pItemProto->Name1;
-            ItemLocalization(itemName, pItemProto->ItemId);
-
-            out << " |cffffffff|Hitem:" << pItemProto->ItemId
-                << ":0:0:0:0:0:0:0" << "|h[" << itemName
-                << "]|h|r";
+            if ((*it))
+                MakeItemLink((*it), out, true);
         }
         ch.SendSysMessage(out.str().c_str());
 
         delete itemListForEqSlot; // delete list of Item*
     }
+
+    if (!bAnyEquippable)
+        TellMaster("There are no items in my inventory that I can equip.");
 }
 
 void PlayerbotAI::SendQuestNeedList()
@@ -809,6 +813,47 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                 m_bot->SetSelectionGuid(ObjectGuid(playerGuid));
                 m_ignoreAIUpdatesUntilTime = time(0) + 4;
                 m_ScenarioType = SCENARIO_DUEL;
+            }
+            return;
+        }
+
+        case SMSG_BUY_FAILED:
+        {
+            WorldPacket p(packet); // 8+4+4+1
+            ObjectGuid vendorguid;
+            p >> vendorguid;
+            uint32 itemid;
+            p >> itemid;
+            uint8 msg;
+            p >> msg; // error msg
+            p.resize(13);
+
+            switch(msg)
+            {
+                case BUY_ERR_CANT_FIND_ITEM:
+                    break;
+                case BUY_ERR_ITEM_ALREADY_SOLD:
+                    break;
+                case BUY_ERR_NOT_ENOUGHT_MONEY:
+                {
+                    Announce(CANT_AFFORD);
+                    break;
+                }
+                case BUY_ERR_SELLER_DONT_LIKE_YOU:
+                    break;
+                case BUY_ERR_DISTANCE_TOO_FAR:
+                    break;
+                case BUY_ERR_ITEM_SOLD_OUT:
+                    break;
+                case BUY_ERR_CANT_CARRY_MORE:
+                {
+                    Announce(INVENTORY_FULL);
+                    break;
+                }
+                case BUY_ERR_RANK_REQUIRE:
+                    break;
+                case BUY_ERR_REPUTATION_REQUIRE:
+                    break;
             }
             return;
         }
@@ -1152,23 +1197,30 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
 
                 if (!canObeyCommandFrom(*(m_bot->GetTrader())))
                 {
+                    // TODO: Really? What if I give a bot all my junk so it's inventory is full when a nice green/blue/purple comes along?
                     SendWhisper("I'm not allowed to trade you any of my items, but you are free to give me money or items.", *(m_bot->GetTrader()));
                     return;
                 }
 
                 // list out items available for trade
                 std::ostringstream out;
+                std::list<std::string> lsItemsTradable;
+                std::list<std::string> lsItemsUntradable;
 
-                out << "In my main backpack:";
                 // list out items in main backpack
                 for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; slot++)
                 {
                     const Item* const pItem = m_bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
                     if (pItem)
+                    {
                         MakeItemLink(pItem, out, true);
+                        if (pItem->CanBeTraded())
+                            lsItemsTradable.push_back(out.str());
+                        else
+                            lsItemsUntradable.push_back(out.str());
+                        out.str("");
+                    }
                 }
-                ChatHandler ch(m_bot->GetTrader());
-                ch.SendSysMessage(out.str().c_str());
 
                 // list out items in other removable backpacks
                 for (uint8 bag = INVENTORY_SLOT_BAG_START; bag < INVENTORY_SLOT_BAG_END; ++bag)
@@ -1176,37 +1228,65 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                     const Bag* const pBag = (Bag *) m_bot->GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
                     if (pBag)
                     {
-                        std::ostringstream outbag;
-                        outbag << "In my ";
-                        const ItemPrototype* const pBagProto = pBag->GetProto();
-                        std::string bagName = pBagProto->Name1;
-                        ItemLocalization(bagName, pBagProto->ItemId);
-                        outbag << bagName << ":";
-
                         for (uint8 slot = 0; slot < pBag->GetBagSize(); ++slot)
                         {
                             const Item* const pItem = m_bot->GetItemByPos(bag, slot);
                             if (pItem)
-                                MakeItemLink(pItem, outbag, true);
+                            {
+                                MakeItemLink(pItem, out, true);
+                                if (pItem->CanBeTraded())
+                                    lsItemsTradable.push_back(out.str());
+                                else
+                                    lsItemsUntradable.push_back(out.str());
+                                out.str("");
+                            }
                         }
-                        ch.SendSysMessage(outbag.str().c_str());
                     }
                 }
 
-                // calculate how much money bot has
-                uint32 copper = m_bot->GetMoney();
-                uint32 gold = uint32(copper / 10000);
-                copper -= (gold * 10000);
-                uint32 silver = uint32(copper / 100);
-                copper -= (silver * 100);
+                ChatHandler ch(m_bot->GetTrader());
+                out.str("");
+                out << "Items I have but cannot trade:";
+                uint32 count = 0;
+                for (std::list<std::string>::iterator iter = lsItemsUntradable.begin(); iter != lsItemsUntradable.end(); iter++)
+                {
+                    out << (*iter);
+                    // Why this roundabout way of posting max 20 items per whisper? To keep the list scrollable.
+                    count++;
+                    if (count % 20 == 0)
+                    {
+                        ch.SendSysMessage(out.str().c_str());
+                        out.str("");
+                    }
+                }
+                if (count > 0)
+                    ch.SendSysMessage(out.str().c_str());
 
+                out.str("");
+                out << "I could give you:";
+                count = 0;
+                for (std::list<std::string>::iterator iter = lsItemsTradable.begin(); iter != lsItemsTradable.end(); iter++)
+                {
+                    out << (*iter);
+                    // Why this roundabout way of posting max 20 items per whisper? To keep the list scrollable.
+                    count++;
+                    if (count % 20 == 0)
+                    {
+                        ch.SendSysMessage(out.str().c_str());
+                        out.str("");
+                    }
+                }
+                if (count > 0)
+                    ch.SendSysMessage(out.str().c_str());
+                else
+                    ch.SendSysMessage("I have nothing to give you.");
+
+                // calculate how much money bot has
                 // send bot the message
-                std::ostringstream whisper;
-                whisper << "I have |cff00ff00" << gold
-                        << "|r|cfffffc00g|r|cff00ff00" << silver
-                        << "|r|cffcdcdcds|r|cff00ff00" << copper
-                        << "|r|cffffd333c|r";
-                SendWhisper(whisper.str().c_str(), *(m_bot->GetTrader()));
+                uint32 copper = m_bot->GetMoney();
+                out.str("");
+                out << "I have |cff00ff00" << Cash(copper) << "|r";
+                SendWhisper(out.str().c_str(), *(m_bot->GetTrader()));
             }
             return;
         }
@@ -1390,6 +1470,45 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                 SetIgnoreUpdateTime();
             }
 
+            return;
+        }
+        case SMSG_BUY_ITEM:
+        {
+            WorldPacket p(packet);  // (8+4+4+4)
+            ObjectGuid vguid;
+            p >> vguid;
+            uint32 vendorslot;
+            p >> vendorslot;
+            p.resize(20);
+
+            vendorslot = vendorslot - 1;
+            Creature *pCreature = m_bot->GetNPCIfCanInteractWith(vguid, UNIT_NPC_FLAG_VENDOR);
+            if (!pCreature)
+                return;
+
+            VendorItemData const* vItems = pCreature->GetVendorItems();
+            VendorItemData const* tItems = pCreature->GetVendorTemplateItems();
+            if ((!vItems || vItems->Empty()) && (!tItems || tItems->Empty()))
+                return;
+
+            uint32 vCount = vItems ? vItems->GetItemCount() : 0;
+            uint32 tCount = tItems ? tItems->GetItemCount() : 0;
+
+            if (vendorslot >= vCount+tCount)
+                return;
+
+            VendorItem const* crItem = vendorslot < vCount ? vItems->GetItem(vendorslot) : tItems->GetItem(vendorslot - vCount);
+            if (!crItem)
+                return;
+
+            ItemPrototype const *pProto = ObjectMgr::GetItemPrototype(crItem->item);
+            if(pProto)
+            {
+                std::ostringstream out;
+                out << "|cff009900" << "I received item: |r";
+                MakeItemLink(pProto,out);
+                TellMaster(out.str().c_str());
+            }
             return;
         }
 
@@ -1983,11 +2102,17 @@ void PlayerbotAI::GetDuelTarget(Unit* forcedTarget)
 
 void PlayerbotAI::DoNextCombatManeuver()
 {
+    if (!m_bot)
+        return;
+
     // check for new targets
     if (m_ScenarioType == SCENARIO_DUEL)
         GetDuelTarget(GetMaster());
     else
         GetCombatTarget();
+    // check if we have a target - fixes crash reported by rrtn (kill hunter's pet bug)
+    // if current target for attacks doesn't make sense anymore
+    // clear our orders so we can get orders in next update
     if (!m_targetCombat || m_targetCombat->isDead() || !m_targetCombat->IsInWorld() || !m_bot->IsHostileTo(m_targetCombat) || !m_bot->IsInMap(m_targetCombat))
     {
         m_bot->AttackStop();
@@ -2880,30 +3005,38 @@ void PlayerbotAI::MovementReset()
 
     if (m_movementOrder == MOVEMENT_FOLLOW)
     {
-        if (!m_followTarget) return;
-
-        // target player is teleporting...
-        if (m_followTarget->GetTypeId() == TYPEID_PLAYER && ((Player *) m_followTarget)->IsBeingTeleported())
+        if (!m_followTarget)
             return;
 
-        // bot is teleporting...
-        if (m_bot && ((Player*)m_bot)->IsBeingTeleported())
+        WorldObject* distTarget = m_followTarget;   // target to distance check
+
+        // don't follow while in combat
+        if (m_bot->isInCombat())
             return;
 
-        // check if bot needs to teleport to reach target...
-        if (!m_bot->isInCombat())
+        Player* pTarget;                            // target is player
+        if (m_followTarget->GetTypeId() == TYPEID_PLAYER)
+            pTarget = ((Player*) m_followTarget);
+
+        if (pTarget)
         {
-            if (m_followTarget->GetTypeId() == TYPEID_PLAYER && ((Player *) m_followTarget)->GetCorpse())
-            {
-                if (!FollowCheckTeleport(*((Player *) m_followTarget)->GetCorpse())) return;
-            }
-            else if (!FollowCheckTeleport(*m_followTarget)) return;
+            // check player for follow situations
+            if (pTarget->IsBeingTeleported() || pTarget->IsTaxiFlying())
+                return;
+
+            // use player's corpse as distance check target
+            if (pTarget->GetCorpse())
+                distTarget = pTarget->GetCorpse();
         }
 
-        if (m_bot->isAlive() &&
-            !m_bot->isInCombat() &&
-            (m_bot->GetMap() == m_followTarget->GetMap() && m_bot->IsWithinDistInMap(GetMaster(), m_bot->GetMap()->GetVisibilityDistance(), true)) &&
-            !m_bot->IsBeingTeleported() )
+        // is bot too far from the follow target
+        if (!m_bot->IsWithinDistInMap(distTarget, 50))
+        {
+            DoTeleport(*m_followTarget);
+            return;
+        }
+
+        if (m_bot->isAlive() && !m_bot->IsBeingTeleported())
         {
             float angle = rand_float(0, M_PI_F);
             float dist = rand_float(m_mgr->m_confFollowDistance[0], m_mgr->m_confFollowDistance[1]);
@@ -3090,7 +3223,7 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
                 return;
             // teleport ghost from graveyard to corpse
             // DEBUG_LOG ("[PlayerbotAI]: UpdateAI - Teleport %s to corpse...", m_bot->GetName() );
-            FollowCheckTeleport(*corpse);
+            DoTeleport(*corpse);
             // check if we are allowed to resurrect now
             if (corpse->GetGhostTime() + m_bot->GetCorpseReclaimDelay(corpse->GetType() == CORPSE_RESURRECTABLE_PVP) > time(0))
             {
@@ -3315,7 +3448,7 @@ bool PlayerbotAI::CastSpell(uint32 spellId)
     if (castTimeEntry && castTimeEntry->CastTime)
     {
         CastTime = (castTimeEntry->CastTime / 1000);
-        DEBUG_LOG ("[PLayerbotAI]: CastSpell - Bot movement reset for casting %s (%u)", pSpellInfo->SpellName[0], spellId);
+        DEBUG_LOG ("[PlayerbotAI]: CastSpell - Bot movement reset for casting %s (%u)", pSpellInfo->SpellName[0], spellId);
         m_bot->StopMoving();
     }
 
@@ -3658,72 +3791,6 @@ Item* PlayerbotAI::FindBombForLockValue(uint32 reqSkillValue)
     return NULL;
 }
 
-bool PlayerbotAI::PickPocket(Unit* pTarget)
-{
-    if(!pTarget)
-        return false;
-
-    bool looted = false;
-
-    ObjectGuid markGuid = pTarget->GetObjectGuid();
-    Creature *c = m_bot->GetMap()->GetCreature(markGuid);
-    if(c)
-    {
-        m_bot->SendLoot(markGuid, LOOT_PICKPOCKETING);
-        Loot *loot = &c->loot;
-        uint32 lootNum = loot->GetMaxSlotInLootFor(m_bot);
-
-        if (m_mgr->m_confDebugWhisper)
-        {
-            std::ostringstream out;
-
-            // calculate how much money bot loots
-            uint32 copper = loot->gold;
-            uint32 gold = uint32(copper / 10000);
-            copper -= (gold * 10000);
-            uint32 silver = uint32(copper / 100);
-            copper -= (silver * 100);
-
-            out << "|r|cff009900" << m_bot->GetName() << " loots: " << "|h|cffffffff[|r|cff00ff00" << gold
-                << "|r|cfffffc00g|r|cff00ff00" << silver
-                << "|r|cffcdcdcds|r|cff00ff00" << copper
-                << "|r|cff993300c"
-                << "|h|cffffffff]";
-
-            TellMaster(out.str().c_str());
-        }
-
-        if (loot->gold)
-        {
-            m_bot->ModifyMoney(loot->gold);
-            m_bot->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, loot->gold);
-            loot->gold = 0;
-            loot->NotifyMoneyRemoved();
-        }
-
-        for (uint32 l = 0; l < lootNum; l++)
-        {
-            QuestItem *qitem = 0, *ffaitem = 0, *conditem = 0;
-            LootItem *item = loot->LootItemInSlot(l, m_bot, &qitem, &ffaitem, &conditem);
-            if (!item)
-                continue;
-
-            ItemPosCountVec dest;
-            if (m_bot->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count) == EQUIP_ERR_OK)
-            {
-                Item* pItem = m_bot->StoreNewItem (dest, item->itemid, true, item->randomPropertyId);
-                m_bot->SendNewItem(pItem, uint32(item->count), false, false, true);
-                --loot->unlootedCount;
-                looted = true;
-            }
-        }
-        // release loot
-        if (looted)
-            m_bot->GetSession()->DoLootRelease(markGuid);
-    }
-    return false; // ensures that the rogue only pick pockets target once
-}
-
 bool PlayerbotAI::HasTool(uint32 TC)
 {
     std::ostringstream out;
@@ -3820,12 +3887,17 @@ void PlayerbotAI::extractQuestIds(const std::string& text, std::list<uint32>& qu
     }
 }
 
-// Build an hlink for spells
-void PlayerbotAI::MakeSpellLink(const SpellEntry *sInfo, std::ostringstream &out, Player *player)
+// Build an hlink for Weapon skills in Aqua
+void PlayerbotAI::MakeWeaponSkillLink(const SpellEntry *sInfo, std::ostringstream &out, uint32 skillid)
 {
-    LocaleConstant loc = LOCALE_enUS;
-    if (player)
-        loc = player->GetSession()->GetSessionDbcLocale();
+    int loc = GetMaster()->GetSession()->GetSessionDbcLocale();
+    out << "|cff00ffff|Hspell:" << sInfo->Id << "|h[" << sInfo->SpellName[loc] << " : " << m_bot->GetSkillValue(skillid) << " /" << m_bot->GetMaxSkillValue(skillid) << "]|h|r";
+}
+
+// Build an hlink for spells in White
+void PlayerbotAI::MakeSpellLink(const SpellEntry *sInfo, std::ostringstream &out)
+{
+    int    loc = GetMaster()->GetSession()->GetSessionDbcLocale();
     out << "|cffffffff|Hspell:" << sInfo->Id << "|h[" << sInfo->SpellName[loc] << "]|h|r";
 }
 
@@ -4703,23 +4775,15 @@ bool PlayerbotAI::TradeCopper(uint32 copper)
     return false;
 }
 
-bool PlayerbotAI::FollowCheckTeleport(WorldObject &obj)
+bool PlayerbotAI::DoTeleport(WorldObject &obj)
 {
-    // if bot has strayed too far from the master, teleport bot
-
-    if (!m_bot->IsWithinDistInMap(&obj, m_bot->GetMap()->GetVisibilityDistance(), true) && GetMaster()->isAlive() && !GetMaster()->IsTaxiFlying())
+    m_ignoreAIUpdatesUntilTime = time(0) + 6;
+    PlayerbotChatHandler ch(GetMaster());
+    if (!ch.teleport(*m_bot))
     {
-        m_bot->GetMotionMaster()->Clear();
-        m_ignoreAIUpdatesUntilTime = time(0) + 6;
-        PlayerbotChatHandler ch(GetMaster());
-        if (!ch.teleport(*m_bot))
-        {
-            ch.sysmessage(".. could not be teleported ..");
-            // DEBUG_LOG ("[PlayerbotAI]: FollowCheckTeleport - %s failed to teleport", m_bot->GetName() );
-            return false;
-        }
-        if (!m_bot->GetMap())
-            m_bot->SetMap(GetMaster()->GetMap());
+        ch.sysmessage(".. could not be teleported ..");
+        // DEBUG_LOG ("[PlayerbotAI]: DoTeleport - %s failed to teleport", m_bot->GetName() );
+        return false;
     }
     return true;
 }
@@ -4821,16 +4885,7 @@ void PlayerbotAI::_doSellItem(Item* const item, std::ostringstream &report, std:
         MakeItemLink(item, report, true);
         report << " for ";
 
-        uint32 gold = uint32(cost / 10000);
-        cost -= (gold * 10000);
-        uint32 silver = uint32(cost / 100);
-        cost -= (silver * 100);
-
-        if (gold > 0)
-            report << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
-        if (silver > 0)
-            report << silver << " |TInterface\\Icons\\INV_Misc_Coin_03:8|t";
-        report << cost << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t\n";
+        report << Cash(cost);
     }
     else if (item->GetProto()->SellPrice > 0)
         MakeItemLink(item, canSell, true);
@@ -5024,6 +5079,25 @@ bool PlayerbotAI::RemoveAuction(const uint32 auctionid)
     return true;
 }
 
+std::string PlayerbotAI::Cash(uint32 copper)
+{
+    using namespace std;
+    std::ostringstream change;
+
+    uint32 gold = uint32(copper / 10000);
+    copper -= (gold * 10000);
+    uint32 silver = uint32(copper / 100);
+    copper -= (silver * 100);
+
+    if (gold > 0)
+        change << gold <<  " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
+    if (silver > 0)
+        change << silver << " |TInterface\\Icons\\INV_Misc_Coin_03:8|t";
+    change << copper << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t";
+
+    return change.str();
+}
+
 void PlayerbotAI::ListQuests(WorldObject * questgiver)
 {
     if (!questgiver)
@@ -5163,16 +5237,7 @@ void PlayerbotAI::ListAuctions()
                     if (sObjectMgr.GetPlayerNameByGUID(guid, bidder_name))
                         report << " " << bidder_name << ": ";
 
-                    uint32 gold = uint32(bid / 10000);
-                    bid -= (gold * 10000);
-                    uint32 silver = uint32(bid / 100);
-                    bid -= (silver * 100);
-
-                    if (gold > 0)
-                        report << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
-                    if (silver > 0)
-                        report << silver << " |TInterface\\Icons\\INV_Misc_Coin_03:8|t";
-                    report << bid << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t";
+                        report << Cash(bid);
                 }
                 if (aItem)
                     report << " ends: " << aTm->tm_hour << "|cff0070dd|hH|h|r " << aTm->tm_min << "|cff0070dd|hmin|h|r";
@@ -5231,38 +5296,25 @@ void PlayerbotAI::Sell(const uint32 itemid)
         MakeItemLink(pItem, report, true);
         report << " for ";
 
-        uint32 gold = uint32(cost / 10000);
-        cost -= (gold * 10000);
-        uint32 silver = uint32(cost / 100);
-        cost -= (silver * 100);
-
-        if (gold > 0)
-            report << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
-        if (silver > 0)
-            report << silver << " |TInterface\\Icons\\INV_Misc_Coin_03:8|t";
-        report << cost << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t";
+        report << Cash(cost);
 
         TellMaster(report.str());
     }
 }
 
-void PlayerbotAI::SellGarbage(bool verbose)
+void PlayerbotAI::SellGarbage(bool bListNonTrash, bool bDetailTrashSold, bool bVerbose)
 {
-    uint32 TotalCost = 0;
-    uint32 TotalSold = 0;
+    uint32 SoldCost = 0;
+    uint32 SoldQuantity = 0;
     std::ostringstream report, goods;
 
-    goods << "Items that are not trash and can be sold: \n";
-    goods << "In my main backpack:";
     // list out items in main backpack
     for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
     {
         Item* const item = m_bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
         if (item)
-            _doSellItem(item, report, goods, TotalCost, TotalSold);
+            _doSellItem(item, report, goods, SoldCost, SoldQuantity);
     }
-    if (verbose)
-        TellMaster(goods.str());
 
     // and each of our other packs
     for (uint8 bag = INVENTORY_SLOT_BAG_START; bag < INVENTORY_SLOT_BAG_END; ++bag)
@@ -5271,38 +5323,59 @@ void PlayerbotAI::SellGarbage(bool verbose)
         const Bag* const pBag = static_cast<Bag *>(m_bot->GetItemByPos(INVENTORY_SLOT_BAG_0, bag));
         if (pBag)
         {
-            goods << "\nIn my ";
-            const ItemPrototype* const pBagProto = pBag->GetProto();
-            std::string bagName = pBagProto->Name1;
-            ItemLocalization(bagName, pBagProto->ItemId);
-            goods << bagName << ":";
+            // Very nice, but who cares what bag it's in?
+            //const ItemPrototype* const pBagProto = pBag->GetProto();
+            //std::string bagName = pBagProto->Name1;
+            //ItemLocalization(bagName, pBagProto->ItemId);
+            //goods << "\nIn my " << bagName << ":";
 
             for (uint8 slot = 0; slot < pBag->GetBagSize(); ++slot)
             {
                 Item* const item = m_bot->GetItemByPos(bag, slot);
                 if (item)
-                    _doSellItem(item, report, goods, TotalCost, TotalSold);
+                    _doSellItem(item, report, goods, SoldCost, SoldQuantity);
             }
-            if (verbose)
-                TellMaster(goods.str());
         }
     }
 
-    if (TotalSold > 0)
+    if (!bDetailTrashSold)
+        report.str(""); // clear ostringstream
+
+    if (SoldCost > 0)
     {
-        report << "Sold total " << TotalSold << " item(s) for ";
-        uint32 gold = uint32(TotalCost / 10000);
-        TotalCost -= (gold * 10000);
-        uint32 silver = uint32(TotalCost / 100);
-        TotalCost -= (silver * 100);
+        if (bDetailTrashSold)
+            report << "Sold total " << SoldQuantity << " item(s) for ";
+        else
+            report << "Sold " << SoldQuantity << " trash item(s) for ";
+        uint32 gold = uint32(SoldCost / 10000);
+        SoldCost -= (gold * 10000);
+        uint32 silver = uint32(SoldCost / 100);
+        SoldCost -= (silver * 100);
 
         if (gold > 0)
             report << gold << " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
         if (silver > 0)
             report << silver << " |TInterface\\Icons\\INV_Misc_Coin_03:8|t";
-        report << TotalCost << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t";
+        report << SoldCost << " |TInterface\\Icons\\INV_Misc_Coin_05:8|t";
 
-        TellMaster(report.str());
+        if (bVerbose)
+            TellMaster(report.str());
+    }
+
+    // For all bags, non-gray sellable items
+    if (bVerbose)
+    {
+        if (bListNonTrash && goods.str().size() > 0)
+        {
+            if (SoldQuantity)
+                TellMaster("I could also sell: %s", goods.str().c_str());
+            else
+                TellMaster("I could sell: %s", goods.str().c_str());
+        }
+        else if (SoldQuantity == 0 && goods.str().size() == 0)
+        {
+            TellMaster("No items to sell, trash or otherwise.");
+        }
     }
 }
 
@@ -6232,7 +6305,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
     }
 
     // Handle class & professions training:
-    // skill                           -- Lists bot(s) Primary profession skills.
+    // skill                           -- Lists bot(s) Primary profession skills & weapon skills
     // skill train                     -- List available class or profession (Primary or Secondary) skills & spells, from selected trainer.
     // skill learn [HLINK][HLINK] ..   -- Learn selected skill and spells, from selected trainer ([HLINK] from skill train).
     // skill unlearn [HLINK][HLINK] .. -- Unlearn selected primary profession skill(s) and all associated spells ([HLINK] from skill)
@@ -6358,7 +6431,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     data << uint32(spellId);                                // should be same as in packet from client
                     GetMaster()->GetSession()->SendPacket(&data);
 
-                    MakeSpellLink(pSpellInfo, msg, &fromPlayer);
+                    MakeSpellLink(pSpellInfo, msg);
                     uint32 gold = uint32(cost / 10000);
                     cost -= (gold * 10000);
                     uint32 silver = uint32(cost / 100);
@@ -6407,7 +6480,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     if  (sSpellMgr.IsPrimaryProfessionFirstRankSpell(tSpell->learnedSpell) && m_bot->HasSpell(tSpell->learnedSpell))
                         continue;
 
-                    TrainerSpellState state =  m_bot->GetTrainerSpellState(tSpell);
+                    TrainerSpellState state =  m_bot->GetTrainerSpellState(tSpell, m_bot->getLevel());
                     if (state != TRAINER_SPELL_GREEN)
                         continue;
 
@@ -6422,7 +6495,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     cost -= (gold * 10000);
                     uint32 silver = uint32(cost / 100);
                     cost -= (silver * 100);
-                    MakeSpellLink(pSpellInfo, msg, &fromPlayer);
+                    MakeSpellLink(pSpellInfo, msg);
                     msg << " ";
                     if (gold > 0)
                         msg << gold <<  " |TInterface\\Icons\\INV_Misc_Coin_01:8|t";
@@ -6468,60 +6541,84 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
         {
             m_spellsToLearn.clear();
             extractSpellIdList(part, m_spellsToLearn);
+            for (std::list<uint32>::iterator it = m_spellsToLearn.begin(); it != m_spellsToLearn.end(); ++it)
+            {
+                if (sSpellMgr.IsPrimaryProfessionSpell(*it) && subcommand != "learn")
+                {
+                    SpellLearnSkillNode const* spellLearnSkill = sSpellMgr.GetSpellLearnSkill(*it);
+
+                    uint32 prev_spell = sSpellMgr.GetPrevSpellInChain(*it);
+                    if (!prev_spell)                                    // first rank, remove skill
+                        GetPlayer()->SetSkill(spellLearnSkill->skill, 0, 0);
+                    else
+                    {
+                        // search prev. skill setting by spell ranks chain
+                        SpellLearnSkillNode const* prevSkill = sSpellMgr.GetSpellLearnSkill(prev_spell);
+                        while (!prevSkill && prev_spell)
+                        {
+                            prev_spell = sSpellMgr.GetPrevSpellInChain(prev_spell);
+                            prevSkill = sSpellMgr.GetSpellLearnSkill(sSpellMgr.GetFirstSpellInChain(prev_spell));
+                        }
+                        if (!prevSkill)                                 // not found prev skill setting, remove skill
+                            GetPlayer()->SetSkill(spellLearnSkill->skill, 0, 0);
+                    }
+                }
+            }
         }
-        // Handle: Lists bot(s) primary profession skills, skill.
+        // Handle: Lists bot(s) primary profession skills & weapon skills.
         else
         {
             m_spellsToLearn.clear();
             m_bot->skill(m_spellsToLearn);
-            msg << "My Primary Professions are: ";
-        }
-
-        for (std::list<uint32>::iterator it = m_spellsToLearn.begin(); it != m_spellsToLearn.end(); ++it)
-        {
-            if (sSpellMgr.IsPrimaryProfessionSpell(*it) && subcommand != "learn")
+            msg << "My Primary Professions: ";
+            for (std::list<uint32>::iterator it = m_spellsToLearn.begin(); it != m_spellsToLearn.end(); ++it)
             {
-                SpellLearnSkillNode const* spellLearnSkill = sSpellMgr.GetSpellLearnSkill(*it);
-
-                uint32 prev_spell = sSpellMgr.GetPrevSpellInChain(*it);
-                if (!prev_spell)                                    // first rank, remove skill
-                    GetPlayer()->SetSkill(spellLearnSkill->skill, 0, 0);
-                else
-                {
-                    // search prev. skill setting by spell ranks chain
-                    SpellLearnSkillNode const* prevSkill = sSpellMgr.GetSpellLearnSkill(prev_spell);
-                    while (!prevSkill && prev_spell)
+                if (IsPrimaryProfessionSkill(*it))
+                    for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
                     {
-                        prev_spell = sSpellMgr.GetPrevSpellInChain(prev_spell);
-                        prevSkill = sSpellMgr.GetSpellLearnSkill(sSpellMgr.GetFirstSpellInChain(prev_spell));
+                        SkillLineAbilityEntry const *skillLine = sSkillLineAbilityStore.LookupEntry(j);
+                        if (!skillLine)
+                            continue;
+
+                        // has skill
+                        if (skillLine->skillId == *it && skillLine->learnOnGetSkill == 0)
+                        {
+                            SpellEntry const* spellInfo = sSpellStore.LookupEntry(skillLine->spellId);
+                            if (!spellInfo)
+                                continue;
+
+                            if (m_bot->GetSkillValue(*it) <= rank[sSpellMgr.GetSpellRank(skillLine->spellId)] && m_bot->HasSpell(skillLine->spellId))
+                            {
+                                // DEBUG_LOG ("[PlayerbotAI]: HandleCommand - skill (%u)(%u)(%u):",skillLine->spellId, rank[sSpellMgr.GetSpellRank(skillLine->spellId)], m_bot->GetSkillValue(*it));
+                                MakeSpellLink(spellInfo, msg);
+                                break;
+                            }
+                        }
                     }
-                    if (!prevSkill)                                 // not found prev skill setting, remove skill
-                        GetPlayer()->SetSkill(spellLearnSkill->skill, 0, 0);
-                }
             }
-            else
-            if (IsPrimaryProfessionSkill(*it))
-                for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
-                {
-                    SkillLineAbilityEntry const *skillLine = sSkillLineAbilityStore.LookupEntry(j);
-                    if (!skillLine)
-                        continue;
 
-                    // has skill
-                    if (skillLine->skillId == *it && skillLine->learnOnGetSkill == 0)
+            msg << "\nMy Weapon skills: ";
+            for (std::list<uint32>::iterator it = m_spellsToLearn.begin(); it != m_spellsToLearn.end(); ++it)
+            {
+                SkillLineEntry const *SkillLine = sSkillLineStore.LookupEntry(*it);
+                // has weapon skill
+                if (SkillLine->categoryId == SKILL_CATEGORY_WEAPON)
+                {
+                    for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
                     {
+                        SkillLineAbilityEntry const *skillLine = sSkillLineAbilityStore.LookupEntry(j);
+                        if (!skillLine)
+                            continue;
+
                         SpellEntry const* spellInfo = sSpellStore.LookupEntry(skillLine->spellId);
                         if (!spellInfo)
                             continue;
 
-                        if (m_bot->GetSkillValue(*it) <= rank[sSpellMgr.GetSpellRank(skillLine->spellId)] && m_bot->HasSpell(skillLine->spellId))
-                        {
-                            // DEBUG_LOG ("[PlayerbotAI]: HandleCommand - skill (%u)(%u)(%u):",skillLine->spellId, rank[sSpellMgr.GetSpellRank(skillLine->spellId)], m_bot->GetSkillValue(*it));
-                            MakeSpellLink(spellInfo, msg, &fromPlayer);
-                            break;
-                        }
+                        if (skillLine->skillId == *it && spellInfo->Effect[0] == SPELL_EFFECT_WEAPON)
+                            MakeWeaponSkillLink(spellInfo,msg,*it);
                     }
                 }
+            }
         }
         SendWhisper(msg.str(), fromPlayer);
         m_spellsToLearn.clear();
@@ -6632,12 +6729,6 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                         }
                     }
             }
-        }
-        else
-        {
-            std::string msg = "What? follow, stay, (c)ast <spellname>, spells, (e)quip <itemlink>, (u)se <itemlink>, drop <questlink>, report, quests, stats, collect";
-            SendWhisper(msg, fromPlayer);
-            m_bot->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
         }
     }
 }

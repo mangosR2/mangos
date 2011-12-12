@@ -4192,7 +4192,7 @@ bool Player::HasActiveSpell(uint32 spell) const
         itr->second.active && !itr->second.disabled);
 }
 
-TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell) const
+TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell, uint32 reqLevel) const
 {
     if (!trainer_spell)
         return TRAINER_SPELL_RED;
@@ -4212,7 +4212,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
 
     // check level requirement
     if (!prof || GetSession()->GetSecurity() < AccountTypes(sWorld.getConfig(CONFIG_UINT32_TRADE_SKILL_GMIGNORE_LEVEL)))
-        if (getLevel() < trainer_spell->reqLevel)
+        if (getLevel() < reqLevel)
             return TRAINER_SPELL_RED;
 
     if (SpellChainNode const* spell_chain = sSpellMgr.GetSpellChainNode(trainer_spell->learnedSpell))
@@ -18256,10 +18256,9 @@ void Player::_SaveAuras()
 
     for(SpellAuraHolderMap::const_iterator itr = auraHolders.begin(); itr != auraHolders.end(); ++itr)
     {
-        SpellAuraHolderPtr holder = itr->second;
         //skip all holders from spells that are passive or channeled
         //do not save single target holders (unless they were cast by the player)
-        if (!holder->IsPassive() && !IsChanneledSpell(holder->GetSpellProto()) && (holder->GetCasterGuid() == GetObjectGuid() || !holder->IsSingleTarget()) && !IsChanneledSpell(holder->GetSpellProto()))
+        if (itr->second && !itr->second->IsDeleted() && !itr->second->IsPassive() && !IsChanneledSpell(itr->second->GetSpellProto()) && (itr->second->GetCasterGuid() == GetObjectGuid() || !itr->second->IsSingleTarget()) && !IsChanneledSpell(itr->second->GetSpellProto()))
         {
             int32  damage[MAX_EFFECT_INDEX];
             uint32 periodicTime[MAX_EFFECT_INDEX];
@@ -18270,10 +18269,10 @@ void Player::_SaveAuras()
                 damage[i] = 0;
                 periodicTime[i] = 0;
 
-                if (Aura *aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i)))
+                if (Aura *aur = itr->second->GetAuraByEffectIndex(SpellEffectIndex(i)))
                 {
                     // don't save not own area auras
-                    if (aur->IsAreaAura() && holder->GetCasterGuid() != GetObjectGuid())
+                    if (aur->IsAreaAura() && itr->second->GetCasterGuid() != GetObjectGuid())
                         continue;
 
                     damage[i] = aur->GetModifier()->m_amount;
@@ -18286,11 +18285,11 @@ void Player::_SaveAuras()
                 continue;
 
             stmt.addUInt32(GetGUIDLow());
-            stmt.addUInt64(holder->GetCasterGuid().GetRawValue());
-            stmt.addUInt32(holder->GetCastItemGuid().GetCounter());
-            stmt.addUInt32(holder->GetId());
-            stmt.addUInt32(holder->GetStackAmount());
-            stmt.addUInt8(holder->GetAuraCharges());
+            stmt.addUInt64(itr->second->GetCasterGuid().GetRawValue());
+            stmt.addUInt32(itr->second->GetCastItemGuid().GetCounter());
+            stmt.addUInt32(itr->second->GetId());
+            stmt.addUInt32(itr->second->GetStackAmount());
+            stmt.addUInt8(itr->second->GetAuraCharges());
 
             for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
                 stmt.addInt32(damage[i]);
@@ -18298,8 +18297,8 @@ void Player::_SaveAuras()
             for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
                 stmt.addUInt32(periodicTime[i]);
 
-            stmt.addInt32(holder->GetAuraMaxDuration());
-            stmt.addInt32(holder->GetAuraDuration());
+            stmt.addInt32(itr->second->GetAuraMaxDuration());
+            stmt.addInt32(itr->second->GetAuraDuration());
             stmt.addUInt32(effIndexMask);
             stmt.Execute();
         }
@@ -19159,9 +19158,6 @@ void Player::RemovePet(PetSaveMode mode)
              if (Pet* _pet = GetMap()->GetPet(*itr))
                  _pet->Unsummon(mode, this);
     }
-    else
-        if (Pet* pet = GetPet())
-            pet->Unsummon(mode, this);
 }
 
 void Player::BuildPlayerChat(WorldPacket *data, uint8 msgtype, const std::string& text, uint32 language) const
@@ -21757,11 +21753,9 @@ void Player::RemoveItemDependentAurasAndCasts( Item * pItem )
     SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
     for(SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); )
     {
-        SpellAuraHolderPtr holder = itr->second;
-
         // skip passive (passive item dependent spells work in another way) and not self applied auras
-        SpellEntry const* spellInfo = holder->GetSpellProto();
-        if (holder->IsPassive() ||  holder->GetCasterGuid() != GetObjectGuid())
+        SpellEntry const* spellInfo = itr->second->GetSpellProto();
+        if (itr->second->IsPassive() ||  itr->second->GetCasterGuid() != GetObjectGuid())
         {
             ++itr;
             continue;
@@ -21770,7 +21764,7 @@ void Player::RemoveItemDependentAurasAndCasts( Item * pItem )
         // Remove spells triggered by equipped item auras
         if (pItem->HasTriggeredByAuraSpell(spellInfo))
         {
-            RemoveAurasDueToSpell(holder->GetId());
+            RemoveAurasDueToSpell(itr->second->GetId());
             itr = auras.begin();
             continue;
         }
@@ -21783,7 +21777,7 @@ void Player::RemoveItemDependentAurasAndCasts( Item * pItem )
         }
 
         // no alt item, remove aura, restart check
-        RemoveAurasDueToSpell(holder->GetId());
+        RemoveAurasDueToSpell(itr->second->GetId());
         itr = auras.begin();
     }
 
@@ -22908,6 +22902,7 @@ void Player::HandleFall(MovementInfo const& movementInfo)
             DEBUG_LOG("FALLDAMAGE z=%f sz=%f pZ=%f FallTime=%d mZ=%f damage=%d SF=%d" , movementInfo.GetPos()->z, height, GetPositionZ(), movementInfo.GetFallTime(), height, damage, safe_fall);
         }
     }
+    RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_LANDING);     // Remove auras that should be removed at landing
 }
 
 void Player::UpdateAchievementCriteria( AchievementCriteriaTypes type, uint32 miscvalue1/*=0*/, uint32 miscvalue2/*=0*/, Unit *unit/*=NULL*/, uint32 time/*=0*/ )
@@ -23215,6 +23210,7 @@ void Player::UnsummonPetTemporaryIfAny(bool full)
                 else
                     pet->Unsummon(PET_SAVE_NOT_IN_SLOT, this);
             }
+            DEBUG_LOG("Player::UnsummonPetTemporaryIfAny tempusummon pet %s ",(*itr).GetString().c_str());
         }
     }
 
@@ -24598,4 +24594,37 @@ uint32 Player::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
     if (!modelid)
         modelid = ssEntry->modelID_A;
     return modelid;
+}
+
+float Player::GetCollisionHeight(bool mounted)
+{
+    if (mounted)
+    {
+        CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID));
+        if (!mountDisplayInfo)
+            return GetCollisionHeight(false);
+
+        CreatureModelDataEntry const* mountModelData = sCreatureModelDataStore.LookupEntry(mountDisplayInfo->ModelId);
+        if (!mountModelData)
+            return GetCollisionHeight(false);
+
+        CreatureDisplayInfoEntry const* displayInfo = sCreatureDisplayInfoStore.LookupEntry(GetNativeDisplayId());
+        MANGOS_ASSERT(displayInfo);
+        CreatureModelDataEntry const* modelData = sCreatureModelDataStore.LookupEntry(displayInfo->ModelId);
+        MANGOS_ASSERT(modelData);
+
+        float scaleMod = GetFloatValue(OBJECT_FIELD_SCALE_X); // 99% sure about this
+
+        return scaleMod * mountModelData->MountHeight + modelData->CollisionHeight * 0.5f;
+    }
+    else
+    {
+        //! Dismounting case - use basic default model data
+        CreatureDisplayInfoEntry const* displayInfo = sCreatureDisplayInfoStore.LookupEntry(GetNativeDisplayId());
+        MANGOS_ASSERT(displayInfo);
+        CreatureModelDataEntry const* modelData = sCreatureModelDataStore.LookupEntry(displayInfo->ModelId);
+        MANGOS_ASSERT(modelData);
+
+        return modelData->CollisionHeight;
+    }
 }
