@@ -164,49 +164,6 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player)
     if(!entry)
         return false;
 
-    const char *mapName = entry->name[player->GetSession()->GetSessionDbcLocale()];
-
-    if(entry->IsDungeon())
-    {
-        if (entry->IsRaid())
-        {
-            // GMs can avoid raid limitations
-            if(!player->isGameMaster() && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_RAID))
-            {
-                // can only enter in a raid group
-                Group* group = player->GetGroup();
-                if (!group || !group->isRaidGroup())
-                {
-                    // probably there must be special opcode, because client has this string constant in GlobalStrings.lua
-                    // TODO: this is not a good place to send the message
-                    player->GetSession()->SendAreaTriggerMessage("You must be in a raid group to enter %s instance", mapName);
-                    DEBUG_LOG("MAP: Player '%s' must be in a raid group to enter instance of '%s'", player->GetName(), mapName);
-                    return false;
-                }
-            }
-        }
-
-        //The player has a heroic mode and tries to enter into instance which has no a heroic mode
-        MapDifficultyEntry const* mapDiff = GetMapDifficultyData(entry->MapID,player->GetDifficulty(entry->map_type == MAP_RAID));
-        if (!mapDiff)
-        {
-            bool isRegularTargetMap = player->GetDifficulty(entry->IsRaid()) == REGULAR_DIFFICULTY;
-
-            //Send aborted message
-            // FIX ME: what about absent normal/heroic mode with specific players limit...
-            player->SendTransferAborted(mapid, TRANSFER_ABORT_DIFFICULTY, isRegularTargetMap ? DUNGEON_DIFFICULTY_NORMAL : DUNGEON_DIFFICULTY_HEROIC);
-            return false;
-        }
-
-        // TODO: move this to a map dependent location
-        /*if(i_data && i_data->IsEncounterInProgress())
-        {
-            DEBUG_LOG("MAP: Player '%s' can't enter instance '%s' while an encounter is in progress.", player->GetName(), GetMapName());
-            player->SendTransferAborted(GetId(), TRANSFER_ABORT_ZONE_IN_COMBAT);
-            return(false);
-        }*/
-    }
-
     return true;
 }
 

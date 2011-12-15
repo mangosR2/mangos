@@ -1294,22 +1294,6 @@ bool DungeonMap::CanEnter(Player *player)
         return false;
     }
 
-    // cannot enter if the instance is full (player cap), GMs don't count
-    uint32 maxPlayers = GetMaxPlayers();
-    if (!player->isGameMaster() && GetPlayersCountExceptGMs() >= maxPlayers)
-    {
-        DETAIL_LOG("MAP: Instance '%u' of map '%s' cannot have more than '%u' players. Player '%s' rejected", GetInstanceId(), GetMapName(), maxPlayers, player->GetName());
-        player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAX_PLAYERS);
-        return false;
-    }
-
-    // cannot enter while an encounter in the instance is in progress
-    if (!player->isGameMaster() && (player->isAlive() && GetInstanceData() && GetInstanceData()->IsEncounterInProgress()) && player->GetMapId() != GetId())
-    {
-        player->SendTransferAborted(GetId(), TRANSFER_ABORT_ZONE_IN_COMBAT);
-        return false;
-    }
-
     return Map::CanEnter(player);
 }
 
