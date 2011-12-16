@@ -23,10 +23,10 @@
     <field type="uint" name="mtargetCreatureType" method="skip" />
     <field type="uint" name="RequiresSpellFocus" method="read" />
     <field type="uint" name="mfacingCasterFlags" method="skip" />
-    <field type="uint" name="mcasterAuraState" method="skip" />
-    <field type="uint" name="mtargetAuraState" method="skip" />
-    <field type="uint" name="mexcludeCasterAuraState" method="skip" />
-    <field type="uint" name="mexcludeTargetAuraState" method="skip" />
+    <field type="uint" name="CasterAuraState" method="read" />
+    <field type="uint" name="TargetAuraState" method="read" />
+    <field type="uint" name="ExcludeCasterAuraState" method="read" />
+    <field type="uint" name="ExcludeTargetAuraState" method="read" />
     <field type="uint" name="CasterAuraSpell" method="read" />
     <field type="uint" name="TargetAuraSpell" method="read" />
     <field type="uint" name="ExcludeCasterAuraSpell" method="read" />
@@ -44,13 +44,13 @@
     <field type="uint" name="BaseLevel" method="read" />
     <field type="uint" name="SpellLevel" method="read" />
     <field type="uint" name="DurationIndex" method="read" />
-    <field type="int" name="mpowerType" method="skip" />
-    <field type="uint" name="mmanaCost" method="skip" />
-    <field type="uint" name="mmanaCostPerLevel" method="skip" />
-    <field type="uint" name="mmanaPerSecond" method="skip" />
-    <field type="uint" name="mmanaPerSecondPerLevel" method="skip" />
+    <field type="int" name="PowerType" method="read" />
+    <field type="uint" name="ManaCost" method="read" />
+    <field type="uint" name="ManaCostPerLevel" method="read" />
+    <field type="uint" name="ManaPerSecond" method="read" />
+    <field type="uint" name="ManaPerSecondPerLevel" method="read" />
     <field type="uint" name="RangeIndex" method="read" />
-    <field type="float" name="mspeed" method="skip" />
+    <field type="float" name="Speed" method="read" />
     <field type="uint" name="mmodalNextSpell" method="skip" />
     <field type="uint" name="StackAmount" method="read" />
     <field type="uint" name="mtotem1" method="skip" />
@@ -207,9 +207,9 @@
     <field type="string" name="mauraDescriptionlang15" method="skip" />
     <field type="string" name="mauraDescriptionlang16" method="skip" />
     <field type="uint" name="mauraDescriptionflag" method="skip" />
-    <field type="uint" name="mmanaCostPct" method="skip" />
-    <field type="uint" name="mstartRecoveryCategory" method="skip" />
-    <field type="uint" name="mstartRecoveryTime" method="skip" />
+    <field type="uint" name="ManaCostPct" method="read" />
+    <field type="uint" name="StartRecoveryCategory" method="read" />
+    <field type="uint" name="StartRecoveryTime" method="read" />
     <field type="uint" name="MaxTargetLevel" method="read" />
     <field type="uint" name="SpellFamilyName" method="read" />
     <field type="uint" name="SpellFamilyFlags1" method="read" />
@@ -229,7 +229,7 @@
     <field type="uint" name="mrequiredTotemCategoryID2" method="skip" />
     <field type="int" name="AreaGroupId" method="read" />
     <field type="uint" name="SchoolMask" method="read" />
-    <field type="uint" name="mruneCostID" method="skip" />
+    <field type="uint" name="RuneCostID" method="read" />
     <field type="uint" name="mspellMissileID" method="skip" />
     <field type="int" name="mpowerDisplayID" method="skip" />
     <field type="float" name="munk11" method="skip" />

@@ -62,11 +62,9 @@ CREATE TABLE `pet_scaling_data` (
 ) DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='Stores pet scaling data (in percent from owner value).';
 
 -- Spell DBC
-
-DROP TABLE IF EXISTS `spell_dbc`;
-CREATE TABLE `spell_dbc` (
+CREATE TABLE IF NOT EXISTS `spell_dbc` (
   `Id` int(10) unsigned NOT NULL,
-  `Category` int(10) unsigned NOT NULL default '0',
+  `Category` int(10) unsigned NOT NULL DEFAULT '0',
   `Dispel` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `Mechanic` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `Attributes` int(10) unsigned NOT NULL DEFAULT '0',
@@ -77,10 +75,14 @@ CREATE TABLE `spell_dbc` (
   `AttributesEx5` int(10) unsigned NOT NULL DEFAULT '0',
   `AttributesEx6` int(10) unsigned NOT NULL DEFAULT '0',
   `AttributesEx7` int(10) unsigned NOT NULL DEFAULT '0',
-  `Stances` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `Stances` int(10) unsigned NOT NULL DEFAULT '0',
   `StancesNot` int(10) unsigned NOT NULL DEFAULT '0',
   `Targets` int(10) unsigned NOT NULL DEFAULT '0',
   `RequiresSpellFocus` int(10) unsigned NOT NULL DEFAULT '0',
+  `CasterAuraState` int(10) unsigned NOT NULL DEFAULT '0',
+  `TargetAuraState` int(10) NOT NULL DEFAULT '0',
+  `ExcludeCasterAuraState` int(10) unsigned NOT NULL DEFAULT '0',
+  `ExcludeTargetAuraState` int(10) NOT NULL DEFAULT '0',
   `CasterAuraSpell` int(10) unsigned NOT NULL DEFAULT '0',
   `TargetAuraSpell` int(10) unsigned NOT NULL DEFAULT '0',
   `ExcludeCasterAuraSpell` int(10) unsigned NOT NULL DEFAULT '0',
@@ -97,7 +99,13 @@ CREATE TABLE `spell_dbc` (
   `BaseLevel` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `SpellLevel` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `DurationIndex` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `PowerType` int(10) NOT NULL DEFAULT '0',
+  `ManaCost` int(10) NOT NULL DEFAULT '0',
+  `ManaCostPerLevel` int(10) NOT NULL DEFAULT '0',
+  `ManaPerSecond` int(10) NOT NULL DEFAULT '0',
+  `ManaPerSecondPerLevel` int(10) NOT NULL DEFAULT '0',
   `RangeIndex` tinyint(3) unsigned NOT NULL DEFAULT '1',
+  `Speed` int(10) NOT NULL DEFAULT '0',
   `StackAmount` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `EquippedItemClass` int(11) NOT NULL DEFAULT '-1',
   `EquippedItemSubClassMask` int(11) NOT NULL DEFAULT '0',
@@ -136,7 +144,7 @@ CREATE TABLE `spell_dbc` (
   `EffectMultipleValue2` float NOT NULL DEFAULT '0',
   `EffectMultipleValue3` float NOT NULL DEFAULT '0',
   `EffectItemType1` int(11) NOT NULL DEFAULT '0',
-  `EffectItemType2` int(11) NOT NULL DEFAULT '0',
+  `EffectItemType2` int(11) unsigned NOT NULL DEFAULT '0',
   `EffectMiscValue1` int(11) NOT NULL DEFAULT '0',
   `EffectMiscValue2` int(11) NOT NULL DEFAULT '0',
   `EffectMiscValue3` int(11) NOT NULL DEFAULT '0',
@@ -156,6 +164,9 @@ CREATE TABLE `spell_dbc` (
   `EffectSpellClassMaskC2` int(10) unsigned NOT NULL DEFAULT '0',
   `EffectSpellClassMaskC3` int(10) unsigned NOT NULL DEFAULT '0',
   `SpellIconID` int(10) unsigned NOT NULL DEFAULT '0',
+  `ManaCostPct` int(10) NOT NULL DEFAULT '0',
+  `StartRecoveryCategory` int(10) NOT NULL DEFAULT '0',
+  `StartRecoveryTime` int(10) NOT NULL DEFAULT '0',
   `MaxTargetLevel` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `SpellFamilyName` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `SpellFamilyFlags1` int(10) unsigned NOT NULL DEFAULT '0',
@@ -169,9 +180,11 @@ CREATE TABLE `spell_dbc` (
   `DmgMultiplier3` float NOT NULL DEFAULT '0',
   `AreaGroupId` int(11) NOT NULL DEFAULT '0',
   `SchoolMask` int(10) unsigned NOT NULL DEFAULT '0',
+  `RuneCostID` int(10) NOT NULL DEFAULT '0',
   `Comment` text NOT NULL,
   PRIMARY KEY (`Id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Custom spell.dbc entries';
+
 
 -- Spell disabled
 -- Commit 70d09c64ce0d3263a7e4

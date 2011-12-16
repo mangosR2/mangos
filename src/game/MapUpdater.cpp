@@ -170,8 +170,23 @@ void MapUpdater::FreezeDetect()
         {
             if (MapID const* mapPair = GetMapPairByThreadId(itr->first))
             {
-                DEBUG_LOG("MapUpdater::FreezeDetect thread "I64FMT" possible freezed (is update map %u instance %u). Killing.",itr->first,mapPair->nMapId, mapPair->nInstanceId);
-                ACE_OS::thr_kill(itr->first, SIGABRT);
+                bool b_needKill = false;
+                if (Map* map = sMapMgr.FindMap(mapPair->nMapId, mapPair->nInstanceId))
+                {
+                    if (map->IsBroken())
+                    {
+                        if (WorldTimer::getMSTime() - itr->second - sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME) > sWorld.getConfig(CONFIG_UINT32_VMSS_FORCEUNLOADDELAY))
+                            b_needKill = true;
+                    }
+                    else
+                        b_needKill = true;
+                }
+
+                if (b_needKill)
+                {
+                    DEBUG_LOG("VMSS::MapUpdater::FreezeDetect thread "I64FMT" possible freezed (is update map %u instance %u). Killing.",itr->first,mapPair->nMapId, mapPair->nInstanceId);
+                    ACE_OS::thr_kill(itr->first, SIGABRT);
+                }
             }
         }
     }

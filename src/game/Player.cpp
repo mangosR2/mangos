@@ -24326,12 +24326,22 @@ bool Player::CheckTransferPossibility(uint32 mapId)
 
     AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(mapId);
     if (!at)
+    {
+        if (targetMapEntry->IsContinent())
+        {
+            if (isGameMaster())
+                return true;
+            if (GetSession()->Expansion() < targetMapEntry->Expansion())
+                return false;
+            return true;
+        }
         return false;
+    }
 
-    return CheckTransferPossibility(at);
+    return CheckTransferPossibility(at, targetMapEntry->IsContinent());
 }
 
-bool Player::CheckTransferPossibility(AreaTrigger const*& at)
+bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq)
 {
     if (!at)
         return false;
@@ -24393,6 +24403,21 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at)
     AreaLockStatus status = GetAreaTriggerLockStatus(at, GetDifficulty(targetMapEntry->IsRaid()));
 
     DEBUG_LOG("Player::CheckTransferPossibility %s check lock status of map %u (difficulty %u), result is %u", GetObjectGuid().GetString().c_str(), at->target_mapId, GetDifficulty(targetMapEntry->IsRaid()), status);
+
+    if (b_onlyMainReq)
+    {
+        switch (status)
+        {
+            case AREA_LOCKSTATUS_MISSING_ITEM:
+            case AREA_LOCKSTATUS_QUEST_NOT_COMPLETED:
+            case AREA_LOCKSTATUS_INSTANCE_IS_FULL:
+            case AREA_LOCKSTATUS_ZONE_IN_COMBAT:
+            case AREA_LOCKSTATUS_TOO_LOW_LEVEL:
+                return true;
+            default:
+                break;
+        }
+    }
 
     switch (status)
     {

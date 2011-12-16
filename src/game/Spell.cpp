@@ -8588,13 +8588,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             targetUnitMap.remove(m_caster);
             break;
         }
-        case 62589: // Nature's Fury (10 man)
-        case 63571: // Nature's Fury (25 man)
-        {
-            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-            targetUnitMap.remove(m_caster); // exclude caster
-            break;
-        }
         case 65044: // Flames
         case 65045: // Flame of demolisher
         {

@@ -833,3 +833,13 @@ INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','AD5A8CBF55EC436DA968EE0B9744C93F65D9E0D6E3C1B136','','174688','37','',NULL);
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','9B6B3B311BA9007C06CF0D146BB979B11CF295C58768DD4F','','31924','23','',NULL);
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','A373FDB6A789CC46072A4CC51A429C817C40862DC6C0190F','','30012','16','',NULL);
+
+DROP TABLE IF EXISTS `account_forcepermission`;
+CREATE TABLE `account_forcepermission` (
+    `AccountID` int(11) unsigned NOT NULL DEFAULT '0',
+    `realmID` int(3) unsigned NOT NULL DEFAULT '0',
+    `Security` int(3) unsigned NOT NULL DEFAULT '0',
+    `Comment` varchar(32) NOT NULL DEFAULT '',
+    PRIMARY KEY (AccountID, realmID)
+) DEFAULT CHARSET=utf8;
+
