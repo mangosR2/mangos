@@ -834,11 +834,11 @@ INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','9B6B3B311BA9007C06CF0D146BB979B11CF295C58768DD4F','','31924','23','',NULL);
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','A373FDB6A789CC46072A4CC51A429C817C40862DC6C0190F','','30012','16','',NULL);
 
--- DROP TABLE IF EXISTS account_forcepermission;
-CREATE TABLE account_forcepermission (
-    AccountID INT(11) UNSIGNED NOT NULL DEFAULT '0',
-    realmID INT(3) UNSIGNED NOT NULL DEFAULT '0',
-    SECURITY INT(3) UNSIGNED NOT NULL DEFAULT '0',
-    COMMENT VARCHAR(32) NOT NULL DEFAULT '',
+DROP TABLE IF EXISTS `account_forcepermission`;
+CREATE TABLE `account_forcepermission` (
+    `AccountID` int(11) unsigned NOT NULL DEFAULT '0',
+    `realmID` int(3) unsigned NOT NULL DEFAULT '0',
+    `Security` int(3) unsigned NOT NULL DEFAULT '0',
+    `Comment` varchar(32) NOT NULL DEFAULT '',
     PRIMARY KEY (AccountID, realmID)
-) ENGINE=MYISAM DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8;

@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `spell_dbc` (
   `AttributesEx3` int(10) unsigned NOT NULL DEFAULT '0',
   `AttributesEx4` int(10) unsigned NOT NULL DEFAULT '0',
   `AttributesEx5` int(10) unsigned NOT NULL DEFAULT '0',
-  `Stances` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `Stances` int(10) unsigned NOT NULL DEFAULT '0',
   `StancesNot` int(10) unsigned NOT NULL DEFAULT '0',
   `Targets` int(10) unsigned NOT NULL DEFAULT '0',
   `CastingTimeIndex` tinyint(3) unsigned NOT NULL DEFAULT '1',
