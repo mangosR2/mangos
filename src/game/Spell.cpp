@@ -909,7 +909,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
         target.timeDelay = (uint64) floor(dist / m_spellInfo->speed * 1000.0f);
 
     }
-    // Spell catsed on self - mostly TRIGGER_MISSILE code
+    // Spell cast on self - mostly TRIGGER_MISSILE code
     else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim == affectiveObject)
     {
         float dist = 5.0f;
@@ -6525,8 +6525,8 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 need = true;
                 if(!target)
                 {
-                    return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                     DEBUG_LOG("Charmed creature attempt to cast spell %u, but no required target",m_spellInfo->Id);
+                    return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
                 break;
             }
