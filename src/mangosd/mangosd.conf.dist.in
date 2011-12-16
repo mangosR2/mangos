@@ -2052,4 +2052,5 @@ VMSS.MapFreeMethod = 1
 VMSS.FreezeCheckPeriod = 1000
 VMSS.MapFreezeDetectTime = 2000
 VMSS.TrySkipFirstThreadBreak = 1
+VMSS.ForceUnloadDelay = 3000
 

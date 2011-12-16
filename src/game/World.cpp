@@ -455,6 +455,7 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
     setConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD,   "VMSS.FreezeCheckPeriod",1000);
     setConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME,    "VMSS.MapFreezeDetectTime",2000);
+    setConfig(CONFIG_UINT32_VMSS_FORCEUNLOADDELAY,    "VMSS.ForceUnloadDelay",3000);
     setConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST,          "VMSS.TrySkipFirstThreadBreak", false);
 
     ///- Read all rates from the config file
