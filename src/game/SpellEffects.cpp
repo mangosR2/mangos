@@ -8283,6 +8283,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveAurasDueToSpell(47636);
                     return;
                 }
+                case 47703:                                 // Unholy Union for Quest In Service of the Unholy
+                {
+                    m_caster->CastSpell(m_caster, 50254, true);
+                    return;
+                }
+                case 47724:                                 // Frost Draw for Quest In Service of Frost
+                {
+                    m_caster->CastSpell(m_caster, 50239, true);
+                    return;
+                }
                 case 48679:                                 // Banshee's Magic Mirror
                 {
                     if (!unitTarget || m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -8472,6 +8482,11 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         }
                     }
 
+                    return;
+                }
+                case 50252:                                 // Blood Draw for Quest In Service of Blood
+                {
+                    m_caster->CastSpell(m_caster, 50250, true);
                     return;
                 }
                 case 50255:                                  // Skadi Poison Spear (N/H)
