@@ -2507,6 +2507,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
                     break;
             }
+            if (m_spellInfo->Id == 63278)           // Mark of the Faceless
+            {
+                Unit* currentTarget = m_targets.getUnitTarget();
+                if(currentTarget)
+                {
+                    targetUnitMap.remove(currentTarget);
+                }
+            }
             break;
         }
         case TARGET_DUELVSPLAYER_COORDINATES:
