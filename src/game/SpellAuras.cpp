@@ -6124,14 +6124,6 @@ void Aura::HandleAuraPeriodicDummy(bool apply, bool Real)
                         GetHolder()->ModStackAmount(20);
                     return;
                 }
-                case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
-                {
-                    Unit *caster = GetCaster();
-
-                    if (caster && target)
-                        caster->CastCustomSpell(target, 63278, 0, &(spell->EffectBasePoints[0]), 0, false, 0, 0, caster->GetObjectGuid() , spell);
-                    return;
-                }
                 case 64217:                                 // Overcharged (spell from Emalon adds)
                 {
                     if (GetHolder()->GetStackAmount() > 11)
@@ -9195,6 +9187,15 @@ void Aura::PeriodicDummyTick()
 
                     if (caster && target)
                         caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
+                    return;
+                }
+                case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
+                {
+
+                    Unit *caster = GetCaster();
+
+                    if (caster && target)
+                        caster->CastCustomSpell(target, 63278, 0, &(spell->EffectBasePoints[0]), 0, false, 0, 0, caster->GetObjectGuid() , spell);
                     return;
                 }
                 case 69008:                                 // Soulstorm (OOC aura)
