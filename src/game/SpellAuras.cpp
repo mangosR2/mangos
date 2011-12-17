@@ -9938,8 +9938,8 @@ void Aura::HandleAuraStopNaturalManaRegen(bool apply, bool Real)
 {
     if (!Real)
         return;
-
-    GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER, !apply && !GetTarget()->IsUnderLastManaUseEffect());
+    if (GetTarget()->getClass() != CLASS_DEATH_KNIGHT)
+        GetTarget()->ApplyModFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER, !apply && !GetTarget()->IsUnderLastManaUseEffect());
 }
 
 bool Aura::IsLastAuraOnHolder()
