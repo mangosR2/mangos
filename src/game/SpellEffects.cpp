@@ -8877,6 +8877,39 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, 58919, true);
                     return;
                 }
+                case 59789:                                 // Oracle Ablutions
+                {
+                    if (!unitTarget)
+                        return;
+
+                    switch(unitTarget->getPowerType())
+                    {
+                        case POWER_RUNIC_POWER:
+                        {
+                            unitTarget->CastSpell(unitTarget, 59812, true);
+                            break;
+                        }
+                        case POWER_MANA:
+                        {
+                            int32 manapool = unitTarget->GetMaxPower(POWER_MANA) * 0.05;
+                            unitTarget->CastCustomSpell(unitTarget, 59813, &manapool, 0, 0, true);
+                            break;
+                        }
+                        case POWER_RAGE:
+                        {
+                            unitTarget->CastSpell(unitTarget, 59814, true);
+                            break;
+                        }
+                        case POWER_ENERGY:
+                        {
+                            unitTarget->CastSpell(unitTarget, 59815, true);
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                    return;
+                }
                 case 59803:                                 // Consume: Spell of Trollgore hero
                 {
                     m_caster->CastSpell(m_caster,59805,true);
