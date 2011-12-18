@@ -912,7 +912,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     // Spell cast on self - mostly TRIGGER_MISSILE code
     else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim == affectiveObject)
     {
-        float dist = 5.0f;
+        float dist = 0.0f;
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
             dist = affectiveObject->GetDistance(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
 

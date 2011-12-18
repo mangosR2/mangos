@@ -4281,19 +4281,6 @@ void Spell::EffectTriggerSpell(SpellEffectIndex effIndex)
                 m_caster->CastSpell(m_caster, 65047, true); // Mirror Image
             break;
         }
-        // Empower Rune Weapon
-        case 53258:
-        {
-            // remove cooldown of frost/death, undead/blood activated in main spell
-            if (unitTarget->GetTypeId() == TYPEID_PLAYER)
-            {
-                bool res1 = ((Player*)unitTarget)->ActivateRunes(RUNE_FROST, 2);
-                bool res2 = ((Player*)unitTarget)->ActivateRunes(RUNE_DEATH, 2);
-                if (res1 || res2)
-                    ((Player*)unitTarget)->ResyncRunes();
-            }
-            return;
-        }
         // Coldflame (Lord Marrowgar - Icecrown Citadel) - have casting time 0.2s, must be casted with triggered=false
         case 69147:
         {
