@@ -24218,6 +24218,10 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
     if (getLevel() < at->requiredLevel && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_LEVEL))
         return AREA_LOCKSTATUS_TOO_LOW_LEVEL;
 
+    if (mapEntry->IsDungeon() && mapEntry->IsRaid() && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_RAID))
+        if (!GetGroup() || !GetGroup()->isRaidGroup())
+            return AREA_LOCKSTATUS_RAID_LOCKED;
+
     // must have one or the other, report the first one that's missing
     if (at->requiredItem)
     {
@@ -24464,6 +24468,9 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
             return false;
         // TODO: messages for other cases
         case AREA_LOCKSTATUS_RAID_LOCKED:
+            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_NEED_GROUP);
+            return false;
+        // TODO: messages for other cases
         case AREA_LOCKSTATUS_UNKNOWN_ERROR:
         default:
             SendTransferAborted(at->target_mapId, TRANSFER_ABORT_ERROR);
