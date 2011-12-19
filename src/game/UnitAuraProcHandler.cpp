@@ -3356,6 +3356,11 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                     triggered_spell_id=61895; // Offhand Blood-Caked Strike
                 break;
             }
+            // Hungering Cold - not proc from dummy
+            if (dummySpell->SpellIconID == 2797)
+            {
+                return SPELL_AURA_PROC_CANT_TRIGGER;
+            }
             break;
         }
         case SPELLFAMILY_PET:
@@ -5129,11 +5134,15 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                 case SPELL_AURA_MOD_ROOT:
                 case SPELL_AURA_TRANSFORM:
                 {
-                    if (EventProcFlag &&
+                    if ((EventProcFlag || spellProcEvent) &&
                         procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
-                        spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE)
+                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
+                        spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE))
                         return SPELL_AURA_PROC_OK;
-                    else if (EventProcFlag)
+                    else if (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
+                        spellProto->AttributesEx & SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE)
+                        return SPELL_AURA_PROC_OK;
+                    else if (EventProcFlag || spellProcEvent)
                         return SPELL_AURA_PROC_FAILED;
                     else
                         return SPELL_AURA_PROC_CANT_TRIGGER;
