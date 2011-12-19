@@ -1,7 +1,7 @@
 /*
 * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
 * Copyright (C) 2010 Blueboy
-* Copyright (C) 2011 MangosR2 
+* Copyright (C) 2011 MangosR2
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -1286,7 +1286,7 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                 uint32 copper = m_bot->GetMoney();
                 out.str("");
                 out << "I have |cff00ff00" << Cash(copper) << "|r";
-                SendWhisper(out.str().c_str(), *(m_bot->GetTrader()));
+                SendWhisper(out.str(), *(m_bot->GetTrader()));
             }
             return;
         }
@@ -6301,7 +6301,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
 
             delete result;
         }
-        SendWhisper(detectout.str().c_str(), fromPlayer);
+        SendWhisper(detectout.str(), fromPlayer);
     }
 
     // Handle class & professions training:

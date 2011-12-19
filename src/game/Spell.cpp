@@ -909,10 +909,10 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
         target.timeDelay = (uint64) floor(dist / m_spellInfo->speed * 1000.0f);
 
     }
-    // Spell catsed on self - mostly TRIGGER_MISSILE code
+    // Spell cast on self - mostly TRIGGER_MISSILE code
     else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim == affectiveObject)
     {
-        float dist = 5.0f;
+        float dist = 0.0f;
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
             dist = affectiveObject->GetDistance(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
 
@@ -2506,6 +2506,14 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                             targetUnitMap.remove(unitTarget);
 
                     break;
+            }
+            if (m_spellInfo->Id == 63278)           // Mark of the Faceless
+            {
+                Unit* currentTarget = m_targets.getUnitTarget();
+                if(currentTarget)
+                {
+                    targetUnitMap.remove(currentTarget);
+                }
             }
             break;
         }
@@ -6525,8 +6533,8 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 need = true;
                 if(!target)
                 {
-                    return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                     DEBUG_LOG("Charmed creature attempt to cast spell %u, but no required target",m_spellInfo->Id);
+                    return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
                 break;
             }
