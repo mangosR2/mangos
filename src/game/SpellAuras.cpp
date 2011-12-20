@@ -10800,6 +10800,13 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     return;
                 break;
             }
+            else if (m_spellProto->SpellFamilyFlags.test<CF_MAGE_FIREBALL>() && GetSpellProto()->SpellVisual[0] == 67)
+            {
+                // Glyph of Fireball
+                if (Unit * caster = GetCaster())
+                    if (caster->HasAura(56368))
+                        m_target->RemoveAurasByCasterSpell(GetId(), caster->GetObjectGuid());
+            }
             else if (m_spellProto->SpellFamilyFlags.test<CF_MAGE_FROSTBOLT>() && GetSpellProto()->SpellVisual[0] == 13)
             {
                 // Glyph of Frostbolt
