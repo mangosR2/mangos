@@ -779,18 +779,19 @@ class MovementInfo
 
         MovementInfo& operator=(const MovementInfo &targetInfo)
         {
-            uint32 moveFlagsTmp  = targetInfo.moveFlags;
+            uint32 moveFlagsTmp = targetInfo.moveFlags;
             if (moveFlags & MOVEFLAG_ONTRANSPORT)
                 moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
 
-            moveFlags = moveFlagsTmp;
+            moveFlags  = moveFlagsTmp;
             u_unk1     = targetInfo.u_unk1;
             time       = targetInfo.time;
             pos        = targetInfo.pos;
             s_pitch    = targetInfo.s_pitch;
             fallTime   = targetInfo.fallTime;
             jump       = targetInfo.jump;
-            if (t_guid.IsEmpty())
+
+            if (!t_guid)
             {
                 moveFlags2 = targetInfo.moveFlags2;
                 t_guid     = targetInfo.t_guid;
@@ -800,6 +801,7 @@ class MovementInfo
                 t_seatInfo = targetInfo.t_seatInfo;
                 t_time2    = targetInfo.t_time2;
             }
+            return *this;
         }
 
     private:
