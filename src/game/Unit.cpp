@@ -2270,7 +2270,15 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
                         currentAbsorb = max_absorb;
                     break;
                 }
+                // Light Essence and Dark Essence (Trial of the Crusader, Twin Val'kyr encounter)
+                if (spellProto->SpellIconID == 2206 ||
+                    spellProto->SpellIconID == 2845)
+                {
+                    CastSpell(this, 67590, true, NULL, *i);
+                    break;
+                }
                 break;
+                 break;
             }
             case SPELLFAMILY_DRUID:
             {
