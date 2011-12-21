@@ -503,7 +503,16 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
         SetOrientation(orientation);
 
     if ((relocate || turn) && GetVehicleKit())
+    {
+        if (m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
+        {
+            x += m_movementInfo.GetTransportPos()->x;
+            y += m_movementInfo.GetTransportPos()->y;
+            z += m_movementInfo.GetTransportPos()->z;
+            orientation += m_movementInfo.GetTransportPos()->o;
+        }
         GetVehicleKit()->RelocatePassengers(x, y, z, orientation);
+    }
 
     return relocate || turn;
 }
@@ -517,7 +526,7 @@ void Unit::SendMonsterMoveTransport(WorldObject *transport, SplineType type, Spl
     data << GetPackGUID();
     data << transport->GetPackGUID();
     data << uint8(m_movementInfo.GetTransportSeat());
-    data << uint8(0);                                       // new in 3.1
+    data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);       // bool, new in 3.1
     data << float(transport->GetPositionX());
     data << float(transport->GetPositionY());
     data << float(transport->GetPositionZ());
@@ -12286,17 +12295,11 @@ void Unit::ExitVehicle()
     if(!m_pVehicle)
         return;
 
-    m_pVehicle->RemovePassenger(this);
+    m_pVehicle->RemovePassenger(this, true);
 
     m_pVehicle = NULL;
 
-    float x = GetPositionX();
-    float y = GetPositionY();
-    float z = GetPositionZ() + 2.0f;
-    GetClosePoint(x, y, z, 2.0f);
-    UpdateAllowedPositionZ(x, y, z);
-    MonsterMoveWithSpeed(x, y, z + 0.5f, 28);
-    if (GetTypeId() == TYPEID_PLAYER)
+    if (isAlive() && GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
 }
 

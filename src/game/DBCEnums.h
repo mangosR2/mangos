@@ -486,6 +486,7 @@ enum VehicleSeatFlags
     SEAT_FLAG_UNK5                  = 0x00000010,           //
     SEAT_FLAG_UNK6                  = 0x00000020,           //
     SEAT_FLAG_HIDE_PASSENGER        = 0x00000200,           // Passenger is hidden
+    SEAT_FLAG_FREE_ACTION           = 0x00000400,           // needed for CGCamera__SyncFreeLookFacing
     SEAT_FLAG_CAN_CONTROL           = 0x00000800,           // Lua_UnitInVehicleControlSeat
     SEAT_FLAG_UNCONTROLLED          = 0x00002000,           // Seat uncontrolled for passenger?
     SEAT_FLAG_CAN_ATTACK            = 0x00004000,           // Can attack, cast spells and use items from vehicle?
