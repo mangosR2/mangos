@@ -1453,9 +1453,8 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         else
         {
             m_spellAuraHolder->SetInUse(false);
-
-            if (!m_spellAuraHolder->IsDeleted())
-                unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder);
+            if (!unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder))
+                DEBUG_LOG("Spell::DoSpellHitOnUnit cannot insert SpellAuraHolder (spell %u) to remove list!", m_spellAuraHolder ? m_spellAuraHolder->GetId() : 0);
         }
     }
 }
@@ -6688,11 +6687,11 @@ SpellCastResult Spell::CheckCasterAuras() const
         if (school_immune || mechanic_immune || dispel_immune)
         {
             //Checking auras is needed now, because you are prevented by some state but the spell grants immunity.
+            MAPLOCK_READ(m_caster, MAP_LOCK_TYPE_AURAS);
             Unit::SpellAuraHolderMap const& auras = m_caster->GetSpellAuraHolderMap();
             for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
-                SpellAuraHolderPtr holder = itr->second;
-                SpellEntry const * pEntry = holder->GetSpellProto();
+                SpellEntry const * pEntry = itr->second->GetSpellProto();
 
                 if ((GetSpellSchoolMask(pEntry) & school_immune) && !(pEntry->AttributesEx & SPELL_ATTR_EX_UNAFFECTED_BY_SCHOOL_IMMUNE))
                     continue;
@@ -6701,7 +6700,7 @@ SpellCastResult Spell::CheckCasterAuras() const
 
                 for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
                 {
-                    Aura *aura = holder->GetAuraByEffectIndex(SpellEffectIndex(i));
+                    Aura *aura = itr->second->GetAuraByEffectIndex(SpellEffectIndex(i));
                     if (!aura)
                         continue;
 

@@ -10453,6 +10453,9 @@ Unit* SpellAuraHolder::GetCaster() const
     if (!m_target)
         return NULL;
 
+    if (GetCasterGuid().IsEmpty())
+        return NULL;
+
     if (m_target->IsInWorld())
         if (GetCasterGuid() == m_target->GetObjectGuid())
             return m_target;

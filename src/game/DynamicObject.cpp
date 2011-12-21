@@ -161,7 +161,7 @@ void DynamicObject::Delay(int32 delaytime)
         if (target)
         {
             SpellAuraHolderPtr holder = target->GetSpellAuraHolder(m_spellId, GetCasterGuid());
-            if (!holder)
+            if (!holder || holder->IsDeleted())
             {
                 ++iter;
                 continue;

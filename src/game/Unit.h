@@ -1591,7 +1591,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void RemoveSingleAuraFromSpellAuraHolder(SpellAuraHolderPtr holder, SpellEffectIndex index, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
         void RemoveSingleAuraFromSpellAuraHolder(uint32 id, SpellEffectIndex index, ObjectGuid casterGuid, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
-        void AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder);
+        bool AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder);
 
         // removing specific aura stacks by diff reasons and selections
         void RemoveAurasDueToSpell(uint32 spellId, SpellAuraHolderPtr except = SpellAuraHolderPtr(NULL), AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
