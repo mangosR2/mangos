@@ -1136,11 +1136,6 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
             pVictim->AttackedBy(this);
         }
 
-        if(damagetype == DIRECT_DAMAGE || damagetype == SPELL_DIRECT_DAMAGE)
-        {
-            if (!spellProto || !(spellProto->AuraInterruptFlags&AURA_INTERRUPT_FLAG_DIRECT_DAMAGE))
-                pVictim->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_DIRECT_DAMAGE);
-        }
         if (pVictim->GetTypeId() != TYPEID_PLAYER)
         {
             float threat = (damage + (cleanDamage ? (cleanDamage->damage + cleanDamage->absorb) : 0)) * sSpellMgr.GetSpellThreatMultiplier(spellProto);
@@ -1179,6 +1174,8 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
             SpellIdSet spellsToRemove;
             if (pVictim->IsInWorld())
             {
+                bool bDirectDamage = (damage > 0 && (damagetype == DIRECT_DAMAGE || damagetype == SPELL_DIRECT_DAMAGE));
+
                 MAPLOCK_READ(pVictim,MAP_LOCK_TYPE_AURAS);
                 SpellAuraHolderMap const& vAuras = pVictim->GetSpellAuraHolderMap();
                 for (SpellAuraHolderMap::const_iterator i = vAuras.begin(), next; i != vAuras.end(); ++i)
@@ -1186,18 +1183,22 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
                     if (!i->second || i->second->IsDeleted())
                         continue;
 
-                    if (spellProto && spellProto->Id == i->second->GetId()) // Not drop auras added by self
+                    if (spellProto && spellProto->Id == i->first) // Not drop auras added by self
                         continue;
 
-                    if (i->second->GetSpellProto()->procFlags)
-                        continue;
-
-                    if (GetProcFlag(i->second->GetSpellProto()))
+                    // Not drop aruras, if he has proc (real or custom)
+                    SpellProcEventEntry const* spellProcEvent = sSpellMgr.GetSpellProcEvent(i->first);
+                    if (IsTriggeredAtSpellProcEvent(pVictim, i->second, spellProto, uint32(DAMAGE_OR_HIT_TRIGGER_MASK),uint32( bDirectDamage ? PROC_EX_DIRECT_DAMAGE : PROC_EX_NONE), cleanDamage ? cleanDamage->attackType : BASE_ATTACK, pVictim == this, spellProcEvent))
                         continue;
 
                     if (i->second->GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE)
                     {
                         spellsToRemove.insert(i->second->GetId());
+                    }
+                    else if (i->second->GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE)
+                    {
+                        if (!spellProto || !(spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE)) // ?? strange requirements
+                            spellsToRemove.insert(i->second->GetId());
                     }
                 }
             }
