@@ -1058,27 +1058,33 @@ bool Aura::CanProcFrom(SpellEntry const *spell, uint32 procFlag, uint32 EventPro
 
 void Aura::ReapplyAffectedPassiveAuras( Unit* target, bool owner_mode )
 {
+    if (!target)
+        return;
+
     // we need store cast item guids for self casted spells
     // expected that not exist permanent auras from stackable auras from different items
     std::map<uint32, ObjectGuid> affectedSelf;
 
-    std::set<uint32> affectedAuraCaster;
+    Unit::SpellIdSet affectedAuraCaster;
 
-    for(Unit::SpellAuraHolderMap::const_iterator itr = target->GetSpellAuraHolderMap().begin(); itr != target->GetSpellAuraHolderMap().end(); ++itr)
     {
-        // permanent passive or permanent area aura
-        // passive spells can be affected only by own or owner spell mods)
-        if ((itr->second->IsPermanent() && (owner_mode && itr->second->IsPassive() || itr->second->IsAreaAura())) &&
-            // non deleted and not same aura (any with same spell id)
-            !itr->second->IsDeleted() && itr->second->GetId() != GetId() &&
-            // and affected by aura
-            isAffectedOnSpell(itr->second->GetSpellProto()))
+        MAPLOCK_READ(target,MAP_LOCK_TYPE_AURAS);
+        for (Unit::SpellAuraHolderMap::const_iterator itr = target->GetSpellAuraHolderMap().begin(); itr != target->GetSpellAuraHolderMap().end(); ++itr)
         {
-            // only applied by self or aura caster
-            if (itr->second->GetCasterGuid() == target->GetObjectGuid())
-                affectedSelf[itr->second->GetId()] = itr->second->GetCastItemGuid();
-            else if (itr->second->GetCasterGuid() == GetCasterGuid())
-                affectedAuraCaster.insert(itr->second->GetId());
+            // permanent passive or permanent area aura
+            // passive spells can be affected only by own or owner spell mods)
+            if ((itr->second->IsPermanent() && (owner_mode && itr->second->IsPassive() || itr->second->IsAreaAura())) &&
+                // non deleted and not same aura (any with same spell id)
+                !itr->second->IsDeleted() && itr->second->GetId() != GetId() &&
+                // and affected by aura
+                isAffectedOnSpell(itr->second->GetSpellProto()))
+            {
+                // only applied by self or aura caster
+                if (itr->second->GetCasterGuid() == target->GetObjectGuid())
+                    affectedSelf[itr->second->GetId()] = itr->second->GetCastItemGuid();
+                else if (itr->second->GetCasterGuid() == GetCasterGuid())
+                    affectedAuraCaster.insert(itr->second->GetId());
+            }
         }
     }
 
@@ -1097,7 +1103,7 @@ void Aura::ReapplyAffectedPassiveAuras( Unit* target, bool owner_mode )
     if (!affectedAuraCaster.empty())
     {
         Unit* caster = GetCaster();
-        for(std::set<uint32>::const_iterator set_itr = affectedAuraCaster.begin(); set_itr != affectedAuraCaster.end(); ++set_itr)
+        for(Unit::SpellIdSet::const_iterator set_itr = affectedAuraCaster.begin(); set_itr != affectedAuraCaster.end(); ++set_itr)
         {
             target->RemoveAurasDueToSpell(*set_itr);
             if (caster)
