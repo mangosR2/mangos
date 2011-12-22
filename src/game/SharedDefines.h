@@ -3031,6 +3031,7 @@ enum AreaLockStatus
     AREA_LOCKSTATUS_ZONE_IN_COMBAT            = 9,
     AREA_LOCKSTATUS_INSTANCE_IS_FULL          = 10,
     AREA_LOCKSTATUS_NOT_ALLOWED               = 11,
+    AREA_LOCKSTATUS_HAS_BIND                  = 12,
 };
 
 #define CONTACT_DISTANCE            0.5f

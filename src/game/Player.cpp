@@ -24307,6 +24307,13 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
         // cannot enter if the instance is full (player cap), GMs don't count
         if (((DungeonMap*)map)->GetPlayersCountExceptGMs() >= ((DungeonMap*)map)->GetMaxPlayers())
             return AREA_LOCKSTATUS_INSTANCE_IS_FULL;
+
+        InstancePlayerBind* pBind = GetBoundInstance(at->target_mapId, GetDifficulty(mapEntry->IsRaid()));
+        if (pBind && pBind->perm && pBind->state != state)
+            return AREA_LOCKSTATUS_HAS_BIND;
+
+        if (pBind && pBind->perm && pBind->state != map->GetPersistentState())
+            return AREA_LOCKSTATUS_HAS_BIND;
     }
 
     return AREA_LOCKSTATUS_OK;
@@ -24466,6 +24473,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
             SendTransferAborted(at->target_mapId, TRANSFER_ABORT_INSUF_EXPAN_LVL, targetMapEntry->Expansion());
             return false;
         case AREA_LOCKSTATUS_NOT_ALLOWED:
+        case AREA_LOCKSTATUS_HAS_BIND:
             SendTransferAborted(at->target_mapId, TRANSFER_ABORT_MAP_NOT_ALLOWED);
             return false;
         // TODO: messages for other cases
