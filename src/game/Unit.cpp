@@ -11329,6 +11329,12 @@ void Unit::ProcDamageAndSpellFor( bool isVictim, Unit * pTarget, uint32 procFlag
                     break;
             }
             anyAuraProc = true;
+            DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST,"Unit::ProcDamageAndSpellFor: %s deal proc on %s, damage %u,  triggeredByAura %u (effect %u), procSpell %u, procFlag %u, procExtra %u, cooldown %u. Proc result %u",
+                GetObjectGuid().GetString().c_str(), 
+                pTarget->GetObjectGuid().GetString().c_str(), 
+                damage, triggeredByAura->GetId(), i,
+                procSpell ? procSpell->Id : 0,
+                procFlag, procExtra, cooldown, procResult);
         }
 
         // Remove charge (aura can be removed by triggers)
