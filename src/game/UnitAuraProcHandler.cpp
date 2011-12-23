@@ -2872,14 +2872,14 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                 // Item - Shaman T10 Elemental 4P Bonus
                 case 70817:
                 {
-                    if (Aura *aur = pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
+                    if (Aura* aura = pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
                     {
-                        SpellAuraHolderPtr aurHolder = GetSpellAuraHolder(aur->GetId());
-                        if (aurHolder)
+                        SpellAuraHolderPtr holder = aura->GetHolder();
+                        if (holder)
                         {
-                            int32 amount = aur->GetAuraDuration() + triggerAmount * IN_MILLISECONDS;
-                            aurHolder->SetAuraDuration(amount);
-                            aurHolder->SendAuraUpdate(false);
+                            int32 duration = aura->GetAuraDuration() + triggerAmount * IN_MILLISECONDS;
+                            holder->SetAuraMaxDuration(duration);
+                            holder->RefreshHolder();
                             return SPELL_AURA_PROC_OK;
                         }
                     }
