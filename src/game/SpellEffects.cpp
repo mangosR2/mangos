@@ -2729,6 +2729,20 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(m_caster, spellShrink, true);
                     return;
                 }
+                case 54092:                                 // Monster Slayer's Kit
+                {
+                    uint32 spell_id = 0;
+                    switch(urand(0,3))
+                    {
+                        case 0: spell_id = 51853; break;
+                        case 1: spell_id = 54063; break;
+                        case 2: spell_id = 54071; break;
+                        case 3: spell_id = 54086; break;
+                        default: return;
+                    }
+                    m_caster->CastSpell(unitTarget,spell_id,true,NULL);
+                    return;
+                }
                 case 54148:                                 // Svala - Ritual Of Sword
                 {
                     unitTarget->CastSpell(unitTarget, 48267, true);    // Teleport Player
@@ -2759,25 +2773,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         return;
 
                     unitTarget->CastSpell(unitTarget, 51807, true);    // Cast Portal Visual
-                    return;
-                }
-
-                case 54577:                                 // Throw U.D.E.D.
-                {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
-                        return;
-
-                    // Sometimes issues with explosion animation. Unclear why
-                    // but possibly caused by the order of spells.
-
-                    // Permanent Feign Death
-                    unitTarget->CastSpell(unitTarget, 29266, true);
-
-                    // need to despawn later
-                    ((Creature*)unitTarget)->ForcedDespawn(2000);
-
-                    // Mammoth Explosion Spell Spawner
-                    unitTarget->CastSpell(unitTarget, 54581, true, m_CastItem);
                     return;
                 }
                 case 54517:                                 // Magnetic Pull
@@ -2811,27 +2806,37 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     }
                     return;
                 }
-                case 54092:                                 // Monster Slayer's Kit
+                case 54577:                                 // Throw U.D.E.D.
                 {
-                    uint32 spell_id = 0;
-                    switch(urand(0,3))
-                    {
-                        case 0: spell_id = 51853; break;
-                        case 1: spell_id = 54063; break;
-                        case 2: spell_id = 54071; break;
-                        case 3: spell_id = 54086; break;
-                        default: return;
-                    }
-                    m_caster->CastSpell(unitTarget,spell_id,true,NULL);
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                        return;
+
+                    // Sometimes issues with explosion animation. Unclear why
+                    // but possibly caused by the order of spells.
+
+                    // Permanent Feign Death
+                    unitTarget->CastSpell(unitTarget, 29266, true);
+
+                    // need to despawn later
+                    ((Creature*)unitTarget)->ForcedDespawn(2000);
+
+                    // Mammoth Explosion Spell Spawner
+                    unitTarget->CastSpell(unitTarget, 54581, true, m_CastItem);
                     return;
                 }
-                case 54850:                                 // Drakkari Colossus, Summon Elemental
+/*                case 54850:                                 // Drakkari Colossus, Summon Elemental
                 {
                     if (!unitTarget)
                         return;
 
                     unitTarget->CastSpell(unitTarget, 54851, true); // Summon Elemental
                     unitTarget->CastSpell(unitTarget, 54852, true); // Stun
+                    return;
+                }*/
+                case 54850:                                 // Emerge
+                {
+                    // Cast Emerge summon
+                    m_caster->CastSpell(m_caster, 54851, true);
                     return;
                 }
                 case 55004:                                 // Nitro Boosts
@@ -8392,9 +8397,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 32756, true);
                     return;
                 }
-                case 49380:                                 // Consume: Spell of Trollgore nonhero
+                case 49380:                                 // Consume
+                case 59803:                                 // Consume (heroic)
                 {
-                    m_caster->CastSpell(m_caster,49381,true);
+                    if (!unitTarget)
+                        return;
+
+                    // Each target hit buffs the caster
+                    unitTarget->CastSpell(m_caster, m_spellInfo->Id == 49380 ? 49381 : 59805, true, NULL, NULL, m_caster->GetObjectGuid());
                     return;
                 }
                 case 49405:                                 // Taunt Invider Trigger (Trollgore - Drak'Tharon Keep)
@@ -8895,11 +8905,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         default:
                             break;
                     }
-                    return;
-                }
-                case 59803:                                 // Consume: Spell of Trollgore hero
-                {
-                    m_caster->CastSpell(m_caster,59805,true);
                     return;
                 }
                 case 62428:                                 // Load into Catapult

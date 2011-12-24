@@ -206,6 +206,10 @@ CREATE TABLE `vehicle_accessory` (
     `accessory_entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
     `seat_id` tinyint(1) NOT NULL DEFAULT '0',
     `minion` tinyint(1) unsigned NOT NULL DEFAULT '0',
+    `offset_x` FLOAT NOT NULL DEFAULT '0',
+    `offset_y` FLOAT NOT NULL DEFAULT '0',
+    `offset_z` FLOAT NOT NULL DEFAULT '0',
+    `offset_o` FLOAT NOT NULL DEFAULT '0',
     `description` text NOT NULL,
     PRIMARY KEY (`entry`, `seat_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Vehicle Accessory System';

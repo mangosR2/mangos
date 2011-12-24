@@ -757,6 +757,7 @@ class MovementInfo
             t_time = 0;
             t_seat = -1;
             t_seatInfo = NULL;
+            moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
         Position const *GetTransportPos() const { return &t_pos; }
@@ -776,6 +777,34 @@ class MovementInfo
         };
 
         JumpInfo const& GetJumpInfo() const { return jump; }
+
+        MovementInfo& operator=(const MovementInfo &targetInfo)
+        {
+            uint32 moveFlagsTmp = targetInfo.moveFlags;
+            if (moveFlags & MOVEFLAG_ONTRANSPORT)
+                moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
+
+            moveFlags  = moveFlagsTmp;
+            u_unk1     = targetInfo.u_unk1;
+            time       = targetInfo.time;
+            pos        = targetInfo.pos;
+            s_pitch    = targetInfo.s_pitch;
+            fallTime   = targetInfo.fallTime;
+            jump       = targetInfo.jump;
+
+            if (!t_guid)
+            {
+                moveFlags2 = targetInfo.moveFlags2;
+                t_guid     = targetInfo.t_guid;
+                t_pos      = targetInfo.t_pos;
+                t_time     = targetInfo.t_time;
+                t_seat     = targetInfo.t_seat;
+                t_seatInfo = targetInfo.t_seatInfo;
+                t_time2    = targetInfo.t_time2;
+            }
+            return *this;
+        }
+
     private:
         // common
         uint32   moveFlags;                                 // see enum MovementFlags
@@ -1153,7 +1182,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         typedef std::set<ObjectGuid> ComboPointHolderSet;
         typedef std::map<uint8, uint32> VisibleAuraMap;
         typedef std::map<SpellEntry const*, ObjectGuid> SingleCastSpellTargetMap;
-
+        typedef std::set<uint32> SpellIdSet;
 
         virtual ~Unit ( );
 
@@ -1592,7 +1621,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void RemoveSingleAuraFromSpellAuraHolder(SpellAuraHolderPtr holder, SpellEffectIndex index, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
         void RemoveSingleAuraFromSpellAuraHolder(uint32 id, SpellEffectIndex index, ObjectGuid casterGuid, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
 
-        void AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder);
+        bool AddSpellAuraHolderToRemoveList(SpellAuraHolderPtr holder);
 
         // removing specific aura stacks by diff reasons and selections
         void RemoveAurasDueToSpell(uint32 spellId, SpellAuraHolderPtr except = SpellAuraHolderPtr(NULL), AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);

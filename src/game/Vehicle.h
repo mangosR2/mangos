@@ -48,10 +48,15 @@ typedef std::map<int8, VehicleSeat> SeatMap;
 
 struct VehicleAccessory
 {
-    explicit VehicleAccessory(uint32 _uiAccessory, int8 _uiSeat, bool _bMinion) : uiAccessory(_uiAccessory), uiSeat(_uiSeat), bMinion(_bMinion) {}
+    explicit VehicleAccessory(uint32 _uiAccessory, int32 _uiSeat, bool _bMinion) : uiAccessory(_uiAccessory), uiSeat(_uiSeat), bMinion(_bMinion) 
+    {
+        m_offsetX = m_offsetY = m_offsetZ = m_offsetO = 0.0f;
+    }
+    void Offset(float x, float y, float z, float o = 0.0f) {m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o;};
     uint32 uiAccessory;
-    int8 uiSeat;
-    uint32 bMinion;
+    int32   uiSeat;
+    bool   bMinion;
+    float m_offsetX, m_offsetY, m_offsetZ, m_offsetO;
 };
 
 typedef std::vector<VehicleAccessory> VehicleAccessoryList;
@@ -70,20 +75,27 @@ class MANGOS_DLL_SPEC VehicleKit
         Unit *GetPassenger(int8 seatId) const;
         int8 GetNextEmptySeat(int8 seatId, bool next) const;
         bool AddPassenger(Unit *passenger, int8 seatId = -1);
-        void RemovePassenger(Unit *passenger);
+        void RemovePassenger(Unit *passenger, bool dismount = false);
         void RelocatePassengers(float x, float y, float z, float ang);
         void RemoveAllPassengers();
         VehicleSeatEntry const* GetSeatInfo(Unit* passenger);
+        int8 GetSeatId(Unit* passenger);
+        void SetDestination(float x, float y, float z, float o, float speed, float elevation);
+        void SetDestination() { m_dst_x = 0.0f; m_dst_y = 0.0f; m_dst_z  = 0.0f; m_dst_o  = 0.0f; m_dst_speed  = 0.0f; m_dst_elevation  = 0.0f; b_dstSet = false;};
 
         Unit* GetBase() { return m_pBase; }
 
     private:
         void UpdateFreeSeatCount();
-        void InstallAccessory(uint32 entry, int8 seatId, bool minion = true);
+        void InstallAccessory(VehicleAccessory const* accessory);
+
+        void Dismount(Unit* passenger, VehicleSeatEntry const* pSeatInfo = NULL);
 
         SeatMap m_Seats;
         uint32 m_uiNumFreeSeats;
         Unit* m_pBase;
+        bool  b_dstSet;
+        float m_dst_x, m_dst_y, m_dst_z, m_dst_o, m_dst_speed, m_dst_elevation;
 
 };
 

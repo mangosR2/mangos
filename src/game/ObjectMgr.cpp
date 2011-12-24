@@ -1410,7 +1410,12 @@ void ObjectMgr::LoadVehicleAccessories()
 
     uint32 count = 0;
 
-    QueryResult* result = WorldDatabase.Query("SELECT `entry`,`accessory_entry`,`seat_id`,`minion` FROM `vehicle_accessory`");
+    //                                                     0                 1         2        3
+    QueryResult* result = WorldDatabase.Query("SELECT `entry`,`accessory_entry`,`seat_id`,`minion`,"
+    //                                                 4          5          6          7
+                                              "`offset_x`,`offset_y`,`offset_z`,`offset_o` "
+    //
+                                              "FROM `vehicle_accessory`");
 
     if (!result)
     {
@@ -1432,8 +1437,13 @@ void ObjectMgr::LoadVehicleAccessories()
 
         uint32 uiEntry       = fields[0].GetUInt32();
         uint32 uiAccessory   = fields[1].GetUInt32();
-        int8   uiSeat        = int8(fields[2].GetInt16());
+        int32   uiSeat       = fields[2].GetInt32();
         bool   bMinion       = fields[3].GetBool();
+
+        float  x             = fields[4].GetFloat();
+        float  y             = fields[5].GetFloat();
+        float  z             = fields[6].GetFloat();
+        float  o             = fields[7].GetFloat();
 
         if (!sCreatureStorage.LookupEntry<CreatureInfo>(uiEntry))
         {
@@ -1447,7 +1457,10 @@ void ObjectMgr::LoadVehicleAccessories()
             continue;
         }
 
-        m_VehicleAccessoryMap[uiEntry].push_back(VehicleAccessory(uiAccessory, uiSeat, bMinion));
+        VehicleAccessory accessory = VehicleAccessory(uiAccessory, uiSeat, bMinion);
+        accessory.Offset(x,y,z,o);
+
+        m_VehicleAccessoryMap[uiEntry].push_back(accessory);
 
         ++count;
     } while (result->NextRow());
