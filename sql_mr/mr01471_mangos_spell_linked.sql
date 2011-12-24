@@ -19,3 +19,8 @@ INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `com
 DELETE FROM `spell_linked` WHERE `entry` = 7376;
 INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
 (7376, 57339, 1, 0, 'Warrior Defensive Stance Passive - threat addon after 3.0');
+
+DELETE FROM `spell_linked` WHERE `entry` IN (65684, 65686);
+INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
+(65684, 67590, 5, 0, 'Dark Essence (Trial of the Crusader, Twin Val\'kyr encounter) - cast Powering Up on shadow damage absorb (look proc in spell_proc_event)'),
+(65686, 67590, 5, 0, 'Light Essence (Trial of the Crusader, Twin Val\'kyr encounter) - cast Powering Up on fire damage absorb (look proc in spell_proc_event)');
