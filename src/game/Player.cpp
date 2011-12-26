@@ -16329,7 +16329,10 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
     DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(GetMapId());
 
     // load the player's map here if it's not already loaded
-    SetMap(sMapMgr.CreateMap(GetMapId(), this));
+    if (Map* map = sMapMgr.CreateMap(GetMapId(), this))
+        SetMap(map);
+    else
+        RelocateToHomebind();
 
     // if the player not at BG and is in an instance and it has been reset in the meantime teleport him to the entrance
     if (!player_at_bg && GetInstanceId() && !state)
@@ -16544,7 +16547,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
         //we can be relocated from taxi and still have an outdated Map pointer!
         //so we need to get a new Map pointer!
-        SetMap(sMapMgr.CreateMap(GetMapId(), this));
+        if (Map* map = sMapMgr.CreateMap(GetMapId(), this))
+            SetMap(map);
+        else
+            RelocateToHomebind();
+
         SaveRecallPosition();                           // save as recall also to prevent recall and fall from sky
 
         m_taxi.ClearTaxiDestinations();
