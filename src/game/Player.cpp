@@ -1734,6 +1734,12 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 
     MapEntry const* mEntry = sMapStore.LookupEntry(mapid);
 
+    if(!mEntry)
+    {
+        sLog.outError("TeleportTo: invalid map entry (id %d). possible disk or memory error.", mapid);
+        return false;
+    }
+
     // don't let enter battlegrounds without assigned battleground id (for example through areatrigger)...
     // don't let gm level > 1 either
     if(!InBattleGround() && mEntry->IsBattleGroundOrArena())
