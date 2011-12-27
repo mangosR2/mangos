@@ -340,7 +340,7 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     // WARNING! Order of execution here is important, do not change.
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
     // Or else we may have some SPELL_STATE_FINISHED spells stalled in pointers, that is bad.
-    m_Events.Update( update_diff );
+    UpdateEvents(update_diff, p_time);
     _UpdateSpells( update_diff );
 
     {
@@ -10595,7 +10595,7 @@ void Unit::CleanupsBeforeDelete()
         if (GetVehicleKit())
             RemoveVehicleKit();
         InterruptNonMeleeSpells(true);
-        m_Events.KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
+        KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
         if (IsInWorld())
             CombatStop();
         ClearComboPointHolders();
@@ -12716,7 +12716,7 @@ private:
 void Unit::ScheduleAINotify(uint32 delay)
 {
     if (!IsAINotifyScheduled())
-        m_Events.AddEvent(new RelocationNotifyEvent(*this), m_Events.CalculateTime(delay));
+        AddEvent(new RelocationNotifyEvent(*this), delay);
 }
 
 void Unit::OnRelocated()
@@ -13041,3 +13041,34 @@ void Unit::SendSpellDamageImmune(Unit* target, uint32 spellId)
     data << uint8(0);                 // bool - log format: 0-default, 1-debug
     SendMessageToSet(&data, true);
 }
+
+EventProcessor* Unit::GetEvents() 
+{
+    return &m_Events;
+}
+
+void Unit::KillAllEvents(bool force)
+{
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+    GetEvents()->KillAllEvents(force);
+}
+
+void Unit::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
+{
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+    if (set_addtime)
+        GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
+    else
+        GetEvents()->AddEvent(Event, e_time, set_addtime);
+}
+
+void Unit::UpdateEvents(uint32 update_diff, uint32 time)
+{
+    {
+        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
+        GetEvents()->RenewEvents();
+    }
+
+    GetEvents()->Update(update_diff);
+}
+

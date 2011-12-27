@@ -29,8 +29,11 @@ EventProcessor::~EventProcessor()
     KillAllEvents(true);
 }
 
-void EventProcessor::Update(uint32 p_time)
+void EventProcessor::Update(uint32 p_time, bool force)
 {
+    if (force)
+        RenewEvents();
+
     // update time
     m_time += p_time;
 
@@ -60,6 +63,9 @@ void EventProcessor::Update(uint32 p_time)
 
 void EventProcessor::KillAllEvents(bool force)
 {
+    if (force)
+        RenewEvents();
+
     // prevent event insertions
     m_aborting = true;
 
@@ -91,7 +97,16 @@ void EventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime
         Event->m_addTime = m_time;
 
     Event->m_execTime = e_time;
-    m_events.insert(std::pair<uint64, BasicEvent*>(e_time, Event));
+    m_queue.push(std::pair<uint64, BasicEvent*>(e_time, Event));
+}
+
+void EventProcessor::RenewEvents()
+{
+    while (!m_queue.empty())
+    {
+        m_events.insert(m_queue.front());
+        m_queue.pop();
+    }
 }
 
 uint64 EventProcessor::CalculateTime(uint64 t_offset)
