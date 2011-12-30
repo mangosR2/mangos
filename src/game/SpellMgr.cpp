@@ -1965,7 +1965,7 @@ struct DoSpellThreat
 
         // flat threat bonus and attack power bonus currently only work properly when all
         // effects have same targets, otherwise, we'd need to seperate it by effect index
-        if (ste.threat || ste.ap_bonus != 0.f)
+        if (ste.threat || fabs(ste.ap_bonus) > M_NULL_F)
         {
             const uint32 *targetA = spell->EffectImplicitTargetA;
             //const uint32 *targetB = spell->EffectImplicitTargetB;

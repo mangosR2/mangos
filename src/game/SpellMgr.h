@@ -553,7 +553,10 @@ inline bool IsSpellReduceThreat(SpellEntry const* spellInfo)
 {
     for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
-        switch(spellInfo->Effect[i])
+        if (spellInfo->Effect[i] != SPELL_EFFECT_APPLY_AURA)
+            continue;
+
+        switch(spellInfo->EffectApplyAuraName[i])
         {
             case SPELL_AURA_MOD_TOTAL_THREAT:
             case SPELL_AURA_MOD_THREAT:

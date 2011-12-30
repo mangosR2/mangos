@@ -1497,7 +1497,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void SendSpellDamageImmune(Unit* target, uint32 spellId);
 
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
-        void MonsterMoveJump(float x, float y, float z, float o, float speed, float height, bool isKnockBack = false);
+        void MonsterMoveJump(float x, float y, float z, float o, float speed, float height, bool isKnockBack = false, Unit* target = NULL);
         // recommend use MonsterMove/MonsterMoveWithSpeed for most case that correctly work with movegens
         // if used additional args in ... part then floats must explicitly casted to double
         void SendMonsterMoveTransport(WorldObject *transport, SplineType type, SplineFlags flags, uint32 moveTime, ...);

@@ -1870,7 +1870,7 @@ void GameObject::SetWorldRotation(float qx, float qy, float qz, float qw)
 {
     Quat rotation(qx, qy, qz, qw);
     // Temporary solution for gameobjects that has no rotation data in DB:
-    if (qz == 0.f && qw == 0.f)
+    if (fabs(qz) < M_NULL_F && fabs(qw) < M_NULL_F)
         rotation = Quat::fromAxisAngleRotation(G3D::Vector3::unitZ(), GetOrientation());
 
     rotation.unitize();

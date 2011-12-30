@@ -133,7 +133,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr)
     // if object provided then selected point at specific dist/angle from object forward look
     if (m_closeObject)
     {
-        if (m_dist == 0.0f)
+        if (fabs(m_dist) < M_NULL_F)
         {
             m_pos.x = m_closeObject->GetPositionX();
             m_pos.y = m_closeObject->GetPositionY();

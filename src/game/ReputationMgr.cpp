@@ -256,7 +256,7 @@ bool ReputationMgr::SetReputation(FactionEntry const* factionEntry, int32 standi
         // check for sub-factions that receive spillover
         SimpleFactionsList const* flist = GetFactionTeamList(factionEntry->ID);
         // if has no sub-factions, check for factions with same parent
-        if (!flist && factionEntry->team && factionEntry->spilloverRateOut != 0.0f)
+        if (!flist && factionEntry->team && fabs(factionEntry->spilloverRateOut) > M_NULL_F)
         {
             spillOverRepOut *= factionEntry->spilloverRateOut;
             if (FactionEntry const *parent = sFactionStore.LookupEntry(factionEntry->team))

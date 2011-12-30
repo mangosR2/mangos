@@ -5097,11 +5097,11 @@ void Spell::HandleThreatSpells()
 
     SpellThreatEntry const* threatEntry = sSpellMgr.GetSpellThreatEntry(m_spellInfo->Id);
 
-    if (!threatEntry || (!threatEntry->threat && threatEntry->ap_bonus == 0.0f))
+    if (!threatEntry || (!threatEntry->threat && fabs(threatEntry->ap_bonus) < M_NULL_F))
         return;
 
     float threat = threatEntry->threat;
-    if (threatEntry->ap_bonus != 0.0f)
+    if (fabs(threatEntry->ap_bonus) > M_NULL_F)
         threat += threatEntry->ap_bonus * m_caster->GetTotalAttackPowerValue(GetWeaponAttackType(m_spellInfo));
 
     bool positive = true;

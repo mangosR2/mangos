@@ -422,8 +422,8 @@ class MANGOS_DLL_SPEC Aura
 
         SpellEntry const* GetSpellProto() const { return ( GetHolder() ? GetHolder()->GetSpellProto() : NULL); }
         uint32 GetId() const { return ( (GetHolder() && GetHolder()->GetSpellProto()) ? GetHolder()->GetSpellProto()->Id : 0 ); }
-        ObjectGuid const& GetCastItemGuid() const { return GetHolder() ? GetHolder()->GetCastItemGuid() : ObjectGuid::Null; }
-        ObjectGuid const& GetCasterGuid() const { return GetHolder() ? GetHolder()->GetCasterGuid() : ObjectGuid::Null; }
+        ObjectGuid const& GetCastItemGuid() const;
+        ObjectGuid const& GetCasterGuid() const;
         Unit* GetCaster() const { return ( GetHolder() ? GetHolder()->GetCaster() : NULL); }
         Unit* GetTarget() const { return ( GetHolder() ? GetHolder()->GetTarget() : NULL); }
 

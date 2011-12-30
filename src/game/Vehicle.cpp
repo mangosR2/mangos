@@ -510,7 +510,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         float moveTimeHalf =  verticalSpeed / ((seatInfo && seatInfo->m_exitGravity > 0.0f) ? seatInfo->m_exitGravity : Movement::gravity);
         float max_height = - Movement::computeFallElevation(moveTimeHalf,false,-verticalSpeed);
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
-        passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z, horisontalSpeed, max_height, true);
+        passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z,passenger->GetOrientation(), horisontalSpeed, max_height, false);
 
     }
     else if (seatInfo)
@@ -522,7 +522,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F/2.0f,3.0f*M_PI_F/2.0f));
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
 
-        passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z + 0.1f,horisontalSpeed,0.0f, true);
+        passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f, false);
     }
     else
     {

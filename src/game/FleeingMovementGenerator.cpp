@@ -249,7 +249,7 @@ FleeingMovementGenerator<T>::_setMoveData(T &owner)
     //get angle and 'distance from caster' to run
     float angle;
 
-    if(i_cur_angle == 0.0f && i_last_distance_from_caster == 0.0f) //just started, first time
+    if(fabs(i_cur_angle) < M_NULL_F && fabs(i_last_distance_from_caster) < M_NULL_F) //just started, first time
     {
         angle = rand_norm_f()*(1.0f - cur_dist/MIN_QUIET_DISTANCE) * M_PI_F/3 + rand_norm_f()*M_PI_F*2/3;
         i_to_distance_from_caster = MIN_QUIET_DISTANCE;
