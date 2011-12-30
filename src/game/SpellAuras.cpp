@@ -9662,11 +9662,17 @@ void Aura::HandleAuraControlVehicle(bool apply, bool Real)
     }
     else
     {
+
+        if (caster->GetVehicle() && caster->GetVehicle() == target->GetVehicleKit())
+        {
+            if (m_removeMode == AURA_REMOVE_BY_STACK)
+                caster->GetVehicle()->RemovePassenger(caster, false);
+            else
+                caster->ExitVehicle();
+        }
+
         // some SPELL_AURA_CONTROL_VEHICLE auras have a dummy effect on the player - remove them
         caster->RemoveAurasDueToSpell(GetId());
-
-        if (caster->GetVehicle() == target->GetVehicleKit())
-            caster->ExitVehicle();
     }
 }
 

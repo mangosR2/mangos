@@ -99,4 +99,14 @@ class MANGOS_DLL_SPEC VehicleKit
 
 };
 
+class PassengerEjectEvent : public BasicEvent
+{
+    public:
+        PassengerEjectEvent(Unit* passenger) : BasicEvent(), m_passenger(passenger) {}
+        bool Execute(uint64 e_time, uint32 p_time);
+
+    private:
+        Unit* m_passenger;
+};
+
 #endif

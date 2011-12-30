@@ -305,6 +305,13 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
             ((Creature*)m_pBase)->AI()->PassengerBoarded(passenger, seat->first, true);
     }
 
+    if (seatInfo->m_flagsB & VEHICLE_SEAT_FLAG_B_EJECTABLE_FORCED)
+    {
+        uint32 delay = seatInfo->m_exitMaxDuration * IN_MILLISECONDS;
+        m_pBase->AddEvent(new PassengerEjectEvent(passenger), delay);
+        DEBUG_LOG("Vehicle::AddPassenger eject event for %s added, delay %u",passenger->GetObjectGuid().GetString().c_str(), delay);
+    }
+
     return true;
 }
 
@@ -521,7 +528,6 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
 
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F/2.0f,3.0f*M_PI_F/2.0f));
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
-
         passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f, false);
     }
     else
@@ -552,3 +558,31 @@ void VehicleKit::SetDestination(float x, float y, float z, float o, float speed,
         fabs(m_dst_elevation) > 0.001)
         b_dstSet = true;
 };
+
+bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    if (m_passenger && m_passenger->IsInWorld())
+    {
+        if (!m_passenger->GetVehicle())
+            return true;
+
+        Unit* vehicle = m_passenger->GetVehicle()->GetBase();
+
+        uint32 controlSpell = 0;
+        Unit::AuraList const& controlAuras = vehicle->GetAurasByType(SPELL_AURA_CONTROL_VEHICLE);
+        for(Unit::AuraList::const_iterator i = controlAuras.begin(); i != controlAuras.end(); ++i)
+        {
+            if ((*i)->GetCasterGuid() == m_passenger->GetObjectGuid())
+            {
+                controlSpell = (*i)->GetId();
+                break;
+            }
+        }
+
+        if (controlSpell)
+        {
+            vehicle->RemoveAurasByCasterSpell(controlSpell, m_passenger->GetObjectGuid());
+        }
+    }
+    return true;
+}
