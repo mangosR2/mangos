@@ -77,11 +77,11 @@ public:
     bool m_confCollectLoot;
     bool m_confCollectSkin;
     bool m_confCollectObjects;
+    int m_botCount;
 
 private:
     Player* const m_master;
     PlayerBotMap m_playerBots;
-    int m_botCount;
 };
 
 #endif
