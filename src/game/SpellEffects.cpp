@@ -4695,20 +4695,62 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
     int32 duration = aur->GetAuraMaxDuration();
 
     // Mixology - increase effect and duration of alchemy spells which the caster has
-    if (caster->GetTypeId() == TYPEID_PLAYER && aur->GetSpellProto()->SpellFamilyName == SPELLFAMILY_POTION
-        && caster->HasAura(53042))
+    if (m_spellInfo->SpellClass == SPELLFAMILY_POTION &&
+        !(m_spellInfo->AttributesEx4 & SPELL_ATTR_EX4_UNK21) &&         // unaffected by Mixology
+        caster->GetTypeId() == TYPEID_PLAYER && caster->HasAura(53042)) // has Mixology passive
     {
         SpellSpecific spellSpec = GetSpellSpecific(aur->GetSpellProto()->Id);
-        if (spellSpec == SPELL_BATTLE_ELIXIR || spellSpec == SPELL_GUARDIAN_ELIXIR || spellSpec == SPELL_FLASK_ELIXIR)
+        if ((spellSpec == SPELL_BATTLE_ELIXIR || spellSpec == SPELL_GUARDIAN_ELIXIR || spellSpec == SPELL_FLASK_ELIXIR) &&
+            caster->HasSpell(m_spellInfo->EffectTriggerSpell[EFFECT_INDEX_0]))  // caster knows the spell
         {
-            if (caster->HasSpell(aur->GetSpellProto()->EffectTriggerSpell[0]))
-            {
-                // do not exceed 2 hours duration (cause of ApplyAura effect triggered twiceapplied twice)
-                if(duration < 2 * HOUR * IN_MILLISECONDS)
-                    duration *= 2.0f; // Increase duration by 2x
+            // do not exceed 2 hours duration (cause of ApplyAura effect triggered twice applied twice)
+            if (duration < 2 * HOUR * IN_MILLISECONDS)
+                duration *= 2;  // Increase duration by 2x
 
-               aur->GetModifier()->m_amount *= 1.3f;
+            // known effect increases
+            switch (m_spellInfo->Id)
+            {
+                case 53749:         // Guru's Elixir
+                    amount = 8;
+                    break;
+                case 28497:         // Elixir of Mighty Agility
+                case 53747:         // Elixir of Spirit
+                case 54212:         // Flask of Pure Mojo
+                case 60340:         // Elixir of Accuracy
+                case 60341:         // Elixir of Deadly Strikes
+                case 60343:         // Elixir of Mighty Defense
+                case 60344:         // Elixir of Expertise
+                case 60345:         // Elixir of Armor Piercing
+                case 60346:         // Elixir of Lightning Speed
+                case 60347:         // Elixir of Mighty Thoughts
+                    amount = 20;
+                    break;
+                case 53752:         // Lesser Flask of Toughness
+                case 62380:         // Lesser Flask of Resistance
+                    amount = 40;
+                    break;
+                case 53755:         // Flask of the Frost Wyrm
+                    amount = 47;
+                    break;
+                case 53760:         // Flask of Endless Rage
+                    amount = 82;
+                    break;
+                case 53751:         // Elixir of Mighty Fortitude
+                    amount = 200;
+                    break;
+                case 53763:         // Elixir of Protection
+                    amount = 280;
+                    break;
+                case 53758:         // Flask of Stoneblood
+                    amount = 650;
+                    break;
+                default:
+                    // default value for all other flasks/elixirs
+                    //TODO: add data to db table or find way of getting it from dbc
+                    amount = Aur->GetModifier()->m_amount * 30 / 100;
+                    break;
             }
+            Aur->GetModifier()->m_amount += amount;
         }
     }
 
