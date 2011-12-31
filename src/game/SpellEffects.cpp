@@ -4695,7 +4695,7 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
     int32 duration = aur->GetAuraMaxDuration();
 
     // Mixology - increase effect and duration of alchemy spells which the caster has
-    if (m_spellInfo->SpellClass == SPELLFAMILY_POTION &&
+    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_POTION &&
         !(m_spellInfo->AttributesEx4 & SPELL_ATTR_EX4_UNK21) &&         // unaffected by Mixology
         caster->GetTypeId() == TYPEID_PLAYER && caster->HasAura(53042)) // has Mixology passive
     {
@@ -4708,6 +4708,7 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
                 duration *= 2;  // Increase duration by 2x
 
             // known effect increases
+            int32 amount = 0;
             switch (m_spellInfo->Id)
             {
                 case 53749:         // Guru's Elixir
@@ -4747,10 +4748,10 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
                 default:
                     // default value for all other flasks/elixirs
                     //TODO: add data to db table or find way of getting it from dbc
-                    amount = Aur->GetModifier()->m_amount * 30 / 100;
+                    amount = aur->GetModifier()->m_amount * 30 / 100;
                     break;
             }
-            Aur->GetModifier()->m_amount += amount;
+            aur->GetModifier()->m_amount += amount;
         }
     }
 
