@@ -21,6 +21,7 @@
 
 #ifndef USE_STANDARD_MALLOC
 #include <stdexcept>
+#include "Platform/Define.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
 
@@ -130,5 +131,5 @@ void operator delete[](void* ptr, const std::nothrow_t&) throw()
     scalable_free(ptr);
 }
 
-#endif
+#endif // PLATFORM == PLATFORM_WINDOWS
 #endif
