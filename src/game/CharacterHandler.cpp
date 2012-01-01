@@ -578,7 +578,10 @@ void WorldSession::HandlePlayerLoginOpcode( WorldPacket & recv_data )
     // check if character is currently a playerbot, if so then logout
     Player *checkChar = sObjectMgr.GetPlayer(playerGuid);
     if (checkChar && checkChar->GetPlayerbotAI())
+    {
         checkChar->GetPlayerbotAI()->GetManager()->LogoutPlayerBot(playerGuid);
+        --checkChar->GetPlayerbotAI()->GetManager()->m_botCount;
+    }
 
     if(PlayerLoading() || GetPlayer() != NULL)
     {
@@ -605,6 +608,9 @@ void WorldSession::HandlePlayerLoginOpcode( WorldPacket & recv_data )
 // a WorldSession exists for the bot. The WorldSession for a bot is created after the character is loaded.
 void PlayerbotMgr::AddPlayerBot(ObjectGuid playerGuid)
 {
+    if (sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
+        return;
+
     // has bot already been added?
     if (sObjectMgr.GetPlayer(playerGuid))
         return;

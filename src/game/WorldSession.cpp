@@ -141,12 +141,15 @@ char const* WorldSession::GetPlayerName() const
 void WorldSession::SendPacket(WorldPacket const* packet)
 {
     // Playerbot mod: send packet to bot AI
-    if (GetPlayer() && GetPlayer()->IsInWorld())
+    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
     {
-        if (GetPlayer()->GetPlayerbotAI())
-            GetPlayer()->GetPlayerbotAI()->HandleBotOutgoingPacket(*packet);
-        else if (GetPlayer()->GetPlayerbotMgr())
-            GetPlayer()->GetPlayerbotMgr()->HandleMasterOutgoingPacket(*packet);
+        if (GetPlayer() && GetPlayer()->IsInWorld())
+        {
+            if (GetPlayer()->GetPlayerbotAI())
+                GetPlayer()->GetPlayerbotAI()->HandleBotOutgoingPacket(*packet);
+            else if (GetPlayer()->GetPlayerbotMgr())
+                GetPlayer()->GetPlayerbotMgr()->HandleMasterOutgoingPacket(*packet);
+        }
     }
 
     if (!m_Socket)
@@ -248,8 +251,9 @@ bool WorldSession::Update(PacketFilter& updater)
                     // lag can cause STATUS_LOGGEDIN opcodes to arrive after the player started a transfer
 
                     // playerbot mod
-                    if (_player && _player->GetPlayerbotMgr())
-                        _player->GetPlayerbotMgr()->HandleMasterIncomingPacket(*packet);
+                    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
+                        if (_player && _player->GetPlayerbotMgr())
+                            _player->GetPlayerbotMgr()->HandleMasterIncomingPacket(*packet);
                     // playerbot mod end
                     break;
                 case STATUS_LOGGEDIN_OR_RECENTLY_LOGGEDOUT:
@@ -327,22 +331,26 @@ bool WorldSession::Update(PacketFilter& updater)
     // The PlayerbotAI class adds to the packet queue to simulate a real player
     // since Playerbots are known to the World obj only by its master's WorldSession object
     // we need to process all master's bot's packets.
-    if (GetPlayer() && GetPlayer()->GetPlayerbotMgr()) {
-        for (PlayerBotMap::const_iterator itr = GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsBegin();
-                itr != GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsEnd(); ++itr)
+    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
+    {
+        if (GetPlayer() && GetPlayer()->GetPlayerbotMgr()) 
         {
-            Player* const botPlayer = itr->second;
-            WorldSession* const pBotWorldSession = botPlayer->GetSession();
-            if (botPlayer->IsBeingTeleported())
-                botPlayer->GetPlayerbotAI()->HandleTeleportAck();
-            else if (botPlayer->IsInWorld())
+            for (PlayerBotMap::const_iterator itr = GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsBegin();
+                    itr != GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsEnd(); ++itr)
             {
-                WorldPacket* packet;
-                while (pBotWorldSession->_recvQueue.next(packet))
+                Player* const botPlayer = itr->second;
+                WorldSession* const pBotWorldSession = botPlayer->GetSession();
+                if (botPlayer->IsBeingTeleported())
+                    botPlayer->GetPlayerbotAI()->HandleTeleportAck();
+                else if (botPlayer->IsInWorld())
                 {
-                    OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
-                    (pBotWorldSession->*opHandle.handler)(*packet);
-                    delete packet;
+                    WorldPacket* packet;
+                    while (pBotWorldSession->_recvQueue.next(packet))
+                    {
+                        OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
+                        (pBotWorldSession->*opHandle.handler)(*packet);
+                        delete packet;
+                    }
                 }
             }
         }

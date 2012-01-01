@@ -2095,7 +2095,7 @@ bool ChatHandler::HandleGoTaxinodeCommand(char* args)
         return false;
     }
 
-    if (node->x == 0.0f && node->y == 0.0f && node->z == 0.0f)
+    if (fabs(node->x) < M_NULL_F && fabs(node->y) < M_NULL_F && fabs(node->z) < M_NULL_F)
     {
         PSendSysMessage(LANG_INVALID_TARGET_COORD,node->x,node->y,node->map_id);
         SetSentErrorMessage(true);

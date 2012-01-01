@@ -18,7 +18,66 @@
 
 //lets use Intel scalable_allocator by default and
 //switch to OS specific allocator only when _STANDARD_MALLOC is defined
+
 #ifndef USE_STANDARD_MALLOC
+#include <stdexcept>
+#include "Platform/Define.h"
+
+#if PLATFORM == PLATFORM_WINDOWS
+
+#include "../../dep/fastmm/fastmm.h"
+
+void* operator new(size_t mem_size)
+{
+    void* result = FastMM_malloc(mem_size);
+
+    if (!result)
+        throw std::exception("FastMM: Error! operator new");
+
+    return result;
+}
+
+void* operator new[](size_t mem_size)
+{
+    void* result = FastMM_malloc(mem_size);
+
+    if (!result)
+        throw std::exception("FastMM: Error! operator new with array");
+
+    return result;
+}
+
+void operator delete(void* pointer) throw()
+{
+    FastMM_free(pointer);
+}
+
+void operator delete[](void* pointer) throw()
+{
+    FastMM_free(pointer);
+}
+
+void* operator new(size_t mem_size, const std::nothrow_t&) throw()
+{
+    return FastMM_malloc(mem_size);
+}
+
+void* operator new[](size_t mem_size, const std::nothrow_t&) throw()
+{
+    return FastMM_malloc(mem_size);
+}
+
+void operator delete(void* pointer, const std::nothrow_t&) throw()
+{
+    FastMM_free(pointer);
+}
+
+void operator delete[](void* pointer, const std::nothrow_t&) throw()
+{
+    FastMM_free(pointer);
+}
+
+#else
 
 #include "../../dep/tbb/include/tbb/scalable_allocator.h"
 
@@ -72,4 +131,5 @@ void operator delete[](void* ptr, const std::nothrow_t&) throw()
     scalable_free(ptr);
 }
 
+#endif // PLATFORM == PLATFORM_WINDOWS
 #endif

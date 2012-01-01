@@ -317,7 +317,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged )
                             else if ((*itr)->GetEffIndex() == EFFECT_INDEX_1)
                                 mBonusWeaponAtt = (*itr)->GetModifier()->m_amount * m_baseFeralAP / 100.0f;
 
-                            if (mLevelBonus != 0.0f && mBonusWeaponAtt != 0.0f)
+                            if (fabs(mLevelBonus) > M_NULL_F && fabs(mBonusWeaponAtt) > M_NULL_F)
                                 break;
                         }
                         break;
