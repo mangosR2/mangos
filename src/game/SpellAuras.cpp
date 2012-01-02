@@ -10063,7 +10063,10 @@ void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
     {
         AuraStorage::iterator itr = m_aurasStorage.find(index);
         if (itr != m_aurasStorage.end())
+        {
+            MAPLOCK_WRITE(m_target, MAP_LOCK_TYPE_AURAS);
             m_aurasStorage.erase(itr);
+        }
     }
 
     m_aurasStorage.insert(std::make_pair(index,aura));
@@ -10127,7 +10130,6 @@ void SpellAuraHolder::_AddSpellAuraHolder()
     // Lookup free slot
     if (m_target->GetVisibleAurasCount() < MAX_AURAS)
     {
-        MAPLOCK_READ(m_target,MAP_LOCK_TYPE_AURAS);
         Unit::VisibleAuraMap const& visibleAuras = m_target->GetVisibleAuras();
         for(uint8 i = 0; i < MAX_AURAS; ++i)
         {
