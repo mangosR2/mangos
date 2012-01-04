@@ -682,13 +682,8 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
     // remove affects from attacker at any non-DoT damage (including 0 damage)
     if ( damagetype != DOT)
     {
-        RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
-        RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
-
         if (pVictim != this)
         {
-            RemoveSpellsCausingAura(SPELL_AURA_MOD_INVISIBILITY);
-
             // set in combat
             SetInCombatWith(pVictim);
             pVictim->SetInCombatWith(this);
@@ -1165,47 +1160,6 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
             {
                 EquipmentSlots slot = EquipmentSlots(urand(0,EQUIPMENT_SLOT_END-1));
                 ((Player*)this)->DurabilityPointLossForEquipSlot(slot);
-            }
-        }
-
-        // TODO: Store auras by interrupt flag to speed this up.
-        if (pVictim)
-        {
-            SpellIdSet spellsToRemove;
-            if (pVictim->IsInWorld())
-            {
-                bool bDirectDamage = (damage > 0 && (damagetype == DIRECT_DAMAGE || damagetype == SPELL_DIRECT_DAMAGE));
-
-                MAPLOCK_READ(pVictim,MAP_LOCK_TYPE_AURAS);
-                SpellAuraHolderMap const& vAuras = pVictim->GetSpellAuraHolderMap();
-                for (SpellAuraHolderMap::const_iterator i = vAuras.begin(), next; i != vAuras.end(); ++i)
-                {
-                    if (!i->second || i->second->IsDeleted())
-                        continue;
-
-                    if (spellProto && spellProto->Id == i->first) // Not drop auras added by self
-                        continue;
-
-                    // Not drop aruras, if he has proc (real or custom)
-                    SpellProcEventEntry const* spellProcEvent = sSpellMgr.GetSpellProcEvent(i->first);
-                    if (IsTriggeredAtSpellProcEvent(pVictim, i->second, spellProto, uint32(DAMAGE_OR_HIT_TRIGGER_MASK),uint32( bDirectDamage ? PROC_EX_DIRECT_DAMAGE : PROC_EX_NONE), cleanDamage ? cleanDamage->attackType : BASE_ATTACK, pVictim == this, spellProcEvent))
-                        continue;
-
-                    if (i->second->GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE)
-                    {
-                        spellsToRemove.insert(i->second->GetId());
-                    }
-                    else if (i->second->GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE)
-                    {
-                        if (!spellProto || !(spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE)) // ?? strange requirements
-                            spellsToRemove.insert(i->second->GetId());
-                    }
-                }
-            }
-            if (!spellsToRemove.empty())
-            {
-                for(SpellIdSet::const_iterator i = spellsToRemove.begin(); i != spellsToRemove.end(); ++i)
-                    pVictim->RemoveAurasDueToSpell(*i);
             }
         }
 
