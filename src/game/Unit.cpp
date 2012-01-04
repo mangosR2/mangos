@@ -4620,8 +4620,8 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
 
     // add aura, register in lists and arrays
     {
-        MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
         holder->_AddSpellAuraHolder();
+        MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
         m_spellAuraHolders.insert(SpellAuraHolderMap::value_type(holder->GetId(), holder));
     }
 
