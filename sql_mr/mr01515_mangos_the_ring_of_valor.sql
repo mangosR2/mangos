@@ -1,11 +1,13 @@
 -- The Ring of Valor
 
-UPDATE `gameobject_template` SET `faction`='114', `flags`='32' WHERE `entry` IN (192704, 192705, 192388, 192387, 192393, 192394, 192389, 192390);
-
-DELETE FROM `gameobject` WHERE `map`='618';
+-- gameobject initial guid
 SET @GAMEOBJECT := 222001;
-INSERT INTO `gameobject`
-    (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`, `orientation`, `rotation0`, `rotation1`, `rotation2`, `rotation3`, `spawntimesecs`, `animprogress`, `state`)
+
+UPDATE gameobject_template SET faction='114', flags='32' WHERE entry IN (192704, 192705, 192388, 192387, 192393, 192394, 192389, 192390);
+
+DELETE FROM gameobject WHERE map='618';
+INSERT INTO gameobject
+    (guid, id, map, spawnMask, phaseMask, position_x, position_y, position_z, orientation, rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state)
 VALUES
     -- buffs
     (@GAMEOBJECT,'184663','618','1','1','735.551819','-284.794678','28.276682','0.034906','0','0','0','0','-120','100','1'),
@@ -30,9 +32,9 @@ VALUES
     (@GAMEOBJECT+14,'192389','618','1','1','700.722290','-283.990662','39.517582','3.141593','0','0','0','0','120','100','1'),
     (@GAMEOBJECT+15,'192390','618','1','1','826.303833','-283.996429','39.517582','0','0','0','0','0','120','100','1');
 
-DELETE FROM `gameobject_battleground` WHERE `guid` BETWEEN @GAMEOBJECT AND @GAMEOBJECT+3;
-INSERT INTO `gameobject_battleground`
-    (`guid`, `event1`, `event2`) VALUES
+DELETE FROM gameobject_battleground WHERE guid IN (SELECT guid FROM gameobject WHERE map=618);
+INSERT INTO gameobject_battleground
+    (guid, event1, event2) VALUES
     -- buffs
     (@GAMEOBJECT,'253','0'),
     (@GAMEOBJECT+1,'253','0'),
@@ -40,8 +42,8 @@ INSERT INTO `gameobject_battleground`
     (@GAMEOBJECT+2,'254','0'),
     (@GAMEOBJECT+3,'254','0');
 
-DELETE FROM `battleground_events` WHERE `map`='618';
-INSERT INTO `battleground_events`
-    (`map`, `event1`, `event2`, `description`) VALUES
+DELETE FROM battleground_events WHERE map='618';
+INSERT INTO battleground_events
+    (map, event1, event2, description) VALUES
     ('618','253','0','buffs'),
     ('618','254','0','doors');

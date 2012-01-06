@@ -1,4 +1,9 @@
 -- Isle of Conquest
+
+-- creature and gameobject initial guid
+SET @CREATURE := 300000;
+SET @GAMEOBJECT := 300000;
+
 -- use these 2 queries only if you want to enable IoC by direct queueing it
 -- DELETE FROM battleground_template WHERE id = 30;
 -- INSERT INTO battleground_template (id, MinPlayersPerTeam, MaxPlayersPerTeam, AllianceStartLoc, AllianceStartO, HordeStartLoc, HordeStartO) VALUES
@@ -107,20 +112,20 @@ UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehich
 UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, AIName = 'NullAI' WHERE entry = 35431;
 
 -- Ally Siege Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 436, AIName = 'NullAI' WHERE entry = 34777;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 436, AIName = 'NullAI' WHERE entry = 35436;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 34777;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 35436;
 -- Horde Siege Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 436, AIName = 'NullAI' WHERE entry = 36355;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 436, AIName = 'NullAI' WHERE entry = 36357;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 36355;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 36357;
 -- Horde Flame Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 437, AIName = 'NullAI' WHERE entry = 34778;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 437, AIName = 'NullAI' WHERE entry = 35417;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 34778;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 35417;
 -- Ally Flame Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 437, AIName = 'NullAI' WHERE entry = 36356;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', `vehicle_id` = 437, AIName = 'NullAI' WHERE entry = 36358;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 36356;
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 36358;
 
-DELETE FROM `creature_spell` WHERE guid IN (34778, 36356);
-INSERT INTO `creature_spell` (`guid`, `spell`, `index`) VALUES
+DELETE FROM creature_spell WHERE guid IN (34778, 36356);
+INSERT INTO creature_spell (guid, spell, `index`) VALUES
 (34778, 66183, 0),
 (34778, 66186, 1),
 (36356, 66183, 0),
@@ -201,9 +206,7 @@ INSERT INTO achievement_criteria_requirement VALUES
 ###############################
 -- SPAWNING STATIC OBJECTS
 ###############################
-SET @GAMEOBJECT := 300000;
-DELETE FROM gameobject WHERE guid BETWEEN 300000 AND 300142; -- cleanup (remove later)
-DELETE FROM gameobject WHERE guid BETWEEN @GAMEOBJECT AND @GAMEOBJECT+138;
+DELETE FROM gameobject WHERE map=628;
 INSERT INTO gameobject (guid, id, map, spawnMask, phaseMask, position_x, position_y, position_z, orientation, rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state) VALUES
 -- chairs
 (@GAMEOBJECT , 160415 , 628 , 3 , 1 , 1117.19 , -365.674 , 18.8456 , 0.968657 , 0 , 0 , 0 , 0 , 0 , 0 , 0),
@@ -392,7 +395,7 @@ INSERT INTO gameobject (guid, id, map, spawnMask, phaseMask, position_x, positio
 (@GAMEOBJECT+137 , 195237 , 628 , 3 , 1 , 750.601 , -864.597 , 13.4754 , 1.93731 , 0 , 0 , 0 , 0 , 10 , 0 , 0),
 (@GAMEOBJECT+138 , 195237 , 628 , 3 , 1 , 785.509 , -864.715 , 13.3993 , 2.47837 , 0 , 0 , 0 , 0 , 10 , 0 , 0);
 
-DELETE FROM gameobject_battleground WHERE guid BETWEEN @GAMEOBJECT+46 AND @GAMEOBJECT+138;
+DELETE FROM gameobject_battleground WHERE guid IN (SELECT guid FROM gameobject WHERE map=628);
 INSERT INTO gameobject_battleground (guid, event1, event2) VALUES
 (@GAMEOBJECT+46 , 0 , 0),
 (@GAMEOBJECT+47 , 0 , 1),
@@ -536,8 +539,7 @@ INSERT INTO battleground_events (map, event1, event2, description) VALUES
 ################################################################
 -- DYNAMIC CREATURES
 ################################################################
-SET @CREATURE := 300000;
-DELETE FROM creature WHERE guid BETWEEN @CREATURE AND @CREATURE+68;
+DELETE FROM creature WHERE map=628;
 INSERT INTO creature (guid, id, map, spawnMask, phaseMask, modelid, equipment_id, position_x, position_y, position_z, orientation, spawntimesecs, spawndist, currentwaypoint, curhealth, curmana, DeathState, MovementType) VALUES
 -- workshop siege engines
 (@CREATURE, 34776, 628, 3, 1, 0, 0, 773.680542, -884.092041, 16.8090363, 1.58824956, 180000, 0, 0, 250000, 0, 0, 0),
@@ -618,7 +620,7 @@ INSERT INTO creature (guid, id, map, spawnMask, phaseMask, modelid, equipment_id
 (@CREATURE+67, 34944, 628, 3, 1, 0, 0, 1142.59, -691.946, 87.9756, 3.9619, 180000, 0, 0, 35000, 0, 0, 0),
 (@CREATURE+68, 34944, 628, 3, 1, 0, 0, 1166.13, -858.391, 87.9653, 5.63741, 180000, 0, 0, 35000, 0, 0, 0);
 
-DELETE FROM creature_battleground WHERE guid BETWEEN @CREATURE AND @CREATURE+68;
+DELETE FROM creature_battleground WHERE guid IN (SELECT guid FROM creature WHERE map=628);
 INSERT INTO creature_battleground (guid, event1, event2) VALUES
 -- siege engines
 (@CREATURE , 2 , 3),
