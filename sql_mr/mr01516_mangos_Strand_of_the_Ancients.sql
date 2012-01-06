@@ -347,13 +347,13 @@ DELETE FROM gameobject_battleground WHERE guid IN (SELECT guid FROM gameobject W
 INSERT INTO gameobject_battleground VALUES
 -- Titan Relic & Doors
 (@GAMEOBJECT, 14, 1),
-(@GAMEOBJECT+1, 11, 0),
+(@GAMEOBJECT+1, 14, 2),
 (@GAMEOBJECT+2, 11, 0),
 (@GAMEOBJECT+3, 11, 0),
 (@GAMEOBJECT+4, 11, 0),
 (@GAMEOBJECT+5, 11, 0),
 (@GAMEOBJECT+6, 11, 0),
-(@GAMEOBJECT+7, 14, 2),
+(@GAMEOBJECT+7, 11, 0),
 
 (@GAMEOBJECT+8, 0, 1),
 (@GAMEOBJECT+9, 0, 2),
