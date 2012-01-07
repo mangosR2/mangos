@@ -168,7 +168,7 @@ FleeingMovementGenerator<T>::_getPoint(T &owner, float &x, float &y, float &z)
             if((is_water_now && !is_water_next && !is_land_ok) || (!is_water_now && is_water_next && !is_water_ok))
                 continue;
 
-            if( !(new_z - z) || distance / fabs(new_z - z) > 1.0f)
+            if( !(new_z - z) || distance / fabs(new_z - z) > 3.0f)
             {
                 float new_z_left = _map->GetHeight(temp_x + 1.0f*cos(angle+M_PI_F/2),temp_y + 1.0f*sin(angle+M_PI_F/2),z,true);
                 float new_z_right = _map->GetHeight(temp_x + 1.0f*cos(angle-M_PI_F/2),temp_y + 1.0f*sin(angle-M_PI_F/2),z,true);
