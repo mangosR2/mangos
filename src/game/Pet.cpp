@@ -2036,7 +2036,8 @@ bool Pet::IsPermanentPetFor(Player* owner)
                 case CLASS_DEATH_KNIGHT:
                     return GetCreatureInfo()->type == CREATURE_TYPE_UNDEAD;
                 case CLASS_MAGE:
-                    return GetCreatureInfo()->Entry == 37994;
+                    // both permanent and temporary water elementals should be in spellbook
+                    return GetCreatureInfo()->Entry == (owner->HasAura(70937)) ? 37994 : 510;
                 default:
                     return false;
             }
