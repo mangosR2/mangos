@@ -573,22 +573,7 @@ bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 
     if (passenger && passenger->IsInWorld() && passenger->hasUnitState(UNIT_STAT_ON_VEHICLE))
     {
-        uint32 controlSpell = 0;
-        Unit::AuraList const& controlAuras = m_vehicle.GetAurasByType(SPELL_AURA_CONTROL_VEHICLE);
-        for(Unit::AuraList::const_iterator i = controlAuras.begin(); i != controlAuras.end(); ++i)
-        {
-            if ((*i)->GetCasterGuid() == passenger->GetObjectGuid())
-            {
-                controlSpell = (*i)->GetId();
-                break;
-            }
-        }
-
-        if (controlSpell)
-        {
-            m_vehicle.RemoveAurasByCasterSpell(controlSpell, passenger->GetObjectGuid());
-        }
-        else
+        if (!m_vehicle.RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, passenger->GetObjectGuid()))
             passenger->ExitVehicle();
     }
     return true;

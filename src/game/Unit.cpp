@@ -5497,6 +5497,26 @@ void Unit::HandleArenaPreparation(bool apply)
         CallForAllControlledUnits(ApplyArenaPreparationWithHelper(apply),CONTROLLED_PET|CONTROLLED_GUARDIANS);
 }
 
+bool Unit::RemoveSpellsCausingAuraByCaster(AuraType auraType, ObjectGuid casterGuid, AuraRemoveMode mode)
+{
+    SpellAuraHolderSet toRemoveHolders;
+    for (AuraList::const_iterator iter = m_modAuras[auraType].begin(); iter != m_modAuras[auraType].end(); ++iter)
+    {
+        Aura* aura = *iter;
+        if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted() || aura->GetHolder()->GetCasterGuid() != casterGuid)
+            continue;
+        toRemoveHolders.insert(aura->GetHolder());
+    }
+
+    if (toRemoveHolders.empty())
+        return false;
+
+    for (SpellAuraHolderSet::iterator i = toRemoveHolders.begin(); i != toRemoveHolders.end(); ++i)
+        RemoveSpellAuraHolder(*i, mode);
+
+    return true;
+}
+
 void Unit::RemoveAllAurasOnDeath()
 {
     // used just after dieing to remove all visible auras
