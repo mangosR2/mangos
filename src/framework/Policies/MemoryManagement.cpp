@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include "Platform/Define.h"
 
-#if PLATFORM == PLATFORM_WINDOWS
+#ifdef WIN_X86
 
 #include "../../dep/fastmm/fastmm.h"
 
@@ -131,5 +131,5 @@ void operator delete[](void* ptr, const std::nothrow_t&) throw()
     scalable_free(ptr);
 }
 
-#endif // PLATFORM == PLATFORM_WINDOWS
+#endif // WIN_X86
 #endif
