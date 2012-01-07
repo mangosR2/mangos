@@ -3424,7 +3424,7 @@ void Spell::prepare(SpellCastTargets const* targets, Aura* triggeredByAura)
     }
 }
 
-void Spell::cancel()
+void Spell::cancel(bool force)
 {
     if (m_spellState == SPELL_STATE_FINISHED)
         return;
@@ -3455,7 +3455,7 @@ void Spell::cancel()
                 {
                     Unit* unit = m_caster->GetObjectGuid() == (*ihit).targetGUID ? m_caster : ObjectAccessor::GetUnit(*m_caster, ihit->targetGUID);
                     if (unit && unit->isAlive())
-                        unit->RemoveAurasByCasterSpell(m_spellInfo->Id, m_caster->GetObjectGuid());
+                        unit->RemoveAurasByCasterSpell(m_spellInfo->Id, m_caster->GetObjectGuid(), force ? AURA_REMOVE_BY_DELETE : AURA_REMOVE_BY_DEFAULT);
 
                     // prevent other effects applying if spell is already interrupted
                     // i.e. if effects have different targets and it was interrupted on one of them when
@@ -7873,7 +7873,7 @@ void SpellEvent::Abort(uint64 /*e_time*/)
 {
     // oops, the spell we try to do is aborted
     if (m_Spell->getState() != SPELL_STATE_FINISHED)
-        m_Spell->cancel();
+        m_Spell->cancel(true);
 }
 
 bool SpellEvent::IsDeletable() const
