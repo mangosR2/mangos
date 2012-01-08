@@ -5171,7 +5171,7 @@ void Unit::RemoveNotOwnSingleTargetAuras(uint32 newPhase)
     // single target auras from other casters
     for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end(); )
     {
-        if (iter->second->GetCasterGuid() != GetObjectGuid() && iter->second->IsSingleTarget())
+        if (iter->second && !iter->second->IsDeleted() && iter->second->GetCasterGuid() != GetObjectGuid() && iter->second->IsSingleTarget())
         {
             if (!newPhase)
             {
