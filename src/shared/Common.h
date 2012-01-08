@@ -258,4 +258,12 @@ inline char * mangos_strdup(const char * source)
 #define countof(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
+#if defined WIN32
+#     define NOTSAFE_SEMAPHORE_OVERHANDLING "Win32"
+#elif defined  (__FreeBSD__)
+#    define NOTSAFE_SEMAPHORE_OVERHANDLING "FreeBSD"
+#elif defined(__APPLE__)
+#    define NOTSAFE_SEMAPHORE_OVERHANDLING "MacOS"
+#endif
+
 #endif
