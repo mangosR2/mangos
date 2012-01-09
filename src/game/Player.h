@@ -1799,11 +1799,13 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 GetArenaTeamIdInvited() { return m_ArenaTeamIdInvited; }
         static void LeaveAllArenaTeams(ObjectGuid guid);
 
-        Difficulty GetDifficulty(bool isRaid) const { return isRaid ? m_raidDifficulty : m_dungeonDifficulty; }
-        Difficulty GetDungeonDifficulty() const { return m_dungeonDifficulty; }
-        Difficulty GetRaidDifficulty() const { return m_raidDifficulty; }
-        void SetDungeonDifficulty(Difficulty dungeon_difficulty) { m_dungeonDifficulty = dungeon_difficulty; }
-        void SetRaidDifficulty(Difficulty raid_difficulty) { m_raidDifficulty = raid_difficulty; }
+        Difficulty GetDifficulty(bool isRaid) const { return isRaid ? GetRaidDifficulty() : GetDungeonDifficulty(); }
+        uint32 GetDifficulty() const { return m_Difficulty; }
+        Difficulty GetDungeonDifficulty() const { return Difficulty(m_Difficulty & 0x00FF); }
+        Difficulty GetRaidDifficulty() const { return Difficulty((m_Difficulty & 0xFF00) >> 8);}
+
+        void SetDungeonDifficulty(Difficulty difficulty) { m_Difficulty = (m_Difficulty & 0xFF00) | uint32(difficulty); }
+        void SetRaidDifficulty(Difficulty difficulty) { m_Difficulty = (m_Difficulty & 0x00FF) | (uint32(difficulty) << 8); }
 
         bool UpdateSkill(uint32 skill_id, uint32 step);
         bool UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step);
@@ -2546,8 +2548,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_nextSave;
         time_t m_speakTime;
         uint32 m_speakCount;
-        Difficulty m_dungeonDifficulty;
-        Difficulty m_raidDifficulty;
+
+        uint32 m_Difficulty;                             // contains both dungeon (first byte) and raid (second byte) difficultyes of player. bytes 2,3 not used.
 
         uint32 m_atLoginFlags;
 
