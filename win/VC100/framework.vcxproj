@@ -325,7 +325,12 @@
     <ClCompile Include="..\..\src\framework\Utilities\EventProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\dep\fastmm\FastMM.lib" />
+    <Library Include="..\..\dep\fastmm\FastMMx64.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </Library>
+    <Library Include="..\..\dep\fastmm\FastMM.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
