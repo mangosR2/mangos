@@ -23,7 +23,6 @@ UPDATE creature_template SET vehicle_id = 44 WHERE entry = 27258;
 UPDATE creature_template SET vehicle_id = 50 WHERE entry = 27261;
 UPDATE creature_template SET vehicle_id = 46 WHERE entry = 27270;
 UPDATE creature_template SET vehicle_id = 50 WHERE entry = 27292;
-UPDATE creature_template SET vehicle_id = 49 WHERE entry = 27354;
 UPDATE creature_template SET vehicle_id = 55 WHERE entry = 27496;
 UPDATE creature_template SET vehicle_id = 56 WHERE entry = 27587;
 UPDATE creature_template SET vehicle_id = 57 WHERE entry = 27593;
@@ -389,20 +388,24 @@ UPDATE creature_template SET IconName="vehichleCursor" WHERE entry IN
 UPDATE creature_template SET IconName="Gunner" WHERE entry IN (28319,28366,28833,30236,32629,33067,33080,33139,33264,34111);
 UPDATE creature_template SET IconName = 'vehichleCursor' WHERE vehicle_id > 0 AND IconName IS NULL;
 
-DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33062, 33060);
+DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33062, 33060, 33067);
 INSERT INTO npc_spellclick_spells VALUES
 (33109, 62309, 0, 0, 0, 1),  -- Demolisher
 (33062, 65030, 0, 0, 0, 1),  -- Chopper
-(33060, 65031, 0, 0, 0, 1);  -- Siege engine
+(33060, 65031, 0, 0, 0, 1),  -- Siege engine
+(33067, 65031, 0, 0, 0, 1);  -- Siege engine turret
 
 -- chopper
 UPDATE creature_template SET IconName = 'vehichleCursor', PowerType = 3,
 spell1 = 62974, spell2 = 62286, spell3 = 62299, spell4 = 64660, AIName = 'NullAI'
 WHERE entry IN (33062);
+
 -- Siege engine
-UPDATE creature_template SET IconName = 'Gunner',  PowerType = 3,
+UPDATE creature_template SET IconName = 'VehicleCursor',  PowerType = 3,
 spell1 = 62345, spell2 = 62522, spell3 = 62346, AIName = 'NullAI'
 WHERE entry IN (33060);
+UPDATE creature_template SET IconName = 'Gunner', AIName = 'NullAI' WHERE entry IN (33067);
+
 -- demolisher
 UPDATE creature_template SET IconName = 'vehichleCursor', PowerType = 3,
 spell1 = 62306, spell2 = 62490, spell3 = 62308, spell4 =  62324, AIName = 'NullAI'
@@ -412,6 +415,15 @@ WHERE entry IN (33109);
 UPDATE creature_template SET PowerType=3,spell1=62358,spell2=62359,spell3=64677,spell4=0,spell5=0,spell6=0 WHERE entry=33067;
 -- Salvaged Demolisher Mechanic Seat
 UPDATE creature_template SET PowerType=3,spell1=62634,spell2=64979,spell3=62479,spell4=62471,spell5=0,spell6=62428 WHERE entry=33167;
+
+-- Flame Leviathan mechanic seat
+DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (33114);
+INSERT INTO `npc_spellclick_spells` (npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags) VALUES
+(33114,46598, 0, 0, 0, 1);
+UPDATE `creature_template` SET IconName = 'vehichleCursor' WHERE `entry` IN (33114);
+
+UPDATE `creature_template` SET AIName = 'NullAI' WHERE `entry` IN (33114, 33142, 33143);
+
 -- Earthen Stoneshaper
 UPDATE creature_template SET unit_flags=33587968 WHERE entry=33620;
 -- Ymirjar Skycaller true fix (delete hack from YTDB)
@@ -491,10 +503,13 @@ UPDATE creature_template SET
     vehicle_id = 49
 WHERE entry IN (27354);
 
-DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27354);
-INSERT INTO npc_spellclick_spells VALUES
-(27354, 67373, 0, 0, 0, 1);
-INSERT IGNORE INTO spell_script_target VALUES (48610, 1, 27396);
+DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (27354);
+INSERT INTO `npc_spellclick_spells` VALUES
+(27354, 48533, 12244, 1, 12244, 1),
+(27354, 48533, 12270, 1, 12270, 1);
+
+DELETE FROM `spell_script_target` WHERE `entry` IN (48610);
+INSERT INTO `spell_script_target` VALUES (48610, 1, 27423), (48610, 1, 27371);
 
 /* Forsaken Blight Spreader */
 UPDATE creature_template SET
