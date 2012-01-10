@@ -584,7 +584,10 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                iOwner->SendThreatRemove(hostileReference);
+                if (getOwner() && getOwner()->IsInWorld())
+                    if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
+                        if (getOwner()->IsInMap(target))
+                            getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
                 iThreatOfflineContainer.addReference(hostileReference);
@@ -606,7 +609,10 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
             }
             if(hostileReference->isOnline())
             {
-                iOwner->SendThreatRemove(hostileReference);
+                if (getOwner() && getOwner()->IsInWorld())
+                    if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
+                        if (getOwner()->IsInMap(target))
+                            getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
             }
