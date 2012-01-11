@@ -489,7 +489,7 @@ class MANGOS_DLL_SPEC Aura
         void TriggerSpell();
         void TriggerSpellWithValue();
 
-        ClassFamilyMask const& GetAuraSpellClassMask() const { return  (GetHolder() && !GetHolder()->IsDeleted()) ? GetHolder()->GetSpellProto()->GetEffectSpellClassMask(m_effIndex) : ClassFamilyMask::Null; }
+        ClassFamilyMask const& GetAuraSpellClassMask() const;
         bool isAffectedOnSpell(SpellEntry const *spell) const;
         bool CanProcFrom(SpellEntry const *spell, uint32 procFlag, uint32 EventProcEx, uint32 procEx, bool active, bool useClassMask) const;
 
