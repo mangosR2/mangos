@@ -7623,9 +7623,6 @@ void Aura::HandleShapeshiftBoosts(bool apply)
         case FORM_SHADOW:
             spellId1 = 49868;
             spellId2 = 71167;
-
-            if (target->GetTypeId() == TYPEID_PLAYER)      // Spell 49868 have same category as main form spell and share cooldown
-                ((Player*)target)->RemoveSpellCooldown(49868);
             break;
         case FORM_GHOSTWOLF:
             spellId1 = 67116;
@@ -7642,9 +7639,17 @@ void Aura::HandleShapeshiftBoosts(bool apply)
     if (apply)
     {
         if (spellId1)
+        {
+            if(target->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)target)->RemoveSpellCooldown(spellId1);
             target->CastSpell(target, spellId1, true, NULL, this );
+        }
         if (spellId2)
+        {
+            if(target->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)target)->RemoveSpellCooldown(spellId2);
             target->CastSpell(target, spellId2, true, NULL, this);
+        }
 
         if (target->GetTypeId() == TYPEID_PLAYER)
         {
