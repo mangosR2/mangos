@@ -321,7 +321,11 @@ HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, Hostile
         pCurrentRef = (*iter);
 
         Unit* pTarget = pCurrentRef->getTarget();
-        MANGOS_ASSERT(pTarget);                             // if the ref has status online the target must be there!
+
+//        MANGOS_ASSERT(pTarget);                             // if the ref has status online the target must be there!
+
+        if (!pTarget)
+            continue;
 
         MAPLOCK_READ(pTarget, MAP_LOCK_TYPE_DEFAULT);
         // some units are prefered in comparison to others
@@ -588,7 +592,10 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                iOwner->SendThreatRemove(hostileReference);
+                if (getOwner() && getOwner()->IsInWorld())
+                    if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
+                        if (getOwner()->IsInMap(target))
+                            getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
                 iThreatOfflineContainer.addReference(hostileReference);
@@ -610,7 +617,10 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
             }
             if(hostileReference->isOnline())
             {
-                iOwner->SendThreatRemove(hostileReference);
+                if (getOwner() && getOwner()->IsInWorld())
+                    if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
+                        if (getOwner()->IsInMap(target))
+                            getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
             }

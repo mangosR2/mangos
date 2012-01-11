@@ -1772,6 +1772,9 @@ void LFGMgr::Teleport(Group* group, bool out)
 
 void LFGMgr::Teleport(Player* player, bool out, bool fromOpcode /*= false*/)
 {
+    if (!player || player->IsInCombat())
+        return;
+
     DEBUG_LOG("LFGMgr::TeleportPlayer: %u is being teleported %s", player->GetObjectGuid().GetCounter(), out ? "from dungeon." : "in dungeon.");
 
     if (out)

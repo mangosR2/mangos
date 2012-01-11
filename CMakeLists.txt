@@ -102,7 +102,21 @@ option(DEBUG "Debug mode" 0)
 # option(RA "With Remote Access" 0) # TODO: support remote access
 option(TBB_USE_EXTERNAL "Use external TBB" 0)
 option(USE_STD_MALLOC "Use standard malloc instead of TBB" 0)
+option(USE_TBB_MALLOC "Use included TBB malloc" 0)
 option(ACE_USE_EXTERNAL "Use external ACE" 0)
+
+if(WIN32)
+  if(PLATFORM MATCHES X86) # 32-bit
+    option(USE_FASTMM_MALLOC "Use included FastMM malloc (default for win*)" 1)
+    option(USE_STD_MALLOC "Use standard malloc instead of TBB" 0)
+  else() # 64-bit
+    option(USE_STD_MALLOC "Use standard malloc instead of TBB" 0)
+    option(USE_FASTMM_MALLOC "Use included FastMM malloc (default for win*)" 1)
+  endif()
+else()
+#Unix and other platforms
+  option(USE_STD_MALLOC "Use standard malloc instead of TBB" 1)
+endif()
 
 find_package(PCHSupport)
 
@@ -170,7 +184,7 @@ else()
   include(cmake/ImportACE.cmake)
 endif()
 
-if(NOT USE_STD_MALLOC)
+if(USE_TBB_MALLOC)
   unset(TBB_INCLUDE_DIR CACHE)
   unset(TBB_LIBRARIES CACHE)
   unset(TBB_LIBRARIES_DIR CACHE)

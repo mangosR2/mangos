@@ -1635,6 +1635,9 @@ struct ClassFamilyMask
     explicit ClassFamilyMask(uint64 familyFlags, uint32 familyFlags2 = 0) : Flags(familyFlags), Flags2(familyFlags2) {}
     ClassFamilyMask(uint32 f0, uint32 f1, uint32 f2): Flags(uint64(f0) | (uint64(f1) << 32)), Flags2(f2) {}
 
+    // predefined empty object for safe return by reference
+    static ClassFamilyMask const Null;
+
     bool Empty() const { return Flags == 0 && Flags2 == 0; }
     bool operator! () const { return Empty(); }
     operator void const* () const { return Empty() ? NULL : this; }// for allow normal use in if(mask)

@@ -1,9 +1,11 @@
 -- Dalaran Arena
 
+-- gameobject initial guid
+SET @GAMEOBJECT := 222020;
+
 UPDATE gameobject_template SET faction=114, flags=32, size=1.5 WHERE entry IN (192642, 192643);
 
 DELETE FROM gameobject WHERE map=617;
-SET @GAMEOBJECT := 222020;
 INSERT INTO gameobject (guid, id, map, spawnMask, phaseMask, position_x, position_y, position_z, orientation, rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state) VALUES
     -- buffs
     (@GAMEOBJECT,184663,617,1,1,1291.7,813.424,7.11472,4.64562,0,0,0.730314,-0.683111,-120,100,1),
@@ -15,7 +17,7 @@ INSERT INTO gameobject (guid, id, map, spawnMask, phaseMask, position_x, positio
     (@GAMEOBJECT+4,194395,617,1,1,1291.6,791.05,7.11,3.22012,0,0,0.999229,-0.0392542,-120,100,1),
     (@GAMEOBJECT+5,191877,617,1,1,1291.6,791.05,7.11,3.22012,0,0,0.999229,-0.0392542,-120,100,1);
 
-DELETE FROM gameobject_battleground WHERE guid IN (222020, 222021, 222022, 222023, 222024, 222025);
+DELETE FROM gameobject_battleground WHERE guid IN (SELECT guid FROM gameobject WHERE map=617);
 INSERT INTO gameobject_battleground (guid, event1, event2) VALUES
     -- buffs
     (@GAMEOBJECT,253,0),

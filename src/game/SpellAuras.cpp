@@ -1005,6 +1005,8 @@ void Aura::ApplyModifier(bool apply, bool Real)
     GetHolder()->SetInUse(false);
 }
 
+ClassFamilyMask const& Aura::GetAuraSpellClassMask() const { return  (GetHolder() && !GetHolder()->IsDeleted()) ? GetHolder()->GetSpellProto()->GetEffectSpellClassMask(m_effIndex) : ClassFamilyMask::Null; }
+
 bool Aura::isAffectedOnSpell(SpellEntry const *spell) const
 {
     return spell->IsFitToFamily(SpellFamily(GetSpellProto()->SpellFamilyName), GetAuraSpellClassMask());
@@ -1073,13 +1075,17 @@ void Aura::ReapplyAffectedPassiveAuras( Unit* target, bool owner_mode )
 
     {
         MAPLOCK_READ(target,MAP_LOCK_TYPE_AURAS);
-        for (Unit::SpellAuraHolderMap::const_iterator itr = target->GetSpellAuraHolderMap().begin(); itr != target->GetSpellAuraHolderMap().end(); ++itr)
+        Unit::SpellAuraHolderMap const& holderMap = target->GetSpellAuraHolderMap();
+        for (Unit::SpellAuraHolderMap::const_iterator itr = holderMap.begin(); itr != holderMap.end(); ++itr)
         {
+            if (!itr->second || itr->second->IsDeleted())
+                continue;
+
             // permanent passive or permanent area aura
             // passive spells can be affected only by own or owner spell mods)
             if ((itr->second->IsPermanent() && (owner_mode && itr->second->IsPassive() || itr->second->IsAreaAura())) &&
                 // non deleted and not same aura (any with same spell id)
-                !itr->second->IsDeleted() && itr->second->GetId() != GetId() &&
+                itr->second->GetId() != GetId() &&
                 // and affected by aura
                 isAffectedOnSpell(itr->second->GetSpellProto()))
             {
@@ -7617,9 +7623,6 @@ void Aura::HandleShapeshiftBoosts(bool apply)
         case FORM_SHADOW:
             spellId1 = 49868;
             spellId2 = 71167;
-
-            if (target->GetTypeId() == TYPEID_PLAYER)      // Spell 49868 have same category as main form spell and share cooldown
-                ((Player*)target)->RemoveSpellCooldown(49868);
             break;
         case FORM_GHOSTWOLF:
             spellId1 = 67116;
@@ -7636,9 +7639,17 @@ void Aura::HandleShapeshiftBoosts(bool apply)
     if (apply)
     {
         if (spellId1)
+        {
+            if(target->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)target)->RemoveSpellCooldown(spellId1);
             target->CastSpell(target, spellId1, true, NULL, this );
+        }
         if (spellId2)
+        {
+            if(target->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)target)->RemoveSpellCooldown(spellId2);
             target->CastSpell(target, spellId2, true, NULL, this);
+        }
 
         if (target->GetTypeId() == TYPEID_PLAYER)
         {

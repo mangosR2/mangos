@@ -2,7 +2,7 @@
 #ifndef __FastMM_H
 #define __FastMM_H
 
-#include <stddef.h> /* Need ptrdiff_t and size_t from here. */
+#include <stddef.h> /* Need size_t from here. */
 
 #define _FASTMM_IMPORT_  __declspec(dllimport)
 #define _FASTMM_CALL_    __cdecl

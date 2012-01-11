@@ -98,7 +98,7 @@ pAuraProcHandler AuraProcHandler[TOTAL_AURAS]=
     &Unit::HandleNULLProc,                                  // 63 unused (3.0.8a-3.2.2a) old SPELL_AURA_PERIODIC_MANA_FUNNEL
     &Unit::HandleNULLProc,                                  // 64 SPELL_AURA_PERIODIC_MANA_LEECH
     &Unit::HandleModCastingSpeedNotStackAuraProc,           // 65 SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK
-    &Unit::HandleNULLProc,                                  // 66 SPELL_AURA_FEIGN_DEATH
+    &Unit::HandleRemoveByDamageProc,                        // 66 SPELL_AURA_FEIGN_DEATH
     &Unit::HandleNULLProc,                                  // 67 SPELL_AURA_MOD_DISARM
     &Unit::HandleNULLProc,                                  // 68 SPELL_AURA_MOD_STALKED
     &Unit::HandleNULLProc,                                  // 69 SPELL_AURA_SCHOOL_ABSORB
@@ -5011,6 +5011,13 @@ SpellAuraProcResult Unit::HandleRemoveByDamageProc(Unit* pVictim, uint32 damage,
             return SPELL_AURA_PROC_FAILED;
     }
 
+    if (procSpell && triggeredByAura->GetModifier()->m_auraname == SPELL_AURA_MOD_STEALTH)
+    {
+            if (procSpell->AttributesEx & (SPELL_ATTR_EX_NOT_BREAK_STEALTH | SPELL_ATTR_EX_NO_THREAT) ||
+                procSpell->AttributesEx2 & SPELL_ATTR_EX2_UNK28)
+            return SPELL_AURA_PROC_FAILED;
+    }
+
     triggeredByAura->SetInUse(true);
     RemoveAurasByCasterSpell(triggeredByAura->GetSpellProto()->Id, triggeredByAura->GetCasterGuid());
     triggeredByAura->SetInUse(false);
@@ -5141,14 +5148,16 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                 case SPELL_AURA_MOD_ROOT:
                 case SPELL_AURA_TRANSFORM:
                 {
-                    if ((EventProcFlag || spellProcEvent) &&
-                        procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
+                    if (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
                         (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
                         spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE))
                         return SPELL_AURA_PROC_OK;
-                    else if (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
-                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE &&
-                        spellProto->AttributesEx & SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE))
+                    if ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
+                        procExtra & PROC_EX_ABSORB) &&
+                        (spellProto->AttributesEx & SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE &&
+                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE ||
+                        spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
+                        spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE)))
                         return SPELL_AURA_PROC_OK;
                     else if (EventProcFlag || spellProcEvent)
                         return SPELL_AURA_PROC_FAILED;
@@ -5159,13 +5168,21 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                     if (procFlag & PROC_FLAG_TAKEN_MELEE_HIT)
                         return SPELL_AURA_PROC_OK;
                     break;
+                // Fake death auras
+                case SPELL_AURA_FEIGN_DEATH:
+                // Invisibility auras
                 case SPELL_AURA_MOD_STEALTH:
                 case SPELL_AURA_MOD_INVISIBILITY:
                 {
-                    if (procFlag & DAMAGE_OR_HIT_TRIGGER_MASK &&
-                        spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE)
+                    if ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
+                        procExtra & PROC_EX_DIRECT_DAMAGE) &&
+                        !(procFlag &  PROC_FLAG_TAKEN_AOE_SPELL_HIT ||
+                        procFlag &  PROC_FLAG_ON_TAKE_PERIODIC))
                         return SPELL_AURA_PROC_OK;
-                    break;
+                    else if (EventProcFlag || spellProcEvent)
+                        return SPELL_AURA_PROC_FAILED;
+                    else
+                        return SPELL_AURA_PROC_CANT_TRIGGER;
                 }
                 default:
                     break;

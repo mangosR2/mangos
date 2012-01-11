@@ -378,6 +378,9 @@ bool ChatHandler::HandleNamegoCommand(char* args)
 
         Map* pMap = m_session->GetPlayer()->GetMap();
 
+        if (!pMap)
+            return false;
+
         if (pMap->IsBattleGroundOrArena())
         {
             // only allow if gm mode is on

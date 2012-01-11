@@ -328,9 +328,10 @@ class MANGOS_DLL_SPEC Group
 
         void SetTargetIcon(uint8 id, ObjectGuid whoGuid, ObjectGuid targetGuid);
 
-        Difficulty GetDifficulty(bool isRaid) const { return isRaid ? m_raidDifficulty : m_dungeonDifficulty; }
-        Difficulty GetDungeonDifficulty() const { return m_dungeonDifficulty; }
-        Difficulty GetRaidDifficulty() const { return m_raidDifficulty; }
+        Difficulty GetDifficulty(bool isRaid) const { return isRaid ? GetRaidDifficulty() : GetDungeonDifficulty(); }
+        uint32 GetDifficulty() const { return m_Difficulty; }
+        Difficulty GetDungeonDifficulty() const { return Difficulty(m_Difficulty & 0x00FF); }
+        Difficulty GetRaidDifficulty() const { return Difficulty((m_Difficulty & 0xFF00) >> 8);}
         void SetDungeonDifficulty(Difficulty difficulty);
         void SetRaidDifficulty(Difficulty difficulty);
         uint16 InInstance();
@@ -450,8 +451,9 @@ class MANGOS_DLL_SPEC Group
         ObjectGuid          m_leaderGuid;
         std::string         m_leaderName;
         GroupType           m_groupType;
-        Difficulty          m_dungeonDifficulty;
-        Difficulty          m_raidDifficulty;
+
+        uint32              m_Difficulty;                             // contains both dungeon (first byte) and raid (second byte) difficultyes of player. bytes 2,3 not used.
+
         BattleGround*       m_bgGroup;
         ObjectGuid          m_targetIcons[TARGET_ICON_COUNT];
         LootMethod          m_lootMethod;
