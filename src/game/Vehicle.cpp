@@ -497,16 +497,11 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         return;
 
     float ox, oy, oz, oo;
-    m_pBase->GetPosition(ox, oy, oz);
-    oo = m_pBase->GetOrientation();
-    ox += seatInfo->m_attachmentOffsetX;
-    oy += seatInfo->m_attachmentOffsetY;
-    oz += seatInfo->m_attachmentOffsetX;
-    oo += seatInfo->m_passengerYaw;
-
-    passenger->SetPosition(ox, oy, oz + 0.5f, oo);
 
     Unit* base = m_pBase->GetVehicle() ? m_pBase->GetVehicle()->GetBase() : m_pBase;
+
+    base->GetPosition(ox, oy, oz);
+    oo = base->GetOrientation();
 
     if (b_dstSet)
     {
@@ -516,7 +511,12 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         float horisontalSpeed = speed * cos(m_dst_elevation);
         float moveTimeHalf =  verticalSpeed / ((seatInfo && seatInfo->m_exitGravity > 0.0f) ? seatInfo->m_exitGravity : Movement::gravity);
         float max_height = - Movement::computeFallElevation(moveTimeHalf,false,-verticalSpeed);
-        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
+
+        float tmp_z = m_dst_z;
+        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, tmp_z);
+        if (tmp_z > m_dst_z)
+            m_dst_z = tmp_z;
+
         passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z,passenger->GetOrientation(), horisontalSpeed, max_height, false);
 
     }
@@ -527,14 +527,24 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         float horisontalSpeed = seatInfo->m_exitSpeed;
 
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F/2.0f,3.0f*M_PI_F/2.0f));
-        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
+
+        float tmp_z = m_dst_z;
+        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, tmp_z);
+        if (tmp_z > m_dst_z)
+            m_dst_z = tmp_z;
+
         passenger->MonsterMoveJump(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f, false);
     }
     else
     {
         // jump from vehicle without seatInfo (? error case)
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), 2.0f, M_PI_F);
-        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
+
+        float tmp_z = m_dst_z;
+        passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, tmp_z);
+        if (tmp_z > m_dst_z)
+            m_dst_z = tmp_z;
+
         passenger->MonsterMoveWithSpeed(m_dst_x, m_dst_y, m_dst_z + 0.5f, 28);
     }
 
