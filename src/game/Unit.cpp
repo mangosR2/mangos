@@ -1035,10 +1035,7 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
             }
 
             if (InstanceData* mapInstance = cVictim->GetInstanceData())
-            {
-                MAPLOCK_WRITE(cVictim,MAP_LOCK_TYPE_DEFAULT);
                 mapInstance->OnCreatureDeath(cVictim);
-            }
 
             if (cVictim->IsLinkingEventTrigger())
                 cVictim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, cVictim);
