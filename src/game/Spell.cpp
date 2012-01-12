@@ -4402,9 +4402,6 @@ void Spell::SendSpellGo()
         castFlags |= CAST_FLAG_PREDICTED_RUNES;             // rune cooldowns list
     }
 
-    if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION && m_targets.GetSpeed() > 0.0f)
-        castFlags |= CAST_FLAG_ADJUST_MISSILE;             // spell has trajectory (guess parameters)
-
     Unit *caster = m_triggeredByAuraSpell && IsChanneledSpell(m_triggeredByAuraSpell) ? GetAffectiveCaster() : m_caster;
 
     if (!caster)
@@ -4447,8 +4444,8 @@ void Spell::SendSpellGo()
 
     if (castFlags & CAST_FLAG_ADJUST_MISSILE)               // adjust missile trajectory duration
     {
-        data << float(m_targets.GetElevation());            // Elevation of missile
-        data << uint32(m_delayMoment);                      // Calculated trajectory delay time.
+        data << float(0);
+        data << uint32(0);
     }
 
     if (castFlags & CAST_FLAG_AMMO)                         // projectile info
