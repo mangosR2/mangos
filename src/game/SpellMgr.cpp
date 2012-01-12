@@ -734,6 +734,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case 64904:                                         // Hymn of Hope
         case 67369:                                         // Grunty Focus
         case 67398:                                         // Zergling Periodic Effect
+        case 72771:                                         // Scent of Blood (Saurfang)
             return true;
         default:
             break;
@@ -2381,6 +2382,14 @@ bool SpellMgr::IsStackableSpellAuraHolder(SpellEntry const* spellInfo)
             case SPELL_AURA_MOD_STUN:
                 return true;
         }
+    }
+
+    // some direct ID checks (hacks!)
+    switch(spellInfo->Id)
+    {
+        case 70602: // Corruption (Valithria Dreamwalker)
+        case 70588: // Suppression (Valithria Dreamwalker)
+            return true;
     }
 
     return false;

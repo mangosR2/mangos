@@ -521,21 +521,38 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                         damage = std::min(damage, 15000);
                         break;
                     }
-                    // Defile damage depending from scale.
-                    case 72754:
-                    case 73708:
-                    case 73709:
-                    case 73710:
-                        damage = damage * m_caster->GetObjectScale();
-                        break;
-                    // Growling ooze puddle
-                    case 70346:
-                    case 72456:
-                    case 72868:
-                    case 72869:
+                    // Pungent Blight (Festergut)
+                    case 69195:
+                    case 71219:
+                    case 73031:
+                    case 73032:
                     {
-                        float distance = unitTarget->GetDistance2d(m_caster);
-                        damage *= exp(-distance/(5.0f*m_caster->GetObjectScale()));
+                        // remove Inoculated
+                        SpellAuraHolderPtr holder = unitTarget->GetSpellAuraHolder(69291);
+                        if (!holder)
+                            holder = unitTarget->GetSpellAuraHolder(72101);
+                        if (!holder)
+                            holder = unitTarget->GetSpellAuraHolder(72102);
+                        if (!holder)
+                            holder = unitTarget->GetSpellAuraHolder(72103);
+
+                        if (holder)
+                            holder->SetAuraDuration(500);
+
+                        break;
+                    }
+                    // Empowered Flare (Blood Council encounter)
+                    case 71708:
+                    {
+                        // aura doesn't want to proc, so hacked...
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(71756))
+                        {
+                            if (holder->GetStackAmount() <= 1)
+                                m_caster->RemoveSpellAuraHolder(holder);
+                            else
+                                holder->ModStackAmount(-1);
+                        }
+
                         break;
                     }
                     // Bone Storm
@@ -546,6 +563,188 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     {
                         float distance = unitTarget->GetDistance2d(m_caster);
                         damage *= exp(-distance/(27.5f));
+                        break;
+                    }
+                    // Expunged Gas (Putricide)
+                    case 70701:
+                    {
+                        uint32 stack = 1;
+                        int32 extraDamage = 0;
+                        damage = 1;
+
+                        SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(70672);
+                        if (!holder)
+                            holder = m_caster->GetSpellAuraHolder(72455);
+                        if (!holder)
+                            holder = m_caster->GetSpellAuraHolder(72832);
+                        if (!holder)
+                            holder = m_caster->GetSpellAuraHolder(72833);
+
+                        if (holder)
+                        {
+                            stack = holder->GetStackAmount();
+
+                            if (m_caster->GetMap()->GetDifficulty() >= RAID_DIFFICULTY_25MAN_NORMAL)
+                                extraDamage = 1500;
+                            else
+                                extraDamage = 1250;
+                        }
+
+                        for (uint32 i = 1; i <= stack; ++i)
+                            damage += extraDamage * i;
+
+                        break;
+                    }
+                    // Vampiric Bite (Queen Lana'thel)
+                    case 70946:
+                    case 71475:
+                    case 71476:
+                    case 71477:
+                    case 71726:
+                    case 71727:
+                    case 71728:
+                    case 71729:
+                    {
+                        // trigger Presence of the Darkfallen check
+                        unitTarget->CastSpell(unitTarget, 71952, true);
+                        break;
+                    }
+                    // Mark of the Fallen Champion damage (Saurfang)
+                    case 72255:
+                    case 72444:
+                    case 72445:
+                    case 72446:
+                    {
+                        if (!unitTarget->HasAura(72293))
+                            damage = 0;
+                        else
+                            unitTarget->CastSpell(unitTarget, 72202, true); // Blood Link
+                        break;
+                    }
+                    // Mutated Plague (Putricide)
+                    // need to find correct formula
+                    case 72454: // 10normal
+                    {
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72451))
+                        {
+                            uint32 stack = holder->GetStackAmount();
+                            switch(stack)
+                            {
+                                case 1:
+                                    // deal normal dmg
+                                    break;
+                                case 2:
+                                    damage = urand(200, 500);
+                                    break;
+                                case 3:
+                                    damage = urand(1000, 1200);
+                                    break;
+                                case 4:
+                                    damage = urand(2500, 3000);
+                                    break;
+                                case 5:
+                                    damage = urand(6500, 7500);
+                                    break;
+                                default:
+                                    damage = 3000 * stack;
+                                    break;
+                            }
+                        }
+                        break;
+                    }
+                    case 72464: // 25normal
+                    {
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72463))
+                        {
+                            uint32 stack = holder->GetStackAmount();
+                            switch(stack)
+                            {
+                                case 1:
+                                    // deal normal dmg
+                                    break;
+                                case 2:
+                                    damage = urand(500, 1000);
+                                    break;
+                                case 3:
+                                    damage = urand(1800, 2300);
+                                    break;
+                                case 4:
+                                    damage = urand(4200, 4700);
+                                    break;
+                                case 5:
+                                    damage = urand(9000, 9500);
+                                    break;
+                                default:
+                                    damage = 3500 * stack;
+                                    break;
+                            }
+                        }
+                        break;
+                    }
+                    case 72506: // 10hero
+                    {
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72745))
+                        {
+                            uint32 stack = holder->GetStackAmount();
+                            switch(stack)
+                            {
+                                case 1:
+                                    // deal normal dmg
+                                    break;
+                                case 2:
+                                    damage = urand(400, 800);
+                                    break;
+                                case 3:
+                                    damage = urand(1500, 2000);
+                                    break;
+                                case 4:
+                                    damage = urand(3500, 4000);
+                                    break;
+                                case 5:
+                                    damage = urand(7000, 8000);
+                                    break;
+                                default:
+                                    damage = 3500 * stack;
+                                    break;
+                            }
+                        }
+                        break;
+                    }
+                    case 72507: // 25hero
+                    {
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72672))
+                        {
+                            uint32 stack = holder->GetStackAmount();
+                            switch(stack)
+                            {
+                                case 1:
+                                    // deal normal dmg
+                                    break;
+                                case 2:
+                                    damage = urand(500, 1000);
+                                    break;
+                                case 3:
+                                    damage = urand(2000, 3000);
+                                    break;
+                                case 4:
+                                    damage = urand(4500, 5500);
+                                    break;
+                                case 5:
+                                    damage = urand(10000, 1200);
+                                    break;
+                                default:
+                                    damage = 4000 * stack;
+                                    break;
+                            }
+                        }
+                        break;
+                    }
+                    // Shadow Prison
+                    case 72999:
+                    {
+                        if (Aura *aur = unitTarget->GetDummyAura(m_spellInfo->Id))
+                            damage += (aur->GetStackAmount() - 1) * aur->GetModifier()->m_amount;
+
                         break;
                     }
                     case 74607:
@@ -3133,6 +3332,24 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->GetMotionMaster()->MovementExpired();
                     return;
                 }
+                case 69675:                                 // Ice Tomb (Sindragosa)
+                {
+                    if (unitTarget)
+                        m_caster->CastSpell(unitTarget, 70157, true, 0, 0, ObjectGuid(), m_spellInfo);
+
+                    return;
+                }
+                case 69712:                                 // Ice Tomb (Sindragosa)
+                {
+                    // trigger spheres to targets with Frost Beacon mark
+                    if (unitTarget)
+                    {
+                        if (unitTarget->HasAura(70126, EFFECT_INDEX_0))
+                            m_caster->CastSpell(unitTarget, 69675, true, 0, 0, ObjectGuid(), m_spellInfo);
+                    }
+
+                    return;
+                }
                 case 69922:                                 // Temper Quel'Delar
                 {
                     if (!unitTarget)
@@ -3184,6 +3401,15 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     }
                     break;
                 }
+                case 71307:                                 // Vile Gas (Festergut, Rotface)
+                case 71908:
+                case 72270:
+                case 72271:
+                {
+                    if (unitTarget)
+                        m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
                 case 71336:                                 // Pact of the Darkfallen
                 {
                     if (!unitTarget)
@@ -3210,6 +3436,13 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     if (needRemove)
                         unitTarget->RemoveAurasDueToSpell(71340);
+                    break;
+                }
+                case 71718:                                 // Conjure Flame
+                case 72040:                                 // Conjure Empowered Flame
+                {
+                    if (unitTarget)
+                        unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     break;
                 }
                 case 72202:                                 // Blade power
@@ -9425,12 +9658,57 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, 69023, true);
                     return;
                 }
+                case 69165:                                 // Inhale Blight (Festergut)
+                {
+                    // TODO: get proper difficulty spell?
+                    SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(69166);
+
+                    if (!holder)
+                        holder = m_caster->GetSpellAuraHolder(71912);
+
+                    if (!holder)
+                    {
+                        // first Inhale
+                        m_caster->RemoveAurasDueToSpell(69157);
+                        m_caster->CastSpell(m_caster, 69162, true);
+                    }
+                    else if (holder)
+                    {
+                        if (holder->GetStackAmount() == 1)
+                        {
+                            // second Inhale
+                            m_caster->RemoveAurasDueToSpell(69162);
+                            m_caster->CastSpell(m_caster, 69164, true);
+                        }
+                        else if (holder->GetStackAmount() == 2)
+                        {
+                            // third Inhale
+                            m_caster->RemoveAurasDueToSpell(69164);
+                        }
+                    }
+
+                    return;
+                }
+                case 69195:                                 // Pungent Blight (Festergut)
+                case 71219:
+                case 73031:
+                case 73032:
+                {
+                    m_caster->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
+                    return;
+                }
                 case 69200:                                 // Raging Spirit
                 {
                     if (!unitTarget)
                         return;
 
                     unitTarget->CastSpell(unitTarget, 69201, true);
+                    return;
+                }
+                case 69298:                                 // Cancel Resistant to Blight (Festergut)
+                {
+                    if (unitTarget)
+                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
                     return;
                 }
                 case 69377:                                 // Fortitude
@@ -9492,28 +9770,111 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         unitTarget->CastSpell(unitTarget, 66334, true);
                     return;
                 }
-                case 69057:                                 // Bone Spike Graveyard (Icecrown Citadel, ->
-                case 70826:                                 // -> Lord Marrowgar encounter, all difficulties)
-                case 72088:                                 // ----- // -----
-                case 72089:                                 // ----- // -----
-                case 73142:                                 // Bone Spike Graveyard (during Bone Storm) ->
-                case 73143:                                 // (Icecrown Citadel, -> Lord Marrowgar encounter, ->
-                case 73144:                                 // all difficulties)
-                case 73145:                                 // ----- // -----
+                case 69057:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 70826:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 72088:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 72089:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 73142:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 73143:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 73144:                                 // Bone Spike Graveyard (Lord Marrowgar)
+                case 73145:                                 // Bone Spike Graveyard (Lord Marrowgar)
                 {
                     if (unitTarget)
-                        unitTarget->CastSpell(unitTarget, 69062, true);
-                    return;
-                }
-                case 69140:                                 // Coldflame (Lord Marrowgar - Icecrown Citadel)
-                {
-                    if (unitTarget)
-                        unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    {
+                        float x, y, z;
+                        unitTarget->GetPosition(x, y, z);
+
+                        if (Creature *pSpike = unitTarget->SummonCreature(38711, x, y, z, 0.0f, TEMPSUMMON_DEAD_DESPAWN, 2000))
+                        {
+                            unitTarget->CastSpell(pSpike, 46598, true); // enter vehicle
+                            pSpike->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
+                        }
+                    }
+
                     return;
                 }
                 case 69147:                                 // Coldflame (circle, Lord Marrowgar - Icecrown Citadel)
                 {
                     m_caster->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
+                case 69538:                                 // Small Ooze Combine (Rotface)
+                {
+                    if (unitTarget)
+                    {
+                        m_caster->CastSpell(unitTarget, 69889, true); // merge
+                        if (m_caster->GetTypeId() == TYPEID_UNIT)
+                            ((Creature*)m_caster)->ForcedDespawn(200);
+                    }
+                    return;
+                }
+                case 69553:                                 // Large Ooze Combine (Rotface)
+                {
+                    // 2 large Oozes, smaller lives and gets 1 more stack, bigger dies
+                    if (unitTarget)
+                    {
+                        SpellAuraHolderPtr casterHolder = m_caster->GetSpellAuraHolder(69558);
+                        SpellAuraHolderPtr targetHolder = unitTarget->GetSpellAuraHolder(69558);
+                        uint32 casterStack = 0;
+                        uint32 targetStack = 0;
+                        Unit *pBigger, *pSmaller;
+
+                        if (casterHolder)
+                            casterStack = casterHolder->GetStackAmount();
+                        if (targetHolder)
+                            targetStack = targetHolder->GetStackAmount();
+
+                        // mark which will live and which will die
+                        pBigger = casterStack <= targetStack ? unitTarget : m_caster;
+                        pSmaller = casterStack <= targetStack ? m_caster : unitTarget;
+
+                        pSmaller->CastSpell(pSmaller, 69558, true); // smaller one grows
+                        if (pBigger->GetTypeId() == TYPEID_UNIT)
+                            ((Creature*)pBigger)->ForcedDespawn(0); // bigger one dies
+                        return;
+                    }
+                    return;
+                }
+                case 69558:                                 // Unstable Ooze (Rotface)
+                {
+                    if (unitTarget)
+                    {
+                        if (SpellAuraHolderPtr holder = unitTarget->GetSpellAuraHolder(m_spellInfo->Id))
+                        {
+                            if (holder->GetStackAmount() >= 4)
+                                unitTarget->CastSpell(unitTarget, 69839, false); // Unstable Ooze Explosion
+                        }
+                    }
+                    return;
+                }
+                case 69610:                                 // Large Ooze Buff Combine (Rotface)
+                {
+                    // Large Ooze (m_caster) and Little Ooze (unitTarget)
+                    if (unitTarget)
+                    {
+                        m_caster->CastSpell(m_caster, 69558, true);
+                        if (unitTarget->GetTypeId() == TYPEID_UNIT)
+                            ((Creature*)unitTarget)->ForcedDespawn();
+                    }
+                }
+                case 69782:                                 // Ooze Flood (Rotface)
+                {
+                    // targets Puddle Stalker which casts slime AoE
+                    if (unitTarget)
+                        unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), false);
+
+                    return;
+                }
+                case 69795:                                 // Ooze Flood Trigger (Rotface)
+                {
+                    // unclear: different versions of spell in the rest of effects basepoints
+                    m_caster->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
+                case 70079:                                 // Ooze Flood Periodic Trigger Cancel (Rotface)
+                {
+                    if (unitTarget)
+                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
                     return;
                 }
                 case 70117:                                 // Ice grip (Sindragosa pull effect)
@@ -9524,6 +9885,42 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->GetPosition(fPosX, fPosY, fPosZ);
                     m_caster->GetRandomPoint(fPosX, fPosY, fPosZ, m_caster->GetObjectBoundingRadius(), fPosX, fPosY, fPosZ);
                     unitTarget->NearTeleportTo(fPosX, fPosY, fPosZ+1.0f, -unitTarget->GetOrientation(), false);
+                    return;
+                }
+                case 70360:                                 // Eat Ooze (Putricide)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    if (SpellAuraHolderPtr holder = unitTarget->GetSpellAuraHolder(70347))
+                    {
+                        if (holder->GetStackAmount() <= 3)
+                        {
+                            if (unitTarget->GetTypeId() == TYPEID_UNIT)
+                                ((Creature*)unitTarget)->ForcedDespawn();
+                            else
+                                unitTarget->RemoveAurasDueToSpell(70347);
+                        }
+                        else
+                            holder->ModStackAmount(-3);
+                    }
+                    return;
+                }
+                case 70920:                                 // Unbound Plague Search Effect
+                {
+                    if (unitTarget)
+                    {
+                        m_caster->CastSpell(unitTarget, 70911, true);   // apply Plague to new target
+                        m_caster->RemoveAurasDueToSpell(70911);
+                    }
+
+                    return;
+                }
+                case 71255:                                 // Choking Gas Bomb (Putricide)
+                {
+                    m_caster->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_0), true);
+                    // second is on random side
+                    m_caster->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(SpellEffectIndex(urand(1, 2))), true);
                     return;
                 }
                 case 71446:                                 // Twilight Bloodbolt 10N
@@ -9558,6 +9955,16 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 71483, true);
                     return;
                 }
+                case 71620:                                 // Tear Gas Cancel (Putricide)
+                case 72618:                                 // Mutated Plague Clear (Putricide)
+                {
+                    if (unitTarget)
+                    {
+                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_0));
+                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1));
+                    }
+                    return;
+                }
                 case 71899:                                 // Bloodbolt Whirl 10N
                 {
                     if (!unitTarget)
@@ -9590,6 +9997,18 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, 71480, true);
                     return;
                 }
+                case 71952:                                 // Presence of the Darkfallen (Queen Lana'thel ICC)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    if (unitTarget->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC ||
+                        unitTarget->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+                    {
+                        unitTarget->CastSpell(unitTarget, 70995, true);
+                    }
+                    return;
+                }
                 case 72034:                                 // Whiteout
                 case 72096:                                 // Whiteout (heroic)
                 {
@@ -9609,7 +10028,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                     return;
                 }
-                case 72219:
+                case 72219:                                 // Gastric Bloat (Festergut)
                 case 72551:
                 case 72552:
                 case 72553:
@@ -9620,34 +10039,36 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (SpellAuraHolderPtr pHolder = unitTarget->GetSpellAuraHolder(m_spellInfo->Id))
                     {
                         if (pHolder->GetStackAmount() + 1 >= m_spellInfo->StackAmount)
-                        {
-                            switch (m_spellInfo->Id)
-                            {
-                                case 72219:
-                                    unitTarget->CastSpell(unitTarget, 72227, true);
-                                    break;
-                                case 72551:
-                                    unitTarget->CastSpell(unitTarget, 72228, true);
-                                    break;
-                                case 72552:
-                                    unitTarget->CastSpell(unitTarget, 72229, true);
-                                    break;
-                                case 72553:
-                                    unitTarget->CastSpell(unitTarget, 72230, true);
-                                    break;
-                                default:
-                                    break;
-
-                                unitTarget->RemoveAurasDueToSpell(m_spellInfo->Id);
-                                unitTarget->RemoveAurasDueToSpell(72231);
-                                return;
-                            }
-                        }
+                            unitTarget->CastSpell(unitTarget, 72227, true);
                     }
 
-                    unitTarget->CastSpell(unitTarget, 72231, true);
-
-                    break;
+                    return;
+                }
+                case 72257:                                 // Remove Marks of the Fallen Champion
+                {
+                    if (unitTarget)
+                        unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
+                    return;
+                }
+                case 72380:                                 // Blood Nova (Saurfang)
+                case 72438:
+                case 72439:
+                case 72440:
+                {
+                    // cast Blood Link on Saurfang (script target)
+                    if (unitTarget)
+                        unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
+                    return;
+                }
+                case 72409:                                 // Rune of Blood (Saurfang)
+                case 72447:
+                case 72448:
+                case 72449:
+                {
+                    // cast Blood Link on Saurfang (script target)
+                    if (unitTarget)
+                        unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
+                    return;
                 }
                 case 72705:                                 // Coldflame (in bone storm, Lord Marrowgar - Icecrown Citadel)
                 {

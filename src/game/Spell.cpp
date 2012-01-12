@@ -1738,14 +1738,13 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 68950:                                 // Fear (ICC: Forge of Souls)
                 case 68912:                                 // Wailing Souls (FoS)
                 case 69048:                                 // Mirrored Soul (FoS)
-                case 69140:                                 // Coldflame (Icecrown Citadel, Lord Marrowgar encounter)
-                case 69674:                                 // Mutated Infection
-                case 71224:
+                case 69674:                                 // Mutated Infection (Rotface)
+                case 70882:                                 // Slime Spray Summon Trigger (Rotface)
+                case 70920:                                 // Unbound Plague Search Effect (Putricide)
+                case 71224:                                 // Mutated Infection (Rotface)
                 case 72091:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, normal)
                 case 73022:                                 // Mutated Infection (heroic)
                 case 73023:                                 // Mutated Infection (heroic)
-                case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
-                case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
                 case 51146:                                 // Searching Gaze (Halls Of Stone)
                     unMaxTargets = 1;
                     break;
@@ -1755,7 +1754,9 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 66332:                                 // Nerubian Burrower (Trial of the Crusader, ->
                 case 67755:                                 // -> Anub'arak encounter, 10 and 10 heroic)
                 case 68509:                                 // Penetrating Cold (10 man heroic)
-                case 69278:                                 // Gas spore - 10
+                case 69055:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, normal)
+                case 69278:                                 // Gas spore - 10 (Festergut)
+                case 70341:                                 // Slime Puddle (Putricide)
                 case 71336:                                 // Pact of the Darkfallen
                 case 71390:                                 // Pact of the Darkfallen
                 case 63476:                                 // Icicle (Hodir - 10)
@@ -1771,10 +1772,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 61693:                                 // Arcane Storm (Malygos) (N)
                 case 62477:                                 // Icicle (Hodir 25man)
                 case 64598:                                 // Cosmic Smash (Algalon 25man) 
-                case 69055:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, normal)
                 case 70814:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, heroic)
-                case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-                case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
                 case 72095:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, heroic)
                     unMaxTargets = 3;
                     break;
@@ -1786,7 +1784,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     break;
                 case 67756:                                 // Nerubian Burrower (Trial of the Crusader, ->
                 case 67757:                                 // -> Anub'arak encounter, 25 and 25 heroic)
-                case 71221:                                 // Gas spore - 25
+                case 71221:                                 // Gas spore - 25 (Festergut)
                     unMaxTargets = 4;
                     break;
                 case 30843:                                 // Enfeeble TODO: exclude top threat target from target selection
@@ -1865,17 +1863,17 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             switch(m_spellInfo->Id)
             {
-                case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
-                case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-                case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
-                case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
                 case 69075:                                 // Bone Storm
+                case 69832:                                 // Unstable Ooze Explosion (Rotface)
+                case 70341:                                 // Slime Puddle (Putricide)
                 case 70834:                                 // Bone Storm
                 case 70835:                                 // Bone Storm
                 case 70836:                                 // Bone Storm
                 case 71518:                                 // Unholy infusion credit
                 case 72289:                                 // Frost infusion credit
                 case 72706:                                 // Valithria event credit
+                case 72769:                                 // Scent of Blood (Saurfang)
+                case 72771:
                 case 72934:                                 // Blood infusion credit
                     radius = DEFAULT_VISIBILITY_INSTANCE;
                     break;
@@ -3558,8 +3556,14 @@ void Spell::cast(bool skipCheck)
                 AddTriggeredSpell(74800);                  // Soul consumption
             else if (m_spellInfo->Id == 61968)             // Flash Freeze (Hodir: Ulduar)
                 AddTriggeredSpell(62148);                  // visual effect
+            else if (m_spellInfo->Id == 69839)             // Unstable Ooze Explosion (Rotface)
+                AddPrecastSpell(69832);                    // cast "cluster" before silence and pacify
             else if (m_spellInfo->Id == 58672)             // Impale, damage and loose threat effect (Vault of Archavon, Archavon the Stone Watcher)
                 AddPrecastSpell(m_caster->GetMap()->IsRegularDifficulty() ? 58666 : 60882);
+            else if (m_spellInfo->Id == 71265)             // Swarming Shadows DoT (Queen Lana'thel ICC)
+                AddPrecastSpell(71277);
+            else if (m_spellInfo->Id == 70923)             // Uncontrollable Frenzy (Queen Lana'thel ICC)
+                AddTriggeredSpell(70924); // health buff etc.
             break;
         }
         case SPELLFAMILY_MAGE:
@@ -7665,14 +7669,6 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
     if (m_spellInfo->Id == 70946 && target->HasAura(70867))
         return false;
 
-    // Sindragosa frost bomb hack
-    if ((m_spellInfo->Id == 69845
-        || m_spellInfo->Id == 71053
-        || m_spellInfo->Id == 71054
-        || m_spellInfo->Id == 71055)
-         && target->HasAura(70867))
-        return false;
-
     // Check targets for LOS visibility (except spells without range limitations )
     switch(m_spellInfo->Effect[eff])
     {
@@ -8680,43 +8676,286 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 69057: // Lord Marrowgar's Bone Spike Graveyard must affect only players. Tank is excluded too. 10N
-        case 70826: // ----- // ----- 25N
-        case 72088: // ----- // ----- 10H
-        case 72089: // ----- // ----- 25H
+        case 69057:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10N)
+        case 70826:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25N)
+        case 72088:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10H)
+        case 72089:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25H)
+        case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
+        case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
+        case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
+        case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
         {
-            UnitList tmpUnitMap, playersUnitMap;
-            FillAreaTargets(tmpUnitMap, DEFAULT_VISIBILITY_INSTANCE, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-
-            if (tmpUnitMap.empty())
-                break;
-
-            for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+            int maxTargets = 1;
+            switch (m_spellInfo->Id)
             {
-                if (*itr && (*itr)->GetTypeId() == TYPEID_PLAYER)
-                    playersUnitMap.push_back(*itr);
+                case 72089:
+                case 70826:
+                case 73143:
+                case 73145:
+                    maxTargets = 3;
             }
 
-            if (!playersUnitMap.empty() && m_caster->getVictim())
-                playersUnitMap.remove(m_caster->getVictim());
+            radius = DEFAULT_VISIBILITY_INSTANCE;
 
-            uint8 maxTargets = 1;                           // In normal Bone Spike Graveyard affects one player, in heroic - 3 players.
-            if (m_spellInfo->Id == 70826 || m_spellInfo->Id == 72089)
-                maxTargets = 3;
-
-            for (uint8 i = 0; i < maxTargets; ++i)
+            UnitList tmpUnitMap;
+            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tmpUnitMap.empty())
             {
-                if (playersUnitMap.empty())
-                    break;
-
-                UnitList::iterator iter = playersUnitMap.begin();
-                std::advance(iter, urand(0, playersUnitMap.size()-1));
-                if (*iter)
-                    targetUnitMap.push_back(*iter);
-
-                playersUnitMap.remove(*iter);
+                for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+                {
+                    if ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER && // target players only
+                        m_caster->getVictim() &&                        // don't target tank
+                        m_caster->getVictim()->GetObjectGuid() != (*itr)->GetObjectGuid())
+                    {
+                        targetUnitMap.push_back(*itr);
+                    }
+                }
             }
 
+            if (!targetUnitMap.empty())
+            {
+                // remove random units from the map
+                while (targetUnitMap.size() > maxTargets)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case 69782: // Ooze Flood (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            UnitList oozesMap;
+
+            targetUnitMap.clear();
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                // stalkers in valves
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    // Puddle Stalker
+                    if ((*iter)->GetEntry() == 37013 && (*iter)->GetPositionZ() < m_caster->GetPositionZ() + 3.0f)
+                        oozesMap.push_back((*iter));
+                }
+            }
+
+            UnitList::iterator i;
+
+            // 2 random targets
+            if (!oozesMap.empty())
+            {
+                i = oozesMap.begin();
+                std::advance(i, urand(0, oozesMap.size() - 1));
+
+                // first Ooze Flood
+                targetUnitMap.push_back(*i);
+                oozesMap.remove(*i);
+
+                // now find the second - closest one
+                if (!oozesMap.empty())
+                {
+                    oozesMap.sort(TargetDistanceOrderNear(*i));
+                    i = oozesMap.begin();
+                    targetUnitMap.push_back(*i);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+        case 69538: // Small Ooze Combine (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetEntry() == 36897)
+                        targetUnitMap.push_back((*iter));
+                }
+            }
+
+            targetUnitMap.remove(m_caster);
+
+            if (!targetUnitMap.empty())
+                targetUnitMap.resize(1);
+
+            break;
+        }
+        case 69553: // Large Ooze Combine (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetEntry() == 36899)
+                        targetUnitMap.push_back((*iter));
+                }
+            }
+
+            targetUnitMap.remove(m_caster);
+
+            if (!targetUnitMap.empty())
+                targetUnitMap.resize(1);
+
+            break;
+        }
+        case 69610: // Large Ooze Buff Combine (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetEntry() == 36897)
+                        targetUnitMap.push_back((*iter));
+                }
+            }
+
+            targetUnitMap.remove(m_caster);
+
+            if (!targetUnitMap.empty())
+                targetUnitMap.resize(1);
+
+            break;
+        }
+        case 69762: // Unchained Magic (Sindragosa)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->getPowerType() == POWER_MANA)
+                        targetUnitMap.push_back(*iter);
+                }
+            }
+            break;
+        }
+        case 69832: // Unstable Ooze Explosion (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetEntry() == 38107)
+                        targetUnitMap.push_back((*iter));
+                }
+            }
+            targetUnitMap.push_back(m_caster);
+            break;
+        }
+        case 69839: // Unstable Ooze Explosion (Rotface)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetObjectGuid().IsPlayer() || (*iter)->GetEntry() == 36899)
+                        targetUnitMap.push_back((*iter));
+                }
+            }
+
+            if (targetUnitMap.size() > 3)
+            {
+                // remove random units from the map
+                while (targetUnitMap.size() > 3)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            break;
+        }
+        case 70346: // Slime Puddle
+        case 72868:
+        case 72869:
+        {
+            radius = 5.0f;
+
+            if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(70347))
+                radius += holder->GetStackAmount() * 0.2f;
+
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            break;
+        }
+        case 70127: // Mystic Buffet (Sindragosa)
+        case 72528:
+        case 72529:
+        case 72530:
+        {
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            targetUnitMap.remove(m_caster);
+            break;
+        }
+        case 70402: // Mutated Transformation (Putricide)
+        case 72511:
+        case 72512:
+        case 72513:
+        {
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
+            for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+            {
+                if ((*itr) && (*itr)->GetObjectGuid().IsVehicle())
+                    itr = targetUnitMap.erase(itr);
+                else
+                    ++itr;
+            }
+            break;
+        }
+        case 70447: // Volatile Ooze Adhesive (Putricide)
+        case 72836:
+        case 72837:
+        case 72838:
+        case 70672: // Gaseous Bloat (Putricide)
+        case 72455:
+        case 72832:
+        case 72833:
+        {
+            targetUnitMap.push_back(m_targets.getUnitTarget());
+            break;
+        }
+        case 70701: // Expunged Gas (Putricide)
+        {
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
+            for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+            {
+                if ((*itr) && (*itr)->GetObjectGuid().IsVehicle())
+                    itr = targetUnitMap.erase(itr);
+                else
+                    ++itr;
+            }
             break;
         }
         case 70728: // Exploit Weakness triggered
@@ -8738,28 +8977,191 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 72378: // Blood Nova
+        case 70911: // Unbound Plague (Putricide)
+        case 72854:
+        case 72855:
+        case 72856:
+        {
+            if (m_targets.getUnitTarget())
+                targetUnitMap.push_back(m_targets.getUnitTarget());
+
+            break;
+        }
+        case 70920: // Unbound Plague Search Effect (Putricide)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+            {
+                // target only other players which dont have Mutated Transformation aura on self
+                if ((*iter) && (*iter)->GetTypeId() == TYPEID_PLAYER &&
+                    !(*iter)->GetDummyAura(70308))
+                {
+                    targetUnitMap.push_back(*iter);
+                }
+            }
+
+            targetUnitMap.remove(m_caster);
+
+            // random 1 target
+            if (!targetUnitMap.empty())
+            {
+                // remove random units from the map
+                while (targetUnitMap.size() > 1)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            break;
+        }
+        case 71075: // Invocation of Blood (V) Move
+        case 71079: // Invocation of Blood (K) Move
+        case 71082: // Invocation of Blood (T) Move
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    // target the one with Invocation of Blood aura
+                    if ((*iter)->HasAura(70952) ||
+                        (*iter)->HasAura(70981) ||
+                        (*iter)->HasAura(70982))
+                    {
+                        targetUnitMap.push_back(*iter);
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case 71307: // Vile Gas (Festergut)
+        case 71908:
+        case 72270:
+        case 72271:
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetEntry() == 38548)
+                        targetUnitMap.push_back(*iter);
+                }
+            }
+            if (!targetUnitMap.empty())
+            {
+                // remove random units from the map
+                while (targetUnitMap.size() > 1)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case 72873: // Malleable Goo (Putricide)
+        case 72874:
+        case 72550:
+        case 72458:
+        case 72549:
+        case 70853:
+        case 72297:
+        case 72548:
+        {
+            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
+            targetUnitMap.remove(m_caster);
+            for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+            {
+                if ((*itr) && (*itr)->GetObjectGuid().IsVehicle())
+                    itr = targetUnitMap.erase(itr);
+                else
+                    ++itr;
+            }
+            break;
+        }
+        case 72038: // Empowered Shock Vortex (Blood Council)
+        case 72815:
+        case 72816:
+        case 72817:
+        {
+            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            targetUnitMap.remove(m_caster);
+        }
+        case 72378: // Blood Nova (Saurfang)
         case 73058:
         {
-            UnitList tmpUnitMap, tgtUnitMap;
-            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-
-            if (tmpUnitMap.empty())
-                break;
-
-            for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tempTargetUnitMap.empty())
             {
-                if (*itr && (*itr)->GetObjectGuid().IsPlayerOrPet() && m_caster->GetDistance(*itr) > 8.0f)
-                    tgtUnitMap.push_back(*itr);
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if (!(*iter)->GetObjectGuid().IsPlayer())
+                        continue;
+
+                    if (m_caster->GetDistance(*iter) < 10.0f) // stored in 72379 radius?
+                        continue;
+
+                    targetUnitMap.push_back((*iter));
+                }
+            }
+            break;
+        }
+        case 72385:                                     // Boiling Blood
+        case 72441:
+        case 72442:
+        case 72443:
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if (!(*iter)->GetObjectGuid().IsPlayer())
+                        continue;
+
+                    if ((*iter) == m_caster->getVictim())
+                        continue;
+
+                    targetUnitMap.push_back((*iter));
+                }
             }
 
-            if (!tgtUnitMap.empty())
+            if (!targetUnitMap.empty())
             {
-                UnitList::iterator itr = tgtUnitMap.begin();
-                std::advance(itr, urand(0, tgtUnitMap.size()-1));
-                if (*itr)
-                    targetUnitMap.push_back(*itr);
+                UnitList::iterator i = targetUnitMap.begin();
+                Unit *pTmp;
+
+                advance(i, urand(0, targetUnitMap.size() - 1));
+                pTmp = *i;
+                targetUnitMap.clear();
+                targetUnitMap.push_back(pTmp);
             }
+
             break;
         }
         case 71336:                                     // Pact of the Darkfallen
@@ -8773,6 +9175,32 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                     if (!(*iter)->GetObjectGuid().IsPlayer())
                         continue;
                     targetUnitMap.push_back((*iter));
+                }
+            }
+
+            if (!targetUnitMap.empty())
+            {
+                int max = 2;
+                if (m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
+                    m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+                {
+                    max = 3;
+                }
+
+                // remove random units from the map
+                while (targetUnitMap.size() > max)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
                 }
             }
             break;
@@ -8807,8 +9235,24 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 71482:                                 // Bloodbolt Splash 10H
         case 71483:                                 // Bloodbolt Splash 25H
         {
-            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_FRIENDLY);
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE, GetAffectiveCaster());
             targetUnitMap.remove(m_caster);
+            break;
+        }
+        case 72454:                                 // Mutated Plague (Putricide)
+        case 72464:
+        case 72506:
+        case 72507:
+        {
+            radius = DEFAULT_VISIBILITY_INSTANCE;
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE, GetAffectiveCaster());
+            for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+            {
+                if ((*itr) && (*itr)->GetObjectGuid().IsVehicle())
+                    itr = targetUnitMap.erase(itr);
+                else
+                    ++itr;
+            }
             break;
         }
         case 74960:                                     // Infrigidate
