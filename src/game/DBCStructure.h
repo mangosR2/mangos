@@ -2424,7 +2424,7 @@ struct VehicleSeatEntry
                                                             // 55       m_cameraEnteringZoom"
                                                             // 56       m_cameraSeatZoomMin
                                                             // 57       m_cameraSeatZoomMax
-    bool IsUsable() const { return m_flags & SEAT_FLAG_USABLE; }
+    bool IsUsable() const { return (m_flags & SEAT_FLAG_USABLE || m_flags & SEAT_FLAG_CAN_CONTROL); }
 };
 
 struct WMOAreaTableEntry
