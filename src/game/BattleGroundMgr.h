@@ -184,7 +184,7 @@ class BGQueueRemoveEvent : public BasicEvent
         BattleGroundQueueTypeId m_BgQueueTypeId;
 };
 
-class BattleGroundMgr
+class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassLevelLockable<BattleGroundMgr, ACE_Thread_Mutex> >
 {
     public:
         /* Construction */

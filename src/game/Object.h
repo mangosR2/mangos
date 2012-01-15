@@ -423,7 +423,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
                 void Update( uint32 time_diff )
                 {
-                    m_obj->Update( m_obj->m_updateTracker.timeElapsed(), time_diff);
+                    if (m_obj->IsInWorld())
+                        m_obj->Update( m_obj->m_updateTracker.timeElapsed(), time_diff);
                     m_obj->m_updateTracker.Reset();
                 }
 
