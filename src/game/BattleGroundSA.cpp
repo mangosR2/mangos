@@ -451,6 +451,7 @@ void BattleGroundSA::UpdatePhase()
 
     // spirit healers at the relic
     SpawnEvent(SA_EVENT_ADD_GRAVE_A, (GetDefender() == ALLIANCE ? BG_SA_GRAVE_STATUS_ALLY_OCCUPIED : BG_SA_GRAVE_STATUS_HORDE_OCCUPIED), true);
+    m_Gyd[SA_EVENT_ADD_GRAVE_A] = ((GetDefender() == ALLIANCE) ? BG_SA_GRAVE_STATUS_ALLY_CONTESTED : BG_SA_GRAVE_STATUS_HORDE_CONTESTED);
 
     // (Re)spawn graveyard at the beach.
     SpawnEvent(SA_EVENT_ADD_GRAVE_B, (GetDefender() == ALLIANCE ? BG_SA_GRAVE_STATUS_HORDE_OCCUPIED : BG_SA_GRAVE_STATUS_ALLY_OCCUPIED), true);
