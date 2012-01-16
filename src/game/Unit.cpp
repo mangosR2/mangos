@@ -4456,9 +4456,30 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
         // take out same spell
         for (SpellAuraHolderMap::iterator iter = spair.first; iter != spair.second; ++iter)
         {
+            // stack some specific spells
+            bool bIsSpellStackingCustom = false;
+            switch(holder->GetId())
+            {
+                case 70338: // Necrotic Plague (Lich King)
+                case 73785:
+                case 73786:
+                case 73787:
+                case 74074: // Plague Siphon (Lich King)
+                case 72679: // Harvested Soul (Lich King)
+                case 73028:
+                case 74318:
+                case 74319:
+                case 74320:
+                case 74321:
+                case 74322:
+                case 74323:
+                    bIsSpellStackingCustom = true;
+                    break;
+            }
+
             if (iter->second && !iter->second->IsDeleted() &&
-                (iter->second->GetCasterGuid() == holder->GetCasterGuid() ||
-                (iter->second->GetCasterGuid().IsCreatureOrPet() && holder->GetCasterGuid().IsCreatureOrPet())))
+                ((iter->second->GetCasterGuid() == holder->GetCasterGuid() || bIsSpellStackingCustom ||
+                (iter->second->GetCasterGuid().IsCreatureOrPet() && holder->GetCasterGuid().IsCreatureOrPet()))))
             {
                 // Aura can stack on self -> Stack it;
                 if (aurSpellInfo->StackAmount)
@@ -4964,6 +4985,12 @@ void Unit::RemoveAuraHolderDueToSpellByDispel(uint32 spellId, uint32 stackAmount
                 return;
             }
         }
+    }
+    // Necrotic Plague (Lich King)
+    // this hack needs correct implementation
+    else if (spellId == 70338 || spellId == 73785 || spellId == 73786 || spellId == 73787)
+    {
+        RemoveSpellAuraHolder(GetSpellAuraHolder(spellId), AURA_REMOVE_BY_DISPEL);
     }
 
     RemoveAuraHolderFromStack(spellId, stackAmount, casterGuid, AURA_REMOVE_BY_DISPEL);

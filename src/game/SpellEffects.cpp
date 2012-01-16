@@ -747,6 +747,17 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
 
                         break;
                     }
+                    // Life Siphon (Lich King)
+                    case 73488:
+                    case 73782:
+                    case 73783:
+                    case 73784:
+                    {
+                        // heals caster for damage done * 10
+                        int32 bp0 = damage * 10;
+                        m_caster->CastCustomSpell(m_caster, 73489, &bp0, 0, 0, true);
+                        break;
+                    }
                     case 74607:
                     // SPELL_FIERY_COMBUSTION_EXPLODE - Ruby sanctum boss Halion,
                     // damage proportional number of mark (74567, dummy)
@@ -3332,6 +3343,25 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->GetMotionMaster()->MovementExpired();
                     return;
                 }
+                case 68576:                                 // Eject All Passengers (also used in encounters Lich King, Jaraxxus?)
+                {
+                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
+                    return;
+                }
+                case 69110:                                 // Ice Burst Target Search (Lich King)
+                {
+                    if (unitTarget)
+                    {
+                        if (unitTarget->GetTypeId() == TYPEID_PLAYER)
+                        {
+                            m_caster->CastSpell(m_caster, 69108, true);
+
+                            if (m_caster->GetTypeId() == TYPEID_UNIT)
+                                ((Creature*)m_caster)->ForcedDespawn(800);
+                        }
+                    }
+                    return;
+                }
                 case 69675:                                 // Ice Tomb (Sindragosa)
                 {
                     if (unitTarget)
@@ -3357,6 +3387,20 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     // Return Tempered Quel'Delar
                     unitTarget->CastSpell(m_caster, 69956, true);
+                    return;
+                }
+                case 70534:                                 // Vile Spirit Damage Target Search (Lich King)
+                {
+                    if (unitTarget)
+                    {
+                        m_caster->CastSpell(m_caster, 70503, true);
+                        m_caster->RemoveAurasDueToSpell(70502);
+                        if (m_caster->GetTypeId() == TYPEID_UNIT)
+                        {
+                            m_caster->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                            ((Creature*)m_caster)->ForcedDespawn(1000);
+                        }
+                    }
                     return;
                 }
                 case 70769:                                 // Divine Storm!
@@ -10070,6 +10114,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
                     return;
                 }
+                case 72429:                                 // Mass Resurrection (Lich King encounter)
+                {
+                    if (unitTarget)
+                        m_caster->CastSpell(unitTarget, 72423, true);
+                    return;
+                }
                 case 72705:                                 // Coldflame (in bone storm, Lord Marrowgar - Icecrown Citadel)
                 {
                     m_caster->CastSpell(m_caster, 72701, true);
@@ -10092,6 +10142,18 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                     else
                         unitTarget->CastSpell(unitTarget, 72865, true, NULL, NULL, m_originalCasterGUID);
+                    return;
+                }
+                case 74282:                                 // Shadow Trap (Lich King)
+                {
+                    if (unitTarget)
+                    {
+                        m_caster->CastSpell(m_caster, 73529, true);
+                        m_caster->RemoveAurasDueToSpell(73525);
+
+                        if (m_caster->GetTypeId() == TYPEID_UNIT)
+                            ((Creature*)m_caster)->ForcedDespawn(800);
+                    }
                     return;
                 }
             }
