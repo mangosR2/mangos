@@ -7669,6 +7669,10 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
     if (m_spellInfo->Id == 70946 && target->HasAura(70867))
         return false;
 
+    if (m_spellInfo->EffectImplicitTargetA[eff] == TARGET_ALL_RAID_AROUND_CASTER ||
+        m_spellInfo->EffectImplicitTargetB[eff] == TARGET_ALL_RAID_AROUND_CASTER)
+        return true;
+
     // Check targets for LOS visibility (except spells without range limitations )
     switch(m_spellInfo->Effect[eff])
     {
