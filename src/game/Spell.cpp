@@ -8786,6 +8786,20 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
+        case 69298: // Cancel Resistant To Blight (Festergut)
+        {
+            UnitList tmpUnitMap;
+            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tmpUnitMap.empty())
+            {
+                for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+                {
+                    if ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER)
+                        targetUnitMap.push_back(*itr);
+                }
+            }
+            break;
+        }
         case 69782: // Ooze Flood (Rotface)
         {
             UnitList tempTargetUnitMap;
