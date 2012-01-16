@@ -1,11 +1,12 @@
 -- The Ring of Valor
 
 -- gameobject initial guid
-SET @GAMEOBJECT := 222001;
+SET @GAMEOBJECT := 541000;
 
 UPDATE gameobject_template SET faction='114', flags='32' WHERE entry IN (192704, 192705, 192388, 192387, 192393, 192394, 192389, 192390);
 
-DELETE FROM gameobject WHERE map='618';
+DELETE FROM `gameobject` WHERE map='618';
+DELETE FROM `gameobject` WHERE `guid` BETWEEN @GAMEOBJECT AND @GAMEOBJECT+999;
 INSERT INTO gameobject
     (guid, id, map, spawnMask, phaseMask, position_x, position_y, position_z, orientation, rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state)
 VALUES

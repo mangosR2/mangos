@@ -1,8 +1,10 @@
 -- Isle of Conquest
 
 -- creature and gameobject initial guid
-SET @CREATURE := 300000;
-SET @GAMEOBJECT := 300000;
+SET @CREATURE := 520000;
+SET @GAMEOBJECT := 520000;
+DELETE FROM `creature` WHERE `guid` BETWEEN @CREATURE AND @CREATURE+9999;
+DELETE FROM `gameobject` WHERE `guid` BETWEEN @GAMEOBJECT AND @GAMEOBJECT+9999;
 
 -- use these 2 queries only if you want to enable IoC by direct queueing it
 -- DELETE FROM battleground_template WHERE id = 30;
