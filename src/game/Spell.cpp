@@ -8839,6 +8839,43 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
 
             break;
         }
+        case 69674:                                 // Mutated Infection (Rotface)
+        case 71224:                                 // Mutated Infection (Rotface)
+        case 73023:                                 // Mutated Infection (heroic)
+        case 73022:                                 // Mutated Infection (heroic)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if ((*iter)->GetTypeId() == TYPEID_PLAYER &&
+                        (*iter) != m_caster->getVictim())
+                        targetUnitMap.push_back(*iter);
+                }
+            }
+
+            if (targetUnitMap.size() > 1)
+            {
+                // remove random units from the map
+                while (targetUnitMap.size() > 1)
+                {
+                    uint32 poz = urand(0, targetUnitMap.size()-1);
+                    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
+                    {
+                        if (!*itr) continue;
+
+                        if (!poz)
+                        {
+                            targetUnitMap.erase(itr);
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
         case 69762: // Unchained Magic (Sindragosa)
         {
             UnitList tempTargetUnitMap;
