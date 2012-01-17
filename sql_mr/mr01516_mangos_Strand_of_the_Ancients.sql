@@ -1,8 +1,11 @@
 -- Strand of the Ancients
 
 -- creature and gameobject initial guid
-SET @CREATURE := 200001;
-SET @GAMEOBJECT := 200008;
+SET @CREATURE := 510000;
+SET @GAMEOBJECT := 510000;
+
+DELETE FROM `creature` WHERE `guid` BETWEEN @CREATURE AND @CREATURE+9999;
+DELETE FROM `gameobject` WHERE `guid` BETWEEN @GAMEOBJECT AND @GAMEOBJECT+9999;
 
 DELETE FROM battleground_template WHERE id = 9;
 INSERT INTO battleground_template (id, MinPlayersPerTeam, MaxPlayersPerTeam, AllianceStartLoc, AllianceStartO, HordeStartLoc, HordeStartO) VALUES (9, 5, 15, 1367, 0, 1368, 0);

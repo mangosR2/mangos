@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1315,8 +1315,9 @@ bool WorldObject::IsInBetween(const WorldObject *obj1, const WorldObject *obj2, 
 
 float WorldObject::GetAngle(const WorldObject* obj) const
 {
-    if(!obj) return 0;
-    return GetAngle( obj->GetPositionX(), obj->GetPositionY() );
+    if (!obj)
+        return 0.0f;
+    return GetAngle(obj->GetPositionX(), obj->GetPositionY());
 }
 
 // Return angle in range 0..2*pi
@@ -1327,7 +1328,7 @@ float WorldObject::GetAngle( const float x, const float y ) const
 
     float ang = atan2(dy, dx);
     ang = (ang >= 0) ? ang : 2 * M_PI_F + ang;
-    return ang;
+    return MapManager::NormalizeOrientation(ang);
 }
 
 bool WorldObject::HasInArc(const float arcangle, const WorldObject* obj) const
@@ -1786,12 +1787,13 @@ namespace MaNGOS
                 float angle = i_object.GetAngle(u) - i_absAngle;
 
                 // move angle to range -pi ... +pi
-                while (angle > M_PI_F)
-                    angle -= 2.0f * M_PI_F;
-                while (angle < -M_PI_F)
-                    angle += 2.0f * M_PI_F;
+                float f_angle = MapManager::NormalizeOrientation(angle);
+                if (f_angle > M_PI_F)
+                    f_angle -= 2.0f * M_PI_F;
+                else if (f_angle < -M_PI_F)
+                    f_angle += 2.0f * M_PI_F;
 
-                i_selector.AddUsedArea(u->GetObjectBoundingRadius(), angle, dist2d);
+                i_selector.AddUsedArea(u->GetObjectBoundingRadius(), f_angle, dist2d);
             }
         private:
             WorldObject const& i_object;

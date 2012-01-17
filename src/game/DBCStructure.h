@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2424,7 +2424,7 @@ struct VehicleSeatEntry
                                                             // 55       m_cameraEnteringZoom"
                                                             // 56       m_cameraSeatZoomMin
                                                             // 57       m_cameraSeatZoomMax
-    bool IsUsable() const { return m_flags & SEAT_FLAG_USABLE; }
+    bool IsUsable() const { return (m_flags & SEAT_FLAG_USABLE || m_flags & SEAT_FLAG_CAN_CONTROL); }
 };
 
 struct WMOAreaTableEntry
