@@ -1005,7 +1005,7 @@ void Aura::ApplyModifier(bool apply, bool Real)
     GetHolder()->SetInUse(false);
 }
 
-ClassFamilyMask const& Aura::GetAuraSpellClassMask() const { return  (GetHolder() && !GetHolder()->IsDeleted()) ? GetHolder()->GetSpellProto()->GetEffectSpellClassMask(m_effIndex) : ClassFamilyMask::Null; }
+ClassFamilyMask const& Aura::GetAuraSpellClassMask() const { return  GetHolder() ? GetHolder()->GetSpellProto()->GetEffectSpellClassMask(m_effIndex) : ClassFamilyMask::Null; }
 
 bool Aura::isAffectedOnSpell(SpellEntry const *spell) const
 {
