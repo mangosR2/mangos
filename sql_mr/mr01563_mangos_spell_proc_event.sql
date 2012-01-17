@@ -345,7 +345,7 @@ DELETE FROM spell_proc_event WHERE entry = 60636;
 INSERT INTO spell_proc_event VALUES (60636, 0x00, 0x0A, 0x00000000, 0x00000000, 0x00000000, 0x00008000, 0x00008000, 0x00008000, 0x00000000, 0x00000000, 0x00000000, 0x00000010, 0x00000000, 0, 100, 0);
 
 -- (53601) Sacred Shield
-UPDATE spell_proc_event SET procFlags = 0x00100000 WHERE entry = 53601;
+DELETE FROM spell_proc_event WHERE entry = 53601;
 
 -- (34753) Holy Concentration
 DELETE FROM spell_proc_event WHERE entry IN (34753, 34859, 34860);
