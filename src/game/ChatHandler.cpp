@@ -149,7 +149,7 @@ void WorldSession::HandleMessagechatOpcode( WorldPacket & recv_data )
                 lang = ModLangAuras.front()->GetModifier()->m_miscvalue;
         }
 
-        if (type != CHAT_MSG_AFK && type != CHAT_MSG_DND)
+        if (type != CHAT_MSG_AFK && type != CHAT_MSG_DND && type != CHAT_MSG_RAID_WARNING)
         {
             if (!_player->CanSpeak())
             {
