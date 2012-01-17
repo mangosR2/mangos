@@ -103,6 +103,8 @@ class MANGOS_DLL_SPEC MotionMaster : private std::stack<MovementGenerator *>
         void MoveConfused();
         void MoveFleeing(Unit* enemy, uint32 timeLimit = 0);
         void MovePoint(uint32 id, float x,float y,float z);
+        // Next overoad MUST be removed in mmaps branch
+        void MovePoint(uint32 id, float x,float y,float z, bool path) { MovePoint(id,x,y,z);}; // Wrapper for use with pathfinding
         void MoveSeekAssistance(float x,float y,float z);
         void MoveSeekAssistanceDistract(uint32 timer);
         void MoveWaypoint();
