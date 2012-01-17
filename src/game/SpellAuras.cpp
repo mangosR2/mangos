@@ -1874,7 +1874,18 @@ void Aura::TriggerSpell()
 //                    // Draw Magic
 //                    case 58185: break;
 //                    // Food
-//                    case 58886: break;
+                    case 58886:
+                    {
+                        if (!m_modifier.m_amount)
+                            return;
+
+                        uint32 randomBuff[5] = {57288, 57139, 57111, 57286, 57291};
+
+                        trigger_spell_id = urand(0,1) ? 58891 : randomBuff[urand(0,4)];
+                        m_modifier.m_amount = 0;
+
+                        break;
+                    }
 //                    // Shadow Sickle
 //                    case 59103: break;
 //                    // Time Bomb
