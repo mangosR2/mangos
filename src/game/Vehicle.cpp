@@ -491,7 +491,7 @@ VehicleSeatEntry const* VehicleKit::GetSeatInfo(Unit* passenger)
     for (SeatMap::iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
         if (Unit *_passenger = itr->second.passenger)
-            if (_passenger = passenger)
+            if (_passenger == passenger)
                 return itr->second.seatInfo;
     }
     return NULL;
@@ -502,7 +502,7 @@ int8 VehicleKit::GetSeatId(Unit* passenger)
     for (SeatMap::iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
         if (Unit *_passenger = itr->second.passenger)
-            if (_passenger = passenger)
+            if (_passenger == passenger)
                 return itr->first;
     }
     return -1;
