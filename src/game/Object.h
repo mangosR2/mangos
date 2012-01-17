@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,6 +63,7 @@ class GameObject;
 class Player;
 class Group;
 class Unit;
+class Group;
 class Map;
 class UpdateMask;
 class InstanceData;
@@ -358,6 +359,7 @@ class MANGOS_DLL_SPEC Object
 
         virtual bool HasQuest(uint32 /* quest_id */) const { return false; }
         virtual bool HasInvolvedQuest(uint32 /* quest_id */) const { return false; }
+
     protected:
 
         Object ( );
@@ -615,6 +617,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
+
     protected:
         explicit WorldObject();
 
