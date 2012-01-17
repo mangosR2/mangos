@@ -143,8 +143,15 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
     if (seatId < 0) // no specific seat requirement
     {
         for (seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
+        {
             if (!seat->second.passenger && (seat->second.seatInfo->IsUsable() || (seat->second.seatInfo->m_flags & SEAT_FLAG_UNCONTROLLED)))
                 break;
+
+        // some weird behaviour of some vehicles: Abomination (Putricide), Val'kyrs and Strangulate Vehicle (Lich King)
+            if (GetBase()->GetEntry() == 37672 || GetBase()->GetEntry() == 38285 ||
+                GetBase()->GetEntry() == 36609 || GetBase()->GetEntry() == 36598)
+                break;
+        }
 
         if (seat == m_Seats.end()) // no available seat
             return false;

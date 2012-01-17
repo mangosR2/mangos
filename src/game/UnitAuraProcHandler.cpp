@@ -1034,6 +1034,12 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                 case 68160:
                     triggered_spell_id = 66809;
                     break;
+                // Dark Hunger (Lich King)
+                case 69383:
+                    basepoints[0] = 0.5f * damage;
+                    target = this;
+                    triggered_spell_id = 69384;
+                    break;
                 // Shiny Shard of the Scale - Equip Effect
                 case 69739:
                     // Cauterizing Heal or Searing Flame

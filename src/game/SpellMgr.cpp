@@ -705,6 +705,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case 72551:                                         // Gastric Bloat 10 H
         case 72552:                                         // Gastric Bloat 25 N
         case 72553:                                         // Gastric Bloat 25 H
+        case 72546:                                         // Harvest Soul (Lich King)
         case 57508:                                         // Volazj Insanity Phase 1
         case 57509:                                         // Volazj Insanity Phase 2
         case 57510:                                         // Volazj Insanity Phase 3
