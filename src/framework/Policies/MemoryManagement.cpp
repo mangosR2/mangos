@@ -77,7 +77,7 @@ void operator delete[](void* ptr, const std::nothrow_t&) throw()
     scalable_free(ptr);
 }
 
-#else if PLATFORM == PLATFORM_WINDOWS || defined(USE_FASTMM_MALLOC)
+#elseif PLATFORM == PLATFORM_WINDOWS || defined(USE_FASTMM_MALLOC)
 
 #include "../../dep/fastmm/FastMM.h"
 

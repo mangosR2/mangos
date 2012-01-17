@@ -21,6 +21,7 @@
 
 #include <ace/Refcounted_Auto_Ptr.h>
 #include <ace/Thread_Mutex.h>
+#include "Common.h"
 
 #ifndef OBJECT_HANDLER
 #  define OBJECT_HANDLER(TYPE,NAME) typedef ACE_Refcounted_Auto_Ptr<TYPE,ACE_Null_Mutex> NAME;
@@ -31,6 +32,11 @@
 #endif
 
 class SpellAuraHolder;
-OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+
+#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+#else
+    OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+#endif
 
 #endif
