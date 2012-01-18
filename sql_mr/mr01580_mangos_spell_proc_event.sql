@@ -738,3 +738,13 @@ INSERT INTO `spell_proc_event` VALUES (50871, 0x00, 0x09, 0x00000000, 0x00000000
 -- (64882) Item - Paladin T8 Protection 4P Bonus
 DELETE FROM `spell_proc_event` WHERE `entry` IN (64882);
 INSERT INTO `spell_proc_event` VALUES (64882, 0x00, 0x0A, 0x00000000, 0x00000000, 0x00000000, 0x00100000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0, 0, 0);
+
+-- Fingers of Frost talent auras proc
+DELETE FROM `spell_proc_event` WHERE `entry` IN (44543, 44545);
+INSERT INTO `spell_proc_event` VALUES
+(44543,0,0x03,0x021002A0,0x021002A0,0x021002A0,0x1000,0,0,0,0,0,0,0,0,0,0),
+(44545,0,0x03,0x021002A0,0x021002A0,0x021002A0,0x1000,0,0,0,0,0,0,0,0,0,0);
+
+-- Fingers of Frost buff aura charges dropping
+DELETE FROM `spell_proc_event` WHERE `entry` IN (74396);
+INSERT INTO `spell_proc_event` VALUES (74396, 0x10, 0x03, 0x28E212F7, 0x28E212F7, 0x28E212F7, 0x119048, 0x119048, 0x119048, 0, 0, 0, 0x10000, 0, 0, 0, 0);
