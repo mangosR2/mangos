@@ -1286,7 +1286,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 
     // Recheck immune (only for delayed spells)
     if (m_spellInfo->speed && (
-        unit->IsImmunedToDamage(GetSpellSchoolMask(m_spellInfo)) ||
+        (IsSpellCauseDamage(m_spellInfo) && unit->IsImmunedToDamage(GetSpellSchoolMask(m_spellInfo))) ||
         unit->IsImmuneToSpell(m_spellInfo)) &&
         !(m_spellInfo->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
     {
@@ -3526,22 +3526,10 @@ void Spell::cast(bool skipCheck)
         }
     }
 
-    if (m_spellInfo->Id == 32592)
-        if (const SpellEntry* spellInfo = sSpellStore.LookupEntry(m_spellInfo->Id))
-            const_cast<SpellEntry*>(spellInfo)->Attributes |= SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY;
-
-    if (m_spellInfo->Id == 64380) //hack for faster Shattering Throw trigering
-        if (const SpellEntry* spellInfo = sSpellStore.LookupEntry(m_spellInfo->Id))
-            const_cast<SpellEntry*>(spellInfo)->CastingTimeIndex = 1;
-
     // Hack for Spirit of Redemption because wrong data in dbc
     if (m_spellInfo->Id == 27827)
         if (const SpellEntry* spellInfo = sSpellStore.LookupEntry(m_spellInfo->Id))
             const_cast<SpellEntry*>(spellInfo)->AuraInterruptFlags = 0;
-
-    if (m_spellInfo->Id == 32592)                           // Mass Dispel - immunity bypass hack
-        if (const SpellEntry* spellInfo = sSpellStore.LookupEntry(m_spellInfo->Id))
-            const_cast<SpellEntry*>(spellInfo)->Attributes |= SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY;
 
     // different triggered (for caster and main target after main cast) and pre-cast (casted before apply effect to each target) cases
     switch(m_spellInfo->SpellFamilyName)
@@ -3592,11 +3580,8 @@ void Spell::cast(bool skipCheck)
         }
         case SPELLFAMILY_WARRIOR:
         {
-            // Shattering Throw
-            if (m_spellInfo->Id == 64382)
-                AddTriggeredSpell(64380);                    // Shattering Throw
             // Shield Slam
-            else if (m_spellInfo->SpellFamilyFlags.test<CF_WARRIOR_SHIELD_SLAM>() && m_spellInfo->Category==1209)
+            if (m_spellInfo->SpellFamilyFlags.test<CF_WARRIOR_SHIELD_SLAM>() && m_spellInfo->Category==1209)
             {
                 if (m_caster->HasAura(58375))               // Glyph of Blocking
                     AddTriggeredSpell(58374);               // Glyph of Blocking

@@ -3438,7 +3438,7 @@ SpellMissInfo Unit::SpellHitResult(Unit *pVictim, SpellEntry const *spell, bool 
             return SPELL_MISS_NONE;
 
         // Check for immune
-        if (pVictim->IsImmunedToDamage(GetSpellSchoolMask(spell)))
+        if (IsSpellCauseDamage(spell) && pVictim->IsImmunedToDamage(GetSpellSchoolMask(spell)))
             return SPELL_MISS_IMMUNE;
     }
     else if (IsPositiveSpell(spell->Id) && IsFriendlyTo(pVictim))
@@ -8253,6 +8253,14 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo)
 
 bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const
 {
+    if (!spellInfo)
+        return false;
+
+    // in case of trigger spells, check not current spell, but triggered (/dev/rsa)
+    if (spellInfo->Effect[index] == SPELL_EFFECT_TRIGGER_SPELL)
+        if (SpellEntry const* triggeredSpellInfo = sSpellStore.LookupEntry(spellInfo->EffectTriggerSpell[index]))
+            return ((Unit*)this)->IsImmuneToSpell(triggeredSpellInfo);
+
     //If m_immuneToEffect type contain this effect type, IMMUNE effect.
     uint32 effect = spellInfo->Effect[index];
     SpellImmuneList const& effectList = m_spellImmune[IMMUNITY_EFFECT];

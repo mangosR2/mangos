@@ -1148,6 +1148,9 @@ enum Mechanics
     (1<<(MECHANIC_SHACKLE-1))|(1<<(MECHANIC_HORROR     -1))|(1<<(MECHANIC_TURN  -1))| \
     (1<<(MECHANIC_DAZE   -1))|(1<<(MECHANIC_SAPPED     -1)))
 
+#define IMMUNE_BY_UNVULNERABILITY_MASK ( \
+    (1<<(MECHANIC_SHIELD-1))|(1<<(MECHANIC_INVULNERABILITY-1))|(1<<(MECHANIC_IMMUNE_SHIELD-1)))
+
 // Spell dispell type
 enum DispelType
 {

@@ -256,6 +256,16 @@ inline bool IsDeathOnlySpell(SpellEntry const *spellInfo)
         || spellInfo->Id == 2584;
 }
 
+bool IsEffectCauseDamage(SpellEntry const* spellInfo, SpellEffectIndex effecIdx);
+
+inline bool IsSpellCauseDamage(SpellEntry const* spellInfo)
+{
+    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+        if (IsEffectCauseDamage(spellInfo, SpellEffectIndex(i)))
+            return true;
+    return false;
+}
+
 inline bool IsCrowdControlAura(AuraType aura)
 {
     return (aura == SPELL_AURA_MOD_CONFUSE ||

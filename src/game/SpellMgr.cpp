@@ -4514,3 +4514,26 @@ uint32 GetProcFlag(SpellEntry const* spellInfo)
 
 ClassFamilyMask const ClassFamilyMask::Null = ClassFamilyMask();
 
+bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
+{
+    if (!spellInfo)
+        return false;
+
+    switch (spellInfo->Effect[effecIdx])
+    {
+        // need much more correct effect definition in this check
+        case SPELL_EFFECT_DISPEL:
+        case SPELL_EFFECT_TRIGGER_SPELL:
+            return false;
+
+        case SPELL_EFFECT_SCHOOL_DAMAGE:
+        case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+        case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
+        case SPELL_EFFECT_WEAPON_DAMAGE:
+        case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+
+        // also all undefined (default mangos way)
+        default:
+            return true;
+    }
+}
