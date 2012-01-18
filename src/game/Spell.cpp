@@ -9278,7 +9278,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             {
                 for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
                 {
-                    if (!(*itr)->GetCharmerOrOwnerPlayerOrPlayerItself())
+                    if (!(*iter)->GetCharmerOrOwnerPlayerOrPlayerItself())
                         continue;
 
                     targetUnitMap.push_back((*iter));
