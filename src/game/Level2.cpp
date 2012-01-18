@@ -2623,7 +2623,7 @@ bool ChatHandler::HandlePInfoCommand(char* args)
         if (fields[5].GetUInt32() != NULL && fields[5].GetUInt32() == accId)                            // checking to see if account has forced perms
         {
             if (fields[7].GetUInt32() != NULL && fields[7].GetUInt32() == realmID)                      // if it does, check to see if it has it on the realm
-                security = (AccountTypes)fields[5].GetUInt16();                                         // if it does, apply forced perm
+                security = (AccountTypes)fields[6].GetUInt16();                                         // if it does, apply forced perm
             else
                 security = (AccountTypes)fields[1].GetUInt32();                                         // if it doesn't for realm, apply regular perms
         }
