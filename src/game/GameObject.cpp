@@ -1079,7 +1079,8 @@ void GameObject::Use(Unit* user)
                 return;
 
             // FIXME: when GO casting will be implemented trap must cast spell to target
-            if (spellId = GetGOInfo()->trap.spellId)
+            spellId = GetGOInfo()->trap.spellId;
+            if (spellId)
                 user->CastSpell(user, spellId, true, NULL, NULL, GetObjectGuid());
 
             // TODO: all traps can be activated, also those without spell.
@@ -2158,7 +2159,7 @@ bool GameObject::IsWildSummoned() const
     {
         for (int eff_idx = 0; eff_idx < MAX_EFFECT_INDEX; ++eff_idx)
         {
-            if (spellInfo->Effect[eff_idx] == SPELL_EFFECT_SUMMON_OBJECT_WILD && GetEntry() == spellInfo->EffectMiscValue[eff_idx])
+            if (spellInfo->Effect[eff_idx] == SPELL_EFFECT_SUMMON_OBJECT_WILD && GetEntry() == (uint32)spellInfo->EffectMiscValue[eff_idx])
                 return true;
         }
     }
