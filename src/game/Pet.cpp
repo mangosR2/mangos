@@ -1836,7 +1836,14 @@ bool Pet::resetTalents()
 
         for (int j = 0; j < MAX_TALENT_RANK; j++)
             if (talentInfo->RankID[j])
+            {
                 removeSpell(talentInfo->RankID[j],!IsPassiveSpell(talentInfo->RankID[j]),false);
+
+                SpellEntry const *spellInfo = sSpellStore.LookupEntry(talentInfo->RankID[j]);
+                for (int k = 0; k < MAX_EFFECT_INDEX; ++k)
+                    if (spellInfo->EffectTriggerSpell[k])
+                        removeSpell(spellInfo->EffectTriggerSpell[k], false);
+            }
     }
 
     UpdateFreeTalentPoints(false);
