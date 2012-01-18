@@ -451,6 +451,7 @@ void BattleGroundSA::UpdatePhase()
 
     // spirit healers at the relic
     SpawnEvent(SA_EVENT_ADD_GRAVE_A, (GetDefender() == ALLIANCE ? BG_SA_GRAVE_STATUS_ALLY_OCCUPIED : BG_SA_GRAVE_STATUS_HORDE_OCCUPIED), true);
+    /*TODO: fix next line, because now the array is out of bounds */
     m_Gyd[SA_EVENT_ADD_GRAVE_A] = ((GetDefender() == ALLIANCE) ? BG_SA_GRAVE_STATUS_ALLY_CONTESTED : BG_SA_GRAVE_STATUS_HORDE_CONTESTED);
 
     // (Re)spawn graveyard at the beach.
@@ -579,18 +580,20 @@ void BattleGroundSA::EventPlayerClickedOnFlag(Player *source, GameObject* target
     switch(gyd)
     {
         // east base
-        case 0:
+        case SA_EVENT_ADD_GRAVE_E:
             SpawnEvent(SA_EVENT_ADD_VECH_E, 0, true);
             SpawnEvent(SA_EVENT_ADD_BOMB_E, (GetDefender() == ALLIANCE) ? BG_SA_GRAVE_STATUS_HORDE_OCCUPIED : BG_SA_GRAVE_STATUS_ALLY_OCCUPIED, true);
             break;
         // west base
-        case 1:
+        case SA_EVENT_ADD_GRAVE_W:
             SpawnEvent(SA_EVENT_ADD_VECH_W, 0, true);
             SpawnEvent(SA_EVENT_ADD_BOMB_W, (GetDefender() == ALLIANCE) ? BG_SA_GRAVE_STATUS_HORDE_OCCUPIED : BG_SA_GRAVE_STATUS_ALLY_OCCUPIED, true);
             break;
         // central base
-        case 2:
+        case SA_EVENT_ADD_GRAVE_C:
             SpawnEvent(SA_EVENT_ADD_BOMB_C, (GetDefender() == ALLIANCE) ? BG_SA_GRAVE_STATUS_HORDE_OCCUPIED : BG_SA_GRAVE_STATUS_ALLY_OCCUPIED, true);
+            break;
+        default:
             break;
     }
 }
@@ -619,7 +622,7 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
     if (doneBy == 52408)
         player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, 60937);
 
-    uint32 type = NULL;
+    BG_SA_GoType type = BG_SA_GO_GATES_T_NONE;
     switch (target_obj->GetEntry())
     {
         case BG_SA_GO_GATES_ROOM_ANCIENT_SHRINE:
@@ -635,12 +638,12 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19836:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], (GetDefender() == HORDE) ? 5 : 2);
                     GateStatus[type] = BG_SA_GO_GATES_DAMAGE;
                     break;
                 case 19837:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], (GetDefender() == HORDE) ? 6 : 3);
                     GateStatus[type] = BG_SA_GO_GATES_DESTROY;
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
@@ -664,11 +667,11 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19041:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DAMAGE);
                     break;
                 case 19046:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DESTROY);
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
                     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
@@ -692,11 +695,11 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19040:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DAMAGE);
                     break;
                 case 19045:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DESTROY);
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
                     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
@@ -720,11 +723,11 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19043:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DAMAGE);
                     break;
                 case 19048:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DESTROY);
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
                     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
@@ -747,11 +750,11 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19042:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DAMAGE);
                     break;
                 case 19047:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DESTROY);
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
                     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
@@ -774,11 +777,11 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                     }
                     break;
                 case 19044:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DAMAGE);
                     break;
                 case 19049:
-                    SendWarningToAllSA(NULL, TEAM_NONE, true, type, true);
+                    SendWarningToAllSA(SA_EVENT_NONE, TEAM_NONE, true, type, true);
                     UpdateWorldState(BG_SA_GateStatus[type], GateStatus[type] = BG_SA_GO_GATES_DESTROY);
                     UpdatePlayerScore(player, SCORE_GATES_DESTROYED, 1);
                     RewardHonorToTeam(85, (teamIndex == 0) ? ALLIANCE : HORDE);
@@ -946,7 +949,7 @@ void BattleGroundSA::_GydOccupied(uint8 node, Team team)
     }
 }
 
-void BattleGroundSA::SendWarningToAllSA(uint8 gyd, Team team, bool isDoor, int door, bool destroyed)
+void BattleGroundSA::SendWarningToAllSA(BG_SA_Events gyd, Team team, bool isDoor, BG_SA_GoType door, bool destroyed)
 {
     if (!isDoor)
     {
@@ -954,9 +957,9 @@ void BattleGroundSA::SendWarningToAllSA(uint8 gyd, Team team, bool isDoor, int d
         {
             switch (gyd)
             {
-                case 0: SendWarningToAll(LANG_BG_SA_HORDE_EAST_CONQUESTED); break;
-                case 1: SendWarningToAll(LANG_BG_SA_HORDE_WEST_CONQUESTED); break;
-                case 2: SendWarningToAll(LANG_BG_SA_HORDE_SOUTH_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_E: SendWarningToAll(LANG_BG_SA_HORDE_EAST_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_W: SendWarningToAll(LANG_BG_SA_HORDE_WEST_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_C: SendWarningToAll(LANG_BG_SA_HORDE_SOUTH_CONQUESTED); break;
                 default: sLog.outError("Error in SA strings: Unknown graveyard %u", gyd); break;
             }
         }
@@ -964,9 +967,9 @@ void BattleGroundSA::SendWarningToAllSA(uint8 gyd, Team team, bool isDoor, int d
         {
             switch (gyd)
             {
-                case 0: SendWarningToAll(LANG_BG_SA_ALLIANCE_EAST_CONQUESTED); break;
-                case 1: SendWarningToAll(LANG_BG_SA_ALLIANCE_WEST_CONQUESTED); break;
-                case 2: SendWarningToAll(LANG_BG_SA_ALLIANCE_SOUTH_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_E: SendWarningToAll(LANG_BG_SA_ALLIANCE_EAST_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_W: SendWarningToAll(LANG_BG_SA_ALLIANCE_WEST_CONQUESTED); break;
+                case SA_EVENT_ADD_GRAVE_C: SendWarningToAll(LANG_BG_SA_ALLIANCE_SOUTH_CONQUESTED); break;
                 default: sLog.outError("Error in SA strings: Unknown graveyard %u", gyd); break;
             }
         }

@@ -502,7 +502,7 @@ void DungeonResetScheduler::LoadResetTimes()
             {
                 MapDifficultyEntry const* mapDiff = GetMapDifficultyData(mapid,Difficulty(difficulty));
                 oldresettime = DungeonResetScheduler::CalculateNextResetTime(mapDiff, time(NULL));
-                sLog.outErrorDb("Wrong reset time in group_instance corrected to: %d", oldresettime);
+                sLog.outErrorDb("Wrong reset time in group_instance corrected to: %ld", oldresettime);
             }
             else
                 oldresettime = time_t(_oldresettime);
@@ -700,7 +700,7 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
         }
     }
 
-    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = %u, canReset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
+    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = %ld, canReset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
 
     MapPersistentState *state;
     if (mapEntry->IsDungeon() && instanceId)
@@ -716,7 +716,7 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
         state = new WorldPersistentState(mapEntry->MapID);
     else
     {
-        sLog.outError("MapPersistentStateManager::AddPersistentState cannot create persistent state for mapid = %d, instanceid = %d, reset time = %u, canReset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
+        sLog.outError("MapPersistentStateManager::AddPersistentState cannot create persistent state for mapid = %d, instanceid = %d, reset time = %ld, canReset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
         return state;
     }
 

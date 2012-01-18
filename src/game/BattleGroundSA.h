@@ -112,7 +112,8 @@ enum BG_SA_GoType
     BG_SA_GO_GATES_T_BLUE_SAPHIRE           = 2,
     BG_SA_GO_GATES_T_MAUVE_AMETHYST         = 3,
     BG_SA_GO_GATES_T_RED_SUN                = 4,
-    BG_SA_GO_GATES_T_YELLOW_MOON            = 5
+    BG_SA_GO_GATES_T_YELLOW_MOON            = 5,
+    BG_SA_GO_GATES_T_NONE                   = 255
 };
 
 enum BG_SA_Events
@@ -131,7 +132,8 @@ enum BG_SA_Events
     SA_EVENT_ADD_GO         = 11,       // flagpoles, defender portals
     SA_EVENT_ADD_VECH_E     = 12,       // east base demolishers
     SA_EVENT_ADD_VECH_W     = 13,       // west base demolishers
-    SA_EVENT_ADD_RELIC      = 14        // titan relic
+    SA_EVENT_ADD_RELIC      = 14,       // titan relic
+    SA_EVENT_NONE           = 255       // no real BG event, only dummy
 };
 
 enum BG_SA_Boats
@@ -235,7 +237,7 @@ class BattleGroundSA : public BattleGround
         // Send packet to player for destroy boats (client part)
         void SendTransportsRemove(Player * player);
         /* For SendWarningToAll */
-        void SendWarningToAllSA(uint8 gyd, Team team, bool isDoor = false, int door = NULL, bool destroyed = false);
+        void SendWarningToAllSA(BG_SA_Events gyd, Team team, bool isDoor = false, BG_SA_GoType door = BG_SA_GO_GATES_T_NONE, bool destroyed = false);
         /* For vehicle's faction*/
         uint32 GetVehicleFaction(uint8 vehicleType) const { return GetCorrectFactionSA(vehicleType); }
         uint32 GetCorrectFactionSA(uint8 vehicleType) const;
