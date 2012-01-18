@@ -5397,10 +5397,15 @@ void Unit::RemoveAura(Aura* aura, AuraRemoveMode mode)
 
 void Unit::RemoveAllAuras(AuraRemoveMode mode /*= AURA_REMOVE_BY_DEFAULT*/)
 {
-    while (!m_spellAuraHolders.empty())
+    for(SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
     {
-        SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin();
-        RemoveSpellAuraHolder(iter->second,mode);
+        if (!iter->second->IsDeleted())
+        {
+            RemoveSpellAuraHolder(iter->second,mode);
+            iter = m_spellAuraHolders.begin();
+        }
+        else
+            ++iter;
     }
 }
 
