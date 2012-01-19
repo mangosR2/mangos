@@ -2481,7 +2481,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     {
                         const SpellEntry *pSpell = sSpellStore.LookupEntry(spellCredit[i]);
 
-                        if (pSpell->EffectMiscValue[EFFECT_INDEX_0] == unitTarget->GetEntry())
+                        if (pSpell->EffectMiscValue[EFFECT_INDEX_0] == (int32)unitTarget->GetEntry())
                         {
                             m_caster->CastSpell(m_caster, spellCredit[i], true);
                             break;
@@ -2678,7 +2678,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     for (int i = 0; i < 4; ++i)
                     {
                         const SpellEntry *pSpell = sSpellStore.LookupEntry(spellCredit[i]);
-                        if (pSpell->EffectMiscValue[EFFECT_INDEX_0] == unitTarget->GetEntry())
+                        if (pSpell->EffectMiscValue[EFFECT_INDEX_0] == (int32)unitTarget->GetEntry())
                         {
                             m_caster->RemoveAurasDueToSpell(52006);   // Remove Stealth from Eye of Acherus upon cast
                             m_caster->CastSpell(unitTarget, spellCredit[i], true);
@@ -6433,20 +6433,6 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     if (!creature_entry)
         return;
 
-    uint32 level = m_caster->getLevel();
-
-    // level of creature summoned using engineering item based at engineering skill level
-    if (m_caster->GetTypeId()==TYPEID_PLAYER && m_CastItem)
-    {
-        ItemPrototype const *proto = m_CastItem->GetProto();
-        if (proto && proto->RequiredSkill == SKILL_ENGINEERING)
-        {
-            uint16 skill202 = ((Player*)m_caster)->GetSkillValue(SKILL_ENGINEERING);
-            if (skill202)
-                level = skill202/5;
-        }
-    }
-
     // select center of summon position
     float center_x = m_targets.m_destX;
     float center_y = m_targets.m_destY;
@@ -7064,7 +7050,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         if (!OldSummon->IsInWorld())
             return;
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER && petentry == 0 || OldSummon->GetEntry() == petentry)
+        if (m_caster->GetTypeId() == TYPEID_PLAYER && (petentry == 0 || OldSummon->GetEntry() == petentry))
         {
             // pet in corpse state can't be summoned
             if (OldSummon->isDead())
