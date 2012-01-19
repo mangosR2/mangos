@@ -23809,6 +23809,11 @@ void Player::ActivateSpec(uint8 specNum)
                 {
                     removeSpell(talentInfo->RankID[r],!IsPassiveSpell(talentInfo->RankID[r]),false);
 
+                    SpellEntry const *spellInfo = sSpellStore.LookupEntry(talentInfo->RankID[r]);
+                    for (int k = 0; k < MAX_EFFECT_INDEX; ++k)
+                        if (spellInfo->EffectTriggerSpell[k])
+                            removeSpell(spellInfo->EffectTriggerSpell[k]);
+
                     // if spell is a buff, remove it from group members
                     // TODO: this should affect all players, not only group members?
                     if (SpellEntry const *spellInfo = sSpellStore.LookupEntry(talentInfo->RankID[r]))
