@@ -7050,7 +7050,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         if (!OldSummon->IsInWorld())
             return;
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER && (petentry == 0 || OldSummon->GetEntry() == petentry))
+        if ((m_caster->GetTypeId() == TYPEID_PLAYER && petentry == 0) || OldSummon->GetEntry() == petentry)
         {
             // pet in corpse state can't be summoned
             if (OldSummon->isDead())
