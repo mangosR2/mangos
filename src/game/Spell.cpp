@@ -1279,7 +1279,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
 
 void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 {
-    if (!unit || !effectMask && !damage)
+    if (!unit || (!effectMask && !damage))
         return;
 
     Unit* realCaster = GetAffectiveCaster();
@@ -1375,7 +1375,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 
     // Get Data Needed for Diminishing Returns, some effects may have multiple auras, so this must be done on spell hit, not aura add
     // Diminishing must not affect spells, casted on self
-    if (realCaster && unit && realCaster != unit || (m_spellFlags & SPELL_FLAG_REFLECTED))
+    if ((realCaster && unit && realCaster != unit) || (m_spellFlags & SPELL_FLAG_REFLECTED))
     {
         m_diminishGroup = GetDiminishingReturnsGroupForSpell(m_spellInfo,m_triggeredByAuraSpell);
         m_diminishLevel = unit->GetDiminishing(m_diminishGroup);
@@ -7727,7 +7727,7 @@ bool Spell::IsTriggeredSpellWithRedundentData() const
 {
     return m_triggeredByAuraSpell || m_triggeredBySpellInfo ||
         // possible not need after above check?
-        m_IsTriggeredSpell && (m_spellInfo->manaCost || m_spellInfo->ManaCostPercentage);
+        (m_IsTriggeredSpell && (m_spellInfo->manaCost || m_spellInfo->ManaCostPercentage));
 }
 
 bool Spell::HaveTargetsForEffect(SpellEffectIndex effect) const
@@ -8361,10 +8361,10 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             // Cast on corpses...
             if (unitTarget &&
                 unitTarget->getDeathState() == CORPSE &&
-                (unitTarget->GetCreatureTypeMask() & CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL) == 0 ||
+                ((unitTarget->GetCreatureTypeMask() & CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL) == 0 ||
                     // ...or own Risen Ghoul pet - self explode effect
                 (unitTarget && unitTarget->GetEntry() == 26125 &&
-                unitTarget->GetCreatorGuid() == m_caster->GetObjectGuid()) )
+                unitTarget->GetCreatorGuid() == m_caster->GetObjectGuid())))
             {
                 targetUnitMap.push_back(unitTarget);
             }
@@ -8678,7 +8678,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
         case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
         {
-            int maxTargets = 1;
+            uint32 maxTargets = 1;
             switch (m_spellInfo->Id)
             {
                 case 72089:
@@ -9352,7 +9352,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
 
             if (!targetUnitMap.empty())
             {
-                int max = 2;
+                uint32 max = 2;
                 if (m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
                     m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
                 {
