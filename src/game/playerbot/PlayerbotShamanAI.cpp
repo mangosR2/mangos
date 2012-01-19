@@ -97,7 +97,6 @@ bool PlayerbotShamanAI::DoFirstCombatManeuver(Unit *pTarget)
 void PlayerbotShamanAI::HealTarget(Unit &target, uint8 hp)
 {
     PlayerbotAI* ai = GetAI();
-    Player *m_bot = GetPlayerBot();
 
     if (hp < 30 && HEALING_WAVE > 0 && ai->GetManaPercent() >= 32)
         ai->CastSpell(HEALING_WAVE, target);
@@ -121,6 +120,8 @@ void PlayerbotShamanAI::DoNextCombatManeuver(Unit *pTarget)
         case PlayerbotAI::SCENARIO_DUEL:
             ai->CastSpell(LIGHTNING_BOLT);
             return;
+        default:
+            break;
     }
 
     // ------- Non Duel combat ----------

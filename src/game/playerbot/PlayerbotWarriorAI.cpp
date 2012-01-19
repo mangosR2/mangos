@@ -155,6 +155,8 @@ void PlayerbotWarriorAI::DoNextCombatManeuver(Unit *pTarget)
             if (HEROIC_STRIKE > 0)
                 ai->CastSpell(HEROIC_STRIKE);
             return;
+        default:
+            break;
     }
     // ------- Non Duel combat ----------
 
@@ -162,16 +164,21 @@ void PlayerbotWarriorAI::DoNextCombatManeuver(Unit *pTarget)
 
     Player *m_bot = GetPlayerBot();
     Unit* pVictim = pTarget->getVictim();
-    float fTargetDist = m_bot->GetCombatDistance(pTarget);
     PlayerbotAI::CombatOrderType co = ai->GetCombatOrder();
 
     // decide what stance to use
     if ((co & PlayerbotAI::ORDERS_TANK) && !m_bot->HasAura(DEFENSIVE_STANCE, EFFECT_INDEX_0) && ai->CastSpell(DEFENSIVE_STANCE))
+    {
         if (ai->GetManager()->m_confDebugWhisper)
+        {
             ai->TellMaster("Stance > Defensive");
+        }
         else if (!(co & PlayerbotAI::ORDERS_TANK) && !m_bot->HasAura(BATTLE_STANCE, EFFECT_INDEX_0) && ai->CastSpell(BATTLE_STANCE))
+        {
             if (ai->GetManager()->m_confDebugWhisper)
                 ai->TellMaster("Stance > Battle");
+        }
+    }
 
     // get spell sequence
     if (pTarget->IsNonMeleeSpellCasted(true))
@@ -185,15 +192,24 @@ void PlayerbotWarriorAI::DoNextCombatManeuver(Unit *pTarget)
 
     // do shouts, berserker rage, etc...
     if (BERSERKER_RAGE > 0 && !m_bot->HasAura(BERSERKER_RAGE, EFFECT_INDEX_0) && ai->CastSpell(BERSERKER_RAGE))
+    {
         if (ai->GetManager()->m_confDebugWhisper)
+        {
             ai->TellMaster("Pre > Berseker Rage");
+        }
         else if (DEMORALIZING_SHOUT > 0 && ai->GetRageAmount() >= 10 && !pTarget->HasAura(DEMORALIZING_SHOUT, EFFECT_INDEX_0) && ai->CastSpell(DEMORALIZING_SHOUT))
+        {
             if (ai->GetManager()->m_confDebugWhisper)
+            {
                 ai->TellMaster("Pre > Demoralizing Shout");
+            }
             else if (BATTLE_SHOUT > 0 && ai->GetRageAmount() >= 10 && !m_bot->HasAura(BATTLE_SHOUT, EFFECT_INDEX_0) && ai->CastSpell(BATTLE_SHOUT))
+            {
                 if (ai->GetManager()->m_confDebugWhisper)
                     ai->TellMaster("Pre > Battle Shout");
-
+            }
+        }
+    }
     std::ostringstream out;
     switch (SpellSequence)
     {
@@ -267,13 +283,13 @@ void PlayerbotWarriorAI::DoNextCombatManeuver(Unit *pTarget)
                 out << " > Heroic Throw";
             else if (m_bot->getRace() == RACE_TAUREN && !pTarget->HasAura(WAR_STOMP, EFFECT_INDEX_0) && !pTarget->HasAura(PIERCING_HOWL, EFFECT_INDEX_0) && !pTarget->HasAura(SHOCKWAVE, EFFECT_INDEX_0) && !pTarget->HasAura(CONCUSSION_BLOW, EFFECT_INDEX_0) && ai->CastSpell(WAR_STOMP, *pTarget))
                 out << " > War Stomp";
-            else if (m_bot->getRace() == RACE_HUMAN && m_bot->hasUnitState(UNIT_STAT_STUNNED) || m_bot->HasAuraType(SPELL_AURA_MOD_FEAR) || m_bot->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) || m_bot->HasAuraType(SPELL_AURA_MOD_CHARM) && ai->CastSpell(EVERY_MAN_FOR_HIMSELF, *m_bot))
+            else if (m_bot->getRace() == RACE_HUMAN && (m_bot->hasUnitState(UNIT_STAT_STUNNED) || m_bot->HasAuraType(SPELL_AURA_MOD_FEAR) || m_bot->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) || m_bot->HasAuraType(SPELL_AURA_MOD_CHARM)) && ai->CastSpell(EVERY_MAN_FOR_HIMSELF, *m_bot))
                 out << " > Every Man for Himself";
-            else if (m_bot->getRace() == RACE_UNDEAD && m_bot->HasAuraType(SPELL_AURA_MOD_FEAR) || m_bot->HasAuraType(SPELL_AURA_MOD_CHARM) && ai->CastSpell(WILL_OF_THE_FORSAKEN, *m_bot))
+            else if (m_bot->getRace() == RACE_UNDEAD && (m_bot->HasAuraType(SPELL_AURA_MOD_FEAR) || m_bot->HasAuraType(SPELL_AURA_MOD_CHARM)) && ai->CastSpell(WILL_OF_THE_FORSAKEN, *m_bot))
                 out << " > Will of the Forsaken";
-            else if (m_bot->getRace() == RACE_DWARF && m_bot->HasAuraState(AURA_STATE_DEADLY_POISON) && ai->CastSpell(STONEFORM, *m_bot))
+            else if (m_bot->getRace() == RACE_DWARF && (m_bot->HasAuraState(AURA_STATE_DEADLY_POISON)) && ai->CastSpell(STONEFORM, *m_bot))
                 out << " > Stoneform";
-            else if (m_bot->getRace() == RACE_GNOME && m_bot->hasUnitState(UNIT_STAT_STUNNED) || m_bot->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) && ai->CastSpell(ESCAPE_ARTIST, *m_bot))
+            else if (m_bot->getRace() == RACE_GNOME && (m_bot->hasUnitState(UNIT_STAT_STUNNED) || m_bot->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED)) && ai->CastSpell(ESCAPE_ARTIST, *m_bot))
                 out << " > Escape Artist";
             else if (m_bot->getRace() == RACE_NIGHTELF && pVictim == m_bot && ai->GetHealthPercent() < 25 && !m_bot->HasAura(SHADOWMELD, EFFECT_INDEX_0) && ai->CastSpell(SHADOWMELD, *m_bot))
                 out << " > Shadowmeld";

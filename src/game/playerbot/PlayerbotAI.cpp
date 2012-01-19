@@ -3225,7 +3225,7 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
             // DEBUG_LOG ("[PlayerbotAI]: UpdateAI - Teleport %s to corpse...", m_bot->GetName() );
             DoTeleport(*corpse);
             // check if we are allowed to resurrect now
-            if (corpse->GetGhostTime() + m_bot->GetCorpseReclaimDelay(corpse->GetType() == CORPSE_RESURRECTABLE_PVP) > time(0))
+            if (corpse->GetGhostTime() + m_bot->GetCorpseReclaimDelay(corpse->GetType() == CORPSE_RESURRECTABLE_PVP) > time(NULL))
             {
                 m_ignoreAIUpdatesUntilTime = corpse->GetGhostTime() + m_bot->GetCorpseReclaimDelay(corpse->GetType() == CORPSE_RESURRECTABLE_PVP);
                 // DEBUG_LOG ("[PlayerbotAI]: UpdateAI - %s has to wait for %d seconds to revive...", m_bot->GetName(), m_ignoreAIUpdatesUntilTime-time(0) );
@@ -3376,6 +3376,7 @@ bool PlayerbotAI::IsInRange(Unit* Target, uint32 spellId)
     if (!TempRange)
         return false;
 
+    // TODO: ugly line of code
     if (TempRange->minRange == TempRange->maxRange == 0.0f)
         return true;
 
@@ -3872,11 +3873,11 @@ void PlayerbotAI::extractQuestIds(const std::string& text, std::list<uint32>& qu
     uint8 pos = 0;
     while (true)
     {
-        int i = text.find("Hquest:", pos);
+        size_t i = text.find("Hquest:", pos);
         if (i == std::string::npos)
             break;
         pos = i + 7;
-        int endPos = text.find(':', pos);
+        size_t endPos = text.find(':', pos);
         if (endPos == std::string::npos)
             break;
         std::string idC = text.substr(pos, endPos - pos);
@@ -4690,7 +4691,6 @@ void PlayerbotAI::EquipItem(Item* src_Item)
 
         // check dest->src move possibility
         ItemPosCountVec sSrc;
-        uint16 eSrc = 0;
         if (m_bot->IsInventoryPos(src))
         {
             msg = m_bot->CanStoreItem(src_bagIndex, src_slot, sSrc, dest_Item, true);
@@ -5115,8 +5115,6 @@ void PlayerbotAI::ListQuests(WorldObject * questgiver)
 
         std::string questTitle  = pQuest->GetTitle();
         QuestLocalization(questTitle, questID);
-
-        QuestStatus status = m_bot->GetQuestStatus(questID);
 
         if (m_bot->SatisfyQuestStatus(pQuest, false))
             out << "|cff808080|Hquest:" << questID << ':' << pQuest->GetQuestLevel() << "|h[" << questTitle << "]|h|r";
@@ -5958,6 +5956,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
             PlayerbotChatHandler ch(GetMaster());
             int8 linkStart = part.find("|");
             if (part.find("|") != std::string::npos)
+            {
                 if (!ch.dropQuest((char *) part.substr(linkStart).c_str()))
                     ch.sysmessage("ERROR: could not drop quest");
                 else
@@ -5965,6 +5964,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
                     SetQuestNeedItems();
                     SetQuestNeedCreatures();
                 }
+            }
         }
         else if (subcommand == "l" || subcommand == "list")
         {
