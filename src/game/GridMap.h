@@ -236,7 +236,7 @@ public:
 
     bool IsNextZcoordOK(float x, float y, float oldZ, float maxDiff = 5.0f) const;
     bool CheckPath(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ) const;
-    bool CheckPathAccurate(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ, Unit* mover = NULL ) const;
+    bool CheckPathAccurate(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ, Unit* mover = NULL, bool onlyLOS = false) const;
 
     //this method should be used only by TerrainManager
     //to cleanup unreferenced GridMap objects - they are too heavy

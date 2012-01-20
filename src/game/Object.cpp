@@ -1153,25 +1153,6 @@ bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
     float ox,oy,oz;
     obj->GetPosition(ox,oy,oz);
 
-    if (GetMapId() == 617) // Waterfall DA BattleGround
-    {
-        if (GameObject *pWaterfall = const_cast<WorldObject*>(this)->GetClosestGameObjectWithEntry(this, 194395, 60.0f))
-        {
-            if (pWaterfall->isSpawned() && pWaterfall->IsInBetween(this, obj, pWaterfall->GetObjectBoundingRadius()))
-                return false;
-        }
-    }
-    else if (GetMapId() == 618) // Pillars RV BattleGround
-    {
-        uint32 const pillars[] = {194583, 194584, 194585, 194587};
-        for (size_t i = 0; i < countof(pillars); ++i)
-        {
-            if (GameObject *pPillar = const_cast<WorldObject*>(this)->GetClosestGameObjectWithEntry(this, pillars[i], 35.0f))
-                if (pPillar->GetGoState() == GO_STATE_ACTIVE && pPillar->IsInBetween(this, obj, pPillar->GetObjectBoundingRadius()))
-                    return false;
-        }
-    }
-
     return(IsWithinLOS(ox, oy, oz ));
 }
 
@@ -1179,34 +1160,13 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 {
     float x,y,z;
     GetPosition(x,y,z);
-    z += 2.0f;
-    oz += 2.0f;
 
-    // check for line of sight because of terrain height differences
-    if (!GetMap()->IsDungeon())  // avoid unnecessary calculation inside raid/dungeons
-    {
-        float dx = ox - x, dy = oy - y, dz = oz - z;
-        float dist = sqrt(dx*dx + dy*dy + dz*dz);
-        if (dist > ATTACK_DISTANCE && dist < MAX_VISIBILITY_DISTANCE)
-        {
-            uint32 steps = uint32(dist / TERRAIN_LOS_STEP_DISTANCE);
-            float step_dist = dist / (float)steps;  // to make sampling intervals symmetric in both directions
-            float inc_factor = step_dist / dist;
-            float incx = dx*inc_factor, incy = dy*inc_factor, incz = dz*inc_factor;
-            float px = x, py = y, pz = z;
-            for (; steps; --steps)
-            {
-                if (GetTerrain()->GetHeight(px, py, pz, false) > pz)
-                    return false;   // found intersection with ground
-                px += incx;
-                py += incy;
-                pz += incz;
-            }
-        }
-    }
+    Unit* searcher = GetObjectGuid().IsUnit() ? (Unit*)this : NULL;
 
-    VMAP::IVMapManager *vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
-    return vMapManager->isInLineOfSight(GetMapId(), x, y, z, ox, oy, oz);
+    VMAP::IVMapManager* vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
+    return vMapManager->isInLineOfSight(GetMapId(), x, y, z + 0.5f, ox, oy, oz + 0.5f) ?
+            GetTerrain()->CheckPathAccurate(x,y,z, ox, oy, oz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? searcher : NULL ) :
+            false;
 }
 
 bool WorldObject::GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D /* = true */) const
