@@ -11604,9 +11604,27 @@ void Spell::EffectSummonAllTotems(SpellEffectIndex eff_idx)
     for(int32 slot = 0; slot < amount_buttons; ++slot)
         if (ActionButton const* actionButton = ((Player*)m_caster)->GetActionButton(start_button+slot))
             if (actionButton->GetType()==ACTION_BUTTON_SPELL)
-                if (uint32 spell_id = actionButton->GetAction())
-                  if (!((Player*)m_caster)->HasSpellCooldown(spell_id))
-                    m_caster->CastSpell(unitTarget,spell_id,true);
+                if (uint32 spell_Id = actionButton->GetAction())
+                {
+                    /* process anticheat check */
+                    if (!((Player*)m_caster)->GetAntiCheat()->DoAntiCheatCheck(CHECK_SPELL, spell_Id, CMSG_CAST_SPELL))
+                        return;
+
+                    SpellEntry const *spellInfo = sSpellStore.LookupEntry(spell_Id);
+
+                    // not have spell in spellbook or spell passive and not casted by client
+                    if (!spellInfo ||
+                       (((Player*)m_caster)->GetUInt16Value(PLAYER_FIELD_BYTES2, 0) == 0 &&
+                        (!((Player*)m_caster)->HasActiveSpell(spell_Id))) ||
+                        IsPassiveSpell(spellInfo))
+                    {
+                        sLog.outError("Spell::EffectSummonAllTotems: unknown spell id %u in player %s totem slot! WPE cheat detected!", spell_Id,m_caster->GetObjectGuid().GetString().c_str());
+                        return;
+                    }
+
+                    if (!((Player*)m_caster)->HasSpellCooldown(spell_Id))
+                        m_caster->CastSpell(unitTarget,spellInfo,true);
+                }
 }
 
 void Spell::EffectDestroyAllTotems(SpellEffectIndex /*eff_idx*/)
