@@ -256,6 +256,16 @@ inline bool IsDeathOnlySpell(SpellEntry const *spellInfo)
         || spellInfo->Id == 2584;
 }
 
+bool IsEffectCauseDamage(SpellEntry const* spellInfo, SpellEffectIndex effecIdx);
+
+inline bool IsSpellCauseDamage(SpellEntry const* spellInfo)
+{
+    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+        if (IsEffectCauseDamage(spellInfo, SpellEffectIndex(i)))
+            return true;
+    return false;
+}
+
 inline bool IsCrowdControlAura(AuraType aura)
 {
     return (aura == SPELL_AURA_MOD_CONFUSE ||
@@ -269,16 +279,7 @@ uint32 GetProcFlag(SpellEntry const* spellInfo);
 
 inline bool IsDeathPersistentSpell(SpellEntry const *spellInfo)
 {
-    // somebody pls move this to spell_dbc table, thx ;x
-    switch(spellInfo->Id)
-    {
-        case 69065: // Impaled (Marrowgar)
-            return false;
-        case 70675: // Rot Worm Spawner (Valithria)
-            return true;
-        default:
-            return spellInfo->AttributesEx3 & SPELL_ATTR_EX3_DEATH_PERSISTENT;
-    }
+    return spellInfo->AttributesEx3 & SPELL_ATTR_EX3_DEATH_PERSISTENT;
 }
 inline bool IsNonCombatSpell(SpellEntry const *spellInfo)
 {

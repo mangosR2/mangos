@@ -121,8 +121,8 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (proto->Area && proto->Area != pUser->GetAreaId() ||
-        proto->Map && proto->Map != pUser->GetMapId())
+    if ((proto->Area && proto->Area != pUser->GetAreaId()) ||
+        (proto->Map && proto->Map != pUser->GetMapId()))
     {
         if (SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid))
             Spell::SendCastResult(pUser, spellInfo, cast_count, SPELL_FAILED_INCORRECT_AREA);
@@ -414,8 +414,8 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     if (mover->GetTypeId()==TYPEID_PLAYER)
     {
         // not have spell in spellbook or spell passive and not casted by client
-        if ((((Player*)mover)->GetUInt16Value(PLAYER_FIELD_BYTES2, 0) == 0 &&
-            (!((Player*)mover)->HasActiveSpell(spellId) && !triggered)
+        if (((((Player*)mover)->GetUInt16Value(PLAYER_FIELD_BYTES2, 0) == 0 &&
+            (!((Player*)mover)->HasActiveSpell(spellId) && !triggered))
             || IsPassiveSpell(spellInfo)) && spellId != 1843)
         {
             sLog.outError("WorldSession::HandleCastSpellOpcode: %s casts spell %u which he shouldn't have", mover->GetObjectGuid().GetString().c_str(), spellId);

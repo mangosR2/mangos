@@ -19,3 +19,11 @@ INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `com
 DELETE FROM `spell_linked` WHERE `entry` = 7376;
 INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
 (7376, 57339, 1, 0, 'Warrior Defensive Stance Passive - threat addon after 3.0');
+
+DELETE FROM `spell_linked` WHERE `entry` = 64382;
+INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
+(64382, 64380, 4, 0, 'Shattering Throw - Immunity dispell');
+
+DELETE FROM `spell_linked` WHERE `entry` = 32375;
+INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
+(32375, 43241, 4, 0, 'Mass Dispel - Cosmetic');

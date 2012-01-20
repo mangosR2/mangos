@@ -141,6 +141,8 @@ void PlayerbotPaladinAI::DoNextCombatManeuver(Unit *pTarget)
             if (HAMMER_OF_JUSTICE > 0)
                 ai->CastSpell(HAMMER_OF_JUSTICE);
             return;
+        default:
+            break;
     }
 
     // damage spells

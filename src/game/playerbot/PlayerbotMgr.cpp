@@ -1050,7 +1050,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
             return false;
         }
 
-        QueryResult *resultsocial = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_social s, characters c WHERE s.guid=c.guid AND c.online = 0 AND flags & 1 AND s.note "_LIKE_" "_CONCAT3_("'%%'","'shared'","'%%'")" AND s.friend = '%u' AND s.guid = '%u'", m_session->GetPlayer()->GetGUIDLow(), guid);
+        QueryResult *resultsocial = CharacterDatabase.PQuery("SELECT COUNT(*) FROM character_social s, characters c WHERE s.guid=c.guid AND c.online = 0 AND flags & 1 AND s.note "_LIKE_" "_CONCAT3_("'%%'","'shared'","'%%'")" AND s.friend = '%u' AND s.guid = '%llu'", m_session->GetPlayer()->GetGUIDLow(), guid.GetRawValue());
         if (resultsocial)
         {
             Field *fields = resultsocial->Fetch();

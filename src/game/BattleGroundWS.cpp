@@ -421,7 +421,7 @@ void BattleGroundWS::EventPlayerClickedOnFlag(Player* Source, GameObject* target
     else
     {
         // Flag on ground (not in base). Return or picked up again.
-        if (GetFlagState(ALLIANCE) == BG_WS_FLAG_STATE_ON_GROUND || GetFlagState(HORDE) == BG_WS_FLAG_STATE_ON_GROUND &&
+        if ((GetFlagState(ALLIANCE) == BG_WS_FLAG_STATE_ON_GROUND || GetFlagState(HORDE) == BG_WS_FLAG_STATE_ON_GROUND) &&
             Source->IsWithinDistInMap(target_obj, 10.0f))
         {
             Team team = A ? ALLIANCE : HORDE;

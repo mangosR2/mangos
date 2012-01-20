@@ -2525,14 +2525,22 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura
                 // Sacred Shield (buff)
                 case 58597:
                 {
-                    triggered_spell_id = 66922;
                     basepoints[0] = int32(damage / GetSpellAuraMaxTicks(triggered_spell_id));
+
                     target = this;
                     break;
                 }
                 // Sacred Shield (talent rank)
                 case 53601:
                 {
+                    if (procSpell && IsFriendlyTo(pVictim))
+                    {
+                        if (procSpell->SpellFamilyFlags.test<CF_PALADIN_FLASH_OF_LIGHT>() && (pVictim->HasAura(53569, EFFECT_INDEX_0) || pVictim->HasAura(53576, EFFECT_INDEX_0)))
+                            triggered_spell_id = 66922;
+                        else
+                            return SPELL_AURA_PROC_FAILED;
+                    }
+
                     // triggered_spell_id in spell data
                     target = this;
                     break;
@@ -4314,7 +4322,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, uint32 d
         // Enlightenment (trigger only from mana cost spells)
         case 35095:
         {
-            if(!procSpell || procSpell->powerType!=POWER_MANA || procSpell->manaCost==0 && procSpell->ManaCostPercentage==0 && procSpell->manaCostPerlevel==0)
+            if(!procSpell || procSpell->powerType!=POWER_MANA || (procSpell->manaCost==0 && procSpell->ManaCostPercentage==0 && procSpell->manaCostPerlevel==0))
                 return SPELL_AURA_PROC_FAILED;
             break;
         }

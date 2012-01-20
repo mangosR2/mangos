@@ -99,6 +99,8 @@ void PlayerbotMageAI::DoNextCombatManeuver(Unit *pTarget)
             if (FIREBALL > 0)
                 ai->CastSpell(FIREBALL);
             return;
+        default:
+            break;
     }
 
     // ------- Non Duel combat ----------

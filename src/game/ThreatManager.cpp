@@ -298,8 +298,8 @@ bool ThreatContainer::IsSecondChoiceTarget(Creature* pAttacker, Unit* pTarget, b
     return
         pTarget->IsImmunedToDamage(pAttacker->GetMeleeDamageSchoolMask()) ||
         pTarget->hasNegativeAuraWithInterruptFlag(AURA_INTERRUPT_FLAG_DAMAGE) ||
-        bCheckThreatArea && pAttacker->IsOutOfThreatArea(pTarget) ||
-        bCheckMeleeRange && !pAttacker->CanReachWithMeleeAttack(pTarget);
+        (bCheckThreatArea && pAttacker->IsOutOfThreatArea(pTarget)) ||
+        (bCheckMeleeRange && !pAttacker->CanReachWithMeleeAttack(pTarget));
 }
 
 //============================================================
