@@ -164,7 +164,7 @@ m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), 
 m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
 m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
 m_regenHealth(true), m_AI_locked(false), m_isDeadByDefault(false),
-m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0), m_temporaryFactionFlags(TEMPFACTION_NONE),
+m_temporaryFactionFlags(TEMPFACTION_NONE), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
 m_creatureInfo(NULL)
 {
     m_regenTimer = 200;
@@ -2131,7 +2131,7 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
             std::vector<Unit*> suitableUnits;
             suitableUnits.reserve(threatlist.size() - position);
             advance(itr, position);
-            for (itr; itr != threatlist.end(); ++itr)
+            for (; itr != threatlist.end(); ++itr)
                 if (Unit* pTarget = GetMap()->GetUnit((*itr)->getUnitGuid()))
                     if (!selectFlags || MeetsSelectAttackingRequirement(pTarget, pSpellInfo, selectFlags))
                         suitableUnits.push_back(pTarget);
@@ -2144,7 +2144,7 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
         case ATTACKING_TARGET_TOPAGGRO:
         {
             advance(itr, position);
-            for (itr; itr != threatlist.end(); ++itr)
+            for (; itr != threatlist.end(); ++itr)
                 if (Unit* pTarget = GetMap()->GetUnit((*itr)->getUnitGuid()))
                     if (!selectFlags || MeetsSelectAttackingRequirement(pTarget, pSpellInfo, selectFlags))
                         return pTarget;
@@ -2154,7 +2154,7 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
         case ATTACKING_TARGET_BOTTOMAGGRO:
         {
             advance(ritr, position);
-            for (ritr; ritr != threatlist.rend(); ++ritr)
+            for (; ritr != threatlist.rend(); ++ritr)
                 if (Unit* pTarget = GetMap()->GetUnit((*itr)->getUnitGuid()))
                     if (!selectFlags || MeetsSelectAttackingRequirement(pTarget, pSpellInfo, selectFlags))
                         return pTarget;
@@ -2363,7 +2363,7 @@ uint32 Creature::GetVendorItemCurrentCount(VendorItem const* vItem)
 
     time_t ptime = time(NULL);
 
-    if ( vCount->lastIncrementTime + vItem->incrtime <= ptime )
+    if ( vCount->lastIncrementTime + (int32)vItem->incrtime <= ptime )
     {
         ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(vItem->item);
 
@@ -2402,7 +2402,7 @@ uint32 Creature::UpdateVendorItemCurrentCount(VendorItem const* vItem, uint32 us
 
     time_t ptime = time(NULL);
 
-    if ( vCount->lastIncrementTime + vItem->incrtime <= ptime )
+    if ( vCount->lastIncrementTime + (int32)vItem->incrtime <= ptime )
     {
         ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(vItem->item);
 
