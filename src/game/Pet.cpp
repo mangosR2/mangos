@@ -31,10 +31,10 @@
 Pet::Pet(PetType type) :
 Creature(CREATURE_SUBTYPE_PET),
 m_usedTalentCount(0),
-m_removed(false), m_happinessTimer(7500), m_petType(type), m_duration(0),
-m_auraUpdateMask(0), m_loading(true), m_updated(false),
-m_declinedname(NULL), m_petModeFlags(PET_MODE_DEFAULT),
-m_petFollowAngle(PET_FOLLOW_ANGLE), m_needSave(true), m_petCounter(0), m_PetScalingData(NULL), m_createSpellID(0),m_HappinessState(0)
+m_removed(false), m_updated(false), m_happinessTimer(7500), m_petType(type), m_duration(0),
+m_auraUpdateMask(0), m_loading(true), m_needSave(true), m_petFollowAngle(PET_FOLLOW_ANGLE),
+m_petCounter(0), m_PetScalingData(NULL), m_createSpellID(0),m_HappinessState(0),
+m_declinedname(NULL), m_petModeFlags(PET_MODE_DEFAULT)
 {
     SetName("Pet");
     m_regenTimer = 2000;
@@ -164,7 +164,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     if (spellInfo && GetSpellDuration(spellInfo) > 0 )
     {
-        uint32 duration = (GetSpellDuration(spellInfo) > timediff*IN_MILLISECONDS) ? GetSpellDuration(spellInfo) - timediff*IN_MILLISECONDS : GetSpellDuration(spellInfo);
+        uint32 duration = (GetSpellDuration(spellInfo) > (int32)timediff*IN_MILLISECONDS) ? GetSpellDuration(spellInfo) - timediff*IN_MILLISECONDS : GetSpellDuration(spellInfo);
         SetDuration(duration);
     }
 
@@ -1368,7 +1368,7 @@ void Pet::_LoadAuras(uint32 timediff)
 
             if (casterGuid.IsEmpty() || !casterGuid.IsUnit())
             {
-                sLog.outError("Pet::LoadAuras Unknown caster %u, ignore.",fields[0].GetUInt64());
+                sLog.outError("Pet::LoadAuras Unknown caster %llu, ignore.",fields[0].GetUInt64());
                 continue;
             }
 
@@ -1545,8 +1545,6 @@ bool Pet::addSpell(uint32 spell_id,ActiveStates active /*= ACT_DECIDE*/, PetSpel
             return false;
     }
 
-    uint32 oldspell_id = 0;
-
     PetSpell newspell;
     newspell.state = state;
     newspell.type = type;
@@ -1596,7 +1594,6 @@ bool Pet::addSpell(uint32 spell_id,ActiveStates active /*= ACT_DECIDE*/, PetSpel
                     if(newspell.active == ACT_ENABLED)
                         ToggleAutocast(itr2->first, false);
 
-                    oldspell_id = itr2->first;
                     unlearnSpell(itr2->first,false,false);
                     break;
                 }
@@ -2568,14 +2565,8 @@ void Pet::ApplyHitScalingBonus(bool apply)
 
     int32 basePoints = int32(m_baseBonusData->meleeHitScale * (CalculateScalingData()->meleeHitScale / 100.0f));
 
-    bool needRecalculateStat = false;
-
-    if (basePoints == 0)
-        needRecalculateStat = true;
-
     if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_HIT_CHANCE))
-        if (ReapplyScalingAura(aura, basePoints))
-            needRecalculateStat = true;
+        ReapplyScalingAura(aura, basePoints);
 
 }
 
@@ -2597,14 +2588,8 @@ void Pet::ApplySpellHitScalingBonus(bool apply)
 
     int32 basePoints = int32(m_baseBonusData->spellHitScale * (CalculateScalingData()->spellHitScale / 100.0f));
 
-    bool needRecalculateStat = false;
-
-    if (basePoints == 0)
-        needRecalculateStat = true;
-
     if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_SPELL_HIT_CHANCE))
-        if (ReapplyScalingAura(aura, basePoints))
-            needRecalculateStat = true;
+        ReapplyScalingAura(aura, basePoints);
 }
 
 void Pet::ApplyExpertizeScalingBonus(bool apply)
@@ -2623,14 +2608,8 @@ void Pet::ApplyExpertizeScalingBonus(bool apply)
 
     int32 basePoints = int32(m_baseBonusData->expertizeScale * (CalculateScalingData()->expertizeScale / 100.0f));
 
-    bool needRecalculateStat = false;
-
-    if (basePoints == 0)
-        needRecalculateStat = true;
-
     if (Aura* aura = GetScalingAura(SPELL_AURA_MOD_EXPERTISE))
-        if (ReapplyScalingAura(aura, basePoints))
-            needRecalculateStat = true;
+        ReapplyScalingAura(aura, basePoints);
 }
 
 void Pet::ApplyPowerregenScalingBonus(bool apply)
