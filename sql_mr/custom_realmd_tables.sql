@@ -842,3 +842,4 @@ CREATE TABLE `account_forcepermission` (
     `Comment` varchar(32) NOT NULL DEFAULT '',
     PRIMARY KEY (AccountID, realmID)
 ) DEFAULT CHARSET=utf8;
+
