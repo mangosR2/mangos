@@ -1231,7 +1231,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool const IsInCombat() const { return GetMap() ? bool(GetMap()->GetAttackersFor(GetObjectGuid()).size() > 0) : false; }
         Unit* getAttackerForHelper();                       // If someone wants to help, who to give them
         bool Attack(Unit *victim, bool meleeAttack);
-        void AttackedBy(Unit *attacker);
+        void AttackedBy(Unit* attacker);
         void CastStop(uint32 except_spellid = 0);
         bool AttackStop(bool targetSwitch = false);
         void RemoveAllAttackers();

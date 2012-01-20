@@ -6122,7 +6122,12 @@ void Spell::DoSummonGroupPets(SpellEffectIndex eff_idx)
             delete pet;
             return;
         }
-        DEBUG_LOG("New Pet (guidlow %d, entry %d) summoned (default). Counter is %d ", pet->GetGUIDLow(), pet->GetEntry(), pet->GetPetCounter());
+        DEBUG_LOG("New Pet (%s) summoned (default). Counter is %d ", pet->GetObjectGuid().GetString().c_str(), pet->GetPetCounter());
+
+        if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+            ((Creature*)m_caster)->AI()->JustSummoned((Creature*)pet);
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)pet);
     }
 
 }
@@ -6153,27 +6158,31 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
 
 
     TempSummonType summonType = (duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
-    Creature* summon = m_caster->SummonCreature(creature_entry,px,py,pz,m_caster->GetOrientation(),summonType,duration,true);
+    Creature* spawnCreature = m_caster->SummonCreature(creature_entry,px,py,pz,m_caster->GetOrientation(),summonType,duration,true);
 
-    if (summon)
+    if (spawnCreature)
     {
-        summon->SetLevel(m_caster->getLevel());
+        spawnCreature->SetLevel(m_caster->getLevel());
 
-        if (sScriptMgr.GetCreatureAI(summon))
+        if (sScriptMgr.GetCreatureAI(spawnCreature))
         {
             // Prevent from ScriptedAI reinitialized
-            summon->LockAI(true);
-            m_caster->CastSpell(summon, 530, true);
-            summon->LockAI(false);
+            spawnCreature->LockAI(true);
+            m_caster->CastSpell(spawnCreature, 530, true);
+            spawnCreature->LockAI(false);
         }
         else
-            m_caster->CastSpell(summon, 530, true);
+            m_caster->CastSpell(spawnCreature, 530, true);
 
-        DEBUG_LOG("New possessed creature (guidlow %d, entry %d) summoned. Owner is %d ", summon->GetGUIDLow(), summon->GetEntry(), m_caster->GetGUIDLow());
+        DEBUG_LOG("New possessed creature (%s) summoned. Owner is %s ", spawnCreature->GetObjectGuid().GetString().c_str(), m_caster->GetObjectGuid().GetString().c_str());
     }
     else
-        sLog.outError("New possessed creature (entry %d) NOT summoned. Owner is %d ", summon->GetEntry(), m_caster->GetGUIDLow());
+        sLog.outError("New possessed creature (entry %d) NOT summoned. Owner is %s ", creature_entry, m_caster->GetObjectGuid().GetString().c_str());
 
+    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+        ((Creature*)m_caster)->AI()->JustSummoned((Creature*)spawnCreature);
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
 }
 
 void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
@@ -6485,7 +6494,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
         m_caster->GetTerrain()->CheckPathAccurate(ox,oy,oz, px, py, pz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? m_caster : NULL );
         m_caster->UpdateAllowedPositionZ(px,py,pz);
 
-        if (Creature *summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->GetOrientation(), summonType, m_duration))
+        if (Creature* summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->GetOrientation(), summonType, m_duration))
         {
             summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
 
@@ -6495,6 +6504,12 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
 
             if (forceFaction)
                 summon->setFaction(forceFaction);
+
+            // Notify original caster if not done already
+            if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
+                ((Creature*)m_caster)->AI()->JustSummoned((Creature*)summon);
+            if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+                ((Creature*)m_originalCaster)->AI()->JustSummoned(summon);
         }
     }
 }
@@ -6621,8 +6636,11 @@ void Spell::DoSummonGuardian(SpellEffectIndex eff_idx, uint32 forceFaction)
         // Notify Summoner
         if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
             ((Creature*)m_caster)->AI()->JustSummoned(spawnCreature);
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            ((Creature*)m_originalCaster)->AI()->JustSummoned(spawnCreature);
 
         DEBUG_LOG("Guardian pet (guidlow %d, entry %d) summoned (default). Counter is %d ", spawnCreature->GetGUIDLow(), spawnCreature->GetEntry(), spawnCreature->GetPetCounter());
+
     }
 }
 
@@ -6682,9 +6700,11 @@ void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
         // Notify Summoner
         if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
             ((Creature*)m_caster)->AI()->JustSummoned(vehicle);
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            ((Creature*)m_originalCaster)->AI()->JustSummoned(vehicle);
     }
     else
-        sLog.outError("Vehicle (guidlow %d, entry %d) NOT summoned by undefined reason. ", vehicle->GetGUIDLow(), vehicle->GetEntry());
+        sLog.outError("Vehicle (entry %d) NOT summoned by undefined reason. ", vehicle_entry);
 }
 
 void Spell::EffectTeleUnitsFaceCaster(SpellEffectIndex eff_idx)
@@ -7687,6 +7707,8 @@ void Spell::EffectSummonObjectWild(SpellEffectIndex eff_idx)
 
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
 }
 
 void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
@@ -11130,6 +11152,8 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
 
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
 }
 
 void Spell::EffectResurrect(SpellEffectIndex /*eff_idx*/)
@@ -11455,6 +11479,8 @@ void Spell::DoSummonCritter(SpellEffectIndex eff_idx, uint32 forceFaction)
     // Notify Summoner
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
         ((Creature*)m_caster)->AI()->JustSummoned(critter);
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        ((Creature*)m_originalCaster)->AI()->JustSummoned(critter);
 
     DEBUG_LOG("New mini pet has guid %u", critter->GetGUIDLow());
 
@@ -11807,6 +11833,8 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
 
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
         ((Creature*)m_caster)->AI()->JustSummoned(pGameObj);
+    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+        ((Creature*)m_originalCaster)->AI()->JustSummoned(pGameObj);
 }
 
 void Spell::EffectProspecting(SpellEffectIndex /*eff_idx*/)
