@@ -321,6 +321,16 @@ void AntiCheat::DoAntiCheatAction(AntiCheatCheck checkType, std::string reason)
                         sWorld.SendWorldText(config->messageNum, name.c_str(), config->description.c_str());
                 break;
 
+                case    ANTICHEAT_ACTION_UNDO_MOVE:
+                {
+                    WorldPacket data(MSG_MOVE_TELEPORT_ACK);
+                    GetPlayer()->BuildTeleportAckMsg(data, GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY(), GetPlayer()->GetPositionZ(), GetPlayer()->GetOrientation());
+                    GetPlayer()->GetSession()->SendPacket(&data);
+                    GetPlayer()->SendHeartBeat();
+                    m_currentmovementInfo->ChangePosition(GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY(), GetPlayer()->GetPositionZ(), GetPlayer()->GetOrientation());
+                }
+                break;
+
                 case    ANTICHEAT_ACTION_LOG:
                 case    ANTICHEAT_ACTION_NULL:
                 default:
