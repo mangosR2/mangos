@@ -38,20 +38,40 @@ INSERT INTO mangos_string (entry, content_default, content_loc6, content_loc7, c
 (20101, 'Quarry', 'la Cantera', 'la Cantera', 'Каменоломня'),
 (20102, 'Hangar', 'el Hangar', 'el Hangar', 'Ангар');
 
+-- IOC vehicles
+
 -- Alliance Gunship Cannon
-UPDATE creature_template SET vehicle_id = 452, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry = 34929;
+UPDATE creature_template SET vehicle_id = 452, iconName = 'Gunner', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry = 34929;
 -- Horde Gunship Cannon
-UPDATE creature_template SET vehicle_id = 453, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry = 34935;
+UPDATE creature_template SET vehicle_id = 453, iconName = 'Gunner', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry = 34935;
 -- Keep Cannon
-UPDATE creature_template SET vehicle_id = 160, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, unit_flags = unit_flags | 4, ScriptName = 'npc_ic_cannon' WHERE entry = 34944;
-UPDATE creature_template SET unit_flags = unit_flags | 4 WHERE entry = 35429;
--- Catapult
-UPDATE creature_template SET powertype = 3, vehicle_id = 438, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, speed_walk = 2.4, speed_run = 2.8, ScriptName = 'npc_ic_vehicle' WHERE entry = 34793;
-UPDATE creature_template SET powertype = 3, speed_walk = 2.4, speed_run = 2.8 WHERE entry = 35413;
--- Demolisher
-UPDATE creature_template SET vehicle_id = 509, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, ScriptName = 'npc_ic_vehicle' WHERE entry = 34775;
+UPDATE creature_template SET vehicle_id = 160, iconName = 'Gunner', faction_A = 35, faction_H = 35, unit_flags = unit_flags | 4, ScriptName = 'npc_ic_cannon' WHERE entry IN (34944, 35429);
 
 UPDATE creature_template SET mechanic_immune_mask = mechanic_immune_mask|1|2|8|16|32|64|128|1024|2048|4096|8192|131072|262144|8388608|16777216|67108864 WHERE entry IN (34944, 35429, 34793, 35413, 34775, 35415, 34776, 35431, 35069, 35433, 34802, 35419, 35273, 35421);
+
+-- Alli Glaive Thrower
+UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '', AIName = 'NullAI' WHERE entry IN (34802, 35419);
+
+-- Horde Glaive Thrower
+UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '', AIName = 'NullAI' WHERE entry IN (35273, 35421);
+
+-- Catapult
+UPDATE creature_template SET powertype = 3, vehicle_id = 438, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, speed_walk = 2.4, speed_run = 2.8, ScriptName = '' WHERE entry in (34793, 35413);
+
+-- Demolisher
+UPDATE creature_template SET powertype = 3, vehicle_id = 509, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, ScriptName = '' WHERE entry IN (34775, 35415);
+
+-- Horde Siege Engine
+UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '',AIName = 'NullAI' WHERE entry IN (35069, 35433);
+
+-- Ally Siege Engine
+UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34776, 35431);
+
+-- Ally/horde Siege Turret
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34777, 35436, 36355, 36357);
+
+-- Horde/Ally Flame Turret
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34778, 35417, 36356, 36358);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (34929, 34935, 34944, 34793, 34775, 34776, 35069, 34802, 35273, 34778, 36356, 34777, 36355);
 INSERT INTO npc_spellclick_spells (npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags) VALUES
@@ -96,35 +116,6 @@ INSERT INTO creature_spell (guid, spell, `index`) VALUES
 (34777, 69505, 1),
 (36355, 67462, 0),
 (36355, 69505, 1);
-
--- IOC vehicles
-
--- Alli Glaive Thrower
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = 'npc_ic_vehicle' WHERE entry = 34802;
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = 'npc_ic_vehicle' WHERE entry = 35419;
--- Horde Glaive Thrower
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = 'npc_ic_vehicle' WHERE entry = 35273;
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = 'npc_ic_vehicle' WHERE entry = 35421;
-
--- Horde Siege Engine
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, AIName = 'NullAI' WHERE entry = 35069;
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, AIName = 'NullAI' WHERE entry = 35433;
--- Ally Siege Engine
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, AIName = 'NullAI' WHERE entry = 34776;
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, AIName = 'NullAI' WHERE entry = 35431;
-
--- Ally Siege Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 34777;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 35436;
--- Horde Siege Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 36355;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, AIName = 'NullAI' WHERE entry = 36357;
--- Horde Flame Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 34778;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 35417;
--- Ally Flame Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 36356;
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, AIName = 'NullAI' WHERE entry = 36358;
 
 DELETE FROM creature_spell WHERE guid IN (34778, 36356);
 INSERT INTO creature_spell (guid, spell, `index`) VALUES
