@@ -162,6 +162,8 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 
         MapUpdater* GetMapUpdater() { return &m_updater; };
 
+        void UpdateLoadBalancer(bool b_start);
+
     private:
 
         // debugging code, should be deleted some day
@@ -187,7 +189,15 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         MapMapType i_maps;
 
         MapUpdater m_updater;
-        IntervalTimer i_timer;
+        ShortIntervalTimer i_balanceTimer;
+        int32  m_threadsCount;
+        int32  m_threadsCountPreferred;
+        uint32 m_previewTimeStamp;
+        uint64 m_workTimeStorage;
+        uint64 m_sleepTimeStorage;
+        uint32 m_tickCount;
+
+        ShortIntervalTimer i_timer;
 };
 
 template<typename Do>

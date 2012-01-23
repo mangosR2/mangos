@@ -553,6 +553,10 @@ void World::LoadConfigSettings(bool reload)
         sMapMgr.SetGridCleanUpDelay(getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN));
 
     setConfig(CONFIG_UINT32_NUMTHREADS, "MapUpdate.Threads", 3);
+    setConfig(CONFIG_BOOL_THREADS_DYNAMIC,"MapUpdate.DynamicThreadsCount", false);
+
+    setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_HIGHVALUE, "MapUpdate.LoadBalanceHighValue", 0.8f, 0.5f, 1.0f);
+    setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_LOWVALUE, "MapUpdate.LoadBalanceLowValue", 0.2f, 0.0f, 0.5f);
 
     setConfigMin(CONFIG_UINT32_INTERVAL_MAPUPDATE, "MapUpdateInterval", 100, MIN_MAP_UPDATE_DELAY);
     if (reload)

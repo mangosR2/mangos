@@ -191,8 +191,20 @@ BindIP = "0.0.0.0"
 #    ACE mtmaps
 #    MapUpdate.Threads
 #        Number of threads to run if the binary was compiled with mtmaps support.
-#        Default: 2
+#        Default: 3
 #        For stable works 1-3 threads (?) testing. Recommendation for low LA - (num of CPU - 1).
+#
+#    MapUpdate.DynamicThreadsCount
+#        Use dynamic threads number for update maps. Count changed in dependent ot server load from 1 to MapUpdate.Threads
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
+#
+#    MapUpdate.LoadBalanceHighValue
+#    MapUpdate.LoadBalanceLowValue
+#        Used only if MapUpdate.DynamicThreadsCount is enabled. Fix high and low load value for change dynamic thread num
+#        Default: 0.8 (80%)  /0.2 (20%)
+#        Min:     0.5 (50%)  /0.0 (0%)
+#        Max:     1.0 (100%) /0.5 (50%)
 #
 ###################################################################################################################
 
@@ -220,6 +232,9 @@ MaxCoreStuckTime = 0
 AddonChannel = 1
 CleanCharacterDB = 1
 MapUpdate.Threads = 1
+MapUpdate.DynamicThreadsCount = 0
+MapUpdate.LoadBalanceHighValue = 0.8
+MapUpdate.LoadBalanceLowValue = 0.2
 
 ###################################################################################################################
 # SERVER LOGGING
