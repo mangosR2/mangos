@@ -4122,6 +4122,100 @@ uint32 SpellMgr::GetSkillDiscoverySpell(uint32 skillId, uint32 spellId, Player* 
     return 0;
 }
 
+// loads the extra item creation info from DB
+void SpellMgr::LoadSkillExtraItemTable()
+{
+    uint32 count = 0;
+
+    mSkillExtraItemStore.clear();                            // need for reload
+
+    //                                                 0        1                       2                       3
+    QueryResult *result = WorldDatabase.Query("SELECT spellId, requiredSpecialization, additionalCreateChance, additionalMaxNum FROM skill_extra_item_template");
+
+    if (result)
+    {
+        BarGoLink bar(result->GetRowCount());
+
+        do
+        {
+            Field *fields = result->Fetch();
+            bar.step();
+
+            uint32 spellId = fields[0].GetUInt32();
+
+            if (!sSpellStore.LookupEntry(spellId))
+            {
+                sLog.outError("Skill specialization %u has nonexistent spell id in `skill_extra_item_template`!", spellId);
+                continue;
+            }
+
+            uint32 requiredSpecialization = fields[1].GetUInt32();
+            if (!sSpellStore.LookupEntry(requiredSpecialization))
+            {
+                sLog.outError("Skill specialization %u have nonexistent required specialization spell id %u in `skill_extra_item_template`!", spellId,requiredSpecialization);
+                continue;
+            }
+
+            float additionalCreateChance = fields[2].GetFloat();
+            if (additionalCreateChance <= 0.0f)
+            {
+                sLog.outError("Skill specialization %u has too low additional create chance in `skill_extra_item_template`!", spellId);
+                continue;
+            }
+
+            uint8 additionalMaxNum = fields[3].GetUInt8();
+            if (!additionalMaxNum)
+            {
+                sLog.outError("Skill specialization %u has 0 max number of extra items in `skill_extra_item_template`!", spellId);
+                continue;
+            }
+
+            SkillExtraItemEntry& skillExtraItemEntry = mSkillExtraItemStore[spellId];
+
+            skillExtraItemEntry.requiredSpecialization = requiredSpecialization;
+            skillExtraItemEntry.additionalCreateChance = additionalCreateChance;
+            skillExtraItemEntry.additionalMaxNum       = additionalMaxNum;
+
+            ++count;
+        } while (result->NextRow());
+
+        delete result;
+
+        sLog.outString();
+        sLog.outString(">> Loaded %u spell specialization definitions", count);
+    }
+    else
+    {
+        sLog.outString();
+        sLog.outString( ">> Loaded 0 spell specialization definitions. DB table `skill_extra_item_template` is empty." );
+    }
+}
+
+bool SpellMgr::CanCreateExtraItems(Player * player, uint32 spellId, float &additionalChance, uint8 &additionalMax)
+{
+    // get the info for the specified spell
+    SkillExtraItemMap::const_iterator ret = mSkillExtraItemStore.find(spellId);
+    if (ret == mSkillExtraItemStore.end())
+        return false;
+
+    SkillExtraItemEntry const* specEntry = &ret->second;
+
+    // if no entry, then no extra items can be created
+    if(!specEntry)
+        return false;
+
+    // the player doesn't have the required specialization, return false
+    if(!player->HasSpell(specEntry->requiredSpecialization))
+        return false;
+
+    // set the arguments to the appropriate values
+    additionalChance = specEntry->additionalCreateChance;
+    additionalMax = specEntry->additionalMaxNum;
+
+    // enable extra item creation
+    return true;
+}
+
 void SpellMgr::CheckUsedSpells(char const* table)
 {
     uint32 countSpells = 0;

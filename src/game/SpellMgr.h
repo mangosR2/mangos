@@ -942,6 +942,27 @@ struct SkillDiscoveryEntry
 typedef std::list<SkillDiscoveryEntry> SkillDiscoveryList;
 typedef UNORDERED_MAP<int32, SkillDiscoveryList> SkillDiscoveryMap;
 
+// struct to store information about extra item creation
+// one entry for every spell that is able to create an extra item
+struct SkillExtraItemEntry
+{
+    // the spell id of the specialization required to create extra items
+    uint32 requiredSpecialization;
+    // the chance to create one additional item
+    float additionalCreateChance;
+    // maximum number of extra items created per crafting
+    uint8 additionalMaxNum;
+
+    SkillExtraItemEntry()
+        : requiredSpecialization(0), additionalCreateChance(0.0f), additionalMaxNum(0) {}
+
+    SkillExtraItemEntry(uint32 rS, float aCC, uint8 aMN)
+        : requiredSpecialization(rS), additionalCreateChance(aCC), additionalMaxNum(aMN) {}
+};
+
+// map to store the extra item creation info, the key is the spellId of the creation spell, the mapped value is the assigned SkillExtraItemEntry
+typedef std::map<uint32,SkillExtraItemEntry> SkillExtraItemMap;
+
 typedef std::multimap<uint32, uint32> PetLevelupSpellSet;
 typedef std::map<uint32, PetLevelupSpellSet> PetLevelupSpellMap;
 
@@ -1290,6 +1311,10 @@ class SpellMgr
         uint32 GetSkillDiscoverySpell(uint32 skillId, uint32 spellId, Player* player);
         uint32 GetExplicitDiscoverySpell(uint32 spellId, Player* player);
 
+        void LoadSkillExtraItemTable();
+        // returns true and sets the appropriate info if the player can create extra items with the given spellId
+        bool CanCreateExtraItems(Player* player, uint32 spellId, float &additionalChance, uint8 &additionalMax);
+
     // Modifiers
     public:
         static SpellMgr& Instance();
@@ -1344,6 +1369,7 @@ class SpellMgr
         SpellAreaForAuraMap  mSpellAreaForAuraMap;
         SpellAreaForAreaMap  mSpellAreaForAreaMap;
         SkillDiscoveryMap    mSkillDiscoveryStore;
+        SkillExtraItemMap    mSkillExtraItemStore;
 };
 
 #define sSpellMgr SpellMgr::Instance()
