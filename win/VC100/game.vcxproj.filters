@@ -37,6 +37,9 @@
     <Filter Include="Movement">
       <UniqueIdentifier>{0ac140f9-89c1-4830-b673-514c5e8b4d37}</UniqueIdentifier>
     </Filter>
+    <Filter Include="WorldPvP">
+      <UniqueIdentifier>{c25f76ed-c7d6-495a-a647-1f97b1261fa7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\game\AccountMgr.cpp">
@@ -278,6 +281,33 @@
     </ClCompile>
     <ClCompile Include="..\..\src\game\World.cpp">
       <Filter>World/Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvP.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPEP.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPGH.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPHP.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPMgr.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPNA.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPSI.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPTF.cpp">
+      <Filter>WorldPvP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPZM.cpp">
+      <Filter>WorldPvP</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\ConfusedMovementGenerator.cpp">
       <Filter>Motion generators</Filter>
@@ -757,6 +787,36 @@
       <Filter>World/Handlers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\World.h">
+      <Filter>World/Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvP.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPEP.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPGH.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPHP.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPMgr.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPNA.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPSI.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPTF.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPZM.h">
+      <Filter>WorldPvP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\ZoneScript.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\ConfusedMovementGenerator.h">

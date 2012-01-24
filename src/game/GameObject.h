@@ -310,7 +310,7 @@ struct GameObjectInfo
             uint32 radius;                                  //0
             uint32 spell;                                   //1
             uint32 worldState1;                             //2
-            uint32 worldstate2;                             //3
+            uint32 worldState2;                             //3
             uint32 winEventID1;                             //4
             uint32 winEventID2;                             //5
             uint32 contestedEventID1;                       //6
@@ -320,7 +320,7 @@ struct GameObjectInfo
             uint32 neutralEventID1;                         //10
             uint32 neutralEventID2;                         //11
             uint32 neutralPercent;                          //12
-            uint32 worldstate3;                             //13
+            uint32 worldState3;                             //13
             uint32 minSuperiority;                          //14
             uint32 maxSuperiority;                          //15
             uint32 minTime;                                 //16
@@ -595,6 +595,25 @@ enum LootState
     GO_JUST_DEACTIVATED
 };
 
+enum CapturePointState
+{
+    CAPTURE_STATE_NEUTRAL = 0,
+    CAPTURE_STATE_PROGRESS,
+    CAPTURE_STATE_CONTEST,
+    CAPTURE_STATE_WIN
+};
+
+// slider values meaning
+// 0   = full horde
+// 100 = full alliance
+// 50  = middle
+enum CapturePointSlider
+{
+    CAPTURE_SLIDER_ALLIANCE = 100,
+    CAPTURE_SLIDER_HORDE    = 0,
+    CAPTURE_SLIDER_NEUTRAL  = 50
+};
+
 class Unit;
 struct GameObjectDisplayInfoEntry;
 
@@ -720,6 +739,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         uint32 GetUseCount() const { return m_useTimes; }
         uint32 GetUniqueUseCount() const { return m_UniqueUsers.size(); }
+        uint32 GetCapturePointTicks() const { return m_captureTicks; }
 
         void SaveRespawnTime();
 
@@ -743,6 +763,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void UseDoorOrButton(uint32 time_to_restore = 0, bool alternative = false);
                                                             // 0 = use `gameobject`.`spawntimesecs`
         void ResetDoorOrButton();
+        void ResetCapturePoint();
 
         bool IsHostileTo(Unit const* unit) const;
         bool IsFriendlyTo(Unit const* unit) const;
@@ -766,6 +787,10 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         float GetDeterminativeSize() const;
 
     protected:
+        uint32      m_captureTime;
+        float       m_captureTicks;
+        CapturePointState m_captureState;
+        uint32      m_ownerFaction;                         // faction which has conquered the capture point
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
         uint32      m_respawnDelayTime;                     // (secs) if 0 then current GO state no dependent from timer
@@ -776,6 +801,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
                                                             // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
         typedef std::set<ObjectGuid> GuidsSet;
+        typedef std::set<Player*> PlayersSet;
+
+        PlayersSet m_capturePlayers[PVP_TEAM_COUNT];        // player sets for each faction
 
         GuidsSet m_SkillupSet;                              // players that already have skill-up at GO use
 

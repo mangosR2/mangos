@@ -953,7 +953,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                         case 225:              // AV, own both mines (alliance)
                         {
 
-                            int8 team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
+                            TeamIndex team = GetTeamIndex(GetPlayer()->GetTeam());
                             if(!((BattleGroundAV*)bg)->IsMineOwnedBy(BG_AV_NORTH_MINE,team) || !((BattleGroundAV*)bg)->IsMineOwnedBy(BG_AV_SOUTH_MINE,team))
                                 continue;
                             break;
@@ -964,7 +964,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                             if (bg->GetTypeID(true) != BATTLEGROUND_AV)
                                 continue;
 
-                            int8 team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
+                            TeamIndex team = GetTeamIndex(GetPlayer()->GetTeam());
                             if(!((BattleGroundAV*)bg)->hasAllTowers(team))
                                 continue;
                             break;
@@ -975,7 +975,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                             if (bg->GetTypeID(true) != BATTLEGROUND_IC)
                                 continue;
 
-                            int8 team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
+                            TeamIndex team = GetTeamIndex(GetPlayer()->GetTeam());
                             if(!((BattleGroundIC*)bg)->hasAllNodes(team))
                                 continue;
                             break;
@@ -1027,7 +1027,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                             if (bg->GetTypeID(true) != BATTLEGROUND_IC)
                                 continue;
 
-                            int8 team = bg->GetTeamIndexByTeamId(GetPlayer()->GetTeam());
+                            TeamIndex team = GetTeamIndex(GetPlayer()->GetTeam());
                             if(!((BattleGroundIC*)bg)->hasAllResNodes(team))
                                 continue;
                             break;

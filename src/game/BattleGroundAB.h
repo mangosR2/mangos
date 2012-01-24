@@ -207,7 +207,7 @@ class BattleGroundAB : public BattleGround
 
         /* achievement req. */
         bool IsAllNodesConrolledByTeam(Team team) const;    // overwrited
-        bool IsTeamScores500Disadvantage(Team team) const { return m_TeamScores500Disadvantage[GetTeamIndexByTeamId(team)]; }
+        bool IsTeamScores500Disadvantage(Team team) const { return m_TeamScores500Disadvantage[GetTeamIndex(team)]; }
     private:
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
@@ -230,13 +230,13 @@ class BattleGroundAB : public BattleGround
         uint8               m_prevNodes[BG_AB_NODES_MAX];   // used for performant wordlstate-updating
         BG_AB_BannerTimer   m_BannerTimers[BG_AB_NODES_MAX];
         uint32              m_NodeTimers[BG_AB_NODES_MAX];
-        uint32              m_lastTick[BG_TEAMS_COUNT];
-        uint32              m_HonorScoreTics[BG_TEAMS_COUNT];
-        uint32              m_ReputationScoreTics[BG_TEAMS_COUNT];
+        uint32              m_lastTick[PVP_TEAM_COUNT];
+        uint32              m_HonorScoreTics[PVP_TEAM_COUNT];
+        uint32              m_ReputationScoreTics[PVP_TEAM_COUNT];
         bool                m_IsInformedNearVictory;
         uint32              m_HonorTics;
         uint32              m_ReputationTics;
         // need for achievements
-        bool                m_TeamScores500Disadvantage[BG_TEAMS_COUNT];
+        bool                m_TeamScores500Disadvantage[PVP_TEAM_COUNT];
 };
 #endif

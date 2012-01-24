@@ -580,6 +580,17 @@ enum Team
     ALLIANCE            = 469,
 };
 
+enum TeamIndex
+{
+    TEAM_INDEX_ALLIANCE = 0,
+    TEAM_INDEX_HORDE,
+    TEAM_INDEX_NEUTRAL,
+};
+
+#define PVP_TEAM_COUNT    2
+
+static inline TeamIndex GetTeamIndex(Team team) { return team == ALLIANCE ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE; }
+
 enum SpellEffects
 {
     SPELL_EFFECT_NONE                      = 0,
@@ -3025,7 +3036,6 @@ enum AreaLockStatus
 #define DEFAULT_VISIBILITY_DISTANCE 90.0f       // default visible distance, 90 yards on continents
 #define DEFAULT_VISIBILITY_INSTANCE 120.0f      // default visible distance in instances, 120 yards
 #define DEFAULT_VISIBILITY_BGARENAS 180.0f      // default visible distance in BG/Arenas, 180 yards
-
 
 // we need to stick to 1 version or half of the stuff will work for someone
 // others will not and opposite

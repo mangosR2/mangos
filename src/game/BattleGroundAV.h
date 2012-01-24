@@ -202,20 +202,8 @@ enum BG_AV_WorldStates
     AV_SNOWFALL_N               = 1966,
 };
 
-// special version with  more wide values range that BattleGroundTeamIndex
-// BattleGroundAVTeamIndex <- BattleGroundTeamIndex cast safe
-// BattleGroundAVTeamIndex -> BattleGroundTeamIndex cast safe and array with BG_TEAMS_COUNT elements must checked != BG_AV_TEAM_NEUTRAL before used
-enum BattleGroundAVTeamIndex
-{
-    BG_AV_TEAM_ALLIANCE        = BG_TEAM_ALLIANCE,
-    BG_AV_TEAM_HORDE           = BG_TEAM_HORDE,
-    BG_AV_TEAM_NEUTRAL         = 2,                         // this is the neutral owner of snowfall
-};
-
-#define BG_AV_TEAMS_COUNT 3
-
 // alliance_control horde_control neutral_control
-const uint32 BG_AV_MineWorldStates[2][BG_AV_TEAMS_COUNT] = {
+const uint32 BG_AV_MineWorldStates[2][3] = {
     {1358, 1359, 1360},
     {1355, 1356, 1357}
 };
@@ -284,9 +272,9 @@ enum BG_AV_QuestIds
 
 struct BG_AV_NodeInfo
 {
-    BattleGroundAVTeamIndex TotalOwner;
-    BattleGroundAVTeamIndex Owner;
-    BattleGroundAVTeamIndex PrevOwner;
+    TeamIndex    TotalOwner;
+    TeamIndex    Owner;
+    TeamIndex    PrevOwner;
     BG_AV_States State;
     BG_AV_States PrevState;
     uint32       Timer;
@@ -340,7 +328,7 @@ class BattleGroundAV : public BattleGround
         virtual void Reset();
 
         /*general stuff*/
-        void UpdateScore(BattleGroundTeamIndex teamIdx, int32 points);
+        void UpdateScore(TeamIndex teamIdx, int32 points);
         void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
 
         /*handle stuff*/ // these are functions which get called from extern scripts
@@ -355,20 +343,19 @@ class BattleGroundAV : public BattleGround
 
         virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player *plr);
 
-        static BattleGroundAVTeamIndex GetAVTeamIndexByTeamId(Team team) { return BattleGroundAVTeamIndex(GetTeamIndexByTeamId(team)); }
-
         // for achievement Stormpike/Frostwolf Perfection
-        bool hasAllTowers(int8 team);
+        bool hasAllTowers(TeamIndex team);
+
     private:
         /* Nodes occupying */
         void EventPlayerAssaultsPoint(Player* player, BG_AV_Nodes node);
         void EventPlayerDefendsPoint(Player* player, BG_AV_Nodes node);
         void EventPlayerDestroyedPoint(BG_AV_Nodes node);
 
-        void AssaultNode(BG_AV_Nodes node, BattleGroundTeamIndex teamIdx);
+        void AssaultNode(BG_AV_Nodes node, TeamIndex teamIdx);
         void DestroyNode(BG_AV_Nodes node);
-        void InitNode(BG_AV_Nodes node, BattleGroundAVTeamIndex teamIdx, bool tower);
-        void DefendNode(BG_AV_Nodes node, BattleGroundTeamIndex teamIdx);
+        void InitNode(BG_AV_Nodes node, TeamIndex teamIdx, bool tower);
+        void DefendNode(BG_AV_Nodes node, TeamIndex teamIdx);
 
         void PopulateNode(BG_AV_Nodes node);
 
@@ -377,25 +364,25 @@ class BattleGroundAV : public BattleGround
         const bool IsGrave(BG_AV_Nodes node) { return (node == BG_AV_NODES_ERROR)? false : !m_Nodes[node].Tower; }
 
         /*mine*/
-        void ChangeMineOwner(uint8 mine, BattleGroundAVTeamIndex teamIdx);
+        void ChangeMineOwner(uint8 mine, TeamIndex teamIdx);
 
         /*worldstates*/
-        uint8 GetWorldStateType(uint8 state, BattleGroundAVTeamIndex teamIdx) const { return teamIdx * BG_AV_MAX_STATES + state; }
+        uint8 GetWorldStateType(uint8 state, TeamIndex teamIdx) const { return teamIdx * BG_AV_MAX_STATES + state; }
         void SendMineWorldStates(uint32 mine);
         void UpdateNodeWorldState(BG_AV_Nodes node);
 
         /*variables */
-        uint32 m_Team_QuestStatus[BG_TEAMS_COUNT][9];       // [x][y] x=team y=questcounter
+        uint32 m_Team_QuestStatus[PVP_TEAM_COUNT][9];       // [x][y] x=team y=questcounter
 
         BG_AV_NodeInfo m_Nodes[BG_AV_NODES_MAX];
 
         // only for worldstates needed
-        BattleGroundAVTeamIndex m_Mine_Owner[BG_AV_MAX_MINES];
-        BattleGroundAVTeamIndex m_Mine_PrevOwner[BG_AV_MAX_MINES];
+        TeamIndex m_Mine_Owner[BG_AV_MAX_MINES];
+        TeamIndex m_Mine_PrevOwner[BG_AV_MAX_MINES];
         int32 m_Mine_Timer[BG_AV_MAX_MINES];
         uint32 m_Mine_Reclaim_Timer[BG_AV_MAX_MINES];
 
-        bool m_IsInformedNearLose[BG_TEAMS_COUNT];
+        bool m_IsInformedNearLose[PVP_TEAM_COUNT];
 
         uint32 m_HonorMapComplete;
         uint32 m_RepTowerDestruction;

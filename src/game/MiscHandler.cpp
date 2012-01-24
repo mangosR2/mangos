@@ -38,6 +38,7 @@
 #include "ObjectAccessor.h"
 #include "Object.h"
 #include "BattleGround.h"
+#include "WorldPvP/WorldPvP.h"
 #include "Pet.h"
 #include "SocialMgr.h"
 #include "DBCEnums.h"
@@ -744,6 +745,13 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket & recv_data)
         return;
     }
 
+    if(WorldPvP* pOutdoorBg = GetPlayer()->GetWorldPvP())
+    {
+        if (pOutdoorBg->HandleAreaTrigger(pl, Trigger_ID))
+            return;
+    }
+
+    // NULL if all values default (non teleport trigger)
     AreaTrigger const* at = sObjectMgr.GetAreaTrigger(Trigger_ID);
     if (!at)
         return;

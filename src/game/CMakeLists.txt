@@ -24,6 +24,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/playerbot
   ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot
   ${CMAKE_CURRENT_SOURCE_DIR}/warden
+  ${CMAKE_CURRENT_SOURCE_DIR}/WorldPvP
   ${CMAKE_SOURCE_DIR}/dep/include/g3dlite
   ${CMAKE_SOURCE_DIR}/dep/include
   ${CMAKE_SOURCE_DIR}/src/shared
