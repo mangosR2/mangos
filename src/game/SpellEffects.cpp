@@ -9940,12 +9940,8 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 }
                 case 70117:                                 // Ice grip (Sindragosa pull effect)
                 {
-                    if (!unitTarget)
-                        return;
-                    float fPosX, fPosY, fPosZ;
-                    m_caster->GetPosition(fPosX, fPosY, fPosZ);
-                    m_caster->GetRandomPoint(fPosX, fPosY, fPosZ, m_caster->GetObjectBoundingRadius(), fPosX, fPosY, fPosZ);
-                    unitTarget->NearTeleportTo(fPosX, fPosY, fPosZ+1.0f, -unitTarget->GetOrientation(), false);
+                    if (unitTarget)
+                        unitTarget->CastSpell(m_caster, 70122, true);
                     return;
                 }
                 case 70360:                                 // Eat Ooze (Putricide)

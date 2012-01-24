@@ -8996,6 +8996,22 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
 
             break;
         }
+        case 70122: // Icy grip (Sindragosa encounter)
+        {
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    if (!(*iter)->GetCharmerOrOwnerPlayerOrPlayerItself())
+                        continue;
+
+                    targetUnitMap.push_back((*iter));
+                }
+            }
+            break;
+        }
         case 70346: // Slime Puddle
         case 72868:
         case 72869:
