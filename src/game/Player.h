@@ -60,6 +60,7 @@ class DungeonPersistentState;
 class Spell;
 class Item;
 struct AreaTrigger;
+class WorldPvP;
 
 typedef std::deque<Mail*> PlayerMails;
 
@@ -2189,6 +2190,15 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool GetRandomWinner() { return m_IsBGRandomWinner; }
         void SetRandomWinner(bool isWinner);
+
+        /*********************************************************/
+        /***                 WORLD PVP SYSTEM                  ***/
+        /*********************************************************/
+
+        WorldPvP* GetWorldPvP() const;
+        // returns true if the player is in active state for outdoor pvp objective capturing
+        bool IsWorldPvPActive();
+        virtual void HandleObjectiveComplete(Player* /*pPlayer*/) {};
 
         /*********************************************************/
         /***                    REST SYSTEM                    ***/

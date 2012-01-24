@@ -1350,7 +1350,7 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
         CharacterDatabase.PExecute("DELETE FROM `character_spell` WHERE `spell` IN (668, 7340, 671, 672, 814, 29932, 17737, 816, 7341, 669, 813, 670) AND guid ='%u'", guid.GetCounter());
 
         // Search each faction is targeted
-        BattleGroundTeamIndex team = BG_TEAM_ALLIANCE;
+        TeamIndex team = TEAM_INDEX_ALLIANCE;
         switch(race)
         {
             case RACE_ORC:
@@ -1359,14 +1359,14 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
             case RACE_TROLL:
             case RACE_BLOODELF:
             //case RACE_GOBLIN: for cataclysm
-                team = BG_TEAM_HORDE;
+                team = TEAM_INDEX_HORDE;
                 break;
             default: break;
         }
 
         // Reset homebind
         CharacterDatabase.PExecute("DELETE FROM `character_homebind` WHERE guid = '%u'", guid.GetCounter());
-        if (team == BG_TEAM_ALLIANCE)
+        if (team == TEAM_INDEX_ALLIANCE)
             CharacterDatabase.PExecute("INSERT INTO `character_homebind` VALUES ('%u','0','1519','-8867.68','673.373','97.9034')", guid.GetCounter());
         else
             CharacterDatabase.PExecute("INSERT INTO `character_homebind` VALUES ('%u','1','1637','1633.33','-4439.11','15.7588')", guid.GetCounter());
@@ -1380,7 +1380,7 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 uint32 achiev_alliance = fields2[0].GetUInt32();
                 uint32 achiev_horde = fields2[1].GetUInt32();
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_achievement` set achievement = '%u' where achievement = '%u' AND guid = '%u'",
-                    team == BG_TEAM_ALLIANCE ? achiev_alliance : achiev_horde, team == BG_TEAM_ALLIANCE ? achiev_horde : achiev_alliance, guid.GetCounter());
+                    team == TEAM_INDEX_ALLIANCE ? achiev_alliance : achiev_horde, team == TEAM_INDEX_ALLIANCE ? achiev_horde : achiev_alliance, guid.GetCounter());
             }
             while (result2->NextRow());
         }
@@ -1394,10 +1394,10 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 uint32 item_alliance = fields2[0].GetUInt32();
                 uint32 item_horde = fields2[1].GetUInt32();
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_inventory` set item = '%u' where item = '%u' AND guid = '%u'",
-                    team == BG_TEAM_ALLIANCE ? item_alliance : item_horde, team == BG_TEAM_ALLIANCE ? item_horde : item_alliance, guid.GetCounter());
+                    team == TEAM_INDEX_ALLIANCE ? item_alliance : item_horde, team == TEAM_INDEX_ALLIANCE ? item_horde : item_alliance, guid.GetCounter());
 
                 CharacterDatabase.PExecute("UPDATE IGNORE `item_instance` SET `data`=CONCAT(CAST(SUBSTRING_INDEX(`data`, ' ', 3) AS CHAR), ' ', '%u', ' ', CAST(SUBSTRING_INDEX(`data`, ' ', (3-64))AS CHAR)) WHERE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`data`, ' ', 4), ' ', '-1') AS UNSIGNED) = '%u' AND owner_guid = '%u'",
-                        team == BG_TEAM_ALLIANCE ? item_alliance : item_horde, team == BG_TEAM_ALLIANCE ? item_horde : item_alliance, guid.GetCounter());
+                        team == TEAM_INDEX_ALLIANCE ? item_alliance : item_horde, team == TEAM_INDEX_ALLIANCE ? item_horde : item_alliance, guid.GetCounter());
             }
             while( result2->NextRow() );
         }
@@ -1411,7 +1411,7 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 uint32 spell_alliance = fields2[0].GetUInt32();
                 uint32 spell_horde = fields2[1].GetUInt32();
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_spell` set spell = '%u' where spell = '%u' AND guid = '%u'",
-                    team == BG_TEAM_ALLIANCE ? spell_alliance : spell_horde, team == BG_TEAM_ALLIANCE ? spell_horde : spell_alliance, guid.GetCounter());
+                    team == TEAM_INDEX_ALLIANCE ? spell_alliance : spell_horde, team == TEAM_INDEX_ALLIANCE ? spell_horde : spell_alliance, guid.GetCounter());
             }
             while( result2->NextRow() );
         }
@@ -1424,9 +1424,9 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 Field *fields2 = result2->Fetch();
                 uint32 reputation_alliance = fields2[0].GetUInt32();
                 uint32 reputation_horde = fields2[1].GetUInt32();
-                CharacterDatabase.PExecute("DELETE FROM character_reputation WHERE faction = '%u' AND guid = '%u'",team == BG_TEAM_ALLIANCE ? reputation_horde : reputation_alliance, guid.GetCounter());
+                CharacterDatabase.PExecute("DELETE FROM character_reputation WHERE faction = '%u' AND guid = '%u'",team == TEAM_INDEX_ALLIANCE ? reputation_horde : reputation_alliance, guid.GetCounter());
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_reputation` set faction = '%u' where faction = '%u' AND guid = '%u'",
-                    team == BG_TEAM_ALLIANCE ? reputation_alliance : reputation_horde, team == BG_TEAM_ALLIANCE ? reputation_horde : reputation_alliance, guid.GetCounter());
+                    team == TEAM_INDEX_ALLIANCE ? reputation_alliance : reputation_horde, team == TEAM_INDEX_ALLIANCE ? reputation_horde : reputation_alliance, guid.GetCounter());
             }
             while( result2->NextRow() );
         }

@@ -68,7 +68,7 @@ void BattleGroundIC::Reset()
     aOpen = false;              // gate to the alli boss
     hOpen = false;              // gate to the horde boss
 
-    for (uint8 i = 0; i < BG_TEAMS_COUNT; ++i)
+    for (uint8 i = 0; i < PVP_TEAM_COUNT; ++i)
         m_TeamScores[i] = BG_IC_SCORE_INITIAL_POINTS;
 
     for (uint8 i = 0; i < BG_IC_NODES_MAX; ++i)
@@ -129,10 +129,10 @@ void BattleGroundIC::SendTransportInit(Player* player)
     player->GetSession()->SendPacket(&packet);
 }
 
-void BattleGroundIC::UpdateScore(BattleGroundTeamIndex teamIdx, int32 points )
+void BattleGroundIC::UpdateScore(TeamIndex teamIdx, int32 points )
 {
     // note: to remove reinforcements points must be negative, for adding reinforcements points must be positive
-    MANGOS_ASSERT( teamIdx == BG_TEAM_ALLIANCE || teamIdx == BG_TEAM_HORDE);
+    MANGOS_ASSERT( teamIdx == TEAM_INDEX_ALLIANCE || teamIdx == TEAM_INDEX_HORDE);
     m_TeamScores[teamIdx] += points;                      // m_TeamScores is int32 - so no problems here
 
     if (points < 0)
@@ -141,11 +141,11 @@ void BattleGroundIC::UpdateScore(BattleGroundTeamIndex teamIdx, int32 points )
         {
             m_TeamScores[teamIdx] = 0;
             // other team will win:
-            EndBattleGround((teamIdx == BG_TEAM_ALLIANCE)? HORDE : ALLIANCE);
+            EndBattleGround((teamIdx == TEAM_INDEX_ALLIANCE)? HORDE : ALLIANCE);
         }
     }
     // must be called here, else it could display a negative value
-    UpdateWorldState(((teamIdx == BG_TEAM_HORDE) ? BG_TEAM_HORDE_REINFORC : BG_TEAM_ALLIANCE_REINFORC), m_TeamScores[teamIdx]);
+    UpdateWorldState(((teamIdx == TEAM_INDEX_HORDE) ? BG_TEAM_HORDE_REINFORC : BG_TEAM_ALLIANCE_REINFORC), m_TeamScores[teamIdx]);
 }
 
 void BattleGroundIC::Update(uint32 diff)
@@ -200,7 +200,7 @@ void BattleGroundIC::Update(uint32 diff)
                 _CreateBanner(node, BG_IC_NODE_TYPE_OCCUPIED, teamIndex, true);
                 _SendNodeUpdate(node);
                 // Message to chatlog
-                if (teamIndex == BG_TEAM_ALLIANCE)
+                if (teamIndex == TEAM_INDEX_ALLIANCE)
                 {
                     SendMessage2ToAll(LANG_BG_IC_NODE_TAKEN,CHAT_MSG_BG_SYSTEM_ALLIANCE,NULL,LANG_BG_ALLY,_GetNodeNameId(node));
                     PlaySoundToAll(BG_IC_SOUND_NODE_CAPTURED_ALLIANCE);
@@ -213,7 +213,7 @@ void BattleGroundIC::Update(uint32 diff)
 
                 // gunship starting
                 if (node == BG_IC_NODE_HANGAR)
-                    (teamIndex == BG_TEAM_ALLIANCE ? gunshipAlliance : gunshipHorde)->BuildStartMovePacket(GetBgMap());
+                    (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipAlliance : gunshipHorde)->BuildStartMovePacket(GetBgMap());
             }
         }
     }
@@ -225,7 +225,7 @@ void BattleGroundIC::Update(uint32 diff)
         {
             if (m_resource_Timer[node] <= diff)
             {
-                UpdateScore(BattleGroundTeamIndex(m_Nodes[node] - BG_IC_NODE_TYPE_OCCUPIED) , 1);
+                UpdateScore(TeamIndex(m_Nodes[node] - BG_IC_NODE_TYPE_OCCUPIED) , 1);
                 RewardHonorToTeam(GetBonusHonorFromKill(1), (m_Nodes[node] - BG_IC_NODE_TYPE_OCCUPIED == 0 ? ALLIANCE : HORDE));
                 m_resource_Timer[node] = BG_IC_RESOURCE_TICK_TIMER;
             }
@@ -364,8 +364,8 @@ void BattleGroundIC::FillInitialWorldStates(WorldPacket& data, uint32& count)
 {
     FillInitialWorldState(data, count, BG_TEAM_ALLIANCE_REINFORC_SET, BG_TEAM_ALLIANCE_REINFORC_SET);
     FillInitialWorldState(data, count, BG_TEAM_HORDE_RENFORC_SET,     BG_TEAM_HORDE_RENFORC_SET);
-    FillInitialWorldState(data, count, BG_TEAM_ALLIANCE_REINFORC,     m_TeamScores[BG_TEAM_ALLIANCE]);
-    FillInitialWorldState(data, count, BG_TEAM_HORDE_REINFORC,        m_TeamScores[BG_TEAM_HORDE]);
+    FillInitialWorldState(data, count, BG_TEAM_ALLIANCE_REINFORC,     m_TeamScores[TEAM_INDEX_ALLIANCE]);
+    FillInitialWorldState(data, count, BG_TEAM_HORDE_REINFORC,        m_TeamScores[TEAM_INDEX_HORDE]);
 
     // Gate icons
     for (uint8 z = 0; z < BG_IC_GATE_MAX; ++z)
@@ -454,7 +454,7 @@ void BattleGroundIC::HandleKillPlayer(Player* player, Player* killer)
         return;
 
     BattleGround::HandleKillPlayer(player, killer);
-    UpdateScore(GetTeamIndexByTeamId(player->GetTeam()), -1);
+    UpdateScore(GetTeamIndex(player->GetTeam()), -1);
 }
 
 void BattleGroundIC::EndBattleGround(Team winner)
@@ -502,7 +502,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
 
     BG_IC_Nodes node = BG_IC_Nodes(event);
 
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(source->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(source->GetTeam());
 
     // Check if player really could use this banner, not cheated
     if (!(m_Nodes[node] == 0 || teamIndex == m_Nodes[node] % 2))
@@ -525,7 +525,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
         _SendNodeUpdate(node);
         m_NodeTimers[node] = BG_IC_FLAG_CAPTURING_TIME;
 
-        if (teamIndex == BG_TEAM_ALLIANCE)
+        if (teamIndex == TEAM_INDEX_ALLIANCE)
             SendMessage2ToAll(LANG_BG_IC_NODE_CLAIMED,CHAT_MSG_BG_SYSTEM_ALLIANCE, source, _GetNodeNameId(node), LANG_BG_ALLY);
         else
             SendMessage2ToAll(LANG_BG_IC_NODE_CLAIMED,CHAT_MSG_BG_SYSTEM_HORDE, source, _GetNodeNameId(node), LANG_BG_HORDE);
@@ -546,7 +546,7 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
             _SendNodeUpdate(node);
             m_NodeTimers[node] = BG_IC_FLAG_CAPTURING_TIME;
 
-            if (teamIndex == BG_TEAM_ALLIANCE)
+            if (teamIndex == TEAM_INDEX_ALLIANCE)
                 SendMessage2ToAll(LANG_BG_IC_NODE_ASSAULTED,CHAT_MSG_BG_SYSTEM_ALLIANCE, source, _GetNodeNameId(node));
             else
                 SendMessage2ToAll(LANG_BG_IC_NODE_ASSAULTED,CHAT_MSG_BG_SYSTEM_HORDE, source, _GetNodeNameId(node));
@@ -563,12 +563,12 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
             _SendNodeUpdate(node);
             m_NodeTimers[node] = 0;
 
-            if (teamIndex == BG_TEAM_ALLIANCE)
+            if (teamIndex == TEAM_INDEX_ALLIANCE)
                 SendMessage2ToAll(LANG_BG_IC_NODE_DEFENDED,CHAT_MSG_BG_SYSTEM_ALLIANCE, source, _GetNodeNameId(node));
             else
                 SendMessage2ToAll(LANG_BG_IC_NODE_DEFENDED,CHAT_MSG_BG_SYSTEM_HORDE, source, _GetNodeNameId(node));
         }
-        sound = (teamIndex == BG_TEAM_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
+        sound = (teamIndex == TEAM_INDEX_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
     }
 
     // If node is occupied, change to enemy-contested
@@ -583,22 +583,22 @@ void BattleGroundIC::EventPlayerClickedOnFlag(Player *source, GameObject* target
         _SendNodeUpdate(node);
         m_NodeTimers[node] = BG_IC_FLAG_CAPTURING_TIME;
 
-        if (teamIndex == BG_TEAM_ALLIANCE)
+        if (teamIndex == TEAM_INDEX_ALLIANCE)
             SendMessage2ToAll(LANG_BG_IC_NODE_ASSAULTED,CHAT_MSG_BG_SYSTEM_ALLIANCE, source, _GetNodeNameId(node));
         else
             SendMessage2ToAll(LANG_BG_IC_NODE_ASSAULTED,CHAT_MSG_BG_SYSTEM_HORDE, source, _GetNodeNameId(node));
 
-        sound = (teamIndex == BG_TEAM_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
+        sound = (teamIndex == TEAM_INDEX_ALLIANCE) ? BG_IC_SOUND_NODE_ASSAULTED_ALLIANCE : BG_IC_SOUND_NODE_ASSAULTED_HORDE;
 
         if (node == BG_IC_NODE_HANGAR)
-            (teamIndex == BG_TEAM_ALLIANCE ? gunshipHorde : gunshipAlliance)->BuildStopMovePacket(GetBgMap());
+            (teamIndex == TEAM_INDEX_ALLIANCE ? gunshipHorde : gunshipAlliance)->BuildStopMovePacket(GetBgMap());
     }
     PlaySoundToAll(sound);
 }
 
 void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy)
 {
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Seaforium Charge Explosion (A-bomb-inable)
     if (doneBy == 66676)
@@ -743,7 +743,7 @@ void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj,
 
 WorldSafeLocsEntry const* BattleGroundIC::GetClosestGraveYard(Player* player)
 {
-    BattleGroundTeamIndex teamIndex = GetTeamIndexByTeamId(player->GetTeam());
+    TeamIndex teamIndex = GetTeamIndex(player->GetTeam());
 
     // Is there any occupied node for this team?
     std::vector<uint8> nodes;
