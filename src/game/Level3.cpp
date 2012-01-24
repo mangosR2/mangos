@@ -42,7 +42,6 @@
 #include "Weather.h"
 #include "PointMovementGenerator.h"
 #include "TargetedMovementGenerator.h"
-#include "SkillDiscovery.h"
 #include "SkillExtraItems.h"
 #include "SystemConfig.h"
 #include "Config/Config.h"
@@ -710,7 +709,7 @@ bool ChatHandler::HandleReloadReputationSpilloverTemplateCommand(char* /*args*/)
 bool ChatHandler::HandleReloadSkillDiscoveryTemplateCommand(char* /*args*/)
 {
     sLog.outString( "Re-Loading Skill Discovery Table..." );
-    LoadSkillDiscoveryTable();
+    sSpellMgr.LoadSkillDiscoveryTable();
     SendGlobalSysMessage("DB table `skill_discovery_template` (recipes discovered at crafting) reloaded.");
     return true;
 }

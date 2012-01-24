@@ -33,7 +33,6 @@
 #include "Weather.h"
 #include "Player.h"
 #include "SkillExtraItems.h"
-#include "SkillDiscovery.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
 #include "AuctionHouseMgr.h"
@@ -1329,7 +1328,7 @@ void World::SetInitialWorldSettings()
     sLog.outString();
 
     sLog.outString( "Loading Skill Discovery Table..." );
-    LoadSkillDiscoveryTable();
+    sSpellMgr.LoadSkillDiscoveryTable();
 
     sLog.outString( "Loading Skill Extra Item Table..." );
     LoadSkillExtraItemTable();
