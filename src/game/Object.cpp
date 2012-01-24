@@ -1153,25 +1153,6 @@ bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
     float ox,oy,oz;
     obj->GetPosition(ox,oy,oz);
 
-    if (GetMapId() == 617) // Waterfall DA BattleGround
-    {
-        if (GameObject *pWaterfall = const_cast<WorldObject*>(this)->GetClosestGameObjectWithEntry(this, 194395, 60.0f))
-        {
-            if (pWaterfall->isSpawned() && pWaterfall->IsInBetween(this, obj, pWaterfall->GetObjectBoundingRadius()))
-                return false;
-        }
-    }
-    else if (GetMapId() == 618) // Pillars RV BattleGround
-    {
-        uint32 const pillars[] = {194583, 194584, 194585, 194587};
-        for (size_t i = 0; i < countof(pillars); ++i)
-        {
-            if (GameObject *pPillar = const_cast<WorldObject*>(this)->GetClosestGameObjectWithEntry(this, pillars[i], 35.0f))
-                if (pPillar->GetGoState() == GO_STATE_ACTIVE && pPillar->IsInBetween(this, obj, pPillar->GetObjectBoundingRadius()))
-                    return false;
-        }
-    }
-
     return(IsWithinLOS(ox, oy, oz ));
 }
 
@@ -1179,34 +1160,13 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 {
     float x,y,z;
     GetPosition(x,y,z);
-    z += 2.0f;
-    oz += 2.0f;
 
-    // check for line of sight because of terrain height differences
-    if (!GetMap()->IsDungeon())  // avoid unnecessary calculation inside raid/dungeons
-    {
-        float dx = ox - x, dy = oy - y, dz = oz - z;
-        float dist = sqrt(dx*dx + dy*dy + dz*dz);
-        if (dist > ATTACK_DISTANCE && dist < MAX_VISIBILITY_DISTANCE)
-        {
-            uint32 steps = uint32(dist / TERRAIN_LOS_STEP_DISTANCE);
-            float step_dist = dist / (float)steps;  // to make sampling intervals symmetric in both directions
-            float inc_factor = step_dist / dist;
-            float incx = dx*inc_factor, incy = dy*inc_factor, incz = dz*inc_factor;
-            float px = x, py = y, pz = z;
-            for (; steps; --steps)
-            {
-                if (GetTerrain()->GetHeight(px, py, pz, false) > pz)
-                    return false;   // found intersection with ground
-                px += incx;
-                py += incy;
-                pz += incz;
-            }
-        }
-    }
+    Unit* searcher = GetObjectGuid().IsUnit() ? (Unit*)this : NULL;
 
-    VMAP::IVMapManager *vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
-    return vMapManager->isInLineOfSight(GetMapId(), x, y, z, ox, oy, oz);
+    VMAP::IVMapManager* vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
+    return vMapManager->isInLineOfSight(GetMapId(), x, y, z + 0.5f, ox, oy, oz + 0.5f) ?
+            GetTerrain()->CheckPathAccurate(x,y,z, ox, oy, oz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? searcher : NULL ) :
+            false;
 }
 
 bool WorldObject::GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D /* = true */) const
@@ -1317,16 +1277,19 @@ float WorldObject::GetAngle(const WorldObject* obj) const
 {
     if (!obj)
         return 0.0f;
+
+    MANGOS_ASSERT(obj != this);
+
     return GetAngle(obj->GetPositionX(), obj->GetPositionY());
 }
 
 // Return angle in range 0..2*pi
-float WorldObject::GetAngle( const float x, const float y ) const
+float WorldObject::GetAngle(const float x, const float y) const
 {
     float dx = x - GetPositionX();
     float dy = y - GetPositionY();
 
-    float ang = atan2(dy, dx);
+    float ang = atan2(dy, dx);                              // returns value between -Pi..Pi
     ang = (ang >= 0) ? ang : 2 * M_PI_F + ang;
     return MapManager::NormalizeOrientation(ang);
 }
@@ -1342,7 +1305,7 @@ bool WorldObject::HasInArc(const float arcangle, const WorldObject* obj) const
     // move arc to range 0.. 2*pi
     arc = MapManager::NormalizeOrientation(arc);
 
-    float angle = GetAngle( obj );
+    float angle = GetAngle(obj);
     angle -= m_position.o;
 
     // move angle to range -pi ... +pi
@@ -1732,7 +1695,7 @@ namespace MaNGOS
     {
         public:
             NearUsedPosDo(WorldObject const& obj, WorldObject const* searcher, float absAngle, ObjectPosSelector& selector)
-                : i_object(obj), i_searcher(searcher), i_absAngle(absAngle), i_selector(selector) {}
+                : i_object(obj), i_searcher(searcher), i_absAngle(MapManager::NormalizeOrientation(absAngle)), i_selector(selector) {}
 
             void operator()(Corpse*) const {}
             void operator()(DynamicObject*) const {}
@@ -1786,14 +1749,13 @@ namespace MaNGOS
 
                 float angle = i_object.GetAngle(u) - i_absAngle;
 
-                // move angle to range -pi ... +pi
-                float f_angle = MapManager::NormalizeOrientation(angle);
-                if (f_angle > M_PI_F)
-                    f_angle -= 2.0f * M_PI_F;
-                else if (f_angle < -M_PI_F)
-                    f_angle += 2.0f * M_PI_F;
+                // move angle to range -pi ... +pi, range before is -2Pi..2Pi
+                if (angle > M_PI_F)
+                    angle -= 2.0f * M_PI_F;
+                else if (angle < -M_PI_F)
+                    angle += 2.0f * M_PI_F;
 
-                i_selector.AddUsedArea(u->GetObjectBoundingRadius(), f_angle, dist2d);
+                i_selector.AddUsedArea(u->GetObjectBoundingRadius(), angle, dist2d);
             }
         private:
             WorldObject const& i_object;

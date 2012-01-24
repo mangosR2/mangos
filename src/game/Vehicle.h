@@ -40,8 +40,9 @@ struct VehicleSeat
 {
     VehicleSeat(VehicleSeatEntry const *pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(NULL) {}
 
-    VehicleSeatEntry const *seatInfo;
+    VehicleSeatEntry const* seatInfo;
     Unit* passenger;
+    bool IsProtectPassenger() const;
 };
 
 typedef std::map<int8, VehicleSeat> SeatMap;
@@ -84,6 +85,7 @@ class MANGOS_DLL_SPEC VehicleKit
         void SetDestination() { m_dst_x = 0.0f; m_dst_y = 0.0f; m_dst_z  = 0.0f; m_dst_o  = 0.0f; m_dst_speed  = 0.0f; m_dst_elevation  = 0.0f; b_dstSet = false;};
 
         Unit* GetBase() { return m_pBase; }
+        Aura* GetControlAura(Unit* passenger);
 
     private:
         void UpdateFreeSeatCount();

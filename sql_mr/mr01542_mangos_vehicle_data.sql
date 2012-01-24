@@ -52,7 +52,6 @@ UPDATE creature_template SET vehicle_id = 123 WHERE entry = 28606;
 UPDATE creature_template SET vehicle_id = 200 WHERE entry = 28607;
 UPDATE creature_template SET vehicle_id = 124 WHERE entry = 28614;
 UPDATE creature_template SET vehicle_id = 156 WHERE entry = 28670;
-UPDATE creature_template SET vehicle_id = 158 WHERE entry = 28781;
 UPDATE creature_template SET vehicle_id = 145 WHERE entry = 28851;
 UPDATE creature_template SET vehicle_id = 68  WHERE entry = 28887;
 UPDATE creature_template SET vehicle_id = 153 WHERE entry = 29043;
@@ -111,7 +110,6 @@ UPDATE creature_template SET vehicle_id = 116 WHERE entry = 32629;
 UPDATE creature_template SET vehicle_id = 312 WHERE entry = 32633;
 UPDATE creature_template SET vehicle_id = 313 WHERE entry = 32640;
 UPDATE creature_template SET vehicle_id = 160 WHERE entry = 32795;
-UPDATE creature_template SET vehicle_id = 158 WHERE entry = 32796;
 UPDATE creature_template SET vehicle_id = 328 WHERE entry = 32930;
 UPDATE creature_template SET vehicle_id = 380 WHERE entry = 32934;
 UPDATE creature_template SET vehicle_id = 336 WHERE entry = 33060;
@@ -390,6 +388,7 @@ UPDATE creature_template SET IconName = 'vehichleCursor' WHERE vehicle_id > 0 AN
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33062, 33060, 33067);
 INSERT INTO npc_spellclick_spells VALUES
 (33109, 62309, 0, 0, 0, 1),  -- Demolisher
+(33167, 62309, 0, 0, 0, 1),  -- Demolisher mechanic seat
 (33062, 65030, 0, 0, 0, 1),  -- Chopper
 (33060, 65031, 0, 0, 0, 1),  -- Siege engine
 (33067, 65031, 0, 0, 0, 1);  -- Siege engine turret

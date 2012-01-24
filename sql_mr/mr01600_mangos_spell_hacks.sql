@@ -40,7 +40,7 @@ VALUES (46924, 0, 0, 0, 327696, 32784, 0, 1024, 0, 512, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 UPDATE `spell_dbc` SET 
 `Category` = 891, 
-`EffectMiscValue2` = 1838645235,
+`EffectMiscValue2` = 1838628819,
 `Comment` = 'Replacement for spell 46924 ("Bladestorm")' 
 WHERE `Id` = 46924;
 

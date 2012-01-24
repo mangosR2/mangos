@@ -25,6 +25,7 @@
 #include "Vehicle.h"
 #include "ObjectMgr.h"
 #include "SpellAuras.h"
+#include "SpellMgr.h"
 #include "TemporarySummon.h"
 
 void WorldSession::HandleDismissControlledVehicle(WorldPacket &recv_data)
@@ -204,7 +205,6 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket &recv_data)
 
     MovementInfo mi;
     recv_data >> mi;
-    GetPlayer()->m_movementInfo = mi;
 
     recv_data >> guid2.ReadAsPacked(); //guid of vehicle or of vehicle in target seat
 
@@ -219,19 +219,54 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket &recv_data)
     if (pVehicle->GetBase()->GetVehicleInfo()->GetEntry()->m_flags & VEHICLE_FLAG_DISABLE_SWITCH)
         return;
 
-    if(guid.GetRawValue() == guid2.GetRawValue())
-        GetPlayer()->ChangeSeat(seatId, false);
+    pVehicle->GetBase()->m_movementInfo = mi;
 
+    if(!guid2 || guid.GetRawValue() == guid2.GetRawValue())
+        GetPlayer()->ChangeSeat(seatId);
+    // seat to another vehicle or accessory
     else if (guid2.IsVehicle())
     {
         if (Creature* vehicle = GetPlayer()->GetMap()->GetAnyTypeCreature(guid2))
         {
             if (VehicleKit* pVehicle2 = vehicle->GetVehicleKit())
+            {
                 if(pVehicle2->HasEmptySeat(seatId))
                 {
-                    GetPlayer()->ExitVehicle();
-                    GetPlayer()->EnterVehicle(pVehicle2, seatId);
+                    SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(vehicle->GetEntry());
+                    for (SpellClickInfoMap::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
+                    {
+                        if (itr->second.IsFitToRequirements(GetPlayer()))
+                        {
+                            Unit* caster = (itr->second.castFlags & 0x1) ? (Unit*)GetPlayer() : (Unit*)vehicle;
+                            Unit* target = (itr->second.castFlags & 0x2) ? (Unit*)GetPlayer() : (Unit*)vehicle;
+
+                            SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->second.spellId);
+                            if (!spellInfo)
+                                return;
+
+                            int32 bp[MAX_EFFECT_INDEX];
+                            bool b_controlAura = false;
+                            for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+                            {
+                                if (IsAuraApplyEffect(spellInfo, SpellEffectIndex(i)))
+                                {
+                                    if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_CONTROL_VEHICLE)
+                                    {
+                                        bp[i] = seatId + 1;
+                                        b_controlAura = true;
+                                    }
+                                    else
+                                        bp[i] = NULL;
+                                }
+                                else
+                                    bp[i] = NULL;
+                            }
+                            if (b_controlAura)
+                                caster->CastCustomSpell(target,spellInfo,&bp[EFFECT_INDEX_0],&bp[EFFECT_INDEX_1],&bp[EFFECT_INDEX_2],true,NULL,NULL,caster->GetObjectGuid());
+                        }
+                    }
                 }
+            }
         }
     }
 }

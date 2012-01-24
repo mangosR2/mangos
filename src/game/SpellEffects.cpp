@@ -8773,13 +8773,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, m_spellInfo->Id == 49380 ? 49381 : 59805, true, NULL, NULL, m_caster->GetObjectGuid());
                     return;
                 }
-                case 49405:                                 // Taunt Invider Trigger (Trollgore - Drak'Tharon Keep)
+                case 49405:                                 //Invader Taunt Trigger
                 {
                     if (!unitTarget)
                         return;
 
-                    //cast back Trollgore -> Taunt Invider
-                    unitTarget->CastSpell(m_caster, 49406, true);
+                    unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     return;
                 }
                 case 48590:                                 // Avenging Spirits (summon Avenging Spirit Summoners)

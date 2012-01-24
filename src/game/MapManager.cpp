@@ -52,12 +52,20 @@ MapManager::~MapManager()
 void
 MapManager::Initialize()
 {
-    int num_threads(sWorld.getConfig(CONFIG_UINT32_NUMTHREADS));
+    m_threadsCount = sWorld.getConfig(CONFIG_BOOL_THREADS_DYNAMIC) ? 1 : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
+    m_threadsCountPreferred = m_threadsCount;
+
     // Start mtmaps if needed.
-    if (num_threads > 0 && m_updater.activate(num_threads) == -1)
+    if (m_threadsCount > 0 && m_updater.activate(m_threadsCount) == -1)
         abort();
 
     InitStateMachine();
+
+    i_balanceTimer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)*100);
+    m_previewTimeStamp = WorldTimer::getMSTime();
+    m_workTimeStorage = 0;
+    m_sleepTimeStorage = 0;
+    m_tickCount = 0;
 }
 
 void MapManager::InitStateMachine()
@@ -185,12 +193,13 @@ void MapManager::DeleteInstance(uint32 mapid, uint32 instanceId)
     }
 }
 
-void
-MapManager::Update(uint32 diff)
+void MapManager::Update(uint32 diff)
 {
     i_timer.Update(diff);
     if( !i_timer.Passed())
         return;
+
+    UpdateLoadBalancer(true);
 
     for (MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
     {
@@ -205,10 +214,13 @@ MapManager::Update(uint32 diff)
     if (m_updater.activated())
         m_updater.wait();
 
-    if (m_updater.IsBroken())
+    UpdateLoadBalancer(false);
+
+    if (m_updater.IsBroken() || m_threadsCountPreferred != m_threadsCount)
     {
-        m_updater.ReActivate(sWorld.getConfig(CONFIG_UINT32_NUMTHREADS));
-        DEBUG_LOG("Map:Update map virtual server pool reactivated, thread num is %u", sWorld.getConfig(CONFIG_UINT32_NUMTHREADS));
+        m_updater.ReActivate(m_threadsCountPreferred);
+        sLog.outDetail("MapManager::Update map virtual server threads pool reactivated, new threads count is %u", m_threadsCountPreferred);
+        m_threadsCount = m_threadsCountPreferred;
     }
 
     for (TransportSet::iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
@@ -403,3 +415,47 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
     return map;
 }
 
+void MapManager::UpdateLoadBalancer(bool b_start)
+{
+    if (!sWorld.getConfig(CONFIG_BOOL_THREADS_DYNAMIC))
+    {
+        // only support for reloading config value of CONFIG_UINT32_NUMTHREADS;
+        m_threadsCountPreferred = sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
+        return;
+    }
+
+    uint32 timeDiff = WorldTimer::getMSTimeDiff(m_previewTimeStamp, WorldTimer::getMSTime());
+    m_previewTimeStamp = WorldTimer::getMSTime();
+
+    if (b_start)
+    {
+        m_sleepTimeStorage += timeDiff;
+        ++m_tickCount;
+    }
+    else
+        m_workTimeStorage += timeDiff;
+
+
+    i_balanceTimer.Update(timeDiff);
+
+    if(!i_balanceTimer.Passed())
+        return;
+
+    float loadValue = float((m_workTimeStorage)/m_tickCount)/float((m_workTimeStorage + m_sleepTimeStorage)/ m_tickCount);
+
+    if (loadValue >= sWorld.getConfig(CONFIG_FLOAT_LOADBALANCE_HIGHVALUE))
+        m_threadsCountPreferred = (m_threadsCountPreferred < sWorld.getConfig(CONFIG_UINT32_NUMTHREADS)) ? (m_threadsCountPreferred + 1) : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
+    else if (loadValue <= sWorld.getConfig(CONFIG_FLOAT_LOADBALANCE_LOWVALUE))
+        m_threadsCountPreferred = (m_threadsCountPreferred > 1) ? (m_threadsCountPreferred - 1) : 1;
+    else
+        m_threadsCountPreferred = m_threadsCount;
+
+    if (m_threadsCountPreferred != m_threadsCount)
+        sLog.outDetail("MapManager::UpdateLoadBalancer load balance %f (tick count %u), threads %u, new %u", loadValue, m_tickCount, m_threadsCount, m_threadsCountPreferred);
+
+    m_workTimeStorage = 0;
+    m_sleepTimeStorage = 0;
+    m_tickCount = 0;
+
+    i_balanceTimer.SetCurrent(0);
+}

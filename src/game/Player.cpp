@@ -8788,7 +8788,10 @@ void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
     WorldPacket data(SMSG_UPDATE_WORLD_STATE, 8);
     data << Field;
     data << Value;
-    GetSession()->SendPacket(&data);
+
+    // Tempfix before WorldStateMgr implementing
+    if (IsInWorld())
+        GetSession()->SendPacket(&data);
 }
 
 static WorldStatePair AV_world_states[] =
