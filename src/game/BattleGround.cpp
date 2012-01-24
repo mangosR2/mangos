@@ -614,6 +614,8 @@ void BattleGround::SetTeamStartLoc(Team team, float X, float Y, float Z, float O
 
 void BattleGround::SendPacketToAll(WorldPacket *packet)
 {
+    if (!m_Players.size())
+        return;
     for(BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
     {
         if (itr->second.OfflineRemoveTime)

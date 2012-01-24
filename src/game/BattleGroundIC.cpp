@@ -825,6 +825,8 @@ Transport* BattleGroundIC::CreateTransport(uint32 goEntry, uint32 period)
 
 void BattleGroundIC::HandleBuffs()
 {
+    if (!GetPlayersSize())
+        return;
     for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
     {
         if (Player *plr = sObjectMgr.GetPlayer(itr->first))
