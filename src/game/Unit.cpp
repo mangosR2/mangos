@@ -7882,7 +7882,11 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         else if (spellProto->Category == 19)
                         {
                             if (pVictim->GetCreatureTypeMask() & CREATURE_TYPEMASK_DEMON_OR_UNDEAD)
-                                return true;
+                            {
+                                // don't override auras that prevent critical strikes taken
+                                if (crit_chance > -100.0f)
+                                    return true;
+                            }
                         }
                         break;
                     case SPELLFAMILY_SHAMAN:
@@ -7891,7 +7895,11 @@ bool Unit::IsSpellCrit(Unit *pVictim, SpellEntry const *spellProto, SpellSchoolM
                         {
                             // Flame Shock
                             if (pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
-                                return true;
+                            {
+                                // don't override auras that prevent critical strikes taken
+                                if (crit_chance > -100.0f)
+                                    return true;
+                            }
                         }
                         break;
                 }
