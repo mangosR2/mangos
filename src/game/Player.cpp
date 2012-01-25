@@ -8814,7 +8814,7 @@ void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
     data << Value;
 
     // Tempfix before WorldStateMgr implementing
-    if (IsInWorld())
+    if (IsInWorld() && GetSession())
         GetSession()->SendPacket(&data);
 }
 
