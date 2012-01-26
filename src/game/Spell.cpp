@@ -6221,8 +6221,13 @@ SpellCastResult Spell::CheckCast(bool strict)
             // no break here!
             case SPELL_EFFECT_TELEPORT_UNITS_FACE_CASTER:
             {
-                if (m_caster->hasUnitState(UNIT_STAT_ROOT))
-                    return SPELL_FAILED_ROOTED;
+                // Blink has leap first and then removing of auras with root effect
+                // need further research with this
+                if (m_spellInfo->Effect[i] != SPELL_EFFECT_LEAP)
+                {
+                    if (m_caster->hasUnitState(UNIT_STAT_ROOT))
+                        return SPELL_FAILED_ROOTED;
+                }
 
                 // not allow use this effect at battleground until battleground start
                 if (m_caster->GetTypeId() == TYPEID_PLAYER)
@@ -6445,6 +6450,19 @@ SpellCastResult Spell::CheckCast(bool strict)
             default:
                 break;
         }
+    }
+
+    // and some hacks, as always
+    switch(m_spellInfo->Id)
+    {
+        // spells that dont have direct effects listed above
+        // maybe should check triggered/linked spells?
+        // but not all are implemented in this way
+        case 36554: // Shadowstep
+        case 51690: // Killing Spree
+            if (m_caster->hasUnitState(UNIT_STAT_ROOT))
+                return SPELL_FAILED_ROOTED;
+            break;
     }
 
     // check trade slot case (last, for allow catch any another cast problems)

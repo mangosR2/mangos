@@ -12196,10 +12196,27 @@ void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, 
             ++iter;
         else if (iter->second->HasMechanicMask(mechMask))
         {
-            RemoveAurasDueToSpell(spell->Id);
+            bool removedSingleAura = false;
+
+            for(int32 i = 0; i < MAX_EFFECT_INDEX; i++)
+            {
+                if (iter->second)
+                {
+                    if ((1 << (spell->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
+                    {
+                        RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
+                        removedSingleAura = true;
+                    }
+                }
+            }
+
+            if (!removedSingleAura)
+                RemoveAurasDueToSpell(spell->Id);
 
             if (auras.empty())
                 break;
+            else if (iter->second)
+                ++iter;
             else
                 iter = auras.begin();
          }
