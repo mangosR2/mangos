@@ -135,7 +135,7 @@ void WorldPvPHP::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPHP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPHP::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiEventId)
 {
     uint32 uiCredit = 0;
 
@@ -158,13 +158,18 @@ void WorldPvPHP::HandleObjectiveComplete(PlayerSet m_sPlayersSet, uint32 uiEvent
     if (!uiCredit)
         return;
 
-    for (PlayerSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+    for (ObjectGuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
     {
         if (!(*itr))
             continue;
 
-        (*itr)->KilledMonsterCredit(uiCredit);
-        (*itr)->RewardHonor(NULL, 1, HONOR_REWARD_HELLFIRE);
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+
+        if (!pPlayer)
+            continue;
+
+        pPlayer->KilledMonsterCredit(uiCredit);
+        pPlayer->RewardHonor(NULL, 1, HONOR_REWARD_HELLFIRE);
     }
 }
 

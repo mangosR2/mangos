@@ -57,8 +57,6 @@ enum CaptureState
     WIN         = 3
 };
 
-typedef std::set<Player*> PlayerSet;
-
 class WorldPvP : public ZoneScript
 {
     friend class WorldPvPMgr;
@@ -83,7 +81,7 @@ class WorldPvP : public ZoneScript
         virtual void HandlePlayerKillInsideArea(Player* /*pKiller*/, Unit* /*pVictim*/) {}
 
         // handle capture objective complete
-        virtual void HandleObjectiveComplete(PlayerSet /*m_sObjectivePlayers*/, uint32 /*uiEventId*/) {}
+        virtual void HandleObjectiveComplete(ObjectGuidSet /*m_sObjectivePlayers*/, uint32 /*uiEventId*/) {}
 
         // init all the outdoor pvp area relates stuff
         virtual bool InitWorldPvPArea() { return false; }
@@ -120,7 +118,7 @@ class WorldPvP : public ZoneScript
         void ResetCapturePoint(uint32 pointEntry, float fValue);
 
         // store the players inside the area depending on the faction
-        PlayerSet m_sZonePlayers;
+        ObjectGuidSet m_sZonePlayers;
 
         uint32 m_uiTypeId;
 };
