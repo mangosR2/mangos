@@ -11763,18 +11763,18 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
             float max_angle = (max_dis - min_dis)/(max_dis + m_caster->GetObjectBoundingRadius());
             float angle_offset = max_angle * (rand_norm_f() - 0.5f);
             m_caster->GetNearPoint2D(fx, fy, dis, m_caster->GetOrientation() + angle_offset);
-            float waterZ = m_caster->GetTerrain()->GetWaterOrGroundLevel(fx, fy, m_caster->GetPositionZ());
-            GridMapLiquidData liqData;
-            if (!m_caster->GetTerrain()->IsInWater(fx, fy, waterZ, &liqData, 0.5f))
+
+            float waterZ;
+
+            if (!m_caster->GetTerrain()->IsAboveWater(fx, fy, m_caster->GetPositionZ() + 0.5f, &waterZ))
             {
                 SendCastResult(SPELL_FAILED_NOT_FISHABLE);
                 SendChannelUpdate(0);
                 return;
             }
 
-            fz = liqData.level;
             // finally, check LoS
-            if (!m_caster->IsWithinLOS(fx, fy, fz))
+            if (!m_caster->IsWithinLOS(fx, fy, waterZ))
             {
                 SendCastResult(SPELL_FAILED_LINE_OF_SIGHT);
                 SendChannelUpdate(0);

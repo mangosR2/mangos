@@ -1011,12 +1011,36 @@ bool TerrainInfo::IsInWater(float x, float y, float pZ, GridMapLiquidData *data,
     return false;
 }
 
-bool TerrainInfo::IsUnderWater(float x, float y, float z) const
+bool TerrainInfo::IsAboveWater(float x, float y, float z, float* pWaterZ/*= NULL*/) const
 {
     if (const_cast<TerrainInfo*>(this)->GetGrid(x, y))
     {
-        if (getLiquidStatus(x, y, z, MAP_LIQUID_TYPE_WATER|MAP_LIQUID_TYPE_OCEAN) & LIQUID_MAP_UNDER_WATER)
+        GridMapLiquidData mapData;
+
+        if (getLiquidStatus(x, y, z, MAP_LIQUID_TYPE_WATER|MAP_LIQUID_TYPE_OCEAN, &mapData) & LIQUID_MAP_ABOVE_WATER)
+        {
+            if (pWaterZ)
+                *pWaterZ = mapData.level;
+
             return true;
+        }
+    }
+    return false;
+}
+
+bool TerrainInfo::IsUnderWater(float x, float y, float z, float* pWaterZ/*= NULL*/) const
+{
+    if (const_cast<TerrainInfo*>(this)->GetGrid(x, y))
+    {
+        GridMapLiquidData mapData;
+
+        if (getLiquidStatus(x, y, z, MAP_LIQUID_TYPE_WATER|MAP_LIQUID_TYPE_OCEAN, &mapData) & LIQUID_MAP_UNDER_WATER)
+        {
+            if (pWaterZ)
+                *pWaterZ = mapData.level;
+
+            return true;
+        }
     }
     return false;
 }
