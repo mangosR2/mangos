@@ -4105,6 +4105,15 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, uint32 d
                 trigger_spell_id = 54843;
                 target = pVictim;
             }
+            // Item - Icecrown 25 Normal/Heroic Healer Weapon Proc
+            if (auraSpellInfo->Id == 71865 || auraSpellInfo->Id == 71868)
+            {
+                // don't proc on self
+                if (procSpell->Id == 71864 || procSpell->Id == 71866)
+                    return SPELL_AURA_PROC_FAILED;
+
+                target = pVictim;
+            }
             break;
         }
         case SPELLFAMILY_SHAMAN:

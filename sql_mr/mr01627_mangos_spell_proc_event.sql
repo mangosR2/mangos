@@ -748,3 +748,15 @@ INSERT INTO `spell_proc_event` VALUES
 -- Fingers of Frost buff aura charges dropping
 DELETE FROM `spell_proc_event` WHERE `entry` IN (74396);
 INSERT INTO `spell_proc_event` VALUES (74396, 0x10, 0x03, 0x28E212F7, 0x28E212F7, 0x28E212F7, 0x119048, 0x119048, 0x119048, 0, 0, 0, 0x10000, 0, 0, 0, 0);
+
+-- Item - Icecrown 25 Normal/Heroic Healer Weapon Proc
+DELETE FROM `spell_proc_event` WHERE `entry` IN (71865, 71868);
+INSERT INTO `spell_proc_event` VALUES
+(71865, 0x7F, 0x00, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0, 0, 0, 0, 0x00010000, 0, 0, 0),
+(71868, 0x7F, 0x00, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0, 0, 0, 0, 0x00010000, 0, 0, 0);
+
+-- Item - Icecrown 25 Normal/Heroic Ranged Weapon Proc
+DELETE FROM `spell_proc_event` WHERE `entry` IN (71835, 71836);
+INSERT INTO `spell_proc_event` VALUES
+(71835, 0x01, 0x00, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0, 0, 0, 0, 0, 0, 0, 0),
+(71836, 0x01, 0x00, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0, 0, 0, 0, 0, 0, 0, 0);

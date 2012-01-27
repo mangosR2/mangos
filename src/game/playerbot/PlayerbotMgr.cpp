@@ -404,7 +404,10 @@ void PlayerbotMgr::HandleMasterIncomingPacket(const WorldPacket& packet)
             {
                 Player* const bot = it->second;
 
-                GameObject *obj = m_master->GetMap()->GetGameObject(objGUID);
+                if (!m_master || !m_master->GetMap())
+                    return;
+
+                GameObject* obj = m_master->GetMap()->GetGameObject(objGUID);
                 if (!obj)
                     return;
 

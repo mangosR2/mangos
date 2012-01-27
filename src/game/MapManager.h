@@ -197,7 +197,7 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         uint64 m_sleepTimeStorage;
         uint32 m_tickCount;
 
-        ShortIntervalTimer i_timer;
+        IntervalTimer i_timer;
 };
 
 template<typename Do>

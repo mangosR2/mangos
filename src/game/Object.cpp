@@ -1375,6 +1375,9 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
     {
         case TYPEID_UNIT:
         {
+            // anyway creature move to target if is in same x,y position
+            if (((Creature const*)this)->GetPositionX() == x && ((Creature const*)this)->GetPositionY() == y)
+                return;
             // non fly unit don't must be in air
             // non swim unit must be at ground (mostly speedup, because it don't must be in water and water level check less fast
             if (!((Creature const*)this)->CanFly())
@@ -1385,7 +1388,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
 
                 if (max_z > INVALID_HEIGHT)
                 {
-                    if (max_z != ground_z && z > max_z)
+                    if (z > max_z)
                         z = max_z;
                     else if (z < ground_z)
                         z = ground_z;

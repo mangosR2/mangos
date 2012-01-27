@@ -25,7 +25,10 @@
  */
 void WorldPvP::HandlePlayerEnterZone(Player* pPlayer)
 {
-    m_sZonePlayers.insert(pPlayer);
+    if (!pPlayer)
+        return;
+
+    m_sZonePlayers.insert(pPlayer->GetObjectGuid());
 }
 
 /**
@@ -35,11 +38,14 @@ void WorldPvP::HandlePlayerEnterZone(Player* pPlayer)
  */
 void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
 {
+    if (!pPlayer)
+        return;
+
     // remove the world state information from the player
     if (!pPlayer->GetSession()->PlayerLogout())
         SendRemoveWorldStates(pPlayer);
 
-    m_sZonePlayers.erase(pPlayer);
+    m_sZonePlayers.erase(pPlayer->GetObjectGuid());
 
     sLog.outDebug("Player %s left an outdoorpvp zone", pPlayer->GetName());
 }
@@ -52,8 +58,11 @@ void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
  */
 void WorldPvP::SendUpdateWorldState(uint32 uiField, uint32 uiValue)
 {
-    for (PlayerSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
-        (*itr)->SendUpdateWorldState(uiField, uiValue);
+    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    {
+        if (Player* pPlayer = sObjectMgr.GetPlayer(*itr))
+            pPlayer->SendUpdateWorldState(uiField, uiValue);
+    }
 }
 
 /**
@@ -100,7 +109,10 @@ void WorldPvP::RegisterZone(uint32 uiZoneId)
 // return if has player inside the zone
 bool WorldPvP::HasPlayer(Player* pPlayer) const
 {
-    return m_sZonePlayers.find(pPlayer) != m_sZonePlayers.end();
+    if (!pPlayer)
+        return false;
+
+    return m_sZonePlayers.find(pPlayer->GetObjectGuid()) != m_sZonePlayers.end();
 }
 
 // lock a capture point
@@ -118,19 +130,24 @@ void WorldPvP::ResetCapturePoint(uint32 pointEntry, float fValue)
 // apply a team buff for the specific zone
 void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
 {
-    for (PlayerSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
         if (!(*itr))
             continue;
 
-        if ((*itr)->GetTeam() == uiTeam)
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+
+        if (!pPlayer)
+            continue;
+
+        if (pPlayer->GetTeam() == uiTeam)
         {
             if (!bRemove)
-                (*itr)->CastSpell(*itr, uiSpellId, true);
+                pPlayer->CastSpell(pPlayer, uiSpellId, true);
             else
             {
-                if ((*itr)->HasAura(uiSpellId))
-                    (*itr)->RemoveAurasDueToSpell(uiSpellId);
+                if (pPlayer->HasAura(uiSpellId))
+                    pPlayer->RemoveAurasDueToSpell(uiSpellId);
             }
         }
     }
@@ -139,10 +156,18 @@ void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
 /// Get the first found Player* (with requested properties) in the zone. Can return NULL.
 Player* WorldPvP::GetPlayerInZone(bool bOnlyAlive /*=false*/, bool bCanBeGamemaster /*=true*/)
 {
-    for (PlayerSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
-        if ((*itr) && (!bOnlyAlive || (*itr)->isAlive()) && (bCanBeGamemaster || !(*itr)->isGameMaster()))
-            return (*itr);
+        if (!(*itr))
+            continue;
+
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+
+        if (!pPlayer)
+            continue;
+
+        if ((!bOnlyAlive || pPlayer->isAlive()) && (bCanBeGamemaster || !pPlayer->isGameMaster()))
+            return pPlayer;
     }
 
     return NULL;

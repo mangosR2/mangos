@@ -249,15 +249,21 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             // remove players who left capture point zone
             for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
             {
-                PlayerSet::iterator itr, next;
+                ObjectGuidSet::iterator itr, next;
                 for (itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); itr = next)
                 {
                     next = itr;
                     ++next;
-                    if (std::find(pointPlayers.begin(), pointPlayers.end(), (*itr)) == pointPlayers.end() || !(*itr)->IsWorldPvPActive())
+
+                    Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+                    if (!pPlayer)
+                        continue;
+
+                    if (std::find(pointPlayers.begin(), pointPlayers.end(), pPlayer) == pointPlayers.end() || !pPlayer->IsWorldPvPActive())
                     {
                         // send capture point leave packet
-                        (*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
+                        if (pPlayer && pPlayer->IsInWorld())
+                            pPlayer->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
                         m_capturePlayers[team].erase((*itr));
                     }
                 }
@@ -269,10 +275,10 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             // add players who entered capture point zone
             for (std::list<Player*>::iterator itr = pointPlayers.begin(); itr != pointPlayers.end(); ++itr)
             {
-                if ((*itr)->IsWorldPvPActive())
+                if ((*itr) && (*itr)->IsInWorld() && (*itr)->IsWorldPvPActive())
                 {
                     // the std:insert:pair::second element in the pair is set to false if an element with the same value existed
-                    if (m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)).second)
+                    if (m_capturePlayers[GetTeamIndex(((Player*)(*itr))->GetTeam())].insert((*itr)->GetObjectGuid()).second)
                     {
                         // send capture point zone enter packets
                         (*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
@@ -323,15 +329,25 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
 
             // on retail this is also sent to newly added players even though they already received a capture tick value
             for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
-                for (PlayerSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
+            {
+                for (ObjectGuidSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
                 {
-                    //(*itr)->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
-                    (*itr)->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
-                    //(*itr)->SendUpdateWorldState(info->capturePoint.worldState1, 1);
-                }
+                    Player* pPlayer = sObjectMgr.GetPlayer(*itr);
 
+                    if (!pPlayer)
+                        continue;
+
+                    if (pPlayer->IsInWorld())
+                    {
+                        //pPlayer->SendUpdateWorldState(info->capturePoint.worldState3, neutralPercent);
+                        pPlayer->SendUpdateWorldState(info->capturePoint.worldState2, (uint32)m_captureTicks);
+                        //pPlayer->SendUpdateWorldState(info->capturePoint.worldState1, 1);
+                    }
+                }
+            }
             // call capture point events
-            Use(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))); // TODO: We actually now dont need player pointer in the Use() function of capture points
+            if (Player* usePlayer = sObjectMgr.GetPlayer(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))))
+                Use(usePlayer); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
             m_captureTime -= diff;
@@ -1156,6 +1172,9 @@ void GameObject::SwitchDoorOrButton(bool activate, bool alternative /* = false *
 
 void GameObject::Use(Unit* user)
 {
+    if (!user)
+        return;
+
     // by default spell caster is user
     Unit* spellCaster = user;
     uint32 spellId = 0;
@@ -2151,16 +2170,12 @@ bool GameObject::IsHostileTo(Unit const* unit) const
     // GvP forced reaction and reputation case
     if (unit->GetTypeId()==TYPEID_PLAYER)
     {
-        // forced reaction
         if (tester_faction->faction)
         {
-            if (ReputationRank const* force = ((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
-                return *force <= REP_HOSTILE;
-
             // apply reputation state
             FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->faction);
             if (raw_tester_faction && raw_tester_faction->reputationListID >=0 )
-                return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) <= REP_HOSTILE;
+                return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction, true) <= REP_HOSTILE;
         }
     }
 
@@ -2194,16 +2209,12 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
     // GvP forced reaction and reputation case
     if (unit->GetTypeId()==TYPEID_PLAYER)
     {
-        // forced reaction
         if (tester_faction->faction)
         {
-            if (ReputationRank const* force =((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
-                return *force >= REP_FRIENDLY;
-
             // apply reputation state
             if (FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->faction))
                 if (raw_tester_faction->reputationListID >=0 )
-                    return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) >= REP_FRIENDLY;
+                    return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction, true) >= REP_FRIENDLY;
         }
     }
 
