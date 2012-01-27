@@ -362,7 +362,6 @@ void VehicleKit::RemovePassenger(Unit *passenger, bool dismount)
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
             Player* player = (Player*)passenger;
-            player->SetMover(NULL);
             player->SetClientControl(m_pBase, 0);
             player->RemovePetActionBar();
         }
@@ -373,12 +372,16 @@ void VehicleKit::RemovePassenger(Unit *passenger, bool dismount)
 
     if (passenger->GetTypeId() == TYPEID_PLAYER)
     {
-        ((Player*)passenger)->GetCamera().ResetView();
+        Player* player = (Player*)passenger;
+        player->SetMover(NULL);
+        player->GetCamera().ResetView();
 
         WorldPacket data(SMSG_FORCE_MOVE_UNROOT, 8+4);
         data << passenger->GetPackGUID();
         data << uint32(2);
         passenger->SendMessageToSet(&data, true);
+
+        player->SetMover(player);
     }
     UpdateFreeSeatCount();
 

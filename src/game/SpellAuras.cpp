@@ -4750,7 +4750,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
         p_caster->SetCharm(NULL);
 
         p_caster->SetClientControl(target, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(p_caster);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
@@ -4819,7 +4819,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         p_caster->SetCharm(pet);
         p_caster->SetClientControl(pet, 1);
-        ((Player*)caster)->SetMover(pet);
+        p_caster->SetMover(pet);
 
         pet->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
@@ -4831,7 +4831,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     {
         p_caster->SetCharm(NULL);
         p_caster->SetClientControl(pet, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(p_caster);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
