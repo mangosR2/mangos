@@ -1750,6 +1750,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     ((Creature*)unitTarget)->ForcedDespawn();
                     return;
                 }
+                case 32300:                                 // Focus Fire
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, unitTarget->GetMap()->IsRegularDifficulty() ? 32302 : 38382, true);
+                    return;
+                }
                 case 33060:                                 // Make a Wish
                 {
                     if (m_caster->GetTypeId()!=TYPEID_PLAYER)
@@ -8156,6 +8164,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, damage, true);
                     break;
                 }
+                case 32301:                                 // Ping Shirrak
+                {
+                    if (!unitTarget)
+                        return;
+
+                    // Cast Focus fire on caster
+                    unitTarget->CastSpell(m_caster, 32300, true);
+                    return;
+                }
                 case 38358:                                 // Tidal Surge
                 {
                     if (!unitTarget)
@@ -8187,6 +8204,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     // TODO likely that this spell should have m_caster as Original caster, but conflicts atm with TARGET_ALL_FRIENDLY_UNITS_AROUND_CASTER
                     unitTarget->CastSpell(unitTarget, 39968, true);
+                    return;
                 }
                 case 41055:                                 // Copy Weapon
                 {
@@ -8780,13 +8798,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, m_spellInfo->Id == 49380 ? 49381 : 59805, true, NULL, NULL, m_caster->GetObjectGuid());
                     return;
                 }
-                case 49405:                                 // Taunt Invider Trigger (Trollgore - Drak'Tharon Keep)
+                case 49405:                                 //Invader Taunt Trigger
                 {
                     if (!unitTarget)
                         return;
 
-                    //cast back Trollgore -> Taunt Invider
-                    unitTarget->CastSpell(m_caster, 49406, true);
+                    unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     return;
                 }
                 case 48590:                                 // Avenging Spirits (summon Avenging Spirit Summoners)
