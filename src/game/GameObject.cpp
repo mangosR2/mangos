@@ -262,7 +262,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                     if (std::find(pointPlayers.begin(), pointPlayers.end(), pPlayer) == pointPlayers.end() || !pPlayer->IsWorldPvPActive())
                     {
                         // send capture point leave packet
-                        if (pPlayer->IsInWorld())
+                        if (pPlayer && pPlayer->IsInWorld())
                             pPlayer->SendUpdateWorldState(info->capturePoint.worldState1, 0); // TODO: Create enum for world state activate and deactivate (1 and 0)
                         m_capturePlayers[team].erase((*itr));
                     }
@@ -346,8 +346,8 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 }
             }
             // call capture point events
-            Player* usePlayer = sObjectMgr.GetPlayer(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin())));
-            Use(usePlayer); // TODO: We actually now dont need player pointer in the Use() function of capture points
+            if (Player* usePlayer = sObjectMgr.GetPlayer(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))))
+                Use(usePlayer); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
             m_captureTime -= diff;
@@ -1172,6 +1172,9 @@ void GameObject::SwitchDoorOrButton(bool activate, bool alternative /* = false *
 
 void GameObject::Use(Unit* user)
 {
+    if (!user)
+        return;
+
     // by default spell caster is user
     Unit* spellCaster = user;
     uint32 spellId = 0;
