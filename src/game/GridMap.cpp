@@ -1281,6 +1281,8 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
                             if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_READY)
                                 bLOSBreak = true;
                             break;
+                        case GAMEOBJECT_TYPE_TRAP:
+                            break;
                         case GAMEOBJECT_TYPE_TRANSPORT:
                             if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_ACTIVE)
                                 bLOSBreak = true;
