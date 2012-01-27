@@ -1287,6 +1287,9 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
                             if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_ACTIVE)
                                 bLOSBreak = true;
                             break;
+                        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
+                            if (!pGo->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DESTROYED))
+                                bLOSBreak = true;
                         default:
                             if (pGo->isSpawned())
                                 bLOSBreak = true;
