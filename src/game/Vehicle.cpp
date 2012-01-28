@@ -301,8 +301,8 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
 //            m_pBase->addUnitState(UNIT_STAT_CONTROLLED);
 //            m_pBase->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
             Player* player = (Player*)passenger;
-            player->SetMover(m_pBase);
-            player->SetClientControl(m_pBase, 1);
+            // player->SetMover(m_pBase);
+            player->SetClientControl(m_pBase, 0);
         }
     }
 
