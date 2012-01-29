@@ -1366,6 +1366,55 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recv_data)
             }
         }
 
+        // check for jewelcrafting gems
+        int32 jc_newcount = 0;
+        if (iGemProto->RequiredSkill == SKILL_JEWELCRAFTING)
+        {
+            for (int j = 0; j < MAX_GEM_SOCKETS; ++j)
+            {
+                if (Gems[j])
+                {
+                    // gem getting replaced
+                    if (OldEnchants[j])
+                    {
+                        if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(OldEnchants[j]))
+                            if (ItemPrototype const* jProto = ObjectMgr::GetItemPrototype(enchantEntry->GemID))
+                                if (jProto->RequiredSkill == SKILL_JEWELCRAFTING)
+                                    --jc_newcount;
+                    }
+
+                    // new gem
+                    if (Gems[j]->GetProto()->RequiredSkill == SKILL_JEWELCRAFTING)
+                        ++jc_newcount;
+                }
+                // existing gems
+                else if (OldEnchants[j])
+                {
+                    if (SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(OldEnchants[j]))
+                        if (ItemPrototype const* jProto = ObjectMgr::GetItemPrototype(enchantEntry->GemID))
+                            if (jProto->RequiredSkill == SKILL_JEWELCRAFTING)
+                                ++jc_newcount;
+                }
+            }
+
+            // more jewelcrafting gems than allowed in this item
+            if (jc_newcount > 0 && uint32(jc_newcount) > MAX_JEWELCRAFTING_GEMS)
+            {
+                _player->SendEquipError(EQUIP_ERR_ITEM_MAX_COUNT_EQUIPPED_SOCKETED, itemTarget, NULL);
+                return;
+            }
+
+            // need to check rest of the equipped items here to prevent client crash
+            if (itemTarget->IsEquipped())
+            {
+                if (InventoryResult res = _player->CanEquipMoreJewelcraftingGems(jc_newcount >= 0 ? jc_newcount : 0, slot))
+                {
+                    _player->SendEquipError(res, itemTarget, NULL);
+                    return;
+                }
+            }
+        }
+
         // for equipped item check all equipment for duplicate equipped gems
         if(itemTarget->IsEquipped())
         {

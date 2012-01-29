@@ -11282,6 +11282,10 @@ InventoryResult Player::CanEquipItem( uint8 slot, uint16 &dest, Item *pItem, boo
             if (eslot == NULL_SLOT)
                 return EQUIP_ERR_ITEM_CANT_BE_EQUIPPED;
 
+            // jewelcrafting gem check
+            if (InventoryResult res2 = CanEquipMoreJewelcraftingGems(pItem->GetJewelcraftingGemCount(), swap ? eslot : NULL_SLOT))
+                return res2;
+
             InventoryResult msg = CanUseItem(pItem , direct_action);
             if (msg != EQUIP_ERR_OK)
                 return msg;
@@ -23125,6 +23129,33 @@ InventoryResult Player::CanEquipUniqueItem( ItemPrototype const* itemProto, uint
         // there is an equip limit on this item
         if (HasItemOrGemWithLimitCategoryEquipped(itemProto->ItemLimitCategory,limitEntry->maxCount-limit_count+1,except_slot))
             return EQUIP_ERR_ITEM_MAX_LIMIT_CATEGORY_EQUIPPED_EXCEEDED_IS;
+    }
+
+    return EQUIP_ERR_OK;
+}
+
+InventoryResult Player::CanEquipMoreJewelcraftingGems(uint32 count, uint8 except_slot) const
+{
+    //uint32 tempcount = count;
+    for (int i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
+    {
+        if (i == int(except_slot))
+            continue;
+
+        Item *pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
+        if (!pItem)
+            continue;
+
+        ItemPrototype const *pProto = pItem->GetProto();
+        if (!pProto)
+            continue;
+
+        if (pProto->Socket[0].Color || pItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT))
+        {
+            count += pItem->GetJewelcraftingGemCount();
+            if (count > MAX_JEWELCRAFTING_GEMS)
+                return EQUIP_ERR_ITEM_MAX_COUNT_EQUIPPED_SOCKETED;
+        }
     }
 
     return EQUIP_ERR_OK;

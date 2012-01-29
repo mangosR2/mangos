@@ -177,6 +177,7 @@ enum EnchantmentSlot
 #define MAX_VISIBLE_ITEM_OFFSET       2                     // 2 fields per visible item (entry+enchantment)
 
 #define MAX_GEM_SOCKETS               MAX_ITEM_PROTO_SOCKETS// (BONUS_ENCHANTMENT_SLOT-SOCK_ENCHANTMENT_SLOT) and item proto size, equal value expected
+#define MAX_JEWELCRAFTING_GEMS        3
 
 enum EnchantmentOffset
 {
@@ -314,6 +315,7 @@ class MANGOS_DLL_SPEC Item : public Object
         uint32 GetMaxStackCount() const { return GetProto()->GetMaxStackSize(); }
         uint8 GetGemCountWithID(uint32 GemID) const;
         uint8 GetGemCountWithLimitCategory(uint32 limitCategory) const;
+        uint8 GetJewelcraftingGemCount() const;
         InventoryResult CanBeMergedPartlyWith(ItemPrototype const* proto) const;
 
         uint8 GetSlot() const {return m_slot;}
