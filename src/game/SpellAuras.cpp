@@ -2310,9 +2310,13 @@ void Aura::TriggerSpell()
                 triggerTarget->CastCustomSpell(triggerTarget, trigger_spell_id, &mana, NULL, NULL, true, NULL, this);
                 return;
             }
-            case 71340:
+            case 71340:                                     // Pact of the Darkfallen (Lana'thel)
             {
-                triggerTarget->CastSpell(triggerTarget, 71341, true);
+                // growing damage, every tenth tick is 1k higher
+                int32 multiplier = GetModifier()->m_miscvalue += 1;
+                int32 bp0 = triggerTarget->GetMap()->GetDifficulty() >= RAID_DIFFICULTY_10MAN_HEROIC ? 4600 : 1610;
+                bp0 = int32(bp0 + (floor(multiplier / 10.0f)) * 1000);
+                triggerTarget->CastCustomSpell(triggerTarget, 71341, &bp0, 0, 0, true, NULL, this, GetCasterGuid(), GetSpellProto());
                 break;
             }
         }
@@ -3313,6 +3317,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (Creature *pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
                 {
+                    pAbomination->setFaction(target->getFaction());
                     target->CastSpell(pAbomination, 46598, true);
                     pAbomination->CastSpell(pAbomination, 70405, true);
                 }
