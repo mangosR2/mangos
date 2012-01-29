@@ -12187,64 +12187,79 @@ void Unit::RemovePetAura(PetAura const* petSpell)
 
 void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, bool non_positive /*= false*/)
 {
-    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
-    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
-    {
-        SpellEntry const *spell = iter->second->GetSpellProto();
-        if (spell->Id == exceptSpellId)
-            ++iter;
-        else if (non_positive && iter->second->IsPositive())
-            ++iter;
-        else if (spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
-            ++iter;
-        else if (iter->second->HasMechanicMask(mechMask))
-        {
-            bool removedSingleAura = false;
 
-            for(int32 i = 0; i < MAX_EFFECT_INDEX; i++)
+    SpellIdSet         spellsToRemove;
+    std::set<Aura*>    aurasToRemove;
+
+    {
+        MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+        SpellAuraHolderMap const& holders = GetSpellAuraHolderMap();
+
+        for (SpellAuraHolderMap::const_iterator iter = holders.begin(); iter != holders.end(); ++iter)
+        {
+            if (!iter->second ||
+                iter->second->IsDeleted() ||
+                iter->second->IsEmptyHolder() ||
+                iter->second->GetId() == exceptSpellId ||
+                iter->second->GetSpellProto()->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY ||
+                non_positive && iter->second->IsPositive())
+                continue;
+
+            if (iter->second->HasMechanicMask(mechMask))
             {
-                if (iter->second)
+                bool removedSingleAura = false;
+
+                for (int32 i = 0; i < MAX_EFFECT_INDEX; i++)
                 {
-                    if ((1 << (spell->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
+
+                    if ((1 << (iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
                     {
-                        RemoveSingleAuraFromSpellAuraHolder(iter->second, SpellEffectIndex(i));
+                        // even if aura already deleted, assuming that not delete all holder
                         removedSingleAura = true;
+
+                        Aura* aura = iter->second->GetAuraByEffectIndex(SpellEffectIndex(i));
+                        if (aura && !aura->IsDeleted())
+                            aurasToRemove.insert(aura);
                     }
                 }
+
+                if (!removedSingleAura)
+                    spellsToRemove.insert(iter->second->GetId());
+
             }
+        }
+    }
 
-            if (!removedSingleAura)
-                RemoveAurasDueToSpell(spell->Id);
+    if (!aurasToRemove.empty())
+    {
+        for (std::set<Aura*>::const_iterator i = aurasToRemove.begin(); i != aurasToRemove.end(); ++i)
+            if (Aura* aura = *i)
+                if (!aura->IsDeleted())
+                    RemoveAura(*i);
+    }
 
-            if (auras.empty())
-                break;
-            else if (iter->second)
-                ++iter;
-            else
-                iter = auras.begin();
-         }
-        else
-            ++iter;
+    if (!spellsToRemove.empty())
+    {
+        for (SpellIdSet::const_iterator i = spellsToRemove.begin(); i != spellsToRemove.end(); ++i)
+            RemoveAurasDueToSpell(*i);
     }
 }
 
 void Unit::RemoveAurasBySpellMechanic(uint32 mechMask)
 {
-    Unit::SpellAuraHolderMap& auras = GetSpellAuraHolderMap();
-    for(Unit::SpellAuraHolderMap::iterator iter = auras.begin(); iter != auras.end();)
+    Unit::SpellAuraHolderMap& holders = GetSpellAuraHolderMap();
+    for(Unit::SpellAuraHolderMap::iterator iter = holders.begin(); iter != holders.end();)
     {
-        SpellEntry const *spell = iter->second->GetSpellProto();
-
-        if (!iter->second->IsPositive())
+        if (!iter->second || iter->second->IsDeleted() || !iter->second->IsPositive())
             ++iter;
-
-        else if (spell->Mechanic & mechMask)
+        else if (iter->second->GetSpellProto()->Mechanic & mechMask)
         {
-            RemoveAurasDueToSpell(spell->Id);
-            if (auras.empty())
+            RemoveAurasDueToSpell(iter->second->GetId());
+
+            if (holders.empty())
                 break;
             else
-                iter = auras.begin();
+                iter = holders.begin();
         }
         else
             ++iter;
