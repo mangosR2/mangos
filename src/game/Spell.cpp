@@ -8669,7 +8669,22 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             }
             break;
         }
-        case 68921: case 69049: // Soulstorm (Forge of Souls - Bronjahm)
+        case 68508: // Crushing Leap (IoC bosses)
+        {
+            UnitList tmpUnitMap;
+            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if (!tmpUnitMap.empty())
+            {
+                for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
+                {
+                    if (*itr && (*itr)->GetTypeId() == TYPEID_PLAYER && !(*itr)->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING)))
+                        targetUnitMap.push_back(*itr);
+                }
+            }
+            break;
+        }
+        case 68921: // Soulstorm (Forge of Souls - Bronjahm)
+        case 69049:
         {
             UnitList tmpUnitMap;
             FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
