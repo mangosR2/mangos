@@ -385,7 +385,7 @@ UPDATE creature_template SET IconName="vehichleCursor" WHERE entry IN
 UPDATE creature_template SET IconName="Gunner" WHERE entry IN (28319,28366,28833,30236,32629,33067,33080,33139,33264,34111);
 UPDATE creature_template SET IconName = 'vehichleCursor' WHERE vehicle_id > 0 AND IconName IS NULL;
 
-DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33062, 33060, 33067);
+DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33167, 33062, 33060, 33067);
 INSERT INTO npc_spellclick_spells VALUES
 (33109, 62309, 0, 0, 0, 1),  -- Demolisher
 (33167, 62309, 0, 0, 0, 1),  -- Demolisher mechanic seat

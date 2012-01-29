@@ -133,6 +133,11 @@ enum BG_SA_Events
     SA_EVENT_ADD_VECH_E     = 12,       // east base demolishers
     SA_EVENT_ADD_VECH_W     = 13,       // west base demolishers
     SA_EVENT_ADD_RELIC      = 14,       // titan relic
+    SA_EVENT_ADD_GREEN_SIGIL  = 15,     // green gate sigil
+    SA_EVENT_ADD_BLUE_SIGIL   = 16,     // blue gate sigil
+    SA_EVENT_ADD_RED_SIGIL    = 17,     // red gate sigil
+    SA_EVENT_ADD_PURPLE_SIGIL = 18,     // purple gate sigil
+    SA_EVENT_ADD_YELLOW_SIGIL = 19,     // yellow gate sigil
     SA_EVENT_NONE           = 255       // no real BG event, only dummy
 };
 
