@@ -3287,6 +3287,13 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             }
+            case 61900:                                     // Electrical Charge
+            {
+                if (m_removeMode == AURA_REMOVE_BY_DEATH)
+                    target->CastSpell(target, GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_0), true);
+
+                return;
+            }
             case 68839:                                     // Corrupt Soul
             {
                 // Knockdown Stun
@@ -9439,6 +9446,11 @@ void Aura::PeriodicDummyTick()
                     }
 
                     break;
+                }
+                case 62019:                                 // Rune of Summoning
+                {
+                    target->CastSpell(target, 62020, true, NULL, this);
+                    return;
                 }
                 case 62038: // Biting Cold (Ulduar: Hodir)
                 {
