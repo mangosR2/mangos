@@ -701,6 +701,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
         case 66406:                                         // Snobolled! (Trial of the Crusader, Gormok the Impaler encounter)
         case 68377:                                         // Carrying Huge Seaforium (IoC)
         case 71010:                                         // Web Wrap (Icecrown Citadel, trash mob Nerub'ar Broodkeeper)
+        case 71265:                                         // Swarming Shadows (Lanathel)
         case 72219:                                         // Gastric Bloat 10 N
         case 72551:                                         // Gastric Bloat 10 H
         case 72552:                                         // Gastric Bloat 25 N
@@ -4808,8 +4809,10 @@ bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
     switch (spellInfo->Effect[effecIdx])
     {
         // need much more correct effect definition in this check
+        case SPELL_EFFECT_NONE:
         case SPELL_EFFECT_DISPEL:
         case SPELL_EFFECT_TRIGGER_SPELL:
+        case SPELL_EFFECT_DISPEL_MECHANIC:
             return false;
 
         case SPELL_EFFECT_SCHOOL_DAMAGE:

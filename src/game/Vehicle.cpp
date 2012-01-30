@@ -120,6 +120,15 @@ int8 VehicleKit::GetNextEmptySeat(int8 seatId, bool next) const
     if (m_Seats.empty() || seatId >= MAX_VEHICLE_SEAT)
         return -1;
 
+    // some vehicles (those - found in ICC) dont return proper seatID
+    // maybe some wrong flags interpretation? (usable)
+    if (m_pBase->GetEntry() == 37672 || m_pBase->GetEntry() == 38285 ||
+        m_pBase->GetEntry() == 36609 || m_pBase->GetEntry() == 36598 ||
+        m_pBase->GetEntry() == 37187)
+    {
+        return 0;
+    }
+
     if (next)
     {
         for (SeatMap::const_iterator seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
@@ -145,11 +154,6 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
         for (seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
         {
             if (!seat->second.passenger && (seat->second.seatInfo->IsUsable() || (seat->second.seatInfo->m_flags & SEAT_FLAG_UNCONTROLLED)))
-                break;
-
-        // some weird behaviour of some vehicles: Abomination (Putricide), Val'kyrs and Strangulate Vehicle (Lich King)
-            if (GetBase()->GetEntry() == 37672 || GetBase()->GetEntry() == 38285 ||
-                GetBase()->GetEntry() == 36609 || GetBase()->GetEntry() == 36598)
                 break;
         }
 
@@ -298,11 +302,8 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
     {
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
-//            m_pBase->addUnitState(UNIT_STAT_CONTROLLED);
-//            m_pBase->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
             Player* player = (Player*)passenger;
-            player->SetMover(m_pBase);
-            player->SetClientControl(m_pBase, 1);
+            player->SetClientControl(m_pBase, 0);
         }
     }
 
@@ -362,7 +363,6 @@ void VehicleKit::RemovePassenger(Unit *passenger, bool dismount)
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
             Player* player = (Player*)passenger;
-            player->SetMover(NULL);
             player->SetClientControl(m_pBase, 0);
             player->RemovePetActionBar();
         }
@@ -373,12 +373,15 @@ void VehicleKit::RemovePassenger(Unit *passenger, bool dismount)
 
     if (passenger->GetTypeId() == TYPEID_PLAYER)
     {
-        ((Player*)passenger)->GetCamera().ResetView();
+        Player* player = (Player*)passenger;
+        player->GetCamera().ResetView();
 
         WorldPacket data(SMSG_FORCE_MOVE_UNROOT, 8+4);
         data << passenger->GetPackGUID();
         data << uint32(2);
         passenger->SendMessageToSet(&data, true);
+
+        player->SetMover(player);
     }
     UpdateFreeSeatCount();
 

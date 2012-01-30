@@ -2310,9 +2310,13 @@ void Aura::TriggerSpell()
                 triggerTarget->CastCustomSpell(triggerTarget, trigger_spell_id, &mana, NULL, NULL, true, NULL, this);
                 return;
             }
-            case 71340:
+            case 71340:                                     // Pact of the Darkfallen (Lana'thel)
             {
-                triggerTarget->CastSpell(triggerTarget, 71341, true);
+                // growing damage, every tenth tick is 1k higher
+                int32 multiplier = GetModifier()->m_miscvalue += 1;
+                int32 bp0 = triggerTarget->GetMap()->GetDifficulty() >= RAID_DIFFICULTY_10MAN_HEROIC ? 4600 : 1610;
+                bp0 = int32(bp0 + (floor(multiplier / 10.0f)) * 1000);
+                triggerTarget->CastCustomSpell(triggerTarget, 71341, &bp0, 0, 0, true, NULL, this, GetCasterGuid(), GetSpellProto());
                 break;
             }
         }
@@ -3283,6 +3287,13 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             }
+            case 61900:                                     // Electrical Charge
+            {
+                if (m_removeMode == AURA_REMOVE_BY_DEATH)
+                    target->CastSpell(target, GetSpellProto()->CalculateSimpleValue(EFFECT_INDEX_0), true);
+
+                return;
+            }
             case 68839:                                     // Corrupt Soul
             {
                 // Knockdown Stun
@@ -3313,6 +3324,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 if (Creature *pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
                 {
+                    pAbomination->setFaction(target->getFaction());
                     target->CastSpell(pAbomination, 46598, true);
                     pAbomination->CastSpell(pAbomination, 70405, true);
                 }
@@ -4750,7 +4762,7 @@ void Aura::HandleModPossess(bool apply, bool Real)
         p_caster->SetCharm(NULL);
 
         p_caster->SetClientControl(target, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(p_caster);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
@@ -4819,7 +4831,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
 
         p_caster->SetCharm(pet);
         p_caster->SetClientControl(pet, 1);
-        ((Player*)caster)->SetMover(pet);
+        p_caster->SetMover(pet);
 
         pet->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
@@ -4831,7 +4843,7 @@ void Aura::HandleModPossessPet(bool apply, bool Real)
     {
         p_caster->SetCharm(NULL);
         p_caster->SetClientControl(pet, 0);
-        p_caster->SetMover(NULL);
+        p_caster->SetMover(p_caster);
 
         // there is a possibility that target became invisible for client\p_caster at ResetView call:
         // it must be called after movement control unapplying, not before! the reason is same as at aura applying
@@ -8402,113 +8414,117 @@ void Aura::PeriodicTick()
                 return;
 
             // some auras remove at specific health level or more
-            if (m_modifier.m_auraname == SPELL_AURA_PERIODIC_DAMAGE)
+            switch (GetId())
             {
-                switch(GetId())
+                case 31956:
+                case 35321:
+                case 38363:
+                case 38801:
+                case 39215:
+                case 43093:
+                case 48920:
+                case 70292:
+                case 71316:
+                case 71317:
                 {
-                    case 43093: case 31956: case 38801:
-                    case 35321: case 38363: case 39215:
-                    case 48920: case 70292:
+                    if (target->GetHealth() == target->GetMaxHealth() )
                     {
-                        if (target->GetHealth() == target->GetMaxHealth() )
-                        {
-                            target->RemoveAurasDueToSpell(GetId());
-                            return;
-                        }
-                        break;
+                        target->RemoveAurasDueToSpell(GetId());
+                        return;
                     }
-                    case 38772:
-                    {
-                        uint32 percent =
-                            GetEffIndex() < EFFECT_INDEX_2 && spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_DUMMY ?
-                            pCaster->CalculateSpellDamage(target, spellProto, SpellEffectIndex(GetEffIndex() + 1)) :
-                            100;
-                        if (target->GetHealth() * 100 >= target->GetMaxHealth() * percent )
-                        {
-                            target->RemoveAurasDueToSpell(GetId());
-                            return;
-                        }
-                        break;
-                    }
-                    case 70541: // Infest (Lich King)
-                    case 73779:
-                    case 73780:
-                    case 73781:
-                    {
-                        if (target->GetHealth() >= target->GetMaxHealth() * 0.9f )
-                        {
-                            target->RemoveAurasDueToSpell(GetId());
-                            return;
-                        }
-                        else
-                        {
-                            // increasing damage (15% more each tick)
-                            // don't increase first tick damage
-                            if (GetModifier()->m_miscvalue > 0)
-                                GetModifier()->m_amount = GetModifier()->m_amount * 1.15f;
-                            else
-                                GetModifier()->m_miscvalue += 1;
-                        }
-                        break;
-                    }
-                    case 70672: // Gaseous Bloat (Putricide)
-                    case 72455:
-                    case 72832:
-                    case 72833:
-                    {
-                        // drop 1 stack
-                        if (GetHolder()->ModStackAmount(-1))
-                        {
-                            target->RemoveAurasDueToSpell(GetId());
-                            return;
-                        }
-
-                        break;
-                    }
-                    case 74562: // SPELL_FIERY_COMBUSTION - Ruby sanctum boss Halion, added mark (74567, dummy) every tick
-                    {
-                        target->CastSpell(target, 74567, true, NULL, NULL, GetCasterGuid());
-                        break;
-                    }
-                    case 74792: // SPELL_SOUL_CONSUMPTION - Ruby sanctum boss Halion, added mark (74795, dummy) every tick
-                    {
-                        target->CastSpell(target, 74795, true, NULL, NULL, GetCasterGuid());
-                        break;
-                    }
-                    case 67297:
-                    case 65950:
-                        pCaster->CastSpell(target, 65951, true);
-                        break;
-                    case 66001:
-                    case 67282:
-                        pCaster->CastSpell(target, 66002, true);
-                        break;
-                    case 67281:
-                    case 67283:
-                        pCaster->CastSpell(target, 66000, true);
-                        break;
-                    case 67296:
-                    case 67298:
-                        pCaster->CastSpell(target, 65952, true);
-                        break;
-                    // Unbound Plague (Putricide)
-                    case 70911:
-                    case 72854:
-                    case 72855:
-                    case 72856:
-                        m_modifier.m_miscvalue += 1; // store ticks number in miscvalue
-                        m_modifier.m_amount = m_modifier.m_baseamount * pow(2.7f, m_modifier.m_miscvalue * 0.223f);
-                        break;
-                    // Boiling Blood (Saurfang)
-                    case 72385:
-                    case 72441:
-                    case 72442:
-                    case 72443:
-                        target->CastSpell(target, 72202, true); // Blood Link
-                        break;
-                    default:
-                        break;
+                    break;
                 }
+                case 38772:
+                {
+                    uint32 percent =
+                        GetEffIndex() < EFFECT_INDEX_2 && spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_DUMMY ?
+                        pCaster->CalculateSpellDamage(target, spellProto, SpellEffectIndex(GetEffIndex() + 1)) :
+                        100;
+                    if (target->GetHealth() * 100 >= target->GetMaxHealth() * percent )
+                    {
+                        target->RemoveAurasDueToSpell(GetId());
+                        return;
+                    }
+                    break;
+                }
+                case 70541: // Infest (Lich King)
+                case 73779:
+                case 73780:
+                case 73781:
+                {
+                    if (target->GetHealth() >= target->GetMaxHealth() * 0.9f )
+                    {
+                        target->RemoveAurasDueToSpell(GetId());
+                        return;
+                    }
+                    else
+                    {
+                        // increasing damage (15% more each tick)
+                        // don't increase first tick damage
+                        if (GetModifier()->m_miscvalue > 0)
+                            GetModifier()->m_amount = GetModifier()->m_amount * 1.15f;
+                        else
+                            GetModifier()->m_miscvalue += 1;
+                    }
+                    break;
+                }
+                case 70672: // Gaseous Bloat (Putricide)
+                case 72455:
+                case 72832:
+                case 72833:
+                {
+                    // drop 1 stack
+                    if (GetHolder()->ModStackAmount(-1))
+                    {
+                        target->RemoveAurasDueToSpell(GetId());
+                        return;
+                    }
+
+                    break;
+                }
+                case 74562: // SPELL_FIERY_COMBUSTION - Ruby sanctum boss Halion, added mark (74567, dummy) every tick
+                {
+                    target->CastSpell(target, 74567, true, NULL, NULL, GetCasterGuid());
+                    break;
+                }
+                case 74792: // SPELL_SOUL_CONSUMPTION - Ruby sanctum boss Halion, added mark (74795, dummy) every tick
+                {
+                    target->CastSpell(target, 74795, true, NULL, NULL, GetCasterGuid());
+                    break;
+                }
+                case 67297:
+                case 65950:
+                    pCaster->CastSpell(target, 65951, true);
+                    break;
+                case 66001:
+                case 67282:
+                    pCaster->CastSpell(target, 66002, true);
+                    break;
+                case 67281:
+                case 67283:
+                    pCaster->CastSpell(target, 66000, true);
+                    break;
+                case 67296:
+                case 67298:
+                    pCaster->CastSpell(target, 65952, true);
+                    break;
+                // Unbound Plague (Putricide)
+                case 70911:
+                case 72854:
+                case 72855:
+                case 72856:
+                    m_modifier.m_miscvalue += 1; // store ticks number in miscvalue
+                    m_modifier.m_amount = m_modifier.m_baseamount * pow(2.7f, m_modifier.m_miscvalue * 0.223f);
+                    break;
+                // Boiling Blood (Saurfang)
+                case 72385:
+                case 72441:
+                case 72442:
+                case 72443:
+                    target->CastSpell(target, 72202, true); // Blood Link
+                    break;
+                default:
+                    break;
             }
 
             uint32 absorb = 0;
@@ -9430,6 +9446,11 @@ void Aura::PeriodicDummyTick()
                     }
 
                     break;
+                }
+                case 62019:                                 // Rune of Summoning
+                {
+                    target->CastSpell(target, 62020, true, NULL, this);
+                    return;
                 }
                 case 62038: // Biting Cold (Ulduar: Hodir)
                 {
