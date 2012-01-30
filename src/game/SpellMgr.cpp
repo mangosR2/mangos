@@ -4809,8 +4809,10 @@ bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
     switch (spellInfo->Effect[effecIdx])
     {
         // need much more correct effect definition in this check
+        case SPELL_EFFECT_NONE:
         case SPELL_EFFECT_DISPEL:
         case SPELL_EFFECT_TRIGGER_SPELL:
+        case SPELL_EFFECT_DISPEL_MECHANIC:
             return false;
 
         case SPELL_EFFECT_SCHOOL_DAMAGE:

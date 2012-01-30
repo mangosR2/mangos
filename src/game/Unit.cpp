@@ -8266,6 +8266,12 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo)
     //TODO add spellEffect immunity checks!, player with flag in bg is immune to immunity buffs from other friendly players!
     //SpellImmuneList const& dispelList = m_spellImmune[IMMUNITY_EFFECT];
 
+    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
+    {
+        if (!IsImmuneToSpellEffect(spellInfo, SpellEffectIndex(i)))
+            return false;
+    }
+
     SpellImmuneList const& dispelList = m_spellImmune[IMMUNITY_DISPEL];
     for(SpellImmuneList::const_iterator itr = dispelList.begin(); itr != dispelList.end(); ++itr)
         if (itr->type == spellInfo->Dispel)
@@ -8304,6 +8310,9 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
 {
     if (!spellInfo)
         return false;
+
+    if (spellInfo->Effect[index] == SPELL_EFFECT_NONE)
+        return true;
 
     // in case of trigger spells, check not current spell, but triggered (/dev/rsa)
     if (spellInfo->Effect[index] == SPELL_EFFECT_TRIGGER_SPELL)
