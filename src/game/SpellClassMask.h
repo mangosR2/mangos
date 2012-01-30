@@ -23,6 +23,75 @@
 
 enum ClassFlag
 {
+    // -- Generic (0)
+    CF_GENERIC_UNK0                         = 0,    // CM0 00000001
+    CF_GENERIC_TOTEM_CALL_EFF               = 1,    // CM0 00000002 + 1 test spell
+    CF_GENERIC_UNK2                         = 2,    // CM0 00000004
+    CF_GENERIC_UNK3                         = 3,    // CM0 00000008
+    CF_GENERIC_HOLY_ENERGY_EFF              = 4,    // CM0 00000010 
+    CF_GENERIC_UNK5                         = 5,    // CM0 00000020
+    CF_GENERIC_PVP_FLAGS                    = 6,    // CM0 00000040
+    CF_GENERIC_UNK7                         = 7,    // CM0 00000080
+    CF_GENERIC_UNK8                         = 8,    // CM0 00000100
+    CF_GENERIC_UNK9                         = 9,    // CM0 00000200
+    CF_GENERIC_UNK10                        = 10,   // CM0 00000400
+    CF_GENERIC_CURSE_IMMUNITY_EFF           = 11,   // CM0 00000800
+    CF_GENERIC_CONSUMPTION_EFF              = 12,   // CM0 00001000 + combustion
+    CF_GENERIC_UNK13                        = 13,   // CM0 00002000
+    CF_GENERIC_UNK14                        = 14,   // CM0 00004000
+    CF_GENERIC_UNK15                        = 15,   // CM0 00008000
+    CF_GENERIC_GLYPH0_EFF                   = 16,   // CM0 00010000 some glyph's
+    CF_GENERIC_UNK17                        = 17,   // CM0 00020000
+    CF_GENERIC_UNK18                        = 18,   // CM0 00040000
+    CF_GENERIC_UNK19                        = 19,   // CM0 00080000
+    CF_GENERIC_UNK20                        = 20,   // CM0 00100000
+    CF_GENERIC_UNK21                        = 21,   // CM0 00200000
+    CF_GENERIC_PREY_OF_THE_WEAK_EFF         = 22,   // CM0 00400000 + cheating death
+    CF_GENERIC_WEAPON_PROC_EFF              = 23,   // CM0 00800000
+    CF_GENERIC_UNK24                        = 24,   // CM0 01000000
+    CF_GENERIC_CORPSE_EXPLOSION_EFF         = 25,   // CM0 02000000
+    CF_GENERIC_DEMONIC_PACT_EFF             = 26,   // CM0 04000000 + metamorphosis 1'st eff
+    CF_GENERIC_CHALLENGE_FLAG_EFF           = 27,   // CM0 08000000
+    CF_GENERIC_UNK28                        = 28,   // CM0 10000000
+    CF_GENERIC_GLYPH1_EFF                   = 29,   // CM0 20000000 all glyph effects (except glyph0)
+    CF_GENERIC_UNK30                        = 30,   // CM0 40000000
+    CF_GENERIC_BLESSED_HEALING_EFF          = 31,   // CM0 80000000
+
+    CF_GENERIC_UNK32                        = 32,   // CM1 00000001
+    CF_GENERIC_UNK33                        = 33,   // CM1 00000002
+    CF_GENERIC_GLACIAL_STRIKE_EFF           = 34,   // CM1 00000004
+    CF_GENERIC_MELEE_STRIKE_EFF             = 35,   // CM1 00000008 sudden death + trauma
+    CF_GENERIC_TURN_THE_TABLES_EFF          = 36,   // CM1 00000010
+    CF_GENERIC_MILITARY_RANK                = 37,   // CM1 00000020
+    CF_GENERIC_UNK38                        = 38,   // CM1 00000040
+    CF_GENERIC_UNK39                        = 39,   // CM1 00000080
+    CF_GENERIC_UNK40                        = 40,   // CM1 00000100
+    CF_GENERIC_UNK41                        = 41,   // CM1 00000200
+    CF_GENERIC_FLAME_BREATH                 = 42,   // CM1 00000400
+    CF_GENERIC_UNK43                        = 43,   // CM1 00000800
+    CF_GENERIC_RUNIC_MASTERY                = 44,   // CM1 00001000
+    CF_GENERIC_UNK45                        = 45,   // CM1 00002000
+    CF_GENERIC_ELEMENTAL_MASTERY            = 46,   // CM1 00004000
+    CF_GENERIC_UNK47                        = 47,   // CM1 00008000
+    CF_GENERIC_UNK48                        = 48,   // CM1 00010000
+    CF_GENERIC_OWLS_FOCUS                   = 49,   // CM1 00020000
+    CF_GENERIC_UNK50                        = 50,   // CM1 00040000
+    CF_GENERIC_UNK51                        = 51,   // CM1 00080000
+    CF_GENERIC_RHYTM_OF_THE_FALLEN          = 52,   // CM1 00100000
+    CF_GENERIC_UNK53                        = 53,   // CM1 00200000
+    CF_GENERIC_UNK54                        = 54,   // CM1 00400000
+    CF_GENERIC_UNK55                        = 55,   // CM1 00800000
+    CF_GENERIC_UNK56                        = 56,   // CM1 01000000
+    CF_GENERIC_UNK57                        = 57,   // CM1 02000000
+    CF_GENERIC_UNK58                        = 58,   // CM1 04000000
+    CF_GENERIC_UNK59                        = 59,   // CM1 08000000
+    CF_GENERIC_KILL_COMMAND_EFF             = 60,   // CM1 10000000
+    CF_GENERIC_UNK61                        = 61,   // CM1 20000000
+    CF_GENERIC_UNK62                        = 62,   // CM1 40000000
+    CF_GENERIC_UNK63                        = 63,   // CM1 80000000
+
+    CF_GENERIC_UNK64                        = 64,   // CM2 00000001
+
     // -- Mage (3)
     CF_MAGE_FIREBALL                        = 0,    // CM0 00000001
     CF_MAGE_FIRE_BLAST                      = 1,    // CM0 00000002
