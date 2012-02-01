@@ -1290,6 +1290,20 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 
     Unit* realCaster = GetAffectiveCaster();
 
+    // Recheck effect immune (only for delayed spells)
+    if (m_spellInfo->speed)
+    {
+        for(int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
+        {
+            if (effectMask & (1 << effectNumber))
+            {
+                // don't handle effect to which target is immuned
+                if (unit->IsImmuneToSpellEffect(m_spellInfo, SpellEffectIndex(effectNumber)))
+                    effectMask &= ~(1 << effectNumber);
+            }
+        }
+    }
+
     // Recheck immune (only for delayed spells)
     if (m_spellInfo->speed && (
         (IsSpellCauseDamage(m_spellInfo) && unit->IsImmunedToDamage(GetSpellSchoolMask(m_spellInfo))) ||
