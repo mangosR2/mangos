@@ -90,6 +90,7 @@ bool PathFinder::calculate(float destX, float destY, float destZ, bool forceDest
     else
     {
         // target moved, so we need to update the poly path
+        ReadGuard Guard(MMAP::MMapFactory::createOrGetMMapManager()->GetLock(m_sourceUnit->GetMapId()));
         BuildPolyPath(start, dest);
         return true;
     }

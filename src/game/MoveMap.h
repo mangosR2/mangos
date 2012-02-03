@@ -25,6 +25,9 @@
 #include "../../dep/recastnavigation/Detour/Include/DetourNavMesh.h"
 #include "../../dep/recastnavigation/Detour/Include/DetourNavMeshQuery.h"
 
+#include "ObjectLock.h"
+#include "MapManager.h"
+
 //  memory management
 inline void* dtCustomAlloc(int size, dtAllocHint /*hint*/)
 {
@@ -84,6 +87,9 @@ namespace MMAP
 
             uint32 getLoadedTilesCount() const { return loadedTiles; }
             uint32 getLoadedMapsCount() const { return loadedMMaps.size(); }
+
+            ObjectLockType& GetLock(uint32 mapId, MapLockType _lockType = MAP_LOCK_TYPE_MMAP);
+
         private:
             bool loadMapData(uint32 mapId);
             uint32 packTileID(int32 x, int32 y);
