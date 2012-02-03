@@ -227,6 +227,7 @@ class MANGOS_DLL_SPEC Group
             uint8       group;
             GroupFlagMask  flags;
             uint8       roles;
+            uint32      lastMap;
         };
         typedef std::list<MemberSlot> MemberSlotList;
         typedef MemberSlotList::const_iterator member_citerator;
@@ -236,7 +237,6 @@ class MANGOS_DLL_SPEC Group
 
     protected:
         typedef std::set<Player*> InvitesList;
-
         typedef std::vector<Roll*> Rolls;
 
     public:
@@ -347,6 +347,8 @@ class MANGOS_DLL_SPEC Group
         void OfflineReadyCheck();
 
         void RewardGroupAtKill(Unit* pVictim, Player* player_tap);
+
+        bool SetPlayerMap(const ObjectGuid guid, uint32 mapid);
 
         /*********************************************************/
         /***                   LOOT SYSTEM                     ***/

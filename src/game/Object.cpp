@@ -1165,7 +1165,7 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
     Unit* searcher = GetObjectGuid().IsUnit() ? (Unit*)this : NULL;
 
     VMAP::IVMapManager* vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
-    return vMapManager->isInLineOfSight(GetMapId(), x, y, z + 0.5f, ox, oy, oz + 0.5f) ?
+    return vMapManager->isInLineOfSight(GetMapId(), x, y, z + 2.0f, ox, oy, oz + 2.0f) ?
             GetTerrain()->CheckPathAccurate(x,y,z, ox, oy, oz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? searcher : NULL ) :
             false;
 }

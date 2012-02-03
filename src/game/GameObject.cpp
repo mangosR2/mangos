@@ -2158,24 +2158,28 @@ bool GameObject::IsHostileTo(Unit const* unit) const
         return IsHostileTo(targetOwner);
 
     // for not set faction case (wild object) use hostile case
-    if(!GetGOInfo()->faction)
+    if (!GetGOInfo()->faction)
         return true;
 
     // faction base cases
     FactionTemplateEntry const*tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
     FactionTemplateEntry const*target_faction = unit->getFactionTemplateEntry();
-    if(!tester_faction || !target_faction)
+    if (!tester_faction || !target_faction)
         return false;
 
     // GvP forced reaction and reputation case
-    if (unit->GetTypeId()==TYPEID_PLAYER)
+    if (unit->GetTypeId() == TYPEID_PLAYER)
     {
         if (tester_faction->faction)
         {
+            // forced reaction
+            if (ReputationRank const* force = ((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
+                return *force <= REP_HOSTILE;
+
             // apply reputation state
             FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->faction);
-            if (raw_tester_faction && raw_tester_faction->reputationListID >=0 )
-                return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction, true) <= REP_HOSTILE;
+            if (raw_tester_faction && raw_tester_faction->reputationListID >= 0)
+                return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) <= REP_HOSTILE;
         }
     }
 
@@ -2197,24 +2201,28 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
         return IsFriendlyTo(targetOwner);
 
     // for not set faction case (wild object) use hostile case
-    if(!GetGOInfo()->faction)
+    if (!GetGOInfo()->faction)
         return false;
 
     // faction base cases
     FactionTemplateEntry const*tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
     FactionTemplateEntry const*target_faction = unit->getFactionTemplateEntry();
-    if(!tester_faction || !target_faction)
+    if (!tester_faction || !target_faction)
         return false;
 
     // GvP forced reaction and reputation case
-    if (unit->GetTypeId()==TYPEID_PLAYER)
+    if (unit->GetTypeId() == TYPEID_PLAYER)
     {
         if (tester_faction->faction)
         {
+            // forced reaction
+            if (ReputationRank const* force =((Player*)unit)->GetReputationMgr().GetForcedRankIfAny(tester_faction))
+                return *force >= REP_FRIENDLY;
+
             // apply reputation state
             if (FactionEntry const* raw_tester_faction = sFactionStore.LookupEntry(tester_faction->faction))
-                if (raw_tester_faction->reputationListID >=0 )
-                    return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction, true) >= REP_FRIENDLY;
+                if (raw_tester_faction->reputationListID >= 0)
+                    return ((Player const*)unit)->GetReputationMgr().GetRank(raw_tester_faction) >= REP_FRIENDLY;
         }
     }
 
@@ -2407,7 +2415,7 @@ bool GameObject::IsWildSummoned() const
     return false;
 }
 
-float GameObject::GetDeterminativeSize() const
+float GameObject::GetDeterminativeSize(bool b_priorityZ) const
 {
     if (!IsInWorld())
         return 0.0f;
@@ -2419,7 +2427,6 @@ float GameObject::GetDeterminativeSize() const
     float dx = info->maxX - info->minX;
     float dy = info->maxY - info->minY;
     float dz = info->maxZ - info->minZ;
-    float _size = sqrt(dx*dx + dy*dy +dz*dz);
 
-    return _size;
+    return b_priorityZ ? dz : sqrt(dx*dx + dy*dy +dz*dz);
 }

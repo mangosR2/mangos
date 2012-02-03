@@ -982,6 +982,9 @@ bool Item::GemsFitSockets() const
     {
         uint8 SocketColor = GetProto()->Socket[enchant_slot-SOCK_ENCHANTMENT_SLOT].Color;
 
+        if (!SocketColor) //prismatic socket
+            continue;
+
         uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot));
         if (!enchant_id)
         {
