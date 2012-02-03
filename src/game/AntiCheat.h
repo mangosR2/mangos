@@ -75,6 +75,7 @@ enum AntiCheatAction
     ANTICHEAT_ACTION_SHEEP            = 6,
     ANTICHEAT_ACTION_STUN             = 7,
     ANTICHEAT_ACTION_SICKNESS         = 8,
+    ANTICHEAT_ACTION_UNDO_MOVE        = 9,
 };
 
 struct AntiCheatCheckEntry;
