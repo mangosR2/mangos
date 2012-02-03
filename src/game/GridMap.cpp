@@ -1229,6 +1229,7 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
     const uint8 numChecks = ceil(fabs(distance/DELTA));
     const float DELTA_X  = (dstX-srcX)/numChecks;
     const float DELTA_Y  = (dstY-srcY)/numChecks;
+    const float DELTA_Z  = (dstZ-srcZ)/numChecks;
 
     float lastGoodX = srcX;
     float lastGoodY = srcY;
@@ -1264,9 +1265,8 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
                     continue;
 
                 // don't check very small and very large objects
-                float pGoSize = pGo->GetDeterminativeSize();
-                if (pGoSize < mover->GetObjectBoundingRadius() * 0.5f ||
-                    pGoSize > mover->GetObjectBoundingRadius() * 100.0f)
+                if (pGo->GetDeterminativeSize(true) < mover->GetObjectBoundingRadius() * 0.5f ||
+                    pGo->GetDeterminativeSize(false) > mover->GetObjectBoundingRadius() * 100.0f)
                     continue;
 
                 // second check by angle
@@ -1277,11 +1277,19 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
                 bool bLOSBreak = false;
                 switch (pGo->GetGoType())
                 {
+                        case GAMEOBJECT_TYPE_TRAP:
+                        case GAMEOBJECT_TYPE_SPELL_FOCUS:
+                        case GAMEOBJECT_TYPE_MO_TRANSPORT:
+                        case GAMEOBJECT_TYPE_CAMERA:
+                        case GAMEOBJECT_TYPE_FISHINGNODE:
+                        case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
+                        case GAMEOBJECT_TYPE_SPELLCASTER:
+                        case GAMEOBJECT_TYPE_FISHINGHOLE:
+                        case GAMEOBJECT_TYPE_CAPTURE_POINT:
+                            break;
                         case GAMEOBJECT_TYPE_DOOR:
                             if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_READY)
                                 bLOSBreak = true;
-                            break;
-                        case GAMEOBJECT_TYPE_TRAP:
                             break;
                         case GAMEOBJECT_TYPE_TRANSPORT:
                             if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_ACTIVE)
@@ -1320,7 +1328,7 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
 
         if (tstZ <= INVALID_HEIGHT)
             break;
-        tstZ += 0.5f;
+        tstZ += (0.5f + DELTA_Z);
 
         if (!CheckPath(prevX, prevY, prevZ, tstX, tstY, tstZ))
         {

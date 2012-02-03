@@ -2415,7 +2415,7 @@ bool GameObject::IsWildSummoned() const
     return false;
 }
 
-float GameObject::GetDeterminativeSize() const
+float GameObject::GetDeterminativeSize(bool b_priorityZ) const
 {
     if (!IsInWorld())
         return 0.0f;
@@ -2427,7 +2427,6 @@ float GameObject::GetDeterminativeSize() const
     float dx = info->maxX - info->minX;
     float dy = info->maxY - info->minY;
     float dz = info->maxZ - info->minZ;
-    float _size = sqrt(dx*dx + dy*dy +dz*dz);
 
-    return _size;
+    return b_priorityZ ? dz : sqrt(dx*dx + dy*dy +dz*dz);
 }

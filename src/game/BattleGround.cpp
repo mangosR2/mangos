@@ -460,6 +460,8 @@ void BattleGround::Update(uint32 diff)
             deadly_Z = -20.0f;
         else if (GetMapId() == 566)                         // Eye of the Storm
             deadly_Z = 1260.0f;
+        else if (GetMapId() == 607)                         // Strand of the Ancients
+            deadly_Z = -200.0f;
 
         for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         {
