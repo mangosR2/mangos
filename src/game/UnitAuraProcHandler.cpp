@@ -5218,10 +5218,14 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                 case SPELL_AURA_MOD_STEALTH:
                 case SPELL_AURA_MOD_INVISIBILITY:
                 {
-                    if ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
+                    if ((!EventProcFlag && !spellProcEvent) &&
+                        (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
                         procExtra & PROC_EX_DIRECT_DAMAGE) &&
                         !(procFlag &  PROC_FLAG_TAKEN_AOE_SPELL_HIT ||
-                        procFlag &  PROC_FLAG_ON_TAKE_PERIODIC))
+                        procFlag &  PROC_FLAG_ON_TAKE_PERIODIC) &&
+                        !(procFlag & PROC_FLAG_SUCCESSFUL_AOE_SPELL_HIT ||
+                        procFlag & PROC_FLAG_ON_DO_PERIODIC)
+                        )
                         return SPELL_AURA_PROC_OK;
                     else if (EventProcFlag || spellProcEvent)
                         return SPELL_AURA_PROC_FAILED;
