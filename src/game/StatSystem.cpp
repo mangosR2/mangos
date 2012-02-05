@@ -390,6 +390,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged )
             UpdateDamagePhysical(OFF_ATTACK);
     }
 
+    UpdateSpellDamageAndHealingBonus();
 
     if (IsInWorld())
     {

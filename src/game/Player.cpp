@@ -17942,6 +17942,7 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty
     if(!mapDiff)
         return NULL;
 
+    MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
     if (itr != m_boundInstances[difficulty].end())
         return &itr->second;
@@ -17951,6 +17952,7 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty
 
 void Player::UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload)
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
     UnbindInstance(itr, difficulty, unload);
 }
@@ -17971,6 +17973,7 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState *state, bool p
 {
     if (state)
     {
+        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
         InstancePlayerBind& bind = m_boundInstances[state->GetDifficulty()][state->GetMapId()];
         if (bind.state)
         {
@@ -24624,7 +24627,10 @@ bool Player::CheckTransferPossibility(uint32 mapId)
 
     MapEntry const* targetMapEntry = sMapStore.LookupEntry(mapId);
     if (!targetMapEntry)
+    {
+        sLog.outError("Player::CheckTransferPossibility: player %s try teleport to map %u, but map not exists!", GetObjectGuid().GetString().c_str(), mapId);
         return false;
+    }
 
     // Battleground requirements checked in another place
     if(InBattleGround() && targetMapEntry->IsBattleGroundOrArena())
@@ -24633,14 +24639,22 @@ bool Player::CheckTransferPossibility(uint32 mapId)
     AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(mapId);
     if (!at)
     {
-        if (targetMapEntry->IsContinent())
+        if (isGameMaster())
         {
-            if (isGameMaster())
-                return true;
-            if (GetSession()->Expansion() < targetMapEntry->Expansion())
-                return false;
+            sLog.outDetail("Player::CheckTransferPossibility: gamemaster %s try teleport to map %u, but entrance trigger not exists (possible for some test maps).", GetObjectGuid().GetString().c_str(), mapId);
             return true;
         }
+
+        if (targetMapEntry->IsContinent())
+        {
+            if (GetSession()->Expansion() < targetMapEntry->Expansion())
+            {
+                sLog.outError("Player::CheckTransferPossibility: player %s try teleport to map %u, but not has sufficient expansion (%u instead of %u)", GetObjectGuid().GetString().c_str(), mapId, GetSession()->Expansion(), targetMapEntry->Expansion());
+                return false;
+            }
+            return true;
+        }
+        sLog.outError("Player::CheckTransferPossibility: player %s try teleport to map %u, but entrance trigger not exists!", GetObjectGuid().GetString().c_str(), mapId);
         return false;
     }
 

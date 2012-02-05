@@ -923,6 +923,12 @@ LexicsCutterNoActionOnGM = 1
 #        min:     0.0  (default mangos method)
 #        max:     1.0  (full CrowdControl, auras like Fear not breaked by damage anyway)
 #
+#    AllowTransferToCustomMap
+#        Allowing moving to maps, enter for which absent in AraeTrigger.dbc (by custom areatrigger_teleport entryes)
+#        Attention! Changing this option "on-the-fly" required reload areatrigger_teleport table!
+#        Default: 0 - disabled (only GM's may transfer to this maps
+#                 1 - enabled  (any player, fit to custom areatrigger_teleport condition, may transfer to this maps).
+#
 ###################################################################################################################
 
 GameType = 1
@@ -1002,6 +1008,7 @@ Motd = "Welcome to the Massive Network Game Object Server."
 Raid.MinLevel = 10
 CheckGOInPath = 0
 CrowdControlHPBase = 0.1
+AllowTransferToCustomMap = 0
 
 ###################################################################################################################
 # PLAYER INTERACTION
@@ -1153,11 +1160,11 @@ AutoBroadcast.Timer = 30000
 #
 #    ListenRange.Say
 #        Distance from player to listen text that creature (or other world object) say
-#        Default: 25
+#        Default: 40
 #
 #    ListenRange.TextEmote
 #        Distance from player to listen textemote that creature (or other world object) say
-#        Default: 25
+#        Default: 40
 #
 #    ListenRange.Yell
 #        Distance from player to listen text that creature (or other world object) yell
