@@ -17942,6 +17942,7 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty
     if(!mapDiff)
         return NULL;
 
+    MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
     if (itr != m_boundInstances[difficulty].end())
         return &itr->second;
@@ -17951,6 +17952,7 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, Difficulty difficulty
 
 void Player::UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload)
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
     BoundInstancesMap::iterator itr = m_boundInstances[difficulty].find(mapid);
     UnbindInstance(itr, difficulty, unload);
 }
@@ -17971,6 +17973,7 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState *state, bool p
 {
     if (state)
     {
+        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
         InstancePlayerBind& bind = m_boundInstances[state->GetDifficulty()][state->GetMapId()];
         if (bind.state)
         {

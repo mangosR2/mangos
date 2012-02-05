@@ -744,13 +744,23 @@ bool AntiCheat::CheckOnTransport()
     if  (GetMover()->HasAura(56266))
         return true;
 
+    // transports size limited
+    // (also received at zeppelin/lift leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
+    if ( m_currentmovementInfo->GetTransportPos()->x < m_currentConfig->checkFloatParam[1] && 
+        m_currentmovementInfo->GetTransportPos()->y < m_currentConfig->checkFloatParam[1] && 
+        m_currentmovementInfo->GetTransportPos()->z < 2.0f * m_currentConfig->checkFloatParam[1])
+        return true;
+
     float trans_rad = sqrt(m_currentmovementInfo->GetTransportPos()->x * m_currentmovementInfo->GetTransportPos()->x + m_currentmovementInfo->GetTransportPos()->y * m_currentmovementInfo->GetTransportPos()->y + m_currentmovementInfo->GetTransportPos()->z * m_currentmovementInfo->GetTransportPos()->z);
     if (trans_rad < + m_currentConfig->checkFloatParam[0])
         return true;
 
     char buffer[255];
-    sprintf(buffer," Transport radius = %f, opcode = %s ",
-                 trans_rad, LookupOpcodeName(m_currentOpcode));
+    sprintf(buffer," Transport radius = %f, opcode = %s, on-transport coordinates %f, %f, %f ",
+                 trans_rad, LookupOpcodeName(m_currentOpcode),
+                 m_currentmovementInfo->GetTransportPos()->x,
+                 m_currentmovementInfo->GetTransportPos()->y,
+                 m_currentmovementInfo->GetTransportPos()->z);
 
     m_currentCheckResult.clear();
     m_currentCheckResult.append(buffer);
@@ -766,8 +776,20 @@ bool AntiCheat::CheckSpell()
 
 bool AntiCheat::CheckSpellValid()
 {
-// in process
-    return true;
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_currentspellID);
+
+    // not have spell in spellbook or spell passive and not casted by client
+    if (spellInfo && !IsPassiveSpell(spellInfo) && !sObjectMgr.IsSpellDisabled(m_currentspellID))
+        return true;
+
+    std::string mode = spellInfo ? (IsPassiveSpell(spellInfo) ? " is passive spell!" : " disabled.") : "absent in DBC!";
+
+    char buffer[255];
+    sprintf(buffer," player try cast spell %u, but spell %s",
+                 m_currentspellID, mode.c_str());
+    m_currentCheckResult.clear();
+    m_currentCheckResult.append(buffer);
+    return false;
 }
 
 bool AntiCheat::CheckSpellOndeath()
@@ -779,6 +801,8 @@ bool AntiCheat::CheckSpellOndeath()
     char buffer[255];
     sprintf(buffer," player is not in ALIVE state, but cast spell %u ",
                  m_currentspellID);
+    m_currentCheckResult.clear();
+    m_currentCheckResult.append(buffer);
     return false;
 
 }
@@ -821,8 +845,20 @@ bool AntiCheat::CheckSpellFamily()
 
 bool AntiCheat::CheckSpellInbook()
 {
-// in process
-    return true;
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_currentspellID);
+
+    // not have spell in spellbook or spell passive and not casted by client
+    if (!GetPlayer()->GetUInt16Value(PLAYER_FIELD_BYTES2, 0) == 0 ||
+         GetPlayer()->HasActiveSpell(m_currentspellID) ||
+        m_currentspellID == 1843)
+        return true;
+
+    char buffer[255];
+    sprintf(buffer," player try cast spell %u, but not has this in spellbook!",
+                 m_currentspellID);
+    m_currentCheckResult.clear();
+    m_currentCheckResult.append(buffer);
+    return false;
 }
 
 // Quest checks
