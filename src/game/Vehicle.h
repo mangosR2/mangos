@@ -25,6 +25,8 @@
 #include "Unit.h"
 #include "SharedDefines.h"
 
+#define SPELL_RIDE_VEHICLE_HARDCODED 46598
+
 struct VehicleEntry;
 
 class VehicleInfo

@@ -256,7 +256,7 @@ UPDATE creature_template SET vehicle_id = 194 WHERE  entry = 29709;
 UPDATE creature_template SET vehicle_id = 243 WHERE  entry = 29736;
 UPDATE creature_template SET vehicle_id = 197 WHERE  entry = 29754;
 UPDATE creature_template SET vehicle_id = 201 WHERE  entry = 29838;
-UPDATE creature_template SET vehicle_id = 205 WHERE  entry = 29884;
+UPDATE creature_template SET vehicle_id = 205, PowerType = 3 WHERE  entry = 29884;
 UPDATE creature_template SET vehicle_id = 209 WHERE  entry = 29931;
 UPDATE creature_template SET vehicle_id = 214 WHERE  entry = 30090;
 UPDATE creature_template SET vehicle_id = 217 WHERE  entry = 30124;

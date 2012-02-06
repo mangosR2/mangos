@@ -118,8 +118,8 @@ void WorldSession::HandleRequestVehicleSwitchSeat(WorldPacket &recv_data)
         if (VehicleKit *pVehicle2 = Vehicle2->GetVehicleKit())
             if (pVehicle2->HasEmptySeat(seatId))
             {
-                    GetPlayer()->ExitVehicle();
-                    GetPlayer()->EnterVehicle(pVehicle2, seatId);
+                GetPlayer()->ExitVehicle();
+                GetPlayer()->EnterVehicle(pVehicle2, seatId);
             }
     }
 }
@@ -228,45 +228,9 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket &recv_data)
     {
         if (Creature* vehicle = GetPlayer()->GetMap()->GetAnyTypeCreature(guid2))
         {
-            if (VehicleKit* pVehicle2 = vehicle->GetVehicleKit())
-            {
-                if(pVehicle2->HasEmptySeat(seatId))
-                {
-                    SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(vehicle->GetEntry());
-                    for (SpellClickInfoMap::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
-                    {
-                        if (itr->second.IsFitToRequirements(GetPlayer()))
-                        {
-                            Unit* caster = (itr->second.castFlags & 0x1) ? (Unit*)GetPlayer() : (Unit*)vehicle;
-                            Unit* target = (itr->second.castFlags & 0x2) ? (Unit*)GetPlayer() : (Unit*)vehicle;
-
-                            SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->second.spellId);
-                            if (!spellInfo)
-                                return;
-
-                            int32 bp[MAX_EFFECT_INDEX];
-                            bool b_controlAura = false;
-                            for (uint32 i = 0; i < MAX_EFFECT_INDEX; ++i)
-                            {
-                                if (IsAuraApplyEffect(spellInfo, SpellEffectIndex(i)))
-                                {
-                                    if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_CONTROL_VEHICLE)
-                                    {
-                                        bp[i] = seatId + 1;
-                                        b_controlAura = true;
-                                    }
-                                    else
-                                        bp[i] = NULL;
-                                }
-                                else
-                                    bp[i] = NULL;
-                            }
-                            if (b_controlAura)
-                                caster->CastCustomSpell(target,spellInfo,&bp[EFFECT_INDEX_0],&bp[EFFECT_INDEX_1],&bp[EFFECT_INDEX_2],true,NULL,NULL,caster->GetObjectGuid());
-                        }
-                    }
-                }
-            }
+            GetPlayer()->ExitVehicle();
+            GetPlayer()->EnterVehicle(vehicle, seatId);
+            DEBUG_LOG("WorldSession::HandleChangeSeatsOnControlledVehicle player %s try seat on vehicle %s, seat %u.",GetPlayer()->GetObjectGuid().GetString().c_str(),guid2.GetString().c_str(), seatId);
         }
     }
 }
