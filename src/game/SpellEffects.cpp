@@ -4689,7 +4689,7 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
 
     MaNGOS::NormalizeMapCoord(x);
     MaNGOS::NormalizeMapCoord(y);
-    m_caster->UpdateGroundPositionZ(x,y,z);
+    m_caster->UpdateAllowedPositionZ(x,y,z);
 
     m_caster->CastSpell(x, y, z, spellInfo, true, m_CastItem, 0, m_originalCasterGUID);
 }
