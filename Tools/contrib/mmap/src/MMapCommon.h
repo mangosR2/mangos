@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ namespace MMAP
 
         while (dirp)
         {
+            errno = 0;
             if ((dp = readdir(dirp)) != NULL)
             {
                 if(matchWildcardFilter(filter.c_str(), dp->d_name))

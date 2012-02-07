@@ -322,16 +322,6 @@ void AntiCheat::DoAntiCheatAction(AntiCheatCheck checkType, std::string reason)
                         sWorld.SendWorldText(config->messageNum, name.c_str(), config->description.c_str());
                 break;
 
-                case    ANTICHEAT_ACTION_UNDO_MOVE:
-                {
-                    WorldPacket data(MSG_MOVE_TELEPORT_ACK);
-                    GetPlayer()->BuildTeleportAckMsg(data, GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY(), GetPlayer()->GetPositionZ(), GetPlayer()->GetOrientation());
-                    GetPlayer()->GetSession()->SendPacket(&data);
-                    GetPlayer()->SendHeartBeat();
-                    m_currentmovementInfo->ChangePosition(GetPlayer()->GetPositionX(), GetPlayer()->GetPositionY(), GetPlayer()->GetPositionZ(), GetPlayer()->GetOrientation());
-                }
-                break;
-
                 case    ANTICHEAT_ACTION_LOG:
                 case    ANTICHEAT_ACTION_NULL:
                 default:
@@ -357,36 +347,14 @@ void AntiCheat::DoAntiCheatAction(AntiCheatCheck checkType, std::string reason)
            return;
         }
 
-        QueryResult *Res = CharacterDatabase.PQuery("SELECT `entry` FROM `anticheat_log` WHERE `playername`='%s' AND `checktype` = %u AND `Map`='%u' AND `alarm_time` >= NOW()-300 LIMIT 1",
-                                                    playerName,
-                                                    checkType,
-                                                    GetPlayer()->GetMapId());
-        if (Res)
-        {
-            Field* Fields = Res->Fetch();
-
-            std::stringstream Query;
-            Query << "UPDATE `anticheat_log` SET `count`=`count`+1,`alarm_time`=NOW()";
-            Query << " WHERE entry=" << Fields[0].GetInt32() << " LIMIT 1";
-
-            CharacterDatabase.Execute(Query.str().c_str());
-            delete Res;
-        }
-        else
-        {
-            CharacterDatabase.PExecute("INSERT INTO `anticheat_log` (`guid`, `playername`, `account`, `checktype`, `alarm_time`, `Map`, `level`, `action1`, `action2`, `reason`)"
-                                       "VALUES (%u,'%s',%u,%u,NOW(),%u,%u,%u,%u,'%s')",
-                                       GetPlayer()->GetObjectGuid().GetCounter(),
-                                       playerName,
-                                       GetPlayer()->GetSession()->GetAccountId(),
-                                       checkType,
-                                       GetPlayer()->GetMapId(),
-                                       GetPlayer()->getLevel(),
-                                       config->actionType[0],
-                                       config->actionType[1],
-                                       reason.c_str());
-            CharacterDatabase.Execute("DELETE FROM `anticheat_log` WHERE `alarm_time` < NOW()-300 AND `count` < 20");
-        }
+        CharacterDatabase.PExecute("REPLACE INTO `anticheat_log` (`guid`, `playername`, `checktype`, `alarm_time`, `action1`, `action2`, `reason`)"
+                                   "VALUES ('%u','%s','%u',NOW(),'%u','%u','%s')",
+                                   GetPlayer()->GetObjectGuid().GetCounter(),
+                                   playerName,
+                                   checkType,
+                                   config->actionType[0],
+                                   config->actionType[1],
+                                   reason.c_str());
     }
 
 }

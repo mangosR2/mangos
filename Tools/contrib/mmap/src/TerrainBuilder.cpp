@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -233,7 +233,7 @@ namespace MMAP
                     {
                         row = i / V9_SIZE;
                         col = i % V9_SIZE;
-              
+
                         if (row < lheader.offsetY || row >= lheader.offsetY + lheader.height ||
                             col < lheader.offsetX || col >= lheader.offsetX + lheader.width)
                         {
@@ -241,7 +241,7 @@ namespace MMAP
                             meshData.liquidVerts.append((xoffset+col*GRID_PART_SIZE)*-1, INVALID_MAP_LIQ_HEIGHT, (yoffset+row*GRID_PART_SIZE)*-1);
                             continue;
                         }
-                   
+
                         getLiquidCoord(i, j, xoffset, yoffset, coord, liquid_map);
                         meshData.liquidVerts.append(coord[0]);
                         meshData.liquidVerts.append(coord[2]);
@@ -413,7 +413,7 @@ namespace MMAP
                     // terrain under the liquid?
                     if(minLLevel > maxTLevel)
                         useTerrain = false;
-                    
+
                     //liquid under the terrain?
                     if(minTLevel > maxLLevel)
                         useLiquid = false;

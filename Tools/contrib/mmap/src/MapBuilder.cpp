@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ namespace MMAP
         printf("Building map %03u:\n", mapID);
 
         set<uint32>* tiles = getTileList(mapID);
-        
+
         // make sure we process maps which don't have tiles
         if (!tiles->size())
         {
@@ -314,7 +314,7 @@ namespace MMAP
         int maxPolysPerTile = 1 << polyBits;
 
         /***          calculate bounds of map         ***/
-        
+
         uint32 tileXMin = 64, tileYMin = 64, tileXMax = 0, tileYMax = 0, tileX, tileY;
         for (set<uint32>::iterator it = tiles->begin(); it != tiles->end(); ++it)
         {

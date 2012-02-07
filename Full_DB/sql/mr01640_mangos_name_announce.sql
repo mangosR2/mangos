@@ -1,4 +1,4 @@
-﻿DELETE FROM `command` WHERE name = 'nameannounce';
+DELETE FROM `command` WHERE name = 'nameannounce';
 INSERT INTO `command` VALUES ('nameannounce', 1, 'Syntax: .nameannounce $MessageToBroadcast\r\n\r\nSend a global message to all players online in chat log with colored sender\'s name.');
 
 DELETE FROM `mangos_string` WHERE entry IN (12000, 12001, 12002);

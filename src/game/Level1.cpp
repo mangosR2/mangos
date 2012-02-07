@@ -467,7 +467,10 @@ bool ChatHandler::HandleNamegoCommand(char* args)
         else
             target->SaveRecallPosition();
 
-        target->TeleportTo(m_session->GetPlayer()->GetMapId(),m_session->GetPlayer()->GetPositionX(),m_session->GetPlayer()->GetPositionY(),m_session->GetPlayer()->GetPositionZ(),m_session->GetPlayer()->GetOrientation());
+        // before GM
+        float x,y,z;
+        m_session->GetPlayer()->GetClosePoint(x, y, z, target->GetObjectBoundingRadius());
+        target->TeleportTo(m_session->GetPlayer()->GetMapId(),x,y,z,target->GetOrientation());
     }
     else
     {
@@ -608,7 +611,11 @@ bool ChatHandler::HandleGonameCommand(char* args)
         else
             _player->SaveRecallPosition();
 
-        _player->TeleportTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TELE_TO_GM_MODE);
+        // to point to see at target with same orientation
+        float x,y,z;
+        target->GetContactPoint(_player,x,y,z);
+
+        _player->TeleportTo(target->GetMapId(), x, y, z, _player->GetAngle(target), TELE_TO_GM_MODE);
     }
     else
     {

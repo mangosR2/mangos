@@ -42,7 +42,8 @@ namespace Movement
 
         explicit MoveSplineInit(Unit& m);
 
-        /*  Final pass of initialization that launches spline movement.
+        /* Final pass of initialization that launches spline movement.
+         * @return duration - estimated travel time
          */
         int32 Launch();
 

@@ -213,7 +213,7 @@ void WorldSession::LogUnexpectedOpcode(WorldPacket* packet, const char *reason)
 /// Logging helper for unexpected opcodes
 void WorldSession::LogUnprocessedTail(WorldPacket *packet)
 {
-    sLog.outDebug( "SESSION: opcode %s (0x%.4X) have unprocessed tail data (read stop at " SIZEFMTD " from " SIZEFMTD ")",
+    sLog.outError( "SESSION: opcode %s (0x%.4X) have unprocessed tail data (read stop at " SIZEFMTD " from " SIZEFMTD ")",
         LookupOpcodeName(packet->GetOpcode()),
         packet->GetOpcode(),
         packet->rpos(),packet->wpos());
