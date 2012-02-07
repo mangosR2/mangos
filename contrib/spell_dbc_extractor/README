@@ -1,0 +1,10 @@
+1. make work directory (ex. c:\sde)
+2. put all spell_dbc_extractor files to this directory
+3. extract and copy Spell.dbc to this directory
+
+enjoy, your may extract spells from command line, type 
+spell_dbc_extractor 55555 (enter)
+SQL files placed in this directory.
+
+PS require Net framework 3.5
+PPS default language for comment extract - 8 (russian). may change in XML.
