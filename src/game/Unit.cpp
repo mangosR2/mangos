@@ -711,6 +711,11 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
 
         if (pVictim != this)
             pVictim->AttackedBy(this);
+
+        if (damageInfo->SchoolMask() == SPELL_SCHOOL_MASK_NORMAL)
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MELEE_ATTACK);
+        else
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_SPELL_ATTACK);
     }
 
     // Blessed Life talent of Paladin
@@ -6038,6 +6043,7 @@ void Unit::ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVic
     damageInfo.damage        = amount;
     damageInfo.procAttacker  = procAttacker;
     damageInfo.procVictim    = procVictim;
+    damageInfo.procEx        = procExtra;
     damageInfo.attackType    = attType;
     ProcDamageAndSpell(&damageInfo);
 }
@@ -9029,6 +9035,8 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
         if (Spell* spell = GetCurrentSpell(CurrentSpellTypes(i)))
             if (IsNonCombatSpell(spell->m_spellInfo))
                 InterruptSpell(CurrentSpellTypes(i),false);
+
+    RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_COMBAT);
 
     if (creatureNotInCombat)
     {

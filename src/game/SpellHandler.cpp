@@ -326,6 +326,7 @@ void WorldSession::HandleGameObjectUseOpcode( WorldPacket & recv_data )
         return;
     }
 
+    GetPlayer()->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_USE);
     obj->Use(_player);
 }
 
