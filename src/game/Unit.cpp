@@ -711,6 +711,11 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
 
         if (pVictim != this)
             pVictim->AttackedBy(this);
+
+        if (damageInfo->SchoolMask() == SPELL_SCHOOL_MASK_NORMAL)
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MELEE_ATTACK);
+        else
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_SPELL_ATTACK);
     }
 
     // Blessed Life talent of Paladin
@@ -6038,6 +6043,7 @@ void Unit::ProcDamageAndSpell(Unit* pVictim, uint32 procAttacker, uint32 procVic
     damageInfo.damage        = amount;
     damageInfo.procAttacker  = procAttacker;
     damageInfo.procVictim    = procVictim;
+    damageInfo.procEx        = procExtra;
     damageInfo.attackType    = attType;
     ProcDamageAndSpell(&damageInfo);
 }
@@ -9030,6 +9036,8 @@ void Unit::SetInCombatState(bool PvP, Unit* enemy)
             if (IsNonCombatSpell(spell->m_spellInfo))
                 InterruptSpell(CurrentSpellTypes(i),false);
 
+    RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_COMBAT);
+
     if (creatureNotInCombat)
     {
         // should probably be removed for the attacked (+ it's party/group) only, not global
@@ -9901,7 +9909,7 @@ bool Unit::SelectHostileTarget()
 
     MANGOS_ASSERT(GetTypeId() == TYPEID_UNIT);
 
-    if (!this->isAlive())
+    if (!GetMap() ||!isAlive())
         return false;
 
     //This function only useful once AI has been initialized
@@ -9946,6 +9954,32 @@ bool Unit::SelectHostileTarget()
             SetInFront(target);
             if (oldTarget != target)
                 ((Creature*)this)->AI()->AttackStart(target);
+
+            // check if currently selected target is reachable
+            // NOTE: path alrteady generated from AttackStart()
+            if(!GetMotionMaster()->operator->()->IsReachable())
+            {
+                // remove all taunts
+                RemoveSpellsCausingAura(SPELL_AURA_MOD_TAUNT);
+
+                if(m_ThreatManager.getThreatList().size() < 2)
+                {
+                    // only one target in list, we have to evade after timer
+                    // TODO: make timer - inside Creature class
+                    ((Creature*)this)->AI()->EnterEvadeMode();
+                }
+                else
+                {
+                    // remove unreachable target from our threat list
+                    // next iteration we will select next possible target
+                    m_HostileRefManager.deleteReference(target);
+                    m_ThreatManager.modifyThreatPercent(target, -101);
+
+                    GetMap()->RemoveAttackerFor(GetObjectGuid(),target->GetObjectGuid());
+                }
+
+                return false;
+            }
         }
         return true;
     }
@@ -12379,10 +12413,10 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
     }
 }
 
-void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed)
+void Unit::MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath, bool forceDestination)
 {
     Movement::MoveSplineInit init(*this);
-    init.MoveTo(x,y,z);
+    init.MoveTo(x,y,z, generatePath, forceDestination);
     init.SetVelocity(speed);
     init.Launch();
 }

@@ -29,6 +29,7 @@ enum MapLockType
 {
     MAP_LOCK_TYPE_DEFAULT,
     MAP_LOCK_TYPE_AURAS,
+    MAP_LOCK_TYPE_MMAP,
     MAP_LOCK_TYPE_MAX,
 };
 

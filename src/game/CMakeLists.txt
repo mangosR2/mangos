@@ -26,6 +26,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/warden
   ${CMAKE_CURRENT_SOURCE_DIR}/WorldPvP
   ${CMAKE_SOURCE_DIR}/dep/include/g3dlite
+  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
+  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/
   ${CMAKE_SOURCE_DIR}/dep/include
   ${CMAKE_SOURCE_DIR}/src/shared
   ${CMAKE_SOURCE_DIR}/src/framework
@@ -45,7 +47,7 @@ source_group("World/Handlers"
 )
 
 source_group("Motion generators"
-  REGULAR_EXPRESSION Generator|MotionMaster
+  REGULAR_EXPRESSION MoveMap|MoveMapSharedDefines|Generator|MotionMaster
 )
 
 source_group("Server"
@@ -85,6 +87,7 @@ add_library(game STATIC
 
 target_link_libraries(game
   shared
+  detour
 )
 
 if(UNIX)
