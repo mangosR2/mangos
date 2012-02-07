@@ -48,9 +48,9 @@ set /p rdb=What is your Realmd database name?      [realmd]      :
 if %rdb%. == . set rdb=realmd
 
 :install
-set dbpath=sql_mr
-set dbpath1=sql_mr
-set dbpath2=sql_mr
+set dbpath=sql
+set dbpath1=sql
+set dbpath2=sql
 set mysql=.
 
 :checkpaths
