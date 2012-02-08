@@ -291,6 +291,9 @@ bool IsPositiveSpell(SpellEntry const *spellproto);
 bool IsPositiveEffect(SpellEntry const *spellInfo, SpellEffectIndex effIndex);
 bool IsPositiveTarget(uint32 targetA, uint32 targetB);
 
+bool IsNonPositiveSpell(uint32 spellId);
+bool IsNonPositiveSpell(SpellEntry const* spellproto);
+
 bool IsExplicitPositiveTarget(uint32 targetA);
 bool IsExplicitNegativeTarget(uint32 targetA);
 

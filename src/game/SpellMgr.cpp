@@ -1037,6 +1037,30 @@ bool IsPositiveSpell(SpellEntry const *spellproto)
     return true;
 }
 
+bool IsNonPositiveSpell(uint32 spellId)
+{
+    SpellEntry const* spellProto = sSpellStore.LookupEntry(spellId);
+
+    if (!spellProto)
+        return false;
+
+    return IsNonPositiveSpell(spellProto);
+}
+
+bool IsNonPositiveSpell(SpellEntry const* spellProto)
+{
+    if (!spellProto)
+        return false;
+
+    if (spellProto->AttributesEx6 & SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR)
+        return true;
+
+    if (IsPositiveSpell(spellProto))
+        return false;
+
+    return true;
+}
+
 bool IsSingleTargetSpell(SpellEntry const *spellInfo)
 {
     // all other single target spells have if it has AttributesEx5

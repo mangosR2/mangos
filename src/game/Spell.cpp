@@ -5559,7 +5559,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
         if (IsPositiveSpell(m_spellInfo->Id) && m_caster->IsFriendlyTo(target))
         {
-            if (target->IsImmuneToSpell(m_spellInfo))
+            if (!target->IsImmunedToSchool(GetSpellSchoolMask(m_spellInfo)) && target->IsImmuneToSpell(m_spellInfo))
                 return SPELL_FAILED_TARGET_AURASTATE;
 
             if (target->IsInWorld() && target->IsInMap(m_caster))

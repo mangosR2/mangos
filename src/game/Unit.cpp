@@ -3467,23 +3467,17 @@ SpellMissInfo Unit::SpellHitResult(Unit *pVictim, SpellEntry const *spell, bool 
     if (pVictim->GetTypeId()==TYPEID_UNIT && ((Creature*)pVictim)->IsInEvadeMode())
         return SPELL_MISS_EVADE;
 
-    if (!(spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
+    if (IsPositiveSpell(spell) && IsFriendlyTo(pVictim))
+        return SPELL_MISS_NONE;
+    else if (!(spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
     {
-        // Check for immune
-        if (pVictim->IsImmuneToSpell(spell))
-            return SPELL_MISS_IMMUNE;
-
-        // All positive spells can`t miss
-        // TODO: client not show miss log for this spells - so need find info for this in dbc and use it!
-        if (IsPositiveSpell(spell->Id) && IsFriendlyTo(pVictim))
-            return SPELL_MISS_NONE;
-
         // Check for immune
         if (IsSpellCauseDamage(spell) && pVictim->IsImmunedToDamage(GetSpellSchoolMask(spell)))
             return SPELL_MISS_IMMUNE;
+
+        if (pVictim->IsImmuneToSpell(spell))
+            return SPELL_MISS_IMMUNE;
     }
-    else if (IsPositiveSpell(spell->Id) && IsFriendlyTo(pVictim))
-        return SPELL_MISS_NONE;
 
     // Try victim reflect spell
     if (CanReflect)
@@ -8319,6 +8313,7 @@ bool Unit::IsImmuneToSpell(SpellEntry const* spellInfo) const
         return true;
 
     if (!(spellInfo->AttributesEx & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) &&
+        IsNonPositiveSpell(spellInfo) &&
         IsImmunedToSchool(GetSpellSchoolMask(spellInfo)))
         return true;
 
