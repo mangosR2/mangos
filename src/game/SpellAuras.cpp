@@ -8528,8 +8528,8 @@ void Aura::PeriodicTick()
             }
 
             DamageInfo damageInfo = DamageInfo(pCaster, target, spellProto);
-
             damageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
+            damageInfo.damageType = DOT;
 
             // ignore non positive values (can be result apply spellmods to aura damage
             uint32 amount = m_modifier.m_amount > 0 ? m_modifier.m_amount : 0;
