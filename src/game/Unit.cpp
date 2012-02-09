@@ -8361,7 +8361,7 @@ bool Unit::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex i
     // in case of trigger spells, check not current spell, but triggered (/dev/rsa)
     if (spellInfo->Effect[index] == SPELL_EFFECT_TRIGGER_SPELL)
         if (SpellEntry const* triggeredSpellInfo = sSpellStore.LookupEntry(spellInfo->EffectTriggerSpell[index]))
-            return ((Unit*)this)->IsImmuneToSpell(triggeredSpellInfo);
+            return IsImmuneToSpell(triggeredSpellInfo);
 
 
     if (!(spellInfo->AttributesEx & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))

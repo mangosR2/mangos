@@ -1116,6 +1116,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         if (target->reflectResult == SPELL_MISS_NONE)       // If reflected spell hit caster -> do all effect on him
         {
             DoSpellHitOnUnit(m_caster, mask);
+            damageInfo.target = m_caster;
             unitTarget = m_caster;
         }
     }

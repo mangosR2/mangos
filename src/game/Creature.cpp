@@ -1617,7 +1617,7 @@ void Creature::ForcedDespawn(uint32 timeMSToDespawn)
          ((TemporarySummon*)this)->UnSummon();
 }
 
-bool Creature::IsImmuneToSpell(SpellEntry const* spellInfo)
+bool Creature::IsImmuneToSpell(SpellEntry const* spellInfo) const
 {
     if (!spellInfo)
         return false;

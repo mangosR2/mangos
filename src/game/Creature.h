@@ -520,7 +520,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         bool IsOutOfThreatArea(Unit* pVictim) const;
         void FillGuidsListFromThreatList(std::vector<ObjectGuid>& guids, uint32 maxamount = 0);
 
-        bool IsImmuneToSpell(SpellEntry const* spellInfo);
+        bool IsImmuneToSpell(SpellEntry const* spellInfo) const;
                                                             // redefine Unit::IsImmuneToSpell
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
                                                             // redefine Unit::IsImmuneToSpellEffect
