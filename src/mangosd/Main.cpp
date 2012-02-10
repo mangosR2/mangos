@@ -185,17 +185,17 @@ extern int main(int argc, char **argv)
     sLog.outString( "%s [world-daemon]", _R2FULLVERSION(REVISION_DATE,REVISION_TIME,REVISION_R2,REVISION_ID) );
     sLog.outString( "<Ctrl-C> to stop." );
     sLog.outString("\n\n"
-        "MM   MM         MM   MM  MMMMM   MMMM   MMMMM\n"
-        "MM   MM         MM   MM MMM MMM MM  MM MMM MMM\n"
-        "MMM MMM         MMM  MM MMM MMM MM  MM MMM\n"
-        "MM M MM         MMMM MM MMM     MM  MM  MMM\n"
-        "MM M MM  MMMMM  MM MMMM MMM     MM  MM   MMM\n"
-        "MM M MM M   MMM MM  MMM MMMMMMM MM  MM    MMM\n"
-        "MM   MM     MMM MM   MM MM  MMM MM  MM     MMM\n"
-        "MM   MM MMMMMMM MM   MM MMM MMM MM  MM MMM MMM\n"
-        "MM   MM MM  MMM MM   MM  MMMMMM  MMMM   MMMMM\n"
-        "        MM  MMM http://getmangos.com\n"
-        "        MMMMMM  R2 modifications included (https://github.com/mangosR2/mangos)\n\n");
+        "  SSSSs   Ss                SSs            SSSSS\n"
+        " Ss   Ss                     Ss           Ss    S\n"
+        "Ss     S  Ss Ss           SS Ss  SSSSS   Ss         SSSSs   Ss SSs   SSSSS\n"
+        " Ss      SSs Sssss    SSSSSs Ss Ss    Ss Ss        Ss   Ss  SSSs Ss Ss    Ss\n"
+        "  SSSSs   Ss Ss  Ss  Ss   Ss Ss Ss    Ss Ss       Ss     Ss Ss      Ss    Ss\n"
+        "      Ss  Ss Ss   Ss Ss   Ss Ss SSSSSS   Ss       Ss     Ss Ss      SSSSSS\n"
+        " S     Ss Ss Ss   Ss Ss   Ss Ss Ss       Ss       Ss     Ss Ss      Ss\n"
+        " Ss   Ss  Ss Ss   Ss  SSSSSs Ss Ss     s  Ss    S  Ss   Ss  Ss      Ss     s\n"
+        "  SSSSs   Ss Ss   Ss      Ss Ss  SSSSSs    SSSSS    SSSSs   Ss       SSSSSs\n"
+        "                          Ss\n"
+        "                      SSSSs\n\n");
     sLog.outString("Using configuration file %s.", cfg_file);
 
     DETAIL_LOG("%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
