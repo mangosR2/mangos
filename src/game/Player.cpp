@@ -24205,6 +24205,11 @@ void Player::SendDuelCountdown(uint32 counter)
     GetSession()->SendPacket(&data);
 }
 
+bool Player::IsImmuneToSpell(SpellEntry const* spellInfo) const
+{
+    return Unit::IsImmuneToSpell(spellInfo);
+}
+
 bool Player::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const
 {
     switch(spellInfo->Effect[index])

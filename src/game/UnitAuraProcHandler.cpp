@@ -4946,7 +4946,7 @@ SpellAuraProcResult Unit::HandleModDamagePercentDoneAuraProc(Unit* /*pVictim*/, 
         return SPELL_AURA_PROC_FAILED;
     else if (spellInfo->Id == 16246)
         // Shaman clearcasting - must proc only first effect
-        return SPELL_AURA_PROC_FAILED;
+        return SPELL_AURA_PROC_CANT_TRIGGER;
 
     return SPELL_AURA_PROC_OK;
 }

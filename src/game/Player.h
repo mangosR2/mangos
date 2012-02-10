@@ -1619,6 +1619,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         TrainerSpellState GetTrainerSpellState(TrainerSpell const* trainer_spell, uint32 reqLevel) const;
         bool IsSpellFitByClassAndRace(uint32 spell_id, uint32* pReqlevel = NULL) const;
         bool IsNeedCastPassiveLikeSpellAtLearn(SpellEntry const* spellInfo) const;
+        bool IsImmuneToSpell(SpellEntry const* spellInfo) const;
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
 
         void SendProficiency(ItemClass itemClass, uint32 itemSubclassMask);

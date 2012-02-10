@@ -6684,7 +6684,10 @@ void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
     if (!vehicle_entry)
         return;
 
-    SpellEntry const* m_mountspell = sSpellStore.LookupEntry(m_spellInfo->EffectBasePoints[eff_idx] != 0 ? m_spellInfo->CalculateSimpleValue(eff_idx) : 46598);
+    SpellEntry const* m_mountspell = sSpellStore.LookupEntry(
+        m_spellInfo->EffectBasePoints[eff_idx] != 0 ?
+        m_spellInfo->CalculateSimpleValue(eff_idx) :
+        SPELL_RIDE_VEHICLE_HARDCODED);
 
     if (!m_mountspell)
         m_mountspell = sSpellStore.LookupEntry(46598);
