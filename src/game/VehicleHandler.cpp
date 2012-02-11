@@ -58,7 +58,7 @@ void WorldSession::HandleDismissControlledVehicle(WorldPacket &recv_data)
         GetPlayer()->ExitVehicle();
 
     if (dismiss)
-        vehicle->ForcedDespawn();
+        vehicle->ForcedDespawn(1000);
 
 }
 

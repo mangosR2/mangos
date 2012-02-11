@@ -31,7 +31,7 @@ VehicleInfo::VehicleInfo(VehicleEntry const* entry) :
 {
 }
 
-VehicleKit::VehicleKit(Unit* base) : m_uiNumFreeSeats(0), m_pBase(base)
+VehicleKit::VehicleKit(Unit* base) :  m_pBase(base), m_uiNumFreeSeats(0)
 {
     for (uint32 i = 0; i < MAX_VEHICLE_SEAT; ++i)
     {

@@ -35,6 +35,9 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     if (owner.hasUnitState(UNIT_STAT_NOT_MOVE))
         return;
 
+    if (!i_target->isInAccessablePlaceFor(&owner))
+        return;
+
     float x, y, z;
 
     // prevent redundant micro-movement for pets, other followers.

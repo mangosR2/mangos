@@ -355,7 +355,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNoImmediateEffect,                         //300 3 spells, share damage (in percent) with aura owner and aura target. implemented in Unit::DealDamage
     &Aura::HandleNULL,                                      //301 SPELL_AURA_HEAL_ABSORB 5 spells
     &Aura::HandleUnused,                                    //302 unused (3.2.2a)
-    &Aura::HandleNULL,                                      //303 17 spells
+    &Aura::HandleNoImmediateEffect,                         //303 SPELL_AURA_DAMAGE_DONE_VERSUS_AURA_STATE_PCT 17 spells implemented in Unit::*DamageBonus
     &Aura::HandleNULL,                                      //304 2 spells (alcohol effect?)
     &Aura::HandleAuraModIncreaseSpeed,                      //305 SPELL_AURA_MOD_MINIMUM_SPEED
     &Aura::HandleNULL,                                      //306 1 spell
@@ -10588,6 +10588,24 @@ void SpellAuraHolder::_AddSpellAuraHolder()
         // Bleeding aura state
         if (GetAllSpellMechanicMask(m_spellProto) & (1 << (MECHANIC_BLEED-1)))
             m_target->ModifyAuraState(AURA_STATE_BLEEDING, true);
+
+        switch(m_spellProto->SpellFamilyName)
+        {
+            case SPELLFAMILY_GENERIC:
+                {
+                    if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_HOLY))
+                        m_target->ModifyAuraState(AURA_STATE_LIGHT_TARGET, true);
+                    else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_SHADOW))
+                        m_target->ModifyAuraState(AURA_STATE_DARK_TARGET, true);
+
+                        // need more correct research for this aura state and effect (mostly Ulduar vehicle spells)
+//                    else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_FIRE))
+//                        m_target->ModifyAuraState(AURA_STATE_SPELLFIRE, true);
+                    break;
+                }
+            default:
+                break;
+        }
     }
 }
 
@@ -10671,6 +10689,16 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
         ClassFamilyMask removeFamilyFlag = m_spellProto->SpellFamilyFlags;
         switch(m_spellProto->SpellFamilyName)
         {
+            case SPELLFAMILY_GENERIC:
+                {
+                    if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_HOLY))
+                        removeState = AURA_STATE_LIGHT_TARGET;
+                    else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_SHADOW))
+                        removeState = AURA_STATE_DARK_TARGET;
+                    else if (GetSpellSchoolMask(m_spellProto) == (SPELL_SCHOOL_MASK_ARCANE | SPELL_SCHOOL_MASK_FIRE))
+                        removeState = AURA_STATE_SPELLFIRE;
+                }
+                break;
             case SPELLFAMILY_PALADIN:
                 if (IsSealSpell(m_spellProto))
                     removeState = AURA_STATE_JUDGEMENT;     // Update Seals information
@@ -10703,6 +10731,9 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
             case SPELLFAMILY_HUNTER:
                 if (m_spellProto->SpellFamilyFlags.test<CF_HUNTER_PET_SPELLS>())
                     removeState = AURA_STATE_FAERIE_FIRE;   // Sting (hunter versions)
+                break;
+            default:
+                break;
         }
 
         // Remove state (but need check other auras for it)

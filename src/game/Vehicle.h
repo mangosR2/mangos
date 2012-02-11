@@ -86,7 +86,7 @@ class MANGOS_DLL_SPEC VehicleKit
         void SetDestination(float x, float y, float z, float o, float speed, float elevation);
         void SetDestination() { m_dst_x = 0.0f; m_dst_y = 0.0f; m_dst_z  = 0.0f; m_dst_o  = 0.0f; m_dst_speed  = 0.0f; m_dst_elevation  = 0.0f; b_dstSet = false;};
 
-        Unit* GetBase() { return m_pBase; }
+        Unit* GetBase() const { return m_pBase; }
         Aura* GetControlAura(Unit* passenger);
 
     private:

@@ -6832,6 +6832,12 @@ SpellCastResult Spell::CheckRange(bool strict)
     Unit *target = m_targets.getUnitTarget();
     GameObject *pGoTarget = m_targets.getGOTarget();
 
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
+
+    bool friendly = target ? target->IsFriendlyTo(m_caster) : false;
+    float max_range = GetSpellMaxRange(srange, friendly);
+    float min_range = GetSpellMinRange(srange, friendly);
+
     // special range cases
     switch(m_spellInfo->rangeIndex)
     {
@@ -6852,25 +6858,20 @@ SpellCastResult Spell::CheckRange(bool strict)
                     (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, target))
                     return SPELL_FAILED_UNIT_NOT_INFRONT;
 
-                float range_mod = strict ? 0.0f : 5.0f;
-                float base = ATTACK_DISTANCE;
+                float range_mod = (strict ? min_range + 0.5f : max_range + 0.5f);
                 if (Player* modOwner = m_caster->GetSpellModOwner())
-                    range_mod += modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, base, this);
+                    modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, range_mod, this);
 
                 // with additional 5 dist for non stricted case (some melee spells have delay in apply
                 return m_caster->CanReachWithMeleeAttack(target, range_mod) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
             }
             break;                                          // let continue in generic way for no target
         }
+        default:
+            //add radius of caster and ~5 yds "give" for non stricred (landing) check
+            max_range += (strict ? 1.25f : 6.25f);
+            break;
     }
-
-    //add radius of caster and ~5 yds "give" for non stricred (landing) check
-    float range_mod = strict ? 1.25f : 6.25;
-
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
-    bool friendly = target ? target->IsFriendlyTo(m_caster) : false;
-    float max_range = GetSpellMaxRange(srange, friendly) + range_mod;
-    float min_range = GetSpellMinRange(srange, friendly);
 
     if (Player* modOwner = m_caster->GetSpellModOwner())
         modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, max_range, this);
