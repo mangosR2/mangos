@@ -8523,8 +8523,8 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
 
                 go->SetLootState(GO_ACTIVATED);
             }
-            if (go->getLootState() == GO_ACTIVATED && 
-            go->GetGoType() == GAMEOBJECT_TYPE_CHEST && 
+            if (go->getLootState() == GO_ACTIVATED &&
+            go->GetGoType() == GAMEOBJECT_TYPE_CHEST &&
             (go->GetGOInfo()->chest.groupLootRules || sWorld.getConfig(CONFIG_BOOL_LOOT_CHESTS_IGNORE_DB)))
             {
                 if (Group* group = go->GetGroupLootRecipient())
@@ -14739,20 +14739,31 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
 {
     uint32 quest_id = pQuest->GetQuestId();
 
-    for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i )
+    // Destroy quest items
+    uint32 srcItemId = pQuest->GetSrcItemId();
+    uint32 srcItemCount = 0;
+
+    if (srcItemId > 0)
     {
-        if (pQuest->ReqItemId[i])
-            DestroyItemCount(pQuest->ReqItemId[i], pQuest->ReqItemCount[i], true);
+        srcItemCount = pQuest->GetSrcItemCount();
+        if (srcItemCount == 0)
+            srcItemCount = 1;
+        DestroyItemCount(srcItemId, srcItemCount, true, true);
     }
 
-    // Destroy quest item
-    uint32 srcitem = pQuest->GetSrcItemId();
-    if (srcitem > 0)
+    // Destroy requered items
+    for (uint32 i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
     {
-        uint32 count = pQuest->GetSrcItemCount();
-        if (count <= 0)
-            count = 1;
-        DestroyItemCount(srcitem, count, true, true);
+        uint32 reqItemId = pQuest->ReqItemId[i];
+        uint32 reqItemCount = pQuest->ReqItemCount[i];
+
+        if (reqItemId == srcItemId)
+        {
+            reqItemCount -= srcItemCount;
+            if (reqItemCount == 0)
+                continue;
+        }
+        DestroyItemCount(reqItemId, reqItemCount, true);
     }
 
     RemoveTimedQuest(quest_id);
@@ -16373,7 +16384,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
         GetSession()->Expansion() < mapEntry->Expansion())
     {
         sLog.outError("Player::LoadFromDB player %s have invalid coordinates (map: %u X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
-            guid.GetString().c_str(), 
+            guid.GetString().c_str(),
             savedLocation.mapid,
             savedLocation.coord_x,
             savedLocation.coord_y,

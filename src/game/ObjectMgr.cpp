@@ -2812,10 +2812,10 @@ void ObjectMgr::LoadPetLevelInfo()
                     pInfo[level].mindmg = uint16(pInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].mindmg * (petBaseInfo[level].mindmg / petBaseInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].mindmg));
 
                 if(pInfo[level].maxdmg == 0)
-                    pInfo[level].mana = uint16(pInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].maxdmg * (petBaseInfo[level].maxdmg / petBaseInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].maxdmg));
+                    pInfo[level].maxdmg = uint16(pInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].maxdmg * (petBaseInfo[level].maxdmg / petBaseInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].maxdmg));
 
                 if(pInfo[level].attackpower == 0)
-                    pInfo[level].mana = uint16(pInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].attackpower * (petBaseInfo[level].attackpower / petBaseInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].attackpower));
+                    pInfo[level].attackpower = uint16(pInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].attackpower * (petBaseInfo[level].attackpower / petBaseInfo[sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL)-1].attackpower));
 
                 for (int i = 0; i < MAX_STATS; i++)
                 {
