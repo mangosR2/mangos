@@ -14743,11 +14743,12 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     uint32 srcItemId = pQuest->GetSrcItemId();
     uint32 srcItemCount = 0;
 
-    if (srcItemId > 0)
+    if (srcItemId)
     {
         srcItemCount = pQuest->GetSrcItemCount();
-        if (srcItemCount == 0)
+        if (!srcItemCount)
             srcItemCount = 1;
+
         DestroyItemCount(srcItemId, srcItemCount, true, true);
     }
 
@@ -14757,13 +14758,14 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
         uint32 reqItemId = pQuest->ReqItemId[i];
         uint32 reqItemCount = pQuest->ReqItemCount[i];
 
-        if (reqItemId == srcItemId)
+        if (reqItemId)
         {
-            reqItemCount -= srcItemCount;
-            if (reqItemCount == 0)
-                continue;
+            if (reqItemId == srcItemId)
+                reqItemCount -= srcItemCount;
+
+            if (reqItemCount)
+                DestroyItemCount(reqItemId, reqItemCount, true);
         }
-        DestroyItemCount(reqItemId, reqItemCount, true);
     }
 
     RemoveTimedQuest(quest_id);
