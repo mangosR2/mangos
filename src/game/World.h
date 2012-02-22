@@ -647,6 +647,12 @@ class World
         // multithread locking (World locking used only if object map == NULL)
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT) { return i_lock[_locktype]; }
 
+        // reset duel system
+        void chompAndTrim(std::string& str);
+        bool getNextId(const std::string& pString, unsigned int& pStartPos, unsigned int& pId);
+        void setDuelResetEnableAreaIds(const char* areas);
+        bool IsAreaIdEnabledDuelReset(uint32 areaId);
+
     protected:
         void _UpdateGameTime();
         // callback for UpdateRealmCharacters
