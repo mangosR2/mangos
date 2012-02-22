@@ -2674,7 +2674,7 @@ void World::setDuelResetEnableAreaIds(const char* areas)
     if(areaEnabledIds.empty())
     {
         std::string areaIdsString(areas);
-        areaEnabledIds = (Tokens) StrSplit(areaIdsString, ",");
+        areaEnabledIds = StrSplit(areaIdsString, ",");
     }
 }
 
