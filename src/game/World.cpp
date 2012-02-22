@@ -980,7 +980,7 @@ void World::LoadConfigSettings(bool reload)
     MMAP::MMapFactory::preventPathfindingOnMaps(ignoreMapIds.c_str());
     sLog.outString("WORLD: mmap pathfinding %sabled", getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
 
-    // reset duel area
+    // reset duel system
     setConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED, "DuelReset.Enable", false);
     std::string areaIdsEnabledDuel = sConfig.GetStringDefault("DuelReset.AreaIds", "");
     setDuelResetEnableAreaIds(areaIdsEnabledDuel.c_str());
