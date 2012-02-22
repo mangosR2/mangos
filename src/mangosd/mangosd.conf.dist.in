@@ -2084,3 +2084,18 @@ VMSS.MapFreezeDetectTime = 2000
 VMSS.TrySkipFirstThreadBreak = 1
 VMSS.ForceUnloadDelay = 3000
 
+###################################################################################################################
+#    Duel Reset System
+#
+#    DuelReset.Enable
+#        Enable duel reset script that resets all Arena Cooldows, set full hp/mana and erase all debuffs. (Need complete DuelReset.areaIds) -- Not Blizzlike
+#        Default: 0 (disabled)
+#                 1 (enabled)
+#
+#    DuelReset.AreaIds
+#        List of area's ids where Duel Reset Script will be enabled. With delimiter ','. You can lookup areas going with a GM to X zone and typing .gps
+#        Default: "12,14,4570" Outdoor Stormwind, Outdoor Orgrimmar, Dalaran's Circle of Wills 
+#
+###################################################################################################################
+DuelReset.Enable = 0
+DuelReset.AreaIds = "12,14,4570"
