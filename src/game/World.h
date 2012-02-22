@@ -393,6 +393,7 @@ enum eConfigBoolValues
     CONFIG_BOOL_PLAYERBOT_COLLECT_OBJECTS,
     CONFIG_BOOL_PLAYERBOT_SELL_TRASH,
     CONFIG_BOOL_MMAP_ENABLED,
+    CONFIG_BOOL_RESET_DUEL_AREA_ENABLED,
     CONFIG_BOOL_VALUE_COUNT
 };
 
@@ -753,6 +754,9 @@ class World
 
         // World locking for global (not-in-map) objects.
         ObjectLockType   i_lock[MAP_LOCK_TYPE_MAX];
+
+        // reset duel system
+        std::set<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
 
 };
 
