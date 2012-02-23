@@ -23,6 +23,7 @@
 #include "Opcodes.h"
 #include "UpdateData.h"
 #include "Player.h"
+#include "World.h"
 
 void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
 {
@@ -48,6 +49,29 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
 
     pl->SendDuelCountdown(3000);
     plTarget->SendDuelCountdown(3000);
+
+    /**
+    * Duel reset script
+    *
+    */
+   
+    uint32 areaId = pl->GetAreaId();
+       
+    if(sWorld.getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) && sWorld.IsAreaIdEnabledDuelReset(areaId)){
+        //remove arena cds
+        pl->RemoveArenaSpellCooldowns();
+        plTarget->RemoveArenaSpellCooldowns();
+
+        //remove arena auras
+        pl->RemoveArenaAuras();
+        plTarget->RemoveArenaAuras();
+
+        //set max mana and hp
+        pl->SetHealth(pl->GetMaxHealth());
+        pl->SetPower(POWER_MANA, pl->GetMaxPower(POWER_MANA));
+        plTarget->SetHealth(plTarget->GetMaxHealth());
+        plTarget->SetPower(POWER_MANA,  plTarget->GetMaxPower(POWER_MANA));
+    }
 }
 
 void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
