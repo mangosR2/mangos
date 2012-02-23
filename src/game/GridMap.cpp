@@ -1326,24 +1326,14 @@ bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& d
     {
         float prevX = srcX + (float(i-1)*DELTA_X);
         float prevY = srcY + (float(i-1)*DELTA_Y);
-        float prevZ = GetHeight(prevX, prevY, srcZ + 5.0f);
+        float prevZ = srcZ + (float(i-1)*DELTA_Z);
 
         tstX = srcX + (float(i)*DELTA_X);
         tstY = srcY + (float(i)*DELTA_Y);
-        tstZ = GetHeight(tstX, tstY, srcZ + 5.0f);
+        tstZ = srcZ + (float(i)*DELTA_Z);
 
         MaNGOS::NormalizeMapCoord(tstX);
         MaNGOS::NormalizeMapCoord(tstY);
-
-        if (tstZ < (INVALID_HEIGHT + M_NULL_F) || 
-            tstZ > (MAX_HEIGHT - M_NULL_F) ||
-            fabs(tstZ - prevZ) > 10.0f )
-            {
-                ++errorsCount;
-                break;
-            }
-
-        tstZ += (DELTA + DELTA_Z);
 
         if (!CheckPath(prevX, prevY, prevZ, tstX, tstY, tstZ))
         {

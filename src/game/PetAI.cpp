@@ -47,10 +47,10 @@ void PetAI::MoveInLineOfSight(Unit *u)
     if (m_creature->getVictim())
         return;
 
-    if (m_creature->IsPet() && ((Pet*)m_creature)->GetModeFlags() & PET_MODE_DISABLE_ACTIONS)
+    if (m_creature->IsPet() && m_creature->GetCharmInfo()->HasState(CHARM_STATE_ACTION,ACTIONS_DISABLE))
         return;
 
-    if (!m_creature->GetCharmInfo() || !m_creature->GetCharmInfo()->HasReactState(REACT_AGGRESSIVE))
+    if (!m_creature->GetCharmInfo() || !m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT,REACT_AGGRESSIVE))
         return;
 
     if (u->isTargetableForAttack() && m_creature->IsHostileTo( u ) &&
@@ -117,7 +117,7 @@ void PetAI::_stopAttack()
 
     Unit* owner = m_creature->GetCharmerOrOwner();
 
-    if(owner && m_creature->GetCharmInfo() && m_creature->GetCharmInfo()->HasCommandState(COMMAND_FOLLOW))
+    if(owner && m_creature->GetCharmInfo() && m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND,COMMAND_FOLLOW))
     {
         m_creature->GetMotionMaster()->MoveFollow(owner,PET_FOLLOW_DIST, m_creature->IsPet() ? ((Pet*)m_creature)->GetPetFollowAngle() : PET_FOLLOW_ANGLE);
     }
@@ -142,7 +142,7 @@ void PetAI::UpdateAI(const uint32 diff)
     else
         m_updateAlliesTimer -= diff;
 
-    if (inCombat && (!m_creature->getVictim() || (m_creature->IsPet() && ((Pet*)m_creature)->GetModeFlags() & PET_MODE_DISABLE_ACTIONS)))
+    if (inCombat && (!m_creature->getVictim() || (m_creature->IsPet() && m_creature->GetCharmInfo()->HasState(CHARM_STATE_ACTION,ACTIONS_DISABLE))))
         _stopAttack();
 
     // i_pet.getVictim() can't be used for check in case stop fighting, i_pet.getVictim() clear at Unit death etc.
@@ -188,11 +188,11 @@ void PetAI::UpdateAI(const uint32 diff)
     }
     else if (owner && m_creature->GetCharmInfo())
     {
-        if (owner->isInCombat() && !(m_creature->GetCharmInfo()->HasReactState(REACT_PASSIVE) || m_creature->GetCharmInfo()->HasCommandState(COMMAND_STAY)))
+        if (owner->isInCombat() && !(m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT,REACT_PASSIVE) || m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND,COMMAND_STAY)))
         {
             AttackStart(owner->getAttackerForHelper());
         }
-        else if(m_creature->GetCharmInfo()->HasCommandState(COMMAND_FOLLOW))
+        else if(m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND,COMMAND_FOLLOW))
         {
             if (!m_creature->hasUnitState(UNIT_STAT_FOLLOW) )
             {
@@ -341,8 +341,8 @@ void PetAI::UpdateAllies()
 void PetAI::AttackedBy(Unit *attacker)
 {
     //when attacked, fight back in case 1)no victim already AND 2)not set to passive AND 3)not set to stay, unless can it can reach attacker with melee attack anyway
-    if(!m_creature->getVictim() && m_creature->GetCharmInfo() && !m_creature->GetCharmInfo()->HasReactState(REACT_PASSIVE) &&
-        (!m_creature->GetCharmInfo()->HasCommandState(COMMAND_STAY) || m_creature->CanReachWithMeleeAttack(attacker)))
+    if(!m_creature->getVictim() && m_creature->GetCharmInfo() && !m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT,REACT_PASSIVE) &&
+        (!m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND,COMMAND_STAY) || m_creature->CanReachWithMeleeAttack(attacker)))
         AttackStart(attacker);
 }
 

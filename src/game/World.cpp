@@ -980,6 +980,12 @@ void World::LoadConfigSettings(bool reload)
     MMAP::MMapFactory::preventPathfindingOnMaps(ignoreMapIds.c_str());
     sLog.outString("WORLD: mmap pathfinding %sabled", getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
 
+    // reset duel system
+    setConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED, "DuelReset.Enable", false);
+    std::string areaIdsEnabledDuel = sConfig.GetStringDefault("DuelReset.AreaIds", "");
+    setDuelResetEnableAreaIds(areaIdsEnabledDuel.c_str());
+    sLog.outString("WORLD: reset duel area %sabled", getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) ? "en" : "dis");
+
     // chat log and lexics cutter settings
     if (reload)
     {
@@ -2661,4 +2667,22 @@ bool World::configNoReload(bool reload, eConfigBoolValues index, char const* fie
         sLog.outError("%s option can't be changed at mangosd.conf reload, using current value (%s).", fieldname, getConfig(index) ? "'true'" : "'false'");
 
     return false;
+}
+
+void World::setDuelResetEnableAreaIds(const char* areas)
+{
+    if(areaEnabledIds.empty())
+    {
+        std::string areaIdsString(areas);
+        Tokens areaEnabledIdsString = StrSplit(areaIdsString, ",");
+        for(std::vector<std::string>::iterator it = areaEnabledIdsString.begin(); it != areaEnabledIdsString.end(); ++it)
+        {
+           areaEnabledIds.insert(atoi((*it).c_str()));
+        }
+    }
+}
+
+bool World::IsAreaIdEnabledDuelReset(uint32 areaId)
+{
+    return areaEnabledIds.find(areaId) != areaEnabledIds.end();
 }

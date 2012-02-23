@@ -60,6 +60,13 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
     if (!pet->isAlive())
         return;
 
+    CharmInfo* charmInfo = pet->GetCharmInfo();
+    if (!charmInfo)
+    {
+        sLog.outError("WorldSession::HandlePetAction: object (GUID: %u TypeId: %u) is considered pet-like but doesn't have a charminfo!", pet->GetGUIDLow(), pet->GetTypeId());
+        return;
+    }
+
     if (pet->GetTypeId() == TYPEID_PLAYER)
     {
         // controller player can only do melee attack
@@ -69,15 +76,8 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
     else if (((Creature*)pet)->IsPet())
     {
         // pet can have action bar disabled
-        if (((Pet*)pet)->GetModeFlags() & PET_MODE_DISABLE_ACTIONS)
+        if (charmInfo->HasState(CHARM_STATE_ACTION,ACTIONS_DISABLE))
             return;
-    }
-
-    CharmInfo* charmInfo = pet->GetCharmInfo();
-    if (!charmInfo)
-    {
-        sLog.outError("WorldSession::HandlePetAction: object (GUID: %u TypeId: %u) is considered pet-like but doesn't have a charminfo!", pet->GetGUIDLow(), pet->GetTypeId());
-        return;
     }
 
     if (((Creature*)pet)->IsPet() || pet->isCharmed())
@@ -188,9 +188,6 @@ void WorldSession::HandlePetSetAction(WorldPacket& recv_data)
         return;
     }
 
-    // pet can have action bar disabled
-    if (pet->IsPet() && ((Pet*)pet)->GetModeFlags() & PET_MODE_DISABLE_ACTIONS)
-        return;
 
     CharmInfo* charmInfo = pet->GetCharmInfo();
     if (!charmInfo)
@@ -198,6 +195,10 @@ void WorldSession::HandlePetSetAction(WorldPacket& recv_data)
         sLog.outError("WorldSession::HandlePetSetAction: object (GUID: %u TypeId: %u) is considered pet-like but doesn't have a charminfo!", pet->GetGUIDLow(), pet->GetTypeId());
         return;
     }
+
+    // pet can have action bar disabled
+    if (pet->IsPet() && charmInfo->HasState(CHARM_STATE_ACTION,ACTIONS_DISABLE))
+        return;
 
     // if pet is chained - used first pet action bar
     if (((Pet*)pet)->GetPetCounter())

@@ -1155,7 +1155,7 @@ bool WorldObject::_IsWithinDist(WorldObject const* obj, float dist2compare, bool
     return distsq < maxdist * maxdist;
 }
 
-bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
+bool WorldObject::IsWithinLOSInMap(const WorldObject* obj, bool strict) const
 {
     if (!IsInMap(obj))
         return false;
@@ -1163,10 +1163,10 @@ bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
     float ox,oy,oz;
     obj->GetPosition(ox,oy,oz);
 
-    return(IsWithinLOS(ox, oy, oz ));
+    return(IsWithinLOS(ox, oy, oz, strict ));
 }
 
-bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
+bool WorldObject::IsWithinLOS(float ox, float oy, float oz, bool strict) const
 {
     float x,y,z;
     GetPosition(x,y,z);
@@ -1175,7 +1175,7 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 
     VMAP::IVMapManager* vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
     return vMapManager->isInLineOfSight(GetMapId(), x, y, z + 2.0f, ox, oy, oz + 2.0f) ?
-            GetTerrain()->CheckPathAccurate(x,y,z, ox, oy, oz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? searcher : NULL ) :
+            (strict ? GetTerrain()->CheckPathAccurate(x,y,z, ox, oy, oz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? searcher : NULL ) : true) :
             false;
 }
 

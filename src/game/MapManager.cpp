@@ -438,7 +438,7 @@ void MapManager::UpdateLoadBalancer(bool b_start)
 
     i_balanceTimer.Update(timeDiff);
 
-    if(!i_balanceTimer.Passed())
+    if (!i_balanceTimer.Passed() || !m_tickCount || !(m_workTimeStorage + m_sleepTimeStorage))
         return;
 
     float loadValue = float((m_workTimeStorage)/m_tickCount)/float((m_workTimeStorage + m_sleepTimeStorage)/ m_tickCount);

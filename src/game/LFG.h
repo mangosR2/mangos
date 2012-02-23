@@ -260,7 +260,7 @@ public:
 
     void Clear();
     LFGLockStatusMap const* GetLockMap();
-    std::string    GetComment()    { return m_comment; };
+    std::string const&  GetComment()    { return m_comment; };
     void           SetComment(std::string comment);
 
     LFGRoleMask    GetRoles();

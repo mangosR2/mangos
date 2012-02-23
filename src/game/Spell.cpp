@@ -1793,7 +1793,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 60936:                                 // Surge of Power (h) (Malygos)
                 case 61693:                                 // Arcane Storm (Malygos) (N)
                 case 62477:                                 // Icicle (Hodir 25man)
-                case 64598:                                 // Cosmic Smash (Algalon 25man) 
+                case 64598:                                 // Cosmic Smash (Algalon 25man)
                 case 70814:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, heroic)
                 case 72095:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, heroic)
                     unMaxTargets = 3;
@@ -4966,7 +4966,15 @@ void Spell::TakePower()
 
     // Set the five second timer
     if (powerType == POWER_MANA && m_powerCost > 0)
-        m_caster->SetLastManaUse();
+    {
+        uint32 delay = 0;
+        if (m_caster->GetCharmInfo())
+            delay = m_caster->GetCharmInfo()->GetGlobalCooldownMgr().GetGlobalCooldown(m_spellInfo);
+        else if (m_caster->GetTypeId() == TYPEID_PLAYER)
+            delay = ((Player*)m_caster)->GetGlobalCooldownMgr().HasGlobalCooldown(m_spellInfo);
+
+        m_caster->AddEvent(new ManaUseEvent(*m_caster), delay);
+    }
 }
 
 SpellCastResult Spell::CheckOrTakeRunePower(bool take)
@@ -5409,7 +5417,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             if (target->IsTaxiFlying())
                 return SPELL_FAILED_BAD_TARGETS;
 
-            if(!m_IsTriggeredSpell && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target))
+            if(!m_IsTriggeredSpell && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target, strict))
                 return SPELL_FAILED_LINE_OF_SIGHT;
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
@@ -5489,10 +5497,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 else
                     return SPELL_FAILED_BAD_TARGETS;
             }
-        }
 
-        if (non_caster_target)
-        {
             // simple cases
             bool explicit_target_mode = false;
             bool target_hostile = false;
@@ -6529,7 +6534,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     // check LOS for ground targeted spells
     if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !m_targets.getUnitTarget() && !m_targets.getGOTarget() && !m_targets.getItemTarget())
     {
-        if (m_targets.m_destX && m_targets.m_destY && m_targets.m_destZ && !m_caster->IsWithinLOS(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ))
+        if (m_targets.m_destX && m_targets.m_destY && m_targets.m_destZ && !m_caster->IsWithinLOS(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, strict))
             return SPELL_FAILED_LINE_OF_SIGHT;
     }
 
@@ -6858,12 +6863,17 @@ SpellCastResult Spell::CheckRange(bool strict)
                     (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, target))
                     return SPELL_FAILED_UNIT_NOT_INFRONT;
 
-                float range_mod = (strict ? max_range : max_range + 5.0f);
+                float combat_range = m_caster->GetMeleeAttackDistance(target);
+
+                float range_mod = combat_range + (strict ? 1.25f : 6.25f);
+
                 if (Player* modOwner = m_caster->GetSpellModOwner())
                     modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, range_mod, this);
 
+                float range_delta = range_mod - combat_range;
+
                 // with additional 5 dist for non stricted case (some melee spells have delay in apply
-                return m_caster->CanReachWithMeleeAttack(target, range_mod) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
+                return m_caster->CanReachWithMeleeAttack(target, range_delta) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
             }
             break;                                          // let continue in generic way for no target
         }
@@ -6995,7 +7005,8 @@ SpellCastResult Spell::CheckPower()
     if (m_powerCost > 0 && m_caster->GetTypeId() == TYPEID_PLAYER)
     {
         Player* playerCaster = (Player*)m_caster;
-        uint32 diff = REGEN_TIME_FULL - m_caster->GetRegenTimer();
+        uint32 lastRegenInterval = playerCaster->IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL;
+        int32 diff = lastRegenInterval - m_caster->GetRegenTimer();
         if (diff >= REGEN_TIME_PRECISE)
             playerCaster->RegenerateAll(diff);
     }
@@ -7758,7 +7769,7 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
             // Get GO cast coordinates if original caster -> GO
             if (target != m_caster)
                 if (WorldObject *caster = GetCastingObject())
-                    if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(caster))
+                    if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(caster, false))
                         return false;
             break;
     }
@@ -8462,6 +8473,20 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 targetUnitMap.remove(unitTarget);
             return true;
         }
+        case 50294: // Starfall triggered in-range damage (all ranks)
+        case 53188:
+        case 53189:
+        case 53190:
+        {
+            Unit* unitTarget = m_targets.getUnitTarget();
+            FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            if  (unitTarget)
+            {
+                targetUnitMap.remove(unitTarget);
+                m_targets.setDestination(unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ());
+            }
+            break;
+        }
         case 57143: // Life Burst (Wyrmrest Skytalon)
         {
             // hack - spell is AoE but implicitTargets dont match here :/
@@ -9095,6 +9120,35 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             break;
         }
+        case 70360: // Eat Ooze (Mutated Abomination, Putricide)
+        case 72527:
+        {
+            radius = 50.0f;
+
+            UnitList tempTargetUnitMap;
+            FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_ALL);
+            if (!tempTargetUnitMap.empty())
+            {
+                for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
+                {
+                    Unit* unit = *iter;
+
+                    if (unit->GetEntry() == 37690) // Growing Ooze Puddle
+                    {
+                        radius = 5.0f;
+                        if (Aura* aura = unit->GetAura(70347, EFFECT_INDEX_0))
+                            radius += aura->GetStackAmount();
+
+                        if (m_caster->IsWithinDist(unit, radius))
+                        {
+                            targetUnitMap.push_back(unit);
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        }
         case 70127: // Mystic Buffet (Sindragosa)
         case 72528:
         case 72529:
@@ -9259,7 +9313,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                     targetUnitMap.push_back(*iter);
                 }
             }
-            
+
             targetUnitMap.remove(m_caster);
 
             // random 1 target

@@ -138,6 +138,7 @@ bool LFGPlayerState::IsSingleRole()
 
 void LFGPlayerState::SetComment(std::string comment)
 {
+    LFGMgr::WriteGuard Guard(sLFGMgr.GetLock());
     m_comment.clear();
     if (!comment.empty())
     {

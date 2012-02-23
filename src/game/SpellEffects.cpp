@@ -8404,7 +8404,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
 
                     // Teleport target to the spectral realm, add debuff and force faction
-                    unitTarget->CastSpell(unitTarget, 44852, true);
                     unitTarget->CastSpell(unitTarget, 46019, true);
                     unitTarget->CastSpell(unitTarget, 46021, true);
                     return;

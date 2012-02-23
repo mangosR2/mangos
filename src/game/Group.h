@@ -348,7 +348,7 @@ class MANGOS_DLL_SPEC Group
 
         void RewardGroupAtKill(Unit* pVictim, Player* player_tap);
 
-        bool SetPlayerMap(const ObjectGuid guid, uint32 mapid);
+        bool SetPlayerMap(ObjectGuid guid, uint32 mapid);
 
         /*********************************************************/
         /***                   LOOT SYSTEM                     ***/

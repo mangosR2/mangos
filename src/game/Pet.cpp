@@ -34,10 +34,10 @@ m_usedTalentCount(0),
 m_removed(false), m_updated(false), m_happinessTimer(7500), m_petType(type), m_duration(0),
 m_auraUpdateMask(0), m_loading(true), m_needSave(true), m_petFollowAngle(PET_FOLLOW_ANGLE),
 m_petCounter(0), m_PetScalingData(NULL), m_createSpellID(0),m_HappinessState(0),
-m_declinedname(NULL), m_petModeFlags(PET_MODE_DEFAULT)
+m_declinedname(NULL)
 {
     SetName("Pet");
-    m_regenTimer = 2000;
+    m_regenTimer = REGEN_TIME_FULL;
 
     m_baseBonusData = new PetScalingData;
 
@@ -46,12 +46,11 @@ m_declinedname(NULL), m_petModeFlags(PET_MODE_DEFAULT)
         InitCharmInfo(this);
 
     if (type == MINI_PET)                                    // always passive
-        GetCharmInfo()->SetReactState(REACT_PASSIVE);
+        GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_PASSIVE);
     else if(type == PROTECTOR_PET)                           // always defensive
-        GetCharmInfo()->SetReactState(REACT_DEFENSIVE);
+        GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_DEFENSIVE);
     else if (type == GUARDIAN_PET)                           // always aggressive
-        GetCharmInfo()->SetReactState(REACT_AGGRESSIVE);
-
+        GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_AGGRESSIVE);
 }
 
 Pet::~Pet()
@@ -207,7 +206,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
     SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
     SetName(std::string(fields[8].GetCppString()));
     SetUInt32Value(UNIT_FIELD_PETEXPERIENCE, fields[5].GetUInt32());
-    m_charmInfo->SetReactState(ReactStates(fields[6].GetUInt8()));
+    m_charmInfo->SetState(fields[6].GetUInt32());
 
 
     // reget for sure use real creature info selected for Pet at load/creating
@@ -445,7 +444,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
         savePet.addUInt32(GetNativeDisplayId());
         savePet.addUInt32(getLevel());
         savePet.addUInt32(GetUInt32Value(UNIT_FIELD_PETEXPERIENCE));
-        savePet.addUInt32(uint32(m_charmInfo->GetReactState()));
+        savePet.addUInt32(uint32(m_charmInfo->GetState()));
         savePet.addUInt32(uint32(mode));
         savePet.addString(m_name);
         savePet.addUInt32(uint32(HasByteFlag(UNIT_FIELD_BYTES_2, 2, UNIT_CAN_BE_RENAMED) ? 0 : 1));
@@ -2209,23 +2208,6 @@ void Pet::SynchronizeLevelWithOwner()
     }
 }
 
-void Pet::ApplyModeFlags(PetModeFlags mode, bool apply)
-{
-    if (apply)
-        m_petModeFlags = PetModeFlags(m_petModeFlags | mode);
-    else
-        m_petModeFlags = PetModeFlags(m_petModeFlags & ~mode);
-
-    Unit* owner = GetOwner();
-    if(!owner || owner->GetTypeId()!=TYPEID_PLAYER)
-        return;
-
-    WorldPacket data(SMSG_PET_MODE, 12);
-    data << GetObjectGuid();
-    data << uint32(m_petModeFlags);
-    ((Player*)owner)->GetSession()->SendPacket(&data);
-}
-
 void Pet::ApplyStatScalingBonus(Stats stat, bool apply)
 {
     if(stat > STAT_SPIRIT || stat < STAT_STRENGTH )
@@ -2692,9 +2674,9 @@ bool Pet::Summon()
         SetUInt32Value(UNIT_CREATED_BY_SPELL, GetCreateSpellID());
 
     if (isTemporarySummoned() && getPetType() !=  PROTECTOR_PET)
-        GetCharmInfo()->SetReactState(REACT_AGGRESSIVE);
+        GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_AGGRESSIVE);
     else
-        GetCharmInfo()->SetReactState(REACT_DEFENSIVE);
+        GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_DEFENSIVE);
 
     switch (getPetType())
     {
@@ -3008,27 +2990,27 @@ void Pet::Regenerate(Powers power, uint32 diff)
             if (IsUnderLastManaUseEffect())
             {
                 // Mangos Updates Mana in intervals of 2s, which is correct
-                addvalue = GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * 2.00f;
+                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
             else
             {
-                addvalue = GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * 2.00f;
+                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
             break;
         }
         case POWER_RAGE:                                    // Regenerate rage ?
         {
-            addvalue = -20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RAGE_LOSS);
+            addvalue -= 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RAGE_LOSS);
             break;
         }
         case POWER_ENERGY:                                  // Regenerate energy (ghoul)
         {
-            addvalue = 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
+            addvalue += 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
             break;
         }
         case POWER_FOCUS:                                   // Hunter pets
         {
-            addvalue = 10 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
+            addvalue += 10 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
             break;
         }
 
@@ -3064,9 +3046,9 @@ void Pet::Regenerate(Powers power, uint32 diff)
     }
 
     // addvalue computed on a 2sec basis. => update to diff time
-    addvalue *= float(diff) / REGEN_TIME_FULL;
+    int32 _addvalue = ceil(addvalue * float(diff) / (float)REGEN_TIME_FULL);
 
-    curValue += int32(addvalue);
+    curValue += _addvalue;
 
     if (curValue < 0)
         curValue = 0;

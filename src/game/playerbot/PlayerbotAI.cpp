@@ -6051,7 +6051,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
         else if (subcommand == "state" && !argumentFound)
         {
             std::string state;
-            switch (pet->GetCharmInfo()->GetReactState())
+            switch (pet->GetCharmInfo()->GetState(CHARM_STATE_REACT))
             {
                 case REACT_AGGRESSIVE:
                     SendWhisper("My pet is aggressive.", fromPlayer);

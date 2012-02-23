@@ -29,3 +29,10 @@ INSERT INTO spell_script_target VALUES
 (61920 ,1,32857),
 (61920 ,1,32927),
 (61920 ,1,32867);
+
+-- Flaming Arrow ---- Quest Going Bearback (12851)
+DELETE FROM spell_script_target WHERE spell_script_target.entry = 54897;
+INSERT INTO spell_script_target VALUES
+(54897, 1, 29351),
+(54897, 1, 29358);
+

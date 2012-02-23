@@ -408,7 +408,7 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     m_usedTalentCount = 0;
     m_questRewardTalentCount = 0;
 
-    m_regenTimer = 0;
+    m_regenTimer = REGEN_TIME_FULL;
     m_weaponChangeTimer = 0;
 
     m_zoneUpdateId = 0;
@@ -1358,7 +1358,7 @@ void Player::Update( uint32 update_diff, uint32 p_time )
             SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_REGENERATE_POWER);
 
         if (!m_regenTimer)
-            RegenerateAll();
+            RegenerateAll(IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL);
     }
 
     if (!isAlive() && !HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) && getDeathState() != GHOULED )
@@ -1505,6 +1505,12 @@ void Player::SetDeathState(DeathState s)
     // restore resurrection spell id for player after aura remove
     if (s == JUST_DIED && cur && ressSpellId)
         SetUInt32Value(PLAYER_SELF_RES_SPELL, ressSpellId);
+
+    if (!cur && s == ALIVE)
+    {
+        _RemoveAllItemMods();
+        _ApplyAllItemMods();
+    }
 
     if (isAlive() && !cur)
     {
@@ -2107,7 +2113,7 @@ void Player::RegenerateAll(uint32 diff)
     if (getClass() == CLASS_DEATH_KNIGHT)
         Regenerate(POWER_RUNE, diff);
 
-    m_regenTimer = REGEN_TIME_FULL;
+    m_regenTimer = IsUnderLastManaUseEffect() ? REGEN_TIME_PRECISE : REGEN_TIME_FULL;
 }
 
 // diff contains the time in milliseconds since last regen.
@@ -2124,33 +2130,35 @@ void Player::Regenerate(Powers power, uint32 diff)
         {
             if (HasAuraType(SPELL_AURA_STOP_NATURAL_MANA_REGEN))
                 break;
-            bool recentCast = IsUnderLastManaUseEffect();
+
             float ManaIncreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_MANA);
-            if (recentCast)
+            if (IsUnderLastManaUseEffect())
             {
                 // Mangos Updates Mana in intervals of 2s, which is correct
-                addvalue = GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * 2.00f;
+                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_INTERRUPTED_FLAT_MODIFIER) *  ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
             else
             {
-                addvalue = GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * 2.00f;
+                addvalue += GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER) * ManaIncreaseRate * (float)REGEN_TIME_FULL/IN_MILLISECONDS;
             }
-        }   break;
+            break;
+        }
         case POWER_RAGE:                                    // Regenerate rage
         {
             float RageDecreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RAGE_LOSS);
-            addvalue = 20 * RageDecreaseRate;               // 2 rage by tick (= 2 seconds => 1 rage/sec)
-        }   break;
+            addvalue += 20 * RageDecreaseRate;               // 2 rage by tick (= 2 seconds => 1 rage/sec)
+            break;
+        }
         case POWER_ENERGY:                                  // Regenerate energy (rogue)
         {
             float EnergyRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
-            addvalue = 20 * EnergyRate;
+            addvalue += 20 * EnergyRate;
             break;
         }
         case POWER_RUNIC_POWER:
         {
             float RunicPowerDecreaseRate = sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_RUNICPOWER_LOSS);
-            addvalue = 30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
+            addvalue += 30 * RunicPowerDecreaseRate;         // 3 RunicPower by tick
             break;
         }
         case POWER_RUNE:
@@ -2187,7 +2195,8 @@ void Player::Regenerate(Powers power, uint32 diff)
                     SetNeedConvertRune(rune, false);
                 }
             }
-        }   break;
+            break;
+        }
         case POWER_FOCUS:
         case POWER_HAPPINESS:
         case POWER_HEALTH:
@@ -2206,20 +2215,20 @@ void Player::Regenerate(Powers power, uint32 diff)
     }
 
     // addvalue computed on a 2sec basis. => update to diff time
-    addvalue *= float(diff) / REGEN_TIME_FULL;
+    uint32 _addvalue = ceil(fabs(addvalue * float(diff) / (float)REGEN_TIME_FULL));
 
     if (power != POWER_RAGE && power != POWER_RUNIC_POWER)
     {
-        curValue += uint32(addvalue);
+        curValue += _addvalue;
         if (curValue > maxValue)
             curValue = maxValue;
     }
     else
     {
-        if (curValue <= uint32(addvalue))
+        if (curValue <= _addvalue)
             curValue = 0;
         else
-            curValue -= uint32(addvalue);
+            curValue -= _addvalue;
     }
     SetPower(power, curValue);
 }
@@ -6635,11 +6644,11 @@ void Player::RewardReputation(Unit *pVictim, float rate)
         }
     }
 
-    if (Rep->repfaction1 && (!Rep->team_dependent || GetTeam()==ALLIANCE))
+    if (Repfaction1 && (!Rep->team_dependent || GetTeam()==ALLIANCE))
     {
         int32 donerep1 = CalculateReputationGain(REPUTATION_SOURCE_KILL, Rep->repvalue1, Repfaction1, pVictim->getLevel());
         donerep1 = int32(donerep1*rate);
-        FactionEntry const *factionEntry1 = sFactionStore.LookupEntry(Rep->repfaction1);
+        FactionEntry const *factionEntry1 = sFactionStore.LookupEntry(Repfaction1);
         uint32 current_reputation_rank1 = GetReputationMgr().GetRank(factionEntry1);
         if (factionEntry1 && current_reputation_rank1 <= Rep->reputation_max_cap1)
             GetReputationMgr().ModifyReputation(factionEntry1, donerep1);
@@ -6653,11 +6662,11 @@ void Player::RewardReputation(Unit *pVictim, float rate)
         }
     }
 
-    if (Rep->repfaction2 && (!Rep->team_dependent || GetTeam()==HORDE))
+    if (Repfaction2 && (!Rep->team_dependent || GetTeam()==HORDE))
     {
         int32 donerep2 = CalculateReputationGain(REPUTATION_SOURCE_KILL, Rep->repvalue2, Repfaction2, pVictim->getLevel());
         donerep2 = int32(donerep2*rate);
-        FactionEntry const *factionEntry2 = sFactionStore.LookupEntry(Rep->repfaction2);
+        FactionEntry const *factionEntry2 = sFactionStore.LookupEntry(Repfaction2);
         uint32 current_reputation_rank2 = GetReputationMgr().GetRank(factionEntry2);
         if (factionEntry2 && current_reputation_rank2 <= Rep->reputation_max_cap2)
             GetReputationMgr().ModifyReputation(factionEntry2, donerep2);
@@ -19524,7 +19533,7 @@ void Player::PetSpellInitialize()
     data << pet->GetObjectGuid();
     data << uint16(pet->GetCreatureInfo()->family);         // creature family (required for pet talents)
     data << uint32(0);
-    data << uint8(charmInfo->GetReactState()) << uint8(charmInfo->GetCommandState()) << uint16(0);
+    data << uint32(charmInfo->GetState());
 
     // action bar loop
     charmInfo->BuildActionBar(&data);
@@ -19610,7 +19619,7 @@ void Player::PossessSpellInitialize()
     data << charm->GetObjectGuid();
     data << uint16(charm->GetObjectGuid().IsAnyTypeCreature() ? ((Creature*)charm)->GetCreatureInfo()->family : 0);
     data << uint32(0);
-    data << uint32(0);
+    data << uint32(charmInfo->GetState());
 
     charmInfo->BuildActionBar(&data);
 
@@ -19641,7 +19650,7 @@ void Player::VehicleSpellInitialize()
     data << charm->GetObjectGuid();
     data << uint16(((Creature*)charm)->GetCreatureInfo()->family);
     data << uint32(0);
-    data << uint32(0x08000101);                             // react state
+    data << uint32(charmInfo->GetState());
 
     charmInfo->BuildActionBar(&data);
 
@@ -19707,11 +19716,7 @@ void Player::CharmSpellInitialize()
     data << charm->GetObjectGuid();
     data << uint16(charm->GetObjectGuid().IsAnyTypeCreature() ? ((Creature*)charm)->GetCreatureInfo()->family : 0);
     data << uint32(0);
-
-    if (charm->GetTypeId() != TYPEID_PLAYER)
-        data << uint8(charmInfo->GetReactState()) << uint8(charmInfo->GetCommandState()) << uint16(0);
-    else
-        data << uint8(0) << uint8(0) << uint16(0);
+    data << uint32(charmInfo->GetState());
 
     charmInfo->BuildActionBar(&data);
 

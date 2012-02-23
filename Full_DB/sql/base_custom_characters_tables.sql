@@ -149,7 +149,8 @@ ALTER TABLE `pet_spell`
 -- Pet table cleanup
 ALTER TABLE `character_pet`
   DROP `resettalents_cost`,
-  DROP `resettalents_time`;
+  DROP `resettalents_time`,
+  CHANGE `Reactstate` `Reactstate` INT(10) UNSIGNED NOT NULL DEFAULT '0';
 
 DROP TABLE IF EXISTS hidden_rating;
 CREATE TABLE IF NOT EXISTS hidden_rating (

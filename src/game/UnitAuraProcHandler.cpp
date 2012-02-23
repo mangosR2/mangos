@@ -2982,6 +2982,9 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
             // Improved Water Shield
             if (dummySpell->SpellIconID == 2287)
             {
+                if (!procSpell)
+                    return SPELL_AURA_PROC_FAILED;
+
                 // Lesser Healing Wave need aditional 60% roll
                 if (procSpell->SpellFamilyFlags.test<CF_SHAMAN_LESSER_HEALING_WAVE>() && !roll_chance_i(60))
                     return SPELL_AURA_PROC_FAILED;

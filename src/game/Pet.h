@@ -47,17 +47,6 @@ enum PetSaveMode
     PET_SAVE_REAGENTS          =  101                       // PET_SAVE_NOT_IN_SLOT with reagents return
 };
 
-// There might be a lot more
-enum PetModeFlags
-{
-    PET_MODE_UNKNOWN_0         = 0x0000001,
-    PET_MODE_UNKNOWN_2         = 0x0000100,
-    PET_MODE_DISABLE_ACTIONS   = 0x8000000,
-
-    // autoset in client at summon
-    PET_MODE_DEFAULT           = PET_MODE_UNKNOWN_0 | PET_MODE_UNKNOWN_2,
-};
-
 enum HappinessState
 {
     UNHAPPY = 1,
@@ -221,9 +210,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         bool CanTakeMoreActiveSpells(uint32 SpellIconID);
         void ToggleAutocast(uint32 spellid, bool apply);
 
-        void ApplyModeFlags(PetModeFlags mode, bool apply);
-        PetModeFlags GetModeFlags() const { return m_petModeFlags; }
-
         bool HasSpell(uint32 spell) const;
 
         void LearnPetPassives();
@@ -324,8 +310,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         DeclinedName *m_declinedname;
 
     private:
-        PetModeFlags m_petModeFlags;
-
         void SaveToDB(uint32, uint8, uint32)                // overwrited of Creature::SaveToDB     - don't must be called
         {
             MANGOS_ASSERT(false);

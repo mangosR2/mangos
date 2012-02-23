@@ -3222,8 +3222,8 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 34477: //Misdirection
             case 57934: //Tricks of Trade
             {
-                if (Unit * caster = GetCaster())
-                    caster->SetThreatRedirectionTarget(ObjectGuid(), 0);
+                if (Unit* caster = GetCaster())
+                    caster->getHostileRefManager().SetThreatRedirection(target->GetObjectGuid(), 100);
                 return;
             }
             case 52098:                                     // Charge Up
@@ -4023,6 +4023,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         switch (form)
         {
             case FORM_CAT:
+            case FORM_SHADOW_DANCE:
                 PowerType = POWER_ENERGY;
                 break;
             case FORM_BEAR:
@@ -4740,9 +4741,9 @@ void Aura::HandleModPossess(bool apply, bool Real)
 
         if (CharmInfo *charmInfo = target->InitCharmInfo(target))
         {
+            charmInfo->SetState(CHARM_STATE_REACT,REACT_PASSIVE);
+            charmInfo->SetState(CHARM_STATE_COMMAND,COMMAND_STAY);
             charmInfo->InitPossessCreateSpells();
-            charmInfo->SetReactState(REACT_PASSIVE);
-            charmInfo->SetCommandState(COMMAND_STAY);
         }
 
         p_caster->PossessSpellInitialize();
@@ -4915,8 +4916,8 @@ void Aura::HandleModCharm(bool apply, bool Real)
         {
             ((Creature*)target)->AIM_Initialize();
             CharmInfo *charmInfo = target->InitCharmInfo(target);
+            charmInfo->SetState(CHARM_STATE_REACT,REACT_DEFENSIVE);
             charmInfo->InitCharmCreateSpells();
-            charmInfo->SetReactState( REACT_DEFENSIVE );
 
             if (caster->GetTypeId() == TYPEID_PLAYER && caster->getClass() == CLASS_WARLOCK)
             {
@@ -8402,7 +8403,7 @@ void Aura::PeriodicTick()
             if (!pCaster)
                 return;
 
-            if (!pCaster->IsInWorld() || !pCaster->isAlive())
+            if (!pCaster->IsInWorld())
                 return;
 
             if (spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
