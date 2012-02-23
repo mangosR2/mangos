@@ -2674,13 +2674,15 @@ void World::setDuelResetEnableAreaIds(const char* areas)
     if(areaEnabledIds.empty())
     {
         std::string areaIdsString(areas);
-        areaEnabledIds = StrSplit(areaIdsString, ",");
+        Tokens areaEnabledIdsString = StrSplit(areaIdsString, ",");
+        for(std::vector<std::string>::iterator it = areaEnabledIdsString.begin(); it != areaEnabledIdsString.end(); ++it)
+        {
+           areaEnabledIds.insert(atoi((*it).c_str()));
+        }
     }
 }
 
 bool World::IsAreaIdEnabledDuelReset(uint32 areaId)
 {
-    std::stringstream aux;
-    aux << areaId;
-    return std::find(areaEnabledIds.begin(), areaEnabledIds.end(), aux.str()) != areaEnabledIds.end();
+   return areaEnabledIds.find(areaId) != areaEnabledIds.end();
 }
