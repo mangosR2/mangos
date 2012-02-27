@@ -2780,7 +2780,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 if (GetSpellProto()->SpellFamilyFlags.test<CF_WARRIOR_OVERPOWER>())
                 {
                     // Must be casting target
-                    if (!target->IsNonMeleeSpellCasted(false))
+                    if (!target->IsNonMeleeSpellCasted(false) || !target->GetObjectGuid().IsPlayerOrPet()) //unrelenting assault don't must affect on pve.
                         return;
 
                     Unit* caster = GetCaster();
