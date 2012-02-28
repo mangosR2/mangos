@@ -2671,13 +2671,13 @@ bool World::configNoReload(bool reload, eConfigBoolValues index, char const* fie
 
 void World::setDuelResetEnableAreaIds(const char* areas)
 {
-    if(areaEnabledIds.empty())
+    if (areaEnabledIds.empty())
     {
-        std::string areaIdsString(areas);
-        Tokens areaEnabledIdsString = StrSplit(areaIdsString, ",");
-        for(std::vector<std::string>::iterator it = areaEnabledIdsString.begin(); it != areaEnabledIdsString.end(); ++it)
+        Tokens areaEnabledIdsString(areas, ',');
+        Tokens::iterator it;
+        for(it = areaEnabledIdsString.begin(); it != areaEnabledIdsString.end(); ++it)
         {
-           areaEnabledIds.insert(atoi((*it).c_str()));
+           areaEnabledIds.insert(atoi(*it));
         }
     }
 }

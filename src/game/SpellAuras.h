@@ -103,6 +103,10 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         Unit* GetTarget() const { return m_target; }
         void SetTarget(Unit* target) { m_target = target; }
 
+        ObjectGuid const& GetAffectiveCasterGuid() const { return m_originalCasterGuid ? m_originalCasterGuid : m_casterGuid; }
+        Unit* GetAffectiveCaster() const;
+        void SetAffectiveCasterGuid(ObjectGuid guid);
+
         bool IsPermanent() const { return m_permanent; }
         void SetPermanent(bool permanent) { m_permanent = permanent; }
         bool IsPassive() const { return m_isPassive; }
@@ -194,6 +198,7 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         Unit* m_target;
         ObjectGuid m_casterGuid;
         ObjectGuid m_castItemGuid;                          // it is NOT safe to keep a pointer to the item because it may get deleted
+        ObjectGuid m_originalCasterGuid;                    // real source of auras cast, used for set cast source in  area auras with "exclusive target"
         time_t m_applyTime;
 
         SpellEntry const* m_spellProto;
@@ -426,6 +431,9 @@ class MANGOS_DLL_SPEC Aura
         ObjectGuid const& GetCasterGuid() const;
         Unit* GetCaster() const { return ( GetHolder() ? GetHolder()->GetCaster() : NULL); }
         Unit* GetTarget() const { return ( GetHolder() ? GetHolder()->GetTarget() : NULL); }
+
+        ObjectGuid const& GetAffectiveCasterGuid() const;
+        Unit* GetAffectiveCaster() const { return ( GetHolder() ? GetHolder()->GetAffectiveCaster() : NULL); }
 
         SpellEffectIndex GetEffIndex() const{ return m_effIndex; }
         int32 GetBasePoints() const { return m_currentBasePoints; }

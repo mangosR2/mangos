@@ -93,12 +93,12 @@ void RealmList::UpdateRealm( uint32 ID, const std::string& name, const std::stri
     realm.allowedSecurityLevel = allowedSecurityLevel;
     realm.populationLevel      = popu;
 
-    Tokens tokens = StrSplit(builds, " ");
+    Tokens tokens(builds, ' ');
     Tokens::iterator iter;
 
     for (iter = tokens.begin(); iter != tokens.end(); ++iter)
     {
-        uint32 build = atol((*iter).c_str());
+        uint32 build = atol(*iter);
         realm.realmbuilds.insert(build);
     }
 
@@ -117,7 +117,7 @@ void RealmList::UpdateRealm( uint32 ID, const std::string& name, const std::stri
 
     ///- Append port to IP address.
     std::ostringstream ss;
-    ss << address << ":" << port;
+    ss << address << ':' << port;
     realm.address   = ss.str();
 }
 

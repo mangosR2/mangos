@@ -206,7 +206,8 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
     SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
     SetName(std::string(fields[8].GetCppString()));
     SetUInt32Value(UNIT_FIELD_PETEXPERIENCE, fields[5].GetUInt32());
-    m_charmInfo->SetState(fields[6].GetUInt32());
+    GetCharmInfo()->SetState(fields[6].GetUInt32());
+    GetCharmInfo()->SetState(CHARM_STATE_ACTION,ACTIONS_ENABLE);
 
 
     // reget for sure use real creature info selected for Pet at load/creating

@@ -891,8 +891,15 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     // spell fly from visual cast object
     WorldObject* affectiveObject = GetAffectiveCasterObject();
 
+    float speed_proto = m_spellInfo->speed;
+    // spell speed calculation for charge-like spells
+    if ((m_spellInfo->AttributesEx7 & SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) && (fabs(m_spellInfo->speed) < M_NULL_F))
+    {
+        speed_proto = BASE_CHARGE_SPEED;
+    }
+
     // Spell have trajectory - need calculate incoming time
-    if (affectiveObject && m_targets.GetSpeed() > 0.0f)
+    if (affectiveObject && (m_targets.GetSpeed() > M_NULL_F))
     {
         float dist = 5.0f;
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
@@ -904,23 +911,28 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
         target.timeDelay = (uint64) floor(dist / speed * 1000.0f);
     }
     // Spell have speed - need calculate incoming time
-    else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim != affectiveObject)
+    else if ((speed_proto > M_NULL_F) && affectiveObject && (pVictim != affectiveObject))
     {
         // calculate spell incoming interval
         float dist = affectiveObject->GetDistance(pVictim->GetPositionX(), pVictim->GetPositionY(), pVictim->GetPositionZ());
         if (dist < 5.0f)
             dist = 5.0f;
-        target.timeDelay = (uint64) floor(dist / m_spellInfo->speed * 1000.0f);
+        target.timeDelay = (uint64) floor(dist / speed_proto * 1000.0f);
 
+        if (m_spellInfo->AttributesEx7 & SPELL_ATTR_EX7_HAS_CHARGE_EFFECT)
+        {
+            if (target.timeDelay > GetDelayStart())
+                SetDelayStart(target.timeDelay);
+        }
     }
     // Spell cast on self - mostly TRIGGER_MISSILE code
-    else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim == affectiveObject)
+    else if ((speed_proto > M_NULL_F) && affectiveObject && (pVictim == affectiveObject))
     {
         float dist = 0.0f;
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
             dist = affectiveObject->GetDistance(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
 
-        target.timeDelay = (uint64) floor(dist / m_spellInfo->speed * 1000.0f);
+        target.timeDelay = (uint64) floor(dist / speed_proto * 1000.0f);
     }
     else
         target.timeDelay = UI64LIT(0);
@@ -3831,7 +3843,7 @@ void Spell::cast(bool skipCheck)
         procTarget = m_caster;
 
     // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
-    if (m_spellInfo->speed > 0.0f)
+    if (m_spellInfo->speed > 0.0f || GetDelayStart() > 0)
     {
 
         // Remove used for cast item if need (it can be already NULL after TakeReagents call

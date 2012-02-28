@@ -83,26 +83,19 @@ bool MySQLConnection::Initialize(const char *infoString)
         return false;
     }
 
-    Tokens tokens = StrSplit(infoString, ";");
-
-    Tokens::iterator iter;
+    Tokens tokens(infoString, ';');
 
     std::string host, port_or_socket, user, password, database;
     int port;
     char const* unix_socket;
 
-    iter = tokens.begin();
+    uint8 i = 0;
 
-    if(iter != tokens.end())
-        host = *iter++;
-    if(iter != tokens.end())
-        port_or_socket = *iter++;
-    if(iter != tokens.end())
-        user = *iter++;
-    if(iter != tokens.end())
-        password = *iter++;
-    if(iter != tokens.end())
-        database = *iter++;
+    host.assign(tokens[i++]);
+    port_or_socket.assign(tokens[i++]);
+    user.assign(tokens[i++]);
+    password.assign(tokens[i++]);
+    database.assign(tokens[i++]);
 
     mysql_options(mysqlInit,MYSQL_SET_CHARSET_NAME,"utf8");
 #ifdef WIN32

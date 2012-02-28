@@ -491,7 +491,7 @@ const uint32 ItemQualityColors[MAX_ITEM_QUALITY] = {
 #define SPELL_ATTR_EX7_UNK15                      0x00008000            // 15
 #define SPELL_ATTR_EX7_UNK16                      0x00010000            // 16
 #define SPELL_ATTR_EX7_UNK17                      0x00020000            // 17
-#define SPELL_ATTR_EX7_UNK18                      0x00040000            // 18
+#define SPELL_ATTR_EX7_HAS_CHARGE_EFFECT          0x00040000            // 18 Only spell with Charge effect (used for calculate traectory/delay)
 #define SPELL_ATTR_EX7_UNK19                      0x00080000            // 19
 #define SPELL_ATTR_EX7_UNK20                      0x00100000            // 20
 #define SPELL_ATTR_EX7_UNK21                      0x00200000            // 21
