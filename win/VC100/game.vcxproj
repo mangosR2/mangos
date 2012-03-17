@@ -504,8 +504,6 @@
     <ClCompile Include="..\..\src\game\SpellMgr.cpp" />
     <ClCompile Include="..\..\src\game\StatSystem.cpp" />
     <ClCompile Include="..\..\src\game\StateMgr.cpp" />
-    <ClCompile Include="..\..\src\game\StateMgr.h" />
-    <ClCompile Include="..\..\src\game\StateMgrImpl.h" />
     <ClCompile Include="..\..\src\game\TargetedMovementGenerator.cpp" />
     <ClCompile Include="..\..\src\game\TaxiHandler.cpp" />
     <ClCompile Include="..\..\src\game\TemporarySummon.cpp" />
@@ -691,6 +689,8 @@
     <ClInclude Include="..\..\src\game\SpellAuras.h" />
     <ClInclude Include="..\..\src\game\SpellMgr.h" />
     <ClInclude Include="..\..\src\game\SQLStorages.h" />
+    <ClInclude Include="..\..\src\game\StateMgr.h" />
+    <ClInclude Include="..\..\src\game\StateMgrImpl.h" />
     <ClInclude Include="..\..\src\game\TargetedMovementGenerator.h" />
     <ClInclude Include="..\..\src\game\TemporarySummon.h" />
     <ClInclude Include="..\..\src\game\ThreatManager.h" />
