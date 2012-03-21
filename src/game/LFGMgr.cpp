@@ -1864,10 +1864,7 @@ void LFGMgr::Teleport(Player* player, bool out, bool fromOpcode /*= false*/)
 
         // stop taxi flight at port
         if (player->IsTaxiFlying())
-        {
-            player->GetMotionMaster()->MovementExpired();
-            player->m_taxi.ClearTaxiDestinations();
-        }
+            player->InterruptTaxiFlying();
 
         player->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
         player->RemoveSpellsCausingAura(SPELL_AURA_FLY);

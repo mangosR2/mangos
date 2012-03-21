@@ -362,6 +362,16 @@ void hexEncodeByteArray(uint8* bytes, uint32 arrayLen, std::string& result);
 inline float round_pct(float value)
 {
     return ((value < 0.0f ? ceil(value * 100.0f - 0.5f) : floor(value * 100.0f + 0.5f))/100.0f);
-}
+};
+
+// SGI STL select1st implementation
+template<typename T_PAIR>
+struct select1st: public std::unary_function<T_PAIR, typename T_PAIR::first_type>
+{
+    const typename T_PAIR::first_type& operator()(const T_PAIR& container) const
+    {
+        return container.first;
+    }
+};
 
 #endif

@@ -8658,11 +8658,14 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         {
             UnitList tempTargetUnitMap;
             FillAreaTargets(tempTargetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_NOT_HOSTILE);
-
+            tempTargetUnitMap.sort(TargetDistanceOrderNear(m_caster));
             for (UnitList::iterator itr = tempTargetUnitMap.begin(),next; itr != tempTargetUnitMap.end(); ++itr)
             {
                 if ((*itr) && (*itr)->GetEntry() == 33121 && (*itr)->HasAura(62468)) // check for stun aura
+                {
                     targetUnitMap.push_back(*itr);
+                    return true;    // only one Construct per Spell
+                }
             }
             break;
         }

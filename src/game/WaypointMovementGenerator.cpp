@@ -287,6 +287,7 @@ void FlightPathMovementGenerator::Finalize(Player & player)
 void FlightPathMovementGenerator::Interrupt(Player & player)
 {
     player.clearUnitState(UNIT_STAT_TAXI_FLIGHT);
+    player.RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_TAXI_FLIGHT);
 }
 
 #define PLAYER_FLIGHT_SPEED        32.0f

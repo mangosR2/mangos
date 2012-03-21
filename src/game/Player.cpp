@@ -61,7 +61,6 @@
 #include "SocialMgr.h"
 #include "AchievementMgr.h"
 #include "Mail.h"
-#include "AccountMgr.h"
 #include "SpellAuras.h"
 
 #include <cmath>
@@ -3737,6 +3736,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank, bo
 
 void Player::RemoveSpellCooldown( uint32 spell_id, bool update /* = false */ )
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
     m_spellCooldowns.erase(spell_id);
 
     if (update)
@@ -3745,18 +3745,28 @@ void Player::RemoveSpellCooldown( uint32 spell_id, bool update /* = false */ )
 
 void Player::RemoveSpellCategoryCooldown(uint32 cat, bool update /* = false */)
 {
+    if (m_spellCooldowns.empty())
+        return;
+
     SpellCategoryStore::const_iterator ct = sSpellCategoryStore.find(cat);
     if (ct == sSpellCategoryStore.end())
         return;
 
     const SpellCategorySet& ct_set = ct->second;
-    for (SpellCooldowns::const_iterator i = m_spellCooldowns.begin(); i != m_spellCooldowns.end();)
+    SpellCategorySet current_set;
+    SpellCategorySet intersection_set;
     {
-        if (ct_set.find(i->first) != ct_set.end())
-            RemoveSpellCooldown((i++)->first, update);
-        else
-            ++i;
+        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
+        std::transform(m_spellCooldowns.begin(), m_spellCooldowns.end(), std::inserter(current_set, current_set.begin()), select1st<SpellCooldowns::value_type>());
     }
+
+    std::set_intersection(ct_set.begin(),ct_set.end(), current_set.begin(),current_set.end(),std::inserter(intersection_set,intersection_set.begin()));
+
+    if (intersection_set.empty())
+        return;
+
+    for (SpellCategorySet::const_iterator itr = intersection_set.begin(); itr != intersection_set.end(); ++itr)
+        RemoveSpellCooldown(*itr, update);
 }
 
 void Player::RemoveArenaSpellCooldowns()
@@ -3797,6 +3807,7 @@ void Player::RemoveAllSpellCooldown()
         for(SpellCooldowns::const_iterator itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end(); ++itr)
             SendClearCooldown(itr->first, this);
 
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         m_spellCooldowns.clear();
     }
 }
@@ -3854,7 +3865,10 @@ void Player::_SaveSpellCooldowns()
     for(SpellCooldowns::iterator itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end();)
     {
         if (itr->second.end <= curTime)
+        {
+            MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
             m_spellCooldowns.erase(itr++);
+        }
         else if (itr->second.end <= infTime)                 // not save locked cooldowns, it will be reset or set at reload
         {
             stmt = CharacterDatabase.CreateStatement(insertSpellCooldown, "INSERT INTO character_spell_cooldown (guid,spell,item,time) VALUES( ?, ?, ?, ?)");
@@ -4423,7 +4437,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
 
                     CharacterDatabase.PExecute("DELETE FROM mail_items WHERE mail_id = '%u'", mail_id);
 
-                    uint32 pl_account = sObjectMgr.GetPlayerAccountIdByGUID(playerguid);
+                    uint32 pl_account = sAccountMgr.GetPlayerAccountIdByGUID(playerguid);
 
                     draft.SetMoney(money).SendReturnToSender(pl_account, playerguid, ObjectGuid(HIGHGUID_PLAYER, sender));
                 }
@@ -4515,7 +4529,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     }
 
     if (updateRealmChars)
-        sWorld.UpdateRealmCharCount(accountId);
+        sAccountMgr.UpdateCharactersCount(accountId, realmID);
 }
 
 /**
@@ -18086,7 +18100,7 @@ void Player::SendRaidInfo()
                 data << uint8((state->GetRealResetTime() > now) ? 1 : 0 );   // expired = 0
                 data << uint8(itr->second.extend ? 1 : 0);      // extended = 1
                 data << uint32(state->GetRealResetTime() > now ? state->GetRealResetTime() - now
-                    : DungeonResetScheduler::CalculateNextResetTime(GetMapDifficultyData(state->GetMapId(), state->GetDifficulty()), now));    // reset time
+                    : DungeonResetScheduler::CalculateNextResetTime(GetMapDifficultyData(state->GetMapId(), state->GetDifficulty())));    // reset time
                 ++counter;
             }
         }
@@ -20750,6 +20764,7 @@ void Player::AddSpellCooldown(uint32 spellid, uint32 itemid, time_t end_time)
     SpellCooldown sc;
     sc.end = end_time;
     sc.itemid = itemid;
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
     m_spellCooldowns[spellid] = sc;
 }
 
@@ -21907,7 +21922,7 @@ void Player::SummonIfPossible(bool agree)
     // stop taxi flight at summon
     if (IsTaxiFlying())
     {
-        GetMotionMaster()->MovementExpired();
+        GetMotionMaster()->MoveIdle();
         m_taxi.ClearTaxiDestinations();
     }
 
@@ -24462,14 +24477,19 @@ bool Player::CheckRAFConditions()
 
 AccountLinkedState Player::GetAccountLinkedState()
 {
+    RafLinkedList const* referredAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), true);
+    RafLinkedList const* referalAccounts  = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
 
-    if (!m_referredAccounts.empty() && !m_referalAccounts.empty())
+    if (!referredAccounts || !referalAccounts)
+        return STATE_NOT_LINKED;
+
+    if (!referredAccounts->empty() && !referalAccounts->empty())
         return STATE_DUAL;
 
-    if (!m_referredAccounts.empty())
+    if (!referredAccounts->empty())
         return STATE_REFER;
 
-    if (!m_referalAccounts.empty())
+    if (!referalAccounts->empty())
         return STATE_REFERRAL;
 
     return STATE_NOT_LINKED;
@@ -24477,37 +24497,43 @@ AccountLinkedState Player::GetAccountLinkedState()
 
 void Player::LoadAccountLinkedState()
 {
-    m_referredAccounts.clear();
-    m_referredAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), true);
+    RafLinkedList const* referredAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), true);
+    if (referredAccounts)
+    {
+        if (referredAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS))
+            sLog.outError("Player:RAF:Warning: loaded %u referred accounts instead of %u for player %s",referredAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetString().c_str());
+        else
+            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %u",referredAccounts->size(),GetObjectGuid().GetString().c_str());
+    }
 
-    if (m_referredAccounts.size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS))
-        sLog.outError("Player:RAF:Warning: loaded " SIZEFMTD " referred accounts instead of %u for player %u",m_referredAccounts.size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetCounter());
-    else
-        DEBUG_LOG("Player:RAF: loaded " SIZEFMTD " referred accounts for player %u",m_referredAccounts.size(),GetObjectGuid().GetCounter());
-
-    m_referalAccounts.clear();
-    m_referalAccounts  = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
-
-    if (m_referalAccounts.size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS))
-        sLog.outError("Player:RAF:Warning: loaded " SIZEFMTD " referal accounts instead of %u for player %u",m_referalAccounts.size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetCounter());
-    else
-        DEBUG_LOG("Player:RAF: loaded " SIZEFMTD " referal accounts for player %u",m_referalAccounts.size(),GetObjectGuid().GetCounter());
+    RafLinkedList const* referalAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
+    if (referalAccounts)
+    {
+        if (referalAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS))
+            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %u",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
+        else
+            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %u",referalAccounts->size(),GetObjectGuid().GetString().c_str());
+    }
 }
 
 bool Player::IsReferAFriendLinked(Player* target)
 {
     // check link this(refer) - target(referral)
-    for (std::vector<uint32>::const_iterator itr = m_referalAccounts.begin(); itr != m_referalAccounts.end(); ++itr)
+    RafLinkedList const* referalAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
+    if (referalAccounts)
     {
-        if ((*itr) == target->GetSession()->GetAccountId())
-            return true;
+        for (RafLinkedList::const_iterator itr = referalAccounts->begin(); itr != referalAccounts->end(); ++itr)
+            if ((*itr) == target->GetSession()->GetAccountId())
+               return true;
     }
 
     // check link target(refer) - this(referral)
-    for (std::vector<uint32>::const_iterator itr = m_referredAccounts.begin(); itr != m_referredAccounts.end(); ++itr)
+    RafLinkedList const* referredAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), true);
+    if (referredAccounts)
     {
-        if ((*itr) == target->GetSession()->GetAccountId())
-            return true;
+        for (RafLinkedList::const_iterator itr = referredAccounts->begin(); itr != referredAccounts->end(); ++itr)
+            if ((*itr) == target->GetSession()->GetAccountId())
+                return true;
     }
 
     return false;
@@ -25149,4 +25175,18 @@ float Player::GetCollisionHeight(bool mounted)
 
         return modelData->CollisionHeight;
     }
+}
+
+void Player::InterruptTaxiFlying()
+{
+    // stop flight if need
+    if (IsTaxiFlying())
+    {
+        GetUnitStateMgr().DropAction(UNIT_ACTION_TAXI);
+        m_taxi.ClearTaxiDestinations();
+        GetUnitStateMgr().InitDefaults();
+    }
+    // save only in non-flight case
+    else
+        SaveRecallPosition();
 }

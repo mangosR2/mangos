@@ -37,6 +37,7 @@ class MANGOS_DLL_SPEC RandomMovementGenerator
         MovementGeneratorType GetMovementGeneratorType() const { return RANDOM_MOTION_TYPE; }
 
         bool GetResetPosition(T&, float& x, float& y, float& z);
+        const char* Name() const { return "<Random>"; }
     private:
         ShortTimeTracker i_nextMoveTime;
         uint32 i_nextMove;

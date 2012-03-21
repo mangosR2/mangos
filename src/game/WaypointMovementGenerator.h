@@ -78,6 +78,8 @@ public PathMovementBase<Creature, WaypointPath const*>
 
         MovementGeneratorType GetMovementGeneratorType() const { return WAYPOINT_MOTION_TYPE; }
 
+        const char* Name() const { return "<Waypoint>"; }
+
         // now path movement implmementation
         void LoadPath(Creature &c);
 
@@ -127,6 +129,8 @@ public PathMovementBase<Player,TaxiPathNodeList const*>
         void Reset(Player &);
         bool Update(Player &, const uint32 &);
         MovementGeneratorType GetMovementGeneratorType() const { return FLIGHT_MOTION_TYPE; }
+
+        const char* Name() const { return "<FlightPath>"; }
 
         TaxiPathNodeList const& GetPath() { return *i_path; }
         uint32 GetPathAtMapEnd() const;

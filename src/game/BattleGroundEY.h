@@ -126,7 +126,6 @@ enum BG_EY_Objectives
 #define BG_EY_NODES_MAX_WITH_SPEIAL 5
 
 // node-events work like this: event1:nodeid, event2:state (0alliance,1horde,2neutral)
-#define BG_EYE_NEUTRAL_TEAM 2
 #define BG_EY_EVENT_CAPTURE_FLAG 4                          // event1=4, event2=nodeid or 4 for the default center spawn
 #define BG_EY_EVENT2_FLAG_CENTER 4                          // maximum node is 3 so 4 for center is ok
 // all other event2 are just nodeids, i won't define something here

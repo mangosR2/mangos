@@ -104,12 +104,12 @@ void AuctionHouseMgr::SendAuctionWonMail(AuctionEntry *auction)
         }
         else
         {
-            bidder_accId = sObjectMgr.GetPlayerAccountIdByGUID(bidder_guid);
+            bidder_accId = sAccountMgr.GetPlayerAccountIdByGUID(bidder_guid);
             bidder_security = bidder_accId ? sAccountMgr.GetSecurity(bidder_accId) : SEC_PLAYER;
 
             if (bidder_security > SEC_PLAYER)               // not do redundant DB requests
             {
-                if (!sObjectMgr.GetPlayerNameByGUID(bidder_guid, bidder_name))
+                if (!sAccountMgr.GetPlayerNameByGUID(bidder_guid, bidder_name))
                     bidder_name = sObjectMgr.GetMangosStringForDBCLocale(LANG_UNKNOWN);
             }
         }
@@ -119,17 +119,17 @@ void AuctionHouseMgr::SendAuctionWonMail(AuctionEntry *auction)
             std::string owner_name;
             if (auction_owner)
                 owner_name = auction_owner->GetName();
-            else if (ownerGuid && !sObjectMgr.GetPlayerNameByGUID(ownerGuid, owner_name))
+            else if (ownerGuid && !sAccountMgr.GetPlayerNameByGUID(ownerGuid, owner_name))
                 owner_name = sObjectMgr.GetMangosStringForDBCLocale(LANG_UNKNOWN);
 
-            uint32 owner_accid = sObjectMgr.GetPlayerAccountIdByGUID(ownerGuid);
+            uint32 owner_accid = sAccountMgr.GetPlayerAccountIdByGUID(ownerGuid);
 
             sLog.outCommand(bidder_accId,"GM %s (Account: %u) won item in auction (Entry: %u Count: %u) and pay money: %u. Original owner %s (Account: %u)",
                 bidder_name.c_str(), bidder_accId, auction->itemTemplate, auction->itemCount, auction->bid, owner_name.c_str(), owner_accid);
         }
     }
     else if (!bidder)
-        bidder_accId = sObjectMgr.GetPlayerAccountIdByGUID(bidder_guid);
+        bidder_accId = sAccountMgr.GetPlayerAccountIdByGUID(bidder_guid);
 
     if (auction_owner)
         auction_owner->GetSession()->SendAuctionOwnerNotification(auction);
@@ -183,7 +183,7 @@ void AuctionHouseMgr::SendAuctionSuccessfulMail(AuctionEntry * auction)
 
     uint32 owner_accId = 0;
     if (!owner)
-        owner_accId = sObjectMgr.GetPlayerAccountIdByGUID(owner_guid);
+        owner_accId = sAccountMgr.GetPlayerAccountIdByGUID(owner_guid);
 
     // owner exist
     if (owner || owner_accId)
@@ -231,7 +231,7 @@ void AuctionHouseMgr::SendAuctionExpiredMail(AuctionEntry * auction)
 
     uint32 owner_accId = 0;
     if (!owner)
-        owner_accId = sObjectMgr.GetPlayerAccountIdByGUID(owner_guid);
+        owner_accId = sAccountMgr.GetPlayerAccountIdByGUID(owner_guid);
 
     // owner exist
     if (owner || owner_accId)
@@ -375,7 +375,7 @@ void AuctionHouseMgr::LoadAuctions()
             if (plWName.empty())
             {
                 std::string plName;
-                if (!sObjectMgr.GetPlayerNameByGUID(ObjectGuid(HIGHGUID_PLAYER, auction->owner), plName))
+                if (!sAccountMgr.GetPlayerNameByGUID(ObjectGuid(HIGHGUID_PLAYER, auction->owner), plName))
                     plName = sObjectMgr.GetMangosStringForDBCLocale(LANG_UNKNOWN);
 
                 Utf8toWStr(plName, plWName);

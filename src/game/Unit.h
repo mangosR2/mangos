@@ -38,6 +38,7 @@
 #include "SpellAuras.h"
 #include "Timer.h"
 #include <list>
+#include "StateMgr.h"
 
 enum SpellInterruptFlags
 {
@@ -2068,6 +2069,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void removeFollower(FollowerReference* /*pRef*/ ) { /* nothing to do yet */ }
 
         MotionMaster* GetMotionMaster() { return &i_motionMaster; }
+        UnitStateMgr& GetUnitStateMgr() { return m_stateMgr; }
 
         bool IsStopped() const { return !(hasUnitState(UNIT_STAT_MOVING)); }
         void StopMoving();
@@ -2259,6 +2261,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         GuardianPetList m_guardianPets;
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
+        UnitStateMgr m_stateMgr;
 
     private:                                                // Error traps for some wrong args using
         // this will catch and prevent build for any cases when all optional args skipped and instead triggered used non boolean type

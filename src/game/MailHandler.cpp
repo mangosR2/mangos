@@ -25,6 +25,7 @@
  *
  */
 
+#include "AccountMgr.h"
 #include "Mail.h"
 #include "Language.h"
 #include "Log.h"
@@ -155,7 +156,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 
     ObjectGuid rc;
     if (normalizePlayerName(receiver))
-        rc = sObjectMgr.GetPlayerGuidByName(receiver);
+        rc = sAccountMgr.GetPlayerGuidByName(receiver);
 
     if (!rc)
     {
@@ -196,7 +197,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
     }
     else
     {
-        rc_team = sObjectMgr.GetPlayerTeamByGUID(rc);
+        rc_team = sAccountMgr.GetPlayerTeamByGUID(rc);
         if (QueryResult* result = CharacterDatabase.PQuery("SELECT COUNT(*) FROM mail WHERE receiver = '%u'", rc.GetCounter()))
         {
             Field *fields = result->Fetch();
@@ -221,7 +222,7 @@ void WorldSession::HandleSendMail(WorldPacket & recv_data )
 
     uint32 rc_account = receive
         ? receive->GetSession()->GetAccountId()
-        : sObjectMgr.GetPlayerAccountIdByGUID(rc);
+        : sAccountMgr.GetPlayerAccountIdByGUID(rc);
 
     Item* items[MAX_MAIL_ITEMS];
 
@@ -517,16 +518,16 @@ void WorldSession::HandleMailTakeItem(WorldPacket & recv_data )
                 else if (sender_guid)
                 {
                     // can be calculated early
-                    sender_accId = sObjectMgr.GetPlayerAccountIdByGUID(sender_guid);
+                    sender_accId = sAccountMgr.GetPlayerAccountIdByGUID(sender_guid);
 
-                    if(!sObjectMgr.GetPlayerNameByGUID(sender_guid, sender_name))
+                    if(!sAccountMgr.GetPlayerNameByGUID(sender_guid, sender_name))
                         sender_name = sObjectMgr.GetMangosStringForDBCLocale(LANG_UNKNOWN);
                 }
                 sLog.outCommand(GetAccountId(), "GM %s (Account: %u) receive mail item: %s (Entry: %u Count: %u) and send COD money: %u to player: %s (Account: %u)",
                     GetPlayerName(), GetAccountId(), it->GetProto()->Name1, it->GetEntry(), it->GetCount(), m->COD, sender_name.c_str(), sender_accId);
             }
             else if (!sender)
-                sender_accId = sObjectMgr.GetPlayerAccountIdByGUID(sender_guid);
+                sender_accId = sAccountMgr.GetPlayerAccountIdByGUID(sender_guid);
 
             // check player existence
             if(sender || sender_accId)

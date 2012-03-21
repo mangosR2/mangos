@@ -1150,8 +1150,8 @@ struct ItemExtendedCostEntry
     uint32      ID;                                         // 0        m_ID
     uint32      reqhonorpoints;                             // 1        m_honorPoints
     uint32      reqarenapoints;                             // 2        m_arenaPoints
-    uint32      reqarenaslot;                               // 4        m_arenaBracket
-    uint32      reqitem[MAX_EXTENDED_COST_ITEMS];           // 5-8      m_itemID
+    uint32      reqarenaslot;                               // 3        m_arenaBracket
+    uint32      reqitem[MAX_EXTENDED_COST_ITEMS];           // 4-8      m_itemID
     uint32      reqitemcount[MAX_EXTENDED_COST_ITEMS];      // 9-13     m_itemCount
     uint32      reqpersonalarenarating;                     // 14       m_requiredArenaRating
                                                             // 15       m_itemPurchaseGroup
@@ -2019,7 +2019,7 @@ struct SpellEntry
     uint32    runeCostID;                                   // 226      m_runeCostID
     //uint32    spellMissileID;                             // 227      m_spellMissileID
     //uint32  PowerDisplayId;                               // 228      m_powerDisplayID (PowerDisplay.dbc)
-    //float   effectBonusCoefficient[3];                    // 229-231  m_effectBonusCoefficient
+    float     EffectCoeffs[MAX_EFFECT_INDEX];               // 229-231  3.2.0
     //uint32  spellDescriptionVariableID;                   // 232      m_descriptionVariablesID
     uint32  SpellDifficultyId;                              // 233      m_difficulty (SpellDifficulty.dbc)
 

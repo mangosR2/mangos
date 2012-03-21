@@ -441,7 +441,7 @@ void BattleGroundEY::Reset()
         m_PointBarStatus[i] = BG_EY_PROGRESS_BAR_STATE_MIDDLE;
         m_PlayersNearPoint[i].clear();
         m_PlayersNearPoint[i].reserve(15);                  //tip size
-        m_ActiveEvents[i] = BG_EYE_NEUTRAL_TEAM;            // neutral team owns every node
+        m_ActiveEvents[i] = TEAM_INDEX_NEUTRAL;             // neutral team owns every node
     }
     // the flag in the middle is spawned at beginning
     m_ActiveEvents[BG_EY_EVENT_CAPTURE_FLAG] = BG_EY_EVENT2_FLAG_CENTER;
@@ -579,7 +579,7 @@ void BattleGroundEY::EventTeamLostPoint(Player *Source, uint32 Point)
     m_PointOwnedByTeam[Point] = TEAM_NONE;
     m_PointState[Point] = EY_POINT_NO_OWNER;
 
-    SpawnEvent(Point, BG_EYE_NEUTRAL_TEAM, true);           // will despawn alliance/horde
+    SpawnEvent(Point, TEAM_INDEX_NEUTRAL, true);            // will despawn alliance/horde
 
     //buff isn't despawned
 

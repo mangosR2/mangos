@@ -25,6 +25,7 @@
  *
  */
 
+#include "AccountMgr.h"
 #include "Mail.h"
 #include "Log.h"
 #include "ObjectGuid.h"
@@ -195,7 +196,7 @@ void MailDraft::SendReturnToSender(uint32 sender_acc, ObjectGuid sender_guid, Ob
 
     uint32 rc_account = 0;
     if (!receiver)
-        rc_account = sObjectMgr.GetPlayerAccountIdByGUID(receiver_guid);
+        rc_account = sAccountMgr.GetPlayerAccountIdByGUID(receiver_guid);
 
     if (!receiver && !rc_account)                           // sender not exist
     {
@@ -244,7 +245,7 @@ void MailDraft::SendMailTo(MailReceiver const& receiver, MailSender const& sende
 
     uint32 pReceiverAccount = 0;
     if (!pReceiver)
-        pReceiverAccount = sObjectMgr.GetPlayerAccountIdByGUID(receiver.GetPlayerGuid());
+        pReceiverAccount = sAccountMgr.GetPlayerAccountIdByGUID(receiver.GetPlayerGuid());
 
     if (!pReceiver && !pReceiverAccount)                    // receiver not exist
     {

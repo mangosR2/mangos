@@ -29,7 +29,6 @@ void ConfusedMovementGenerator<T>::Initialize(T &unit)
 {
     // set initial position
     unit.GetPosition(i_x, i_y, i_z);
-
     unit.StopMoving();
     unit.addUnitState(UNIT_STAT_CONFUSED|UNIT_STAT_CONFUSED_MOVE);
 }
@@ -38,24 +37,20 @@ template<class T>
 void ConfusedMovementGenerator<T>::Interrupt(T &unit)
 {
     // confused state still applied while movegen disabled
-    unit.clearUnitState(UNIT_STAT_CONFUSED_MOVE);
+    unit.clearUnitState(UNIT_STAT_CONFUSED|UNIT_STAT_CONFUSED_MOVE);
 }
 
 template<class T>
 void ConfusedMovementGenerator<T>::Reset(T &unit)
 {
     i_nextMoveTime.Reset(0);
-    unit.StopMoving();
     unit.addUnitState(UNIT_STAT_CONFUSED|UNIT_STAT_CONFUSED_MOVE);
+    unit.StopMoving();
 }
 
 template<class T>
 bool ConfusedMovementGenerator<T>::Update(T &unit, const uint32 &diff)
 {
-    // ignore in case other no reaction state
-    if (unit.hasUnitState(UNIT_STAT_CAN_NOT_REACT & ~UNIT_STAT_CONFUSED))
-        return true;
-
     if (i_nextMoveTime.Passed())
     {
         // currently moving, update location

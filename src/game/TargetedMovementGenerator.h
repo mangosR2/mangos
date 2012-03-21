@@ -58,6 +58,7 @@ class MANGOS_DLL_SPEC TargetedMovementGeneratorMedium
 
         void unitSpeedChanged() { i_recalculateTravel=true; }
         void UpdateFinalDistance(float fDistance);
+        const char* Name() const { return "<TargetedMedium>"; }
 
     protected:
         void _setTargetLocation(T &);
@@ -76,7 +77,7 @@ class MANGOS_DLL_SPEC ChaseMovementGenerator : public TargetedMovementGeneratorM
 {
     public:
         ChaseMovementGenerator(Unit &target)
-            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target) {}
+            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, 0.f, 0.f) {}
         ChaseMovementGenerator(Unit &target, float offset, float angle)
             : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, offset, angle) {}
         ~ChaseMovementGenerator() {}
@@ -87,6 +88,7 @@ class MANGOS_DLL_SPEC ChaseMovementGenerator : public TargetedMovementGeneratorM
         void Finalize(T &);
         void Interrupt(T &);
         void Reset(T &);
+        const char* Name() const { return "<Chase>"; }
 
         static void _clearUnitStateMove(T &u) { u.clearUnitState(UNIT_STAT_CHASE_MOVE); }
         static void _addUnitStateMove(T &u)  { u.addUnitState(UNIT_STAT_CHASE_MOVE); }
@@ -111,6 +113,7 @@ class MANGOS_DLL_SPEC FollowMovementGenerator : public TargetedMovementGenerator
         void Finalize(T &);
         void Interrupt(T &);
         void Reset(T &);
+        const char* Name() const { return "<Follow>"; }
 
         static void _clearUnitStateMove(T &u) { u.clearUnitState(UNIT_STAT_FOLLOW_MOVE); }
         static void _addUnitStateMove(T &u)  { u.addUnitState(UNIT_STAT_FOLLOW_MOVE); }

@@ -23,6 +23,7 @@
 #include "PlayerbotMgr.h"
 #include "WorldPacket.h"
 #include "../Chat.h"
+#include "../AccountMgr.h"
 #include "../ObjectMgr.h"
 #include "../GossipDef.h"
 #include "../Chat.h"
@@ -1035,7 +1036,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
     if (!normalizePlayerName(charnameStr))
         return false;
 
-    ObjectGuid guid = sObjectMgr.GetPlayerGuidByName(charnameStr.c_str());
+    ObjectGuid guid = sAccountMgr.GetPlayerGuidByName(charnameStr.c_str());
     if (guid == ObjectGuid() || (guid == m_session->GetPlayer()->GetObjectGuid()))
     {
         SendSysMessage(LANG_PLAYER_NOT_FOUND);
@@ -1043,7 +1044,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         return false;
     }
 
-    uint32 accountId = sObjectMgr.GetPlayerAccountIdByGUID(guid);
+    uint32 accountId = sAccountMgr.GetPlayerAccountIdByGUID(guid);
     if (accountId != m_session->GetAccountId())
     {
         if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_SHAREDBOTS))
@@ -1177,7 +1178,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
             if (targetChar)
             {
                 std::string targetStr = targetChar;
-                ObjectGuid targ_guid = sObjectMgr.GetPlayerGuidByName(targetStr.c_str());
+                ObjectGuid targ_guid = sAccountMgr.GetPlayerGuidByName(targetStr.c_str());
 
                 targetGuid.Set(targ_guid.GetRawValue());
             }

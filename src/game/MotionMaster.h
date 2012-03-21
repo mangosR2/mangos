@@ -20,6 +20,7 @@
 #define MANGOS_MOTIONMASTER_H
 
 #include "Common.h"
+#include "StateMgrImpl.h"
 #include <stack>
 #include <vector>
 
@@ -29,71 +30,16 @@ class Unit;
 // Creature Entry ID used for waypoints show, visible only for GMs
 #define VISUAL_WAYPOINT 1
 
-// values 0 ... MAX_DB_MOTION_TYPE-1 used in DB
-enum MovementGeneratorType
+class MANGOS_DLL_SPEC MotionMaster 
 {
-    IDLE_MOTION_TYPE                = 0,                    // IdleMovementGenerator.h
-    RANDOM_MOTION_TYPE              = 1,                    // RandomMovementGenerator.h
-    WAYPOINT_MOTION_TYPE            = 2,                    // WaypointMovementGenerator.h
-    MAX_DB_MOTION_TYPE              = 3,                    // *** this and below motion types can't be set in DB.
-
-    CONFUSED_MOTION_TYPE            = 4,                    // ConfusedMovementGenerator.h
-    CHASE_MOTION_TYPE               = 5,                    // TargetedMovementGenerator.h
-    HOME_MOTION_TYPE                = 6,                    // HomeMovementGenerator.h
-    FLIGHT_MOTION_TYPE              = 7,                    // WaypointMovementGenerator.h
-    POINT_MOTION_TYPE               = 8,                    // PointMovementGenerator.h
-    FLEEING_MOTION_TYPE             = 9,                    // FleeingMovementGenerator.h
-    DISTRACT_MOTION_TYPE            = 10,                   // IdleMovementGenerator.h
-    ASSISTANCE_MOTION_TYPE          = 11,                   // PointMovementGenerator.h (first part of flee for assistance)
-    ASSISTANCE_DISTRACT_MOTION_TYPE = 12,                   // IdleMovementGenerator.h (second part of flee for assistance)
-    TIMED_FLEEING_MOTION_TYPE       = 13,                   // FleeingMovementGenerator.h (alt.second part of flee for assistance)
-    FOLLOW_MOTION_TYPE              = 14,                   // TargetedMovementGenerator.h
-    EFFECT_MOTION_TYPE              = 15,
-};
-
-enum MMCleanFlag
-{
-    MMCF_NONE   = 0,
-    MMCF_UPDATE = 1,                                        // Clear or Expire called from update
-    MMCF_RESET  = 2                                         // Flag if need top()->Reset()
-};
-
-class MANGOS_DLL_SPEC MotionMaster : private std::stack<MovementGenerator *>
-{
-    private:
-        typedef std::stack<MovementGenerator *> Impl;
-        typedef std::vector<MovementGenerator *> ExpireList;
     public:
 
-        explicit MotionMaster(Unit *unit) : m_owner(unit), m_expList(NULL), m_cleanFlag(MMCF_NONE) {}
+        explicit MotionMaster(Unit *unit);
         ~MotionMaster();
 
         void Initialize();
-
-        MovementGenerator* operator->(void) { return top(); }
-
-        using Impl::top;
-        using Impl::empty;
-
-        typedef Impl::container_type::const_iterator const_iterator;
-        const_iterator begin() const { return Impl::c.begin(); }
-        const_iterator end() const { return Impl::c.end(); }
-
-        void UpdateMotion(uint32 diff);
-        void Clear(bool reset = true, bool all = false)
-        {
-            if (m_cleanFlag & MMCF_UPDATE)
-                DelayedClean(reset, all);
-            else
-                DirectClean(reset, all);
-        }
-        void MovementExpired(bool reset = true)
-        {
-            if (m_cleanFlag & MMCF_UPDATE)
-                DelayedExpire(reset);
-            else
-                DirectExpire(reset);
-        }
+        void Clear(bool reset = true, bool all = false);
+        void MovementExpired(bool reset = true) { Clear(); }
 
         void MoveIdle();
         void MoveRandom();
@@ -119,18 +65,17 @@ class MANGOS_DLL_SPEC MotionMaster : private std::stack<MovementGenerator *>
         // will only work in MMgens where we have a target (TARGETED_MOTION_TYPE)
         void UpdateFinalDistanceToTarget(float fDistance);
 
+        class UnitStateMgr* impl();
+        MovementGenerator*  top();
+        Unit* GetOwner() { return m_owner; };
+        bool  empty();
+
         bool GetDestination(float &x, float &y, float &z);
+
     private:
-        void Mutate(MovementGenerator *m);                  // use Move* functions instead
+        void Mutate(MovementGenerator* mgen, UnitActionId slot);                  // use Move* functions instead
 
-        void DirectClean(bool reset, bool all);
-        void DelayedClean(bool reset, bool all);
-
-        void DirectExpire(bool reset);
-        void DelayedExpire(bool reset);
-
-        Unit       *m_owner;
-        ExpireList *m_expList;
+        Unit*       m_owner;
         uint8       m_cleanFlag;
 };
 

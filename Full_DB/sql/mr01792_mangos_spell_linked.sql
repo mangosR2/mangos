@@ -27,3 +27,14 @@ INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `com
 DELETE FROM `spell_linked` WHERE `entry` = 32375;
 INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
 (32375, 43241, 4, 0, 'Mass Dispel - Cosmetic');
+
+-- Gift of the Naaru Visual
+DELETE FROM `spell_linked` WHERE `linked_entry` = 57901;
+INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `comment`) VALUES
+(28880, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59542, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59543, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59544, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59545, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59547, 57901, 1, 0, 'Gift of the Naaru Visual'),
+(59548, 57901, 1, 0, 'Gift of the Naaru Visual');

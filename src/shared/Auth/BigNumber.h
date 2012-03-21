@@ -87,7 +87,8 @@ class BigNumber
         const char *AsDecStr();
 
     private:
+        void ClearArraysMap();
         struct bignum_st *_bn;
-        uint8 *_array;
+        std::map<int, uint8*> arraysMap;
 };
 #endif

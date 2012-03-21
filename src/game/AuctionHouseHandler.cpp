@@ -21,6 +21,7 @@
 #include "Opcodes.h"
 #include "Log.h"
 #include "World.h"
+#include "AccountMgr.h"
 #include "ObjectMgr.h"
 #include "ObjectGuid.h"
 #include "Player.h"
@@ -156,7 +157,7 @@ void WorldSession::SendAuctionOutbiddedMail(AuctionEntry *auction)
 
     uint32 oldBidder_accId = 0;
     if(!oldBidder)
-        oldBidder_accId = sObjectMgr.GetPlayerAccountIdByGUID(oldBidder_guid);
+        oldBidder_accId = sAccountMgr.GetPlayerAccountIdByGUID(oldBidder_guid);
 
     // old bidder exist
     if (oldBidder || oldBidder_accId)
@@ -181,7 +182,7 @@ void WorldSession::SendAuctionCancelledToBidderMail(AuctionEntry* auction)
 
     uint32 bidder_accId = 0;
     if (!bidder)
-        bidder_accId = sObjectMgr.GetPlayerAccountIdByGUID(bidder_guid);
+        bidder_accId = sAccountMgr.GetPlayerAccountIdByGUID(bidder_guid);
 
     // bidder exist
     if (bidder || bidder_accId)
@@ -409,7 +410,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket & recv_data)
 
     // impossible have online own another character (use this for speedup check in case online owner)
     Player* auction_owner = sObjectMgr.GetPlayer(ownerGuid);
-    if (!auction_owner && sObjectMgr.GetPlayerAccountIdByGUID(ownerGuid) == pl->GetSession()->GetAccountId())
+    if (!auction_owner && sAccountMgr.GetPlayerAccountIdByGUID(ownerGuid) == pl->GetSession()->GetAccountId())
     {
         // you cannot bid your another character auction:
         SendAuctionCommandResult(NULL, AUCTION_BID_PLACED, AUCTION_ERR_BID_OWN);

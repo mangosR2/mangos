@@ -20,6 +20,7 @@
 #include "Database/DatabaseEnv.h"
 #include "ObjectAccessor.h"
 #include "ObjectGuid.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "World.h"
 #include "Policies/SingletonImp.h"
@@ -31,7 +32,10 @@ extern DatabaseType LoginDatabase;
 INSTANTIATE_SINGLETON_1(AccountMgr);
 
 AccountMgr::AccountMgr()
-{}
+{
+    mPlayerDataCacheMap.clear();
+    mRAFLinkedMap.clear();
+}
 
 AccountMgr::~AccountMgr()
 {}
@@ -245,37 +249,52 @@ std::string AccountMgr::CalculateShaPassHash(std::string& name, std::string& pas
     return encoded;
 }
 
-std::vector<uint32> AccountMgr::GetRAFAccounts(uint32 accid, bool referred)
+RafLinkedList* AccountMgr::GetRAFAccounts(uint32 accid, bool referred)
 {
 
-    QueryResult* result;
-
-    if (referred)
-        result = LoginDatabase.PQuery("SELECT `friend_id` FROM `account_friends` WHERE `id` = %u AND `expire_date` > NOW() LIMIT %u", accid, sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS));
-    else
-        result = LoginDatabase.PQuery("SELECT `id` FROM `account_friends` WHERE `friend_id` = %u AND `expire_date` > NOW() LIMIT %u", accid, sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS));
-
-    std::vector<uint32> acclist;
-
-    if (result)
+    RafLinkedMap::iterator itr = mRAFLinkedMap.find(std::pair<uint32,bool>(accid, referred));
+    if (itr == mRAFLinkedMap.end())
     {
-        do
+        QueryResult* result;
+
+        if (referred)
+            result = LoginDatabase.PQuery("SELECT `friend_id` FROM `account_friends` WHERE `id` = %u AND `expire_date` > NOW() LIMIT %u", accid, sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS));
+        else
+            result = LoginDatabase.PQuery("SELECT `id` FROM `account_friends` WHERE `friend_id` = %u AND `expire_date` > NOW() LIMIT %u", accid, sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS));
+
+        RafLinkedList acclist;
+
+        if (result)
         {
-            Field* fields = result->Fetch();
-            uint32 refaccid = fields[0].GetUInt32();
-            acclist.push_back(refaccid);
+            do
+            {
+                Field* fields = result->Fetch();
+                uint32 refaccid = fields[0].GetUInt32();
+                acclist.push_back(refaccid);
+            }
+            while (result->NextRow());
+            delete result;
         }
-        while (result->NextRow());
-        delete result;
+        ReadGuard Guard(GetLock());
+        mRAFLinkedMap.insert(RafLinkedMap::value_type(std::pair<uint32,bool>(accid, referred), acclist));
+        itr = mRAFLinkedMap.find(std::pair<uint32,bool>(accid, referred));
     }
 
-    return acclist;
+    return &itr->second;
 }
 
 AccountOpResult AccountMgr::AddRAFLink(uint32 accid, uint32 friendid)
 {
     if (!LoginDatabase.PExecute("INSERT INTO `account_friends`  (`id`, `friend_id`, `expire_date`) VALUES (%u,%u,NOW() + INTERVAL 3 MONTH)", accid, friendid))
         return AOR_DB_INTERNAL_ERROR;
+
+    RafLinkedList* referred = GetRAFAccounts(accid, true);
+    if (referred)
+        referred->push_back(accid);
+
+    RafLinkedList* referal = GetRAFAccounts(friendid, false);
+    if (referal)
+        referal->push_back(friendid);
 
     return AOR_OK;
 }
@@ -285,5 +304,234 @@ AccountOpResult AccountMgr::DeleteRAFLink(uint32 accid, uint32 friendid)
     if (!LoginDatabase.PExecute("DELETE FROM `account_friends` WHERE `id` = %u AND `friend_id` = %u", accid, friendid))
         return AOR_DB_INTERNAL_ERROR;
 
+    RafLinkedList* referred = GetRAFAccounts(accid, true);
+    if (referred)
+    {
+        for (RafLinkedList::iterator itr1 = referred->begin(); itr1 != referred->end();)
+        {
+            if (*itr1 == accid)
+                referred->erase(itr1);
+            else
+                ++itr1;
+        }
+    }
+
+    RafLinkedList* referal = GetRAFAccounts(friendid, false);
+    if (referal)
+    {
+        for (RafLinkedList::iterator itr1 = referal->begin(); itr1 != referal->end();)
+        {
+            if (*itr1 == friendid)
+                referal->erase(itr1);
+            else
+                ++itr1;
+        }
+    }
+
     return AOR_OK;
+}
+
+// name must be checked to correctness (if received) before call this function
+ObjectGuid AccountMgr::GetPlayerGuidByName(std::string name)
+{
+    ObjectGuid guid;
+
+    PlayerDataCache const* cache = GetPlayerDataCache(name);
+    if (cache)
+    {
+        guid = ObjectGuid(HIGHGUID_PLAYER, cache->lowguid);
+    }
+
+    return guid;
+}
+
+bool AccountMgr::GetPlayerNameByGUID(ObjectGuid guid, std::string& name)
+{
+    PlayerDataCache const* cache = GetPlayerDataCache(guid);
+    if (cache)
+    {
+        name = cache->name;
+        return true;
+    }
+
+    return false;
+}
+
+Team AccountMgr::GetPlayerTeamByGUID(ObjectGuid guid)
+{
+    PlayerDataCache const* cache = GetPlayerDataCache(guid);
+    if (cache)
+        return Player::TeamForRace(cache->race);
+
+    return TEAM_NONE;
+}
+
+uint32 AccountMgr::GetPlayerAccountIdByGUID(ObjectGuid guid)
+{
+    if (!guid.IsPlayer())
+        return 0;
+
+    PlayerDataCache const* cache = GetPlayerDataCache(guid);
+    if (cache)
+        return cache->account;
+
+    return 0;
+}
+
+uint32 AccountMgr::GetPlayerAccountIdByPlayerName(const std::string& name)
+{
+    PlayerDataCache const* cache = GetPlayerDataCache(name);
+    if (cache)
+        return cache->account;
+
+    return 0;
+}
+
+void AccountMgr::ClearPlayerDataCache(ObjectGuid guid)
+{
+    if (!guid || !guid.IsPlayer())
+        return;
+
+    WriteGuard Guard(GetLock());
+    PlayerDataCacheMap::iterator itr = mPlayerDataCacheMap.find(guid);
+    if (itr != mPlayerDataCacheMap.end())
+        mPlayerDataCacheMap.erase(itr);
+}
+
+void AccountMgr::MakePlayerDataCache(Player* player)
+{
+    if (!player || !player->GetSession())
+        return;
+
+    ObjectGuid guid = player->GetObjectGuid();
+
+    ClearPlayerDataCache(guid);
+
+    WriteGuard Guard(GetLock());
+
+    PlayerDataCache cache;
+    cache.account  = player->GetSession()->GetAccountId();;
+    cache.lowguid  = guid.GetCounter();
+    cache.race     = player->getRace();
+    cache.name     = player->GetName();
+
+    mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
+}
+
+PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid)
+{
+    PlayerDataCacheMap::const_iterator itr;
+    {
+        ReadGuard Guard(GetLock());
+        itr = mPlayerDataCacheMap.find(guid);
+        if (itr != mPlayerDataCacheMap.end()) 
+            return &itr->second;
+    }
+
+    if (Player* player = sObjectMgr.GetPlayer(guid))
+    {
+        MakePlayerDataCache(player);
+    }
+    else
+    {
+        QueryResult* result = CharacterDatabase.PQuery("SELECT account, name, race FROM characters WHERE guid = '%u'", guid.GetCounter());
+        if (result)
+        {
+            PlayerDataCache cache;
+            cache.account = (*result)[0].GetUInt32();
+            cache.lowguid = guid.GetCounter();
+            cache.name    = (*result)[1].GetCppString();
+            cache.race    = (*result)[2].GetUInt8();
+
+            WriteGuard Guard(GetLock());
+            mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
+        }
+    }
+
+    {
+        ReadGuard Guard(GetLock());
+        itr = mPlayerDataCacheMap.find(guid);
+        if (itr != mPlayerDataCacheMap.end()) 
+            return &itr->second;
+    }
+
+    return NULL;
+}
+
+PlayerDataCache const* AccountMgr::GetPlayerDataCache(const std::string& name)
+{
+    {
+        ReadGuard Guard(GetLock());
+        for (PlayerDataCacheMap::const_iterator itr = mPlayerDataCacheMap.begin(); itr != mPlayerDataCacheMap.end(); ++itr)
+            if (itr->second.name == name)
+                return &itr->second;
+    }
+
+    ObjectGuid guid;
+
+    QueryResult* result = CharacterDatabase.PQuery("SELECT account, guid, race FROM characters WHERE name = '%s'", name.c_str());
+    if (result)
+    {
+        PlayerDataCache cache;
+        cache.account  = (*result)[0].GetUInt32();
+        cache.lowguid  = (*result)[1].GetUInt32();
+        cache.race     = (*result)[2].GetUInt8();
+        cache.name     = name;
+
+        guid = ObjectGuid(HIGHGUID_PLAYER, cache.lowguid);
+
+        WriteGuard Guard(GetLock());
+        mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
+    }
+
+    {
+        ReadGuard Guard(GetLock());
+        PlayerDataCacheMap::const_iterator itr = mPlayerDataCacheMap.find(guid);
+        if (itr != mPlayerDataCacheMap.end()) 
+            return &itr->second;
+    }
+
+    return NULL;
+}
+
+uint32 AccountMgr::GetCharactersCount(uint32 acc_id, bool full)
+{
+    if (full)
+    {
+        QueryResult* result = LoginDatabase.PQuery("SELECT SUM(numchars) FROM realmcharacters WHERE acctid = '%u'", acc_id);
+        if (result)
+        {
+            Field* fields =result->Fetch();
+            uint32 acctcharcount = fields[0].GetUInt32();
+            delete result;
+            return acctcharcount;
+        }
+    }
+    else
+    {
+        QueryResult* result = CharacterDatabase.PQuery("SELECT COUNT(guid) FROM characters WHERE account = '%u'", acc_id);
+        uint8 charcount = 0;
+        if (result)
+        {
+            Field *fields = result->Fetch();
+            charcount = fields[0].GetUInt8();
+            delete result;
+            return charcount;
+        }
+    }
+    return 0;
+}
+
+void AccountMgr::UpdateCharactersCount(uint32 acc_id, uint32 realm_id)
+{
+    uint32 charcount = GetCharactersCount(acc_id, false);
+    LoginDatabase.BeginTransaction();
+    LoginDatabase.PExecute("DELETE FROM realmcharacters WHERE acctid= '%u' AND realmid = '%u'", acc_id, realm_id);
+    LoginDatabase.PExecute("INSERT INTO realmcharacters (numchars, acctid, realmid) VALUES (%u, %u, %u)",  charcount, acc_id, realm_id);
+    LoginDatabase.CommitTransaction();
+}
+
+void AccountMgr::LockAccount(uint32 acc_id, bool lock)
+{
+    LoginDatabase.PExecute( "UPDATE account SET locked = '%u' WHERE id = '%u'", uint32(lock), acc_id);
 }

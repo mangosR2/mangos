@@ -1393,9 +1393,16 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
     {
         case TYPEID_UNIT:
         {
-            // anyway creature move to target if is in same x,y position
-            if (((Creature const*)this)->GetPositionX() == x && ((Creature const*)this)->GetPositionY() == y)
-                return;
+            Unit* pVictim = ((Creature const*)this)->getVictim();
+            if (pVictim)
+            {
+                // anyway creature move to victim if is in 2D melee attack distance (prevent some exploit bye cheaters)
+                if (GetDistance2d(x, y) <= ((Creature const*)this)->GetMeleeAttackDistance(pVictim))
+                    return;
+                // anyway creature move to victim for thinly Z distance (shun some VMAP wrong ground calculating)
+                if (fabs(GetPositionZ() - pVictim->GetPositionZ()) < 5.0f)
+                    return;
+            }
             // non fly unit don't must be in air
             // non swim unit must be at ground (mostly speedup, because it don't must be in water and water level check less fast
             if (!((Creature const*)this)->CanFly())

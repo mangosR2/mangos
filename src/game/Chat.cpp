@@ -919,7 +919,7 @@ bool ChatHandler::HasLowerSecurity(Player* target, ObjectGuid guid, bool strong)
     if (target)
         target_session = target->GetSession();
     else
-        target_account = sObjectMgr.GetPlayerAccountIdByGUID(guid);
+        target_account = sAccountMgr.GetPlayerAccountIdByGUID(guid);
 
     if(!target_session && !target_account)
     {
@@ -2993,7 +2993,7 @@ ObjectGuid ChatHandler::ExtractGuidFromLink(char** text)
             if (Player* player = sObjectMgr.GetPlayer(name.c_str()))
                 return player->GetObjectGuid();
 
-            return sObjectMgr.GetPlayerGuidByName(name);
+            return sAccountMgr.GetPlayerGuidByName(name);
         }
         case GUID_LINK_CREATURE:
         {
@@ -3086,7 +3086,7 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
                 return true;
             }
 
-            if (ObjectGuid guid = sObjectMgr.GetPlayerGuidByName(name))
+            if (ObjectGuid guid = sAccountMgr.GetPlayerGuidByName(name))
             {
                 // to point where player stay (if loaded)
                 float o;
@@ -3311,7 +3311,7 @@ bool ChatHandler::ExtractPlayerTarget(char** args, Player** player /*= NULL*/, O
             *player = pl;
 
         // if need guid value from DB (in name case for check player existence)
-        ObjectGuid guid = !pl && (player_guid || player_name) ? sObjectMgr.GetPlayerGuidByName(name) : ObjectGuid();
+        ObjectGuid guid = !pl && (player_guid || player_name) ? sAccountMgr.GetPlayerGuidByName(name) : ObjectGuid();
 
         // if allowed player guid (if no then only online players allowed)
         if (player_guid)

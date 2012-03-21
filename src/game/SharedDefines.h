@@ -741,7 +741,7 @@ enum SpellEffects
     SPELL_EFFECT_SUSPEND_GRAVITY           = 145,
     SPELL_EFFECT_ACTIVATE_RUNE             = 146,
     SPELL_EFFECT_QUEST_FAIL                = 147,
-    SPELL_EFFECT_148                       = 148,
+    SPELL_EFFECT_TRIGGER_MISSILE_2         = 148,
     SPELL_EFFECT_CHARGE2                   = 149,
     SPELL_EFFECT_QUEST_START               = 150,
     SPELL_EFFECT_TRIGGER_SPELL_2           = 151,

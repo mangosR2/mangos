@@ -37,13 +37,23 @@ struct MANGOS_DLL_DECL MapID
 
     bool operator<(const MapID& val) const
     {
-        if(nMapId == val.nMapId)
+        if (nMapId == val.nMapId)
             return nInstanceId < val.nInstanceId;
+
+        if (IsContinent() && !val.IsContinent())
+            return true;
+        else if (!IsContinent() && val.IsContinent())
+            return false;
 
         return nMapId < val.nMapId;
     }
 
     bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
+
+    bool IsContinent() const
+    {
+        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
+    };
 
     uint32 nMapId;
     uint32 nInstanceId;
@@ -203,10 +213,11 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 template<typename Do>
 inline void MapManager::DoForAllMapsWithMapId(uint32 mapId, Do& _do)
 {
-    MapMapType::const_iterator start = i_maps.lower_bound(MapID(mapId,0));
-    MapMapType::const_iterator end   = i_maps.lower_bound(MapID(mapId+1,0));
-    for(MapMapType::const_iterator itr = start; itr != end; ++itr)
-        _do(itr->second);
+    for(MapMapType::const_iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    {
+        if (itr->first.nMapId == mapId)
+            _do(itr->second);
+    }
 }
 
 #define sMapMgr MapManager::Instance()

@@ -266,4 +266,23 @@ inline char * mangos_strdup(const char * source)
 #    define NOTSAFE_SEMAPHORE_OVERHANDLING "MacOS"
 #endif
 
+#ifndef INT8_MAX
+#  define INT8_MAX       0x7f
+#  define INT8_MIN       0xff
+#  define UINT8_MAX      0xff
+#  define UINT8_MIN      0x00
+#  define INT16_MAX      0x7fff
+#  define INT16_MIN      0xffff
+#  define UINT16_MAX     0xffff
+#  define UINT16_MIN     0x0000
+#  define INT32_MAX      0x7fffffff
+#  define INT32_MIN      0xffffffff
+#  define UINT32_MAX     0xffffffff
+#  define UINT32_MIN     0x00000000
+#  define INT64_MAX      0x7fffffffffffffff
+#  define INT64_MIN      0xffffffffffffffff
+#  define UINT64_MAX     0xffffffffffffffff
+#  define UINT64_MIN     0x0000000000000000
+#endif
+
 #endif

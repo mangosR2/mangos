@@ -174,12 +174,12 @@ struct BattleGroundObjectInfo
 enum BattleGroundQueueTypeId
 {
     BATTLEGROUND_QUEUE_NONE     = 0,
-    BATTLEGROUND_QUEUE_AV       = 1,
-    BATTLEGROUND_QUEUE_WS       = 2,
-    BATTLEGROUND_QUEUE_AB       = 3,
-    BATTLEGROUND_QUEUE_EY       = 4,
-    BATTLEGROUND_QUEUE_SA       = 5,
-    BATTLEGROUND_QUEUE_IC       = 6,
+    BATTLEGROUND_QUEUE_AV       = 1,    // Alterac Vally
+    BATTLEGROUND_QUEUE_WS       = 2,    // Warsong Gulch
+    BATTLEGROUND_QUEUE_AB       = 3,    // Arathi basin
+    BATTLEGROUND_QUEUE_EY       = 4,    // Eye of the Storm
+    BATTLEGROUND_QUEUE_SA       = 5,    // Strand of the Ancients
+    BATTLEGROUND_QUEUE_IC       = 6,    // Isle of Conquest
     BATTLEGROUND_QUEUE_RB       = 7,
     BATTLEGROUND_QUEUE_2v2      = 8,
     BATTLEGROUND_QUEUE_3v3      = 9,

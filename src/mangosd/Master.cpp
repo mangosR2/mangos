@@ -95,15 +95,8 @@ public:
             // possible freeze
             else if (WorldTimer::getMSTimeDiff(w_lastchange, curtime) > _delaytime)
             {
-                if (WorldTimer::getMSTimeDiff(w_lastchange, curtime) > (60 * 60 * IN_MILLISECONDS) - 1)
-                {
-                    sLog.outError("FreezeDetector: false freeze detected! check TZ settings on host OS's!");
-                }
-                else
-                {
-                    sLog.outError("FreezeDetector: World Thread hangs, kicking out server!");
-                    *((uint32 volatile*)NULL) = 0;              // bang crash
-                }
+                sLog.outError("World Thread hangs, kicking out server!");
+                *((uint32 volatile*)NULL) = 0;              // bang crash
             }
         }
         sLog.outString("Anti-freeze thread exiting without problems.");

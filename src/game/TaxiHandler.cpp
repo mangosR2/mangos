@@ -117,9 +117,6 @@ void WorldSession::SendDoFlight( uint32 mountDisplayId, uint32 path, uint32 path
     if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
         GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
 
-    while(GetPlayer()->GetMotionMaster()->GetCurrentMovementGeneratorType()==FLIGHT_MOTION_TYPE)
-        GetPlayer()->GetMotionMaster()->MovementExpired(false);
-
     if (mountDisplayId)
         GetPlayer()->Mount( mountDisplayId );
 

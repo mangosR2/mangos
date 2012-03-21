@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "AccountMgr.h"
 #include "Channel.h"
 #include "ObjectMgr.h"
 #include "World.h"
@@ -773,7 +774,7 @@ void Channel::MakeChannelOwner(WorldPacket *data)
 {
     std::string name = "";
 
-    if (!sObjectMgr.GetPlayerNameByGUID(m_ownerGuid, name) || name.empty())
+    if (!sAccountMgr.GetPlayerNameByGUID(m_ownerGuid, name) || name.empty())
         name = "PLAYER_NOT_FOUND";
 
     MakeNotifyPacket(data, CHAT_CHANNEL_OWNER_NOTICE);

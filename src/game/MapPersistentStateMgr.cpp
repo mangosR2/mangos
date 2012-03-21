@@ -368,7 +368,7 @@ time_t DungeonPersistentState::GetRealResetTime() const
     if(!mapDiff)
         return 0;
 
-    return DungeonResetScheduler::CalculateNextResetTime(mapDiff, time(NULL));
+    return DungeonResetScheduler::CalculateNextResetTime(mapDiff);
 }
 
 //== BattleGroundPersistentState functions =================
@@ -398,25 +398,27 @@ uint32 DungeonResetScheduler::GetMaxResetTimeFor(MapDifficultyEntry const* mapDi
     return delay;
 }
 
-time_t DungeonResetScheduler::CalculateNextResetTime(MapDifficultyEntry const* mapDiff, time_t prevResetTime)
+time_t DungeonResetScheduler::CalculateNextResetTime(MapDifficultyEntry const* mapDiff)
 {
 
     if (!mapDiff)
         return 0;
 
-    time_t offset       = GetMaxResetTimeFor(mapDiff);
-    time_t now          = time(NULL);
-    time_t diff         = sWorld.getConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR) * HOUR;
-    time_t start_point  = INSTANCE_RESET_SCHEDULE_START_TIME + offset + diff;
-    time_t newresettime = time_t(start_point + uint32(ceil(float(now - start_point) /float(offset))) * offset);
+    const time_t now = time(NULL);
+    struct tm *ts;
+    ts = localtime(&now);
+    ts->tm_sec = ts->tm_min = ts->tm_hour = 0;
+    time_t zeroHour = mktime(ts);
+    time_t offset   = GetMaxResetTimeFor(mapDiff);
+    time_t diff     = sWorld.getConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR) * HOUR;
 
-    return newresettime;
+    return diff + offset + zeroHour;
 
 }
 
 void DungeonResetScheduler::LoadResetTimes()
 {
-    time_t now = time(NULL);
+    const time_t now = time(NULL);
     //time_t today = (now / DAY) * DAY;
     //time_t oldest_reset_time = now;
 
@@ -501,7 +503,7 @@ void DungeonResetScheduler::LoadResetTimes()
             if (_oldresettime > uint64(time(NULL) + INSTANCE_MAX_RESET_OFFSET))
             {
                 MapDifficultyEntry const* mapDiff = GetMapDifficultyData(mapid,Difficulty(difficulty));
-                oldresettime = DungeonResetScheduler::CalculateNextResetTime(mapDiff, time(NULL));
+                oldresettime = DungeonResetScheduler::CalculateNextResetTime(mapDiff);
                 sLog.outErrorDb("Wrong reset time in group_instance corrected to: %ld", oldresettime);
             }
             else
@@ -554,7 +556,7 @@ void DungeonResetScheduler::LoadResetTimes()
 
         if(!t || t < now)
         {
-            t = CalculateNextResetTime(mapDiff , t);
+            t = CalculateNextResetTime(mapDiff);
             CharacterDatabase.DirectPExecute("REPLACE INTO instance_reset VALUES ('%u','%u','"UI64FMTD"')", mapid, difficulty, (uint64)t);
         }
 
@@ -608,8 +610,8 @@ void DungeonResetScheduler::ScheduleReset(bool add, time_t time, DungeonResetEve
 
 void DungeonResetScheduler::Update()
 {
-    time_t now = time(NULL), t;
-    while(!m_resetTimeQueue.empty() && (t = m_resetTimeQueue.begin()->first) < now)
+    time_t now = time(NULL);
+    while(!m_resetTimeQueue.empty() && (m_resetTimeQueue.begin()->first) < now)
     {
         DungeonResetEvent &event = m_resetTimeQueue.begin()->second;
         if (event.type == RESET_EVENT_NORMAL_DUNGEON)
@@ -637,7 +639,7 @@ void DungeonResetScheduler::Update()
                 MapDifficultyEntry const* mapDiff = GetMapDifficultyData(event.mapid,event.difficulty);
                 MANGOS_ASSERT(mapDiff);
 
-                time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(mapDiff, resetTime);
+                time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(mapDiff);
 
                 CharacterDatabase.DirectPExecute("UPDATE instance_reset SET resettime = '"UI64FMTD"' WHERE mapid = '%u' AND difficulty = '%u'", (uint64)next_reset, uint32(event.mapid), uint32(event.difficulty));
 
@@ -970,7 +972,7 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, Difficulty difficu
         CharacterDatabase.CommitTransaction();
 
         // calculate the next reset time
-        time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(mapDiff, resetTime);
+        time_t next_reset = DungeonResetScheduler::CalculateNextResetTime(mapDiff);
         // update it in the DB
         CharacterDatabase.PExecute("UPDATE instance_reset SET resettime = '"UI64FMTD"' WHERE mapid = '%u' AND difficulty = '%u'", (uint64)next_reset, mapid, difficulty);
     }

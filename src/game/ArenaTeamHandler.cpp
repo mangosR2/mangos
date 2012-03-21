@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "AccountMgr.h"
 #include "WorldSession.h"
 #include "WorldPacket.h"
 #include "Log.h"
@@ -166,7 +167,7 @@ void WorldSession::HandleArenaTeamAcceptOpcode(WorldPacket & /*recv_data*/)
     }
 
     if (!sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) &&
-        _player->GetTeam() != sObjectMgr.GetPlayerTeamByGUID(at->GetCaptainGuid()))
+        _player->GetTeam() != sAccountMgr.GetPlayerTeamByGUID(at->GetCaptainGuid()))
     {
         // not let enemies sign petition
         SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, "", "", ERR_ARENA_TEAM_NOT_ALLIED);

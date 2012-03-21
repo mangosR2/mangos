@@ -281,16 +281,9 @@ bool ChatHandler::HandleAccountLockCommand(char* args)
         return false;
     }
 
-    if (value)
-    {
-        LoginDatabase.PExecute( "UPDATE account SET locked = '1' WHERE id = '%u'", GetAccountId());
-        PSendSysMessage(LANG_COMMAND_ACCLOCKLOCKED);
-    }
-    else
-    {
-        LoginDatabase.PExecute( "UPDATE account SET locked = '0' WHERE id = '%u'", GetAccountId());
-        PSendSysMessage(LANG_COMMAND_ACCLOCKUNLOCKED);
-    }
+    sAccountMgr.LockAccount(GetAccountId(), value);
+
+    PSendSysMessage(value ? LANG_COMMAND_ACCLOCKLOCKED : LANG_COMMAND_ACCLOCKUNLOCKED);
 
     return true;
 }

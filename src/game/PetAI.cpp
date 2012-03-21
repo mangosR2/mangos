@@ -123,7 +123,6 @@ void PetAI::_stopAttack()
     }
     else
     {
-        m_creature->GetMotionMaster()->Clear(false);
         m_creature->GetMotionMaster()->MoveIdle();
     }
     m_creature->AttackStop();

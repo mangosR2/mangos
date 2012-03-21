@@ -219,7 +219,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
         return;
     }
 
-    if (GetGoType() == GAMEOBJECT_TYPE_CAPTURE_POINT)
+    if (GetGoType() == GAMEOBJECT_TYPE_CAPTURE_POINT && !GetMap()->IsBattleGroundOrArena())
     {
         if (m_captureTime < diff)
         {

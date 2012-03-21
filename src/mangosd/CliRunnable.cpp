@@ -24,6 +24,7 @@
 #include "Language.h"
 #include "Log.h"
 #include "World.h"
+#include "AccountMgr.h"
 #include "ObjectMgr.h"
 #include "WorldSession.h"
 #include "Config/Config.h"
@@ -269,7 +270,7 @@ void ChatHandler::HandleCharacterDeletedRestoreHelper(DeletedInfo const& delInfo
         return;
     }
 
-    if (sObjectMgr.GetPlayerGuidByName(delInfo.name))
+    if (sAccountMgr.GetPlayerGuidByName(delInfo.name))
     {
         PSendSysMessage(LANG_CHARACTER_DELETED_SKIP_NAME, delInfo.name.c_str(), delInfo.lowguid, delInfo.accountId);
         return;
@@ -418,8 +419,8 @@ bool ChatHandler::HandleCharacterEraseCommand(char* args)
     if(!normalizePlayerName(target_name))
         return false;
 
-    ObjectGuid target_guid = sObjectMgr.GetPlayerGuidByName(nameStr);
-    uint32 account_id = sObjectMgr.GetPlayerAccountIdByGUID(target_guid);
+    ObjectGuid target_guid = sAccountMgr.GetPlayerGuidByName(nameStr);
+    uint32 account_id = sAccountMgr.GetPlayerAccountIdByGUID(target_guid);
 
     if (target_guid.IsEmpty() || !account_id)
     {

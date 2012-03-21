@@ -20,8 +20,12 @@
 #define _ACCMGR_H
 
 #include "Common.h"
+#include "ObjectGuid.h"
+#include "SharedDefines.h"
 #include "Policies/Singleton.h"
 #include <string>
+
+class Player;
 
 enum AccountOpResult
 {
@@ -33,7 +37,19 @@ enum AccountOpResult
     AOR_DB_INTERNAL_ERROR
 };
 
+struct PlayerDataCache
+{
+    uint32      lowguid;
+    uint32      account;
+    std::string name;
+    uint8       race;
+};
+
 #define MAX_ACCOUNT_STR 16
+
+typedef std::map<ObjectGuid, PlayerDataCache> PlayerDataCacheMap;
+typedef std::vector<uint32> RafLinkedList;
+typedef std::map<std::pair<uint32, bool>, RafLinkedList > RafLinkedMap;
 
 class AccountMgr
 {
@@ -53,11 +69,38 @@ class AccountMgr
         uint32 GetCharactersCount(uint32 acc_id);
         std::string CalculateShaPassHash(std::string& name, std::string& password);
 
-        std::vector<uint32> GetRAFAccounts(uint32 accid, bool referred = true);
+        ObjectGuid GetPlayerGuidByName(std::string name);
+        bool GetPlayerNameByGUID(ObjectGuid guid, std::string &name);
+        Team GetPlayerTeamByGUID(ObjectGuid guid);
+        uint32 GetPlayerAccountIdByGUID(ObjectGuid guid);
+        uint32 GetPlayerAccountIdByPlayerName(const std::string& name);
+
+        uint32 GetCharactersCount(uint32 acc_id, bool full);
+        void UpdateCharactersCount(uint32 acc_id, uint32 realm_id);
+
+        void LockAccount(uint32 acc_id, bool lock);
+
+        PlayerDataCache const* GetPlayerDataCache(ObjectGuid guid);
+        PlayerDataCache const* GetPlayerDataCache(const std::string& name);
+        void  ClearPlayerDataCache(ObjectGuid guid);
+        void  MakePlayerDataCache(Player* player);
+
+        RafLinkedList* GetRAFAccounts(uint32 accid, bool referred = true);
         AccountOpResult AddRAFLink(uint32 accid, uint32 friendid);
         AccountOpResult DeleteRAFLink(uint32 accid, uint32 friendid);
 
         static bool normalizeString(std::string& utf8str);
+
+        // multithread locking
+        typedef   ACE_RW_Thread_Mutex          LockType;
+        typedef   ACE_Read_Guard<LockType>     ReadGuard;
+        typedef   ACE_Write_Guard<LockType>    WriteGuard;
+        LockType& GetLock() { return i_lock; }
+
+        private:
+        LockType            i_lock;
+        PlayerDataCacheMap  mPlayerDataCacheMap;
+        RafLinkedMap        mRAFLinkedMap;
 };
 
 #define sAccountMgr MaNGOS::Singleton<AccountMgr>::Instance()
