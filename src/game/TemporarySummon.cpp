@@ -189,6 +189,9 @@ void TemporarySummon::UnSummon(uint32 delay)
                 sum->AI()->SummonedCreatureDespawn(this);
 
     AddObjectToRemoveList();
+
+    // Prevent double unsummonig before remove from world
+    m_type = TEMPSUMMON_MANUAL_DESPAWN;
 }
 
 void TemporarySummon::SaveToDB()

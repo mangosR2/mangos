@@ -2826,7 +2826,7 @@ void PlayerbotAI::UpdateAttackerInfo()
             continue;
         Unit *a = itr->second.attacker;
         float t = 0.00;
-        std::list<HostileReference*>::const_iterator i = a->getThreatManager().getThreatList().begin();
+        ThreatList::const_iterator i = a->getThreatManager().getThreatList().begin();
         for (; i != a->getThreatManager().getThreatList().end(); ++i)
         {
             if ((*i)->getThreat() > t && (*i)->getTarget() != m_bot)

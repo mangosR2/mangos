@@ -307,7 +307,7 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
         }
     }
 
-    passenger->SendMonsterMoveTransport(m_pBase, SPLINETYPE_FACINGANGLE, SPLINEFLAG_UNKNOWN5, 0, 0.0f);
+    passenger->SendMonsterMoveTransport(m_pBase, SPLINETYPE_FACINGANGLE, SPLINEFLAG_TRANSPORT, 0, 0.0f);
 
     RelocatePassengers(m_pBase->GetPositionX(), m_pBase->GetPositionY(), m_pBase->GetPositionZ()+0.5f, m_pBase->GetOrientation());
 
@@ -528,7 +528,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         float moveTimeHalf =  verticalSpeed / ((seatInfo && seatInfo->m_exitGravity > 0.0f) ? seatInfo->m_exitGravity : Movement::gravity);
         float max_height = - Movement::computeFallElevation(moveTimeHalf,false,-verticalSpeed);
 
-        passenger->MonsterMoveToDestination(m_dst_x, m_dst_y, m_dst_z,passenger->GetOrientation(), horisontalSpeed, max_height, false);
+        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x,m_dst_y,m_dst_z,passenger->GetOrientation(), horisontalSpeed, max_height, true);
 
     }
     else if (seatInfo)
@@ -541,7 +541,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         if (m_dst_z < oz)
             m_dst_z = oz;
 
-        passenger->MonsterMoveToDestination(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f, false);
+        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f);
     }
     else
     {
@@ -551,7 +551,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         if (m_dst_z < oz)
             m_dst_z = oz;
 
-        passenger->MonsterMoveWithSpeed(m_dst_x, m_dst_y, m_dst_z + 0.1f, 28.0f);
+        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), 28.0f, 0.0f);
     }
 
     SetDestination();

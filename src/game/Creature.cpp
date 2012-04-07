@@ -35,6 +35,7 @@
 #include "MapManager.h"
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
+#include "CreatureEventAI.h"
 #include "Formulas.h"
 #include "WaypointMovementGenerator.h"
 #include "InstanceData.h"
@@ -2619,3 +2620,48 @@ void Creature::SetLevitate(bool enable)
     data << GetPackGUID();
     SendMessageToSet(&data, true);
 }
+
+bool AttackResumeEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    if (!m_owner.isAlive())
+        return true;
+
+    if (m_owner.hasUnitState(UNIT_STAT_CAN_NOT_REACT) || m_owner.HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        return true;
+
+    Unit* victim = m_owner.getVictim();
+
+    if (!victim || !victim->IsInMap(&m_owner))
+        return true;
+
+    switch(m_owner.GetObjectGuid().GetHigh())
+    {
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        {
+            m_owner.AttackStop(!b_force);
+            CreatureAI* ai = ((Creature*)&m_owner)->AI();
+            if (ai)
+            {
+            // Reset EventAI now unsafe, temp disabled (require correct writing EventAI scripts)
+            //    if (CreatureEventAI* eventai = (CreatureEventAI*)ai)
+            //        eventai->Reset();
+                ai->AttackStart(victim);
+            }
+            break;
+        }
+        case HIGHGUID_PET:
+        {
+            m_owner.AttackStop(!b_force);
+           ((Pet*)&m_owner)->AI()->AttackStart(victim);
+            break;
+        }
+        case HIGHGUID_PLAYER:
+            break;
+        default:
+            sLog.outError("AttackResumeEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
+        break;
+    }
+    return true;
+}
+

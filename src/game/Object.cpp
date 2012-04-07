@@ -1998,7 +1998,7 @@ Creature* WorldObject::GetClosestCreatureWithEntry(WorldObject* pSource, uint32 
 
    Cell cell(p);
    cell.SetNoCreate();
-   MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*pSource,uiEntry,true,fMaxSearchRange);
+   MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*pSource,uiEntry,true,false,fMaxSearchRange);
    MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
    TypeContainerVisitor<MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
    cell.Visit(p, grid_creature_searcher, *pSource->GetMap(), *this, fMaxSearchRange);

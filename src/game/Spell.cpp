@@ -46,8 +46,6 @@
 #include "Vehicle.h"
 #include "Chat.h"
 
-#define SPELL_CHANNEL_UPDATE_INTERVAL (1 * IN_MILLISECONDS)
-
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
 class PrioritizeManaUnitWraper
@@ -1739,100 +1737,95 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 45976:                                 // Open Portal
                 case 48278:                                 // Paralyze (Utgarde Pinnacle)
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
-                case 54148:                                 // Svala Get Random Target
-                case 55479:                                 // Forced Obedience (Naxxramas - Razovius encounter)
+                case 54148:                                 // Ritual of the Sword (Utgarde Pinnacle, Svala)
+                case 55479:                                 // Forced Obedience (Naxxramas, Razovius)
                 case 59870:                                 // Glare of the Tribunal (h) (Halls of Stone)
-                case 62016:                                 // Charge Orb (Thorim)
-                case 62301:                                 // Cosmic Smash (Algalon)
-                case 62488:                                 // Activate Construct (Ulduar - Ignis encounter)
-                case 63018:                                 // Searing Light nonhero
-                case 63024:                                 // Gravity Bomb (XT-002)
+                case 62016:                                 // Charge Orb (Ulduar, Thorim)
+                case 62301:                                 // Cosmic Smash (Ulduar, Algalon)
+                case 62488:                                 // Activate Construct (Ulduar, Ignis)
+                case 63018:                                 // Searing Light
+                case 63024:                                 // Gravity Bomb (Ulduar, XT-002)
                 case 63387:                                 // Rapid Burst
                 case 63545:                                 // Icicle Hodir(trigger spell from 62227)
-                case 63795:                                 // Psychosis (Yogg-Saron)
-                case 62042:                                 // Stormhammer (Thorim)
+                case 63795:                                 // Psychosis (Ulduar, Yogg-Saron)
+                case 62042:                                 // Stormhammer (Ulduar, Thorim)
                 case 64218:                                 // Overcharge
-                case 64234:                                 // Gravity Bomb (h) (XT-002)
+                case 64234:                                 // Gravity Bomb (h) (Ulduar, XT-002)
                 case 64531:                                 // Rapid Burst (h)
-                case 65121:                                 // Searing Light hero
-                case 65301:                                 // Psychosis (Yogg-Saron)
-                case 65950:                                 // Touch of Light
-                case 66001:                                 // Touch of Darkness
-                case 66152:                                 // Bullet Foced Cast (Trial of the Crusader, ->
-                case 66153:
-                case 66336:                                 // Mistress' Kiss (Trial of the Crusader, ->
-                case 66339:                                 // Summon Scarab (Trial of the Crusader, Anub'arak encounter)
-                case 67077:                                 // -> Lord Jaraxxus encounter, 10 and 10 heroic)
-                case 67281:
-                case 67282:
-                case 67283:
-                case 67296:
-                case 67297:
-                case 67298:
-                case 68950:                                 // Fear (ICC: Forge of Souls)
+                case 65121:                                 // Searing Light (h)
+                case 65301:                                 // Psychosis (Ulduar, Yogg-Saron)
+                case 65950:                                 // Touch of Light (ToCrusader, Val'kyr Twins)
+                case 66001:                                 // Touch of Darkness (ToCrusader, Val'kyr Twins)
+                case 66152:                                 // Bullet Controller Summon Periodic Trigger Light (ToCrusader)
+                case 66153:                                 // Bullet Controller Summon Periodic Trigger Dark (ToCrusader)
+                case 66332:                                 // Nerubian Burrower (Mode 0) (ToCrusader, Anub'arak)
+                case 66336:                                 // Mistress' Kiss (ToCrusader, Jaraxxus)
+                case 66339:                                 // Summon Scarab (ToCrusader, Anub'arak)
+                case 67077:                                 // Mistress' Kiss (Mode 2) (ToCrusader, Jaraxxus)
+                case 67281:                                 // Touch of Darkness (Mode 1)
+                case 67282:                                 // Touch of Darkness (Mode 2)
+                case 67283:                                 // Touch of Darkness (Mode 3)
+                case 67296:                                 // Touch of Light (Mode 1)
+                case 67297:                                 // Touch of Light (Mode 2)
+                case 67298:                                 // Touch of Light (Mode 3)
+                case 68950:                                 // Fear (FoS)
                 case 68912:                                 // Wailing Souls (FoS)
                 case 69048:                                 // Mirrored Soul (FoS)
-                case 69674:                                 // Mutated Infection (Rotface)
-                case 70882:                                 // Slime Spray Summon Trigger (Rotface)
-                case 70920:                                 // Unbound Plague Search Effect (Putricide)
-                case 71224:                                 // Mutated Infection (Rotface)
-                case 72091:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, normal)
-                case 73022:                                 // Mutated Infection (heroic)
-                case 73023:                                 // Mutated Infection (heroic)
+                case 69674:                                 // Mutated Infection (ICC, Rotface)
+                case 70882:                                 // Slime Spray Summon Trigger (ICC, Rotface)
+                case 70920:                                 // Unbound Plague Search Effect (ICC, Putricide)
+                case 71224:                                 // Mutated Infection (Mode 1)
+                case 72091:                                 // Frozen Orb (Vault of Archavon, Toravon)
+                case 73022:                                 // Mutated Infection (Mode 2)
+                case 73023:                                 // Mutated Infection (Mode 3)
                 case 51146:                                 // Searching Gaze (Halls Of Stone)
                     unMaxTargets = 1;
                     break;
                 case 28542:                                 // Life Drain
                 case 62476:                                 // Icicle (Hodir 10man)
+                case 63476:                                 // Icicle (Hodir - 10)
                 case 66013:                                 // Penetrating Cold (10 man)
-                case 66332:                                 // Nerubian Burrower (Trial of the Crusader, ->
-                case 67755:                                 // -> Anub'arak encounter, 10 and 10 heroic)
+                case 67755:                                 // Nerubian Burrower (Mode 1) (ToCrusader, Anub'arak)
+                case 67756:                                 // Nerubian Burrower (Mode 2) (ToCrusader, Anub'arak)
                 case 68509:                                 // Penetrating Cold (10 man heroic)
-                case 69055:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, normal)
-                case 69278:                                 // Gas spore - 10 (Festergut)
-                case 70341:                                 // Slime Puddle (Putricide)
+                case 69055:                                 // Bone Slice (ICC, Lord Marrowgar)
+                case 69278:                                 // Gas spore (ICC, Festergut)
+                case 70341:                                 // Slime Puddle (ICC, Putricide)
                 case 71336:                                 // Pact of the Darkfallen
                 case 71390:                                 // Pact of the Darkfallen
-                case 63476:                                 // Icicle (Hodir - 10)
                     unMaxTargets = 2;
                     break;
                 case 28796:                                 // Poison Bolt Volley
                 case 29213:                                 // Curse of the Plaguebringer
                 case 31298:                                 // Sleep
-                case 39992:                                 // Needle Spine Targeting (Warlord Najentus)
+                case 39992:                                 // Needle Spine Targeting (BT, Warlord Najentus)
                 case 51904:                                 // Limiting the count of Summoned Ghouls
                 case 54522:
                 case 60936:                                 // Surge of Power (h) (Malygos)
-                case 61693:                                 // Arcane Storm (Malygos) (N)
+                case 61693:                                 // Arcane Storm (Malygos)
                 case 62477:                                 // Icicle (Hodir 25man)
-                case 64598:                                 // Cosmic Smash (Algalon 25man)
-                case 70814:                                 // Bone Slice (Icecrown Citadel, Lord Marrowgar, heroic)
-                case 72095:                                 // Frozen Orb (Vault of Archavon, Toravon encounter, heroic)
+                case 64598:                                 // Cosmic Smash (h) (Ulduar, Algalon)
+                case 70814:                                 // Bone Slice (ICC, Lord Marrowgar, heroic)
+                case 72095:                                 // Frozen Orb (h) (Vault of Archavon, Toravon)
                     unMaxTargets = 3;
                     break;
-                case 61916:                                 // Lightning Whirl (Stormcaller Brundir - Ulduar)
-                    unMaxTargets = urand(2, 3);
-                    break;
-                case 63482:                                 // Lightning Whirl (h) (Stormcaller Brundir - Ulduar)
-                    unMaxTargets = urand(3, 6);
-                    break;
-                case 67756:                                 // Nerubian Burrower (Trial of the Crusader, ->
-                case 67757:                                 // -> Anub'arak encounter, 25 and 25 heroic)
-                case 71221:                                 // Gas spore - 25 (Festergut)
+                case 67757:                                 // Nerubian Burrower (Mode 3) (ToCrusader, Anub'arak)
+                case 71221:                                 // Gas spore (Mode 1) (ICC, Festergut)
                     unMaxTargets = 4;
                     break;
                 case 30843:                                 // Enfeeble TODO: exclude top threat target from target selection
-                case 42005:                                 // Bloodboil
+                case 42005:                                 // Bloodboil TODO: need to be 5 targets(players) furthest away from caster
+                case 45641:                                 // Fire Bloom (SWP, Kil'jaeden)
                 case 55665:                                 // Life Drain (h)
                 case 58917:                                 // Consume Minions
-                case 64604:                                 // Nature Bomb Freya
-                case 67076:                                 // Mistress' Kiss (Trial of the Crusader, ->
-                case 67078:                                 // -> Lord Jaraxxus encounter, 25 and 25 heroic)
+                case 64604:                                 // Nature Bomb (Ulduar, Freya)
+                case 67076:                                 // Mistress' Kiss (Mode 1) (ToCrusader, Jaraxxus)
+                case 67078:                                 // Mistress' Kiss (Mode 3) (ToCrusader, Jaraxxus)
                 case 67700:                                 // Penetrating Cold (25 man)
                 case 68510:                                 // Penetrating Cold (25 man, heroic)
                     unMaxTargets = 5;
                     break;
-                case 61694:                                 // Arcane Storm(H) (25 man) (Malygos)
+                case 61694:                                 // Arcane Storm (h) (Malygos)
                     unMaxTargets = 7;
                     break;
                 case 54098:                                 // Poison Bolt Volley (h)
@@ -1841,6 +1834,16 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     break;
                 case 25991:                                 // Poison Bolt Volley (Pincess Huhuran)
                     unMaxTargets = 15;
+                    break;
+                // random count
+                case 61916:                                 // Lightning Whirl (Ulduar, Stormcaller Brundir)
+                    unMaxTargets = urand(2, 3);
+                    break;
+                case 46771:                                 // Flame Sear (SWP, Grand Warlock Alythess)
+                    unMaxTargets = urand(3, 5);
+                    break;
+                case 63482:                                 // Lightning Whirl (h) (Ulduar, Stormcaller Brundir)
+                    unMaxTargets = urand(3, 6);
                     break;
                 default:
                     break;
@@ -1870,7 +1873,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         }
         case SPELLFAMILY_DEATHKNIGHT:
         {
-            if (m_spellInfo->SpellIconID == 1737)           // Corpse Explosion
+            if (m_spellInfo->SpellIconID == 1737)           // Corpse Explosion // TODO - spell 50445?
                 unMaxTargets = 1;
             break;
         }
@@ -5631,9 +5634,13 @@ SpellCastResult Spell::CheckCast(bool strict)
     bool castOnVehicleAllowed = false;
 
     if (m_caster->GetVehicle())
+    {
+        if (m_spellInfo->AttributesEx6 & SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE)
+            castOnVehicleAllowed = true;
         if ( VehicleSeatEntry const* seatInfo = m_caster->GetVehicle()->GetSeatInfo(m_caster))
             if (seatInfo->m_flags & SEAT_FLAG_CAN_CAST || seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK)
                 castOnVehicleAllowed = true;
+    }
 
 
     // not let players cast spells at mount (and let do it to creatures)
@@ -5750,7 +5757,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                             // no target provided or it was not valid, so use closest in range
                             if (!targetExplicit)
                             {
-                                MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*m_caster, i_spellST->second.targetEntry, i_spellST->second.type != SPELL_TARGET_TYPE_DEAD, range);
+                                MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*m_caster, i_spellST->second.targetEntry, i_spellST->second.type != SPELL_TARGET_TYPE_DEAD, i_spellST->second.type == SPELL_TARGET_TYPE_DEAD, range);
                                 MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
 
                                 // Visit all, need to find also Pet* objects
@@ -6482,10 +6489,14 @@ SpellCastResult Spell::CheckCast(bool strict)
             {
                 Unit* pTarget = m_targets.getUnitTarget();
 
+                // In case of TARGET_SCRIPT, we have already added a target. Use it here (and find a better solution)
+                if (m_UniqueTargetInfo.size() == 1)
+                    pTarget = m_caster->GetMap()->GetAnyTypeCreature(m_UniqueTargetInfo.front().targetGUID);
+
                 if (!pTarget || !pTarget->GetVehicleKit())
                     return SPELL_FAILED_BAD_TARGETS;
 
-                int32 seat = m_spellInfo->EffectApplyAuraName[i] < 8 ? m_spellInfo->EffectApplyAuraName[i] : -1;
+                int32 seat = m_spellInfo->EffectBasePoints[i] < 8 ? m_spellInfo->EffectBasePoints[i] : -1;
 
                 if (!pTarget->GetVehicleKit()->HasEmptySeat(seat))
                 {
@@ -6938,7 +6949,7 @@ SpellCastResult Spell::CheckRange(bool strict)
     return SPELL_CAST_OK;
 }
 
-uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell, Item* castItem)
+int32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell, Item* castItem)
 {
     // item cast not used power
     if (castItem)
@@ -7001,9 +7012,8 @@ uint32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spel
         powerCost = int32(powerCost/ (1.117f * spellInfo->spellLevel / caster->getLevel() -0.1327f));
 
     // PCT mod from user auras by school
-    powerCost = int32(powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
-    if (powerCost < 0)
-        powerCost = 0;
+    powerCost = ceil((float)powerCost * (1.0f + caster->GetFloatValue(UNIT_FIELD_POWER_COST_MULTIPLIER + school)));
+
     return powerCost;
 }
 
@@ -7047,7 +7057,7 @@ SpellCastResult Spell::CheckPower()
 
     // Check power amount
     Powers powerType = Powers(m_spellInfo->powerType);
-    if (m_caster->GetPower(powerType) < m_powerCost)
+    if (m_powerCost > 0 && (int32)m_caster->GetPower(powerType) < m_powerCost)
         return SPELL_FAILED_NO_POWER;
 
     return SPELL_CAST_OK;

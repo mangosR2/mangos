@@ -105,6 +105,11 @@ namespace Movement
          */
         void SetOrientationFixed(bool enable);
 
+        /* Enables transport enter/exit modes
+         */
+        void SetTransportEnter();
+        void SetTransportExit();
+
         /* Sets the velocity (in case you want to have custom movement velocity)
          * if no set, speed will be selected based on unit's speeds and current movement mode
          * Has no effect if falling mode enabled
@@ -176,6 +181,16 @@ namespace Movement
         args.facing.f.y = spot.y;
         args.facing.f.z = spot.z;
         args.flags.EnableFacingPoint();
+    }
+
+    inline void MoveSplineInit::SetTransportEnter()
+    {
+        args.flags.EnableTransport();
+    }
+
+    inline void MoveSplineInit::SetTransportExit()
+    {
+        args.flags.EnableTransportExit();
     }
 }
 #endif // MANGOSSERVER_MOVESPLINEINIT_H

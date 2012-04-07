@@ -1367,9 +1367,6 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading Instance encounters data..." );  // must be after Creature loading
     sObjectMgr.LoadInstanceEncounters();
 
-    sLog.outString( "Loading Npc Text Id..." );
-    sObjectMgr.LoadNpcGossips();                            // must be after load Creature and LoadGossipText
-
     sLog.outString( "Loading Gossip scripts..." );
     sScriptMgr.LoadGossipScripts();                         // must be before gossip menu options
 

@@ -24,7 +24,7 @@ CREATE TABLE `db_version` (
   `version` varchar(120) default NULL,
   `creature_ai_version` varchar(120) default NULL,
   `cache_id` int(10) default '0',
-  `required_11926_01_mangos_creature_template` bit(1) default NULL
+  `required_11940_07_mangos_spell_scripts` bit(1) default NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Used DB version notes';
 
 --
@@ -1111,8 +1111,8 @@ CREATE TABLE `creature_movement_scripts` (
   `command` mediumint(8) unsigned NOT NULL default '0',
   `datalong` mediumint(8) unsigned NOT NULL default '0',
   `datalong2` int(10) unsigned NOT NULL default '0',
-  `datalong3` int(10) unsigned NOT NULL default '0',
-  `datalong4` int(10) unsigned NOT NULL default '0',
+  `buddy_entry` int(10) unsigned NOT NULL default '0',
+  `search_radius` int(10) unsigned NOT NULL default '0',
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
@@ -1519,8 +1519,8 @@ CREATE TABLE `event_scripts` (
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
-  `dataint3` int(11) NOT NULL default '0',
-  `dataint4` int(11) NOT NULL default '0',
+  `buddy_entry` int(11) NOT NULL default '0',
+  `search_radius` int(11) NOT NULL default '0',
   `x` float NOT NULL default '0',
   `y` float NOT NULL default '0',
   `z` float NOT NULL default '0',
@@ -2024,8 +2024,8 @@ CREATE TABLE `gameobject_scripts` (
   `command` mediumint(8) unsigned NOT NULL default '0',
   `datalong` mediumint(8) unsigned NOT NULL default '0',
   `datalong2` int(10) unsigned NOT NULL default '0',
-  `datalong3` int(10) unsigned NOT NULL default '0',
-  `datalong4` int(10) unsigned NOT NULL default '0',
+  `buddy_entry` int(10) unsigned NOT NULL default '0',
+  `search_radius` int(10) unsigned NOT NULL default '0',
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
@@ -2207,8 +2207,8 @@ CREATE TABLE `gossip_scripts` (
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
-  `dataint3` int(11) NOT NULL default '0',
-  `dataint4` int(11) NOT NULL default '0',
+  `buddy_entry` int(11) NOT NULL default '0',
+  `search_radius` int(11) NOT NULL default '0',
   `x` float NOT NULL default '0',
   `y` float NOT NULL default '0',
   `z` float NOT NULL default '0',
@@ -4015,26 +4015,6 @@ CREATE TABLE `milling_loot_template` (
 LOCK TABLES `milling_loot_template` WRITE;
 /*!40000 ALTER TABLE `milling_loot_template` DISABLE KEYS */;
 /*!40000 ALTER TABLE `milling_loot_template` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `npc_gossip`
---
-
-DROP TABLE IF EXISTS `npc_gossip`;
-CREATE TABLE `npc_gossip` (
-  `npc_guid` int(10) unsigned NOT NULL default '0',
-  `textid` mediumint(8) unsigned NOT NULL default '0',
-  PRIMARY KEY  (`npc_guid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
---
--- Dumping data for table `npc_gossip`
---
-
-LOCK TABLES `npc_gossip` WRITE;
-/*!40000 ALTER TABLE `npc_gossip` DISABLE KEYS */;
-/*!40000 ALTER TABLE `npc_gossip` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -14086,8 +14066,8 @@ CREATE TABLE `quest_end_scripts` (
   `command` mediumint(8) unsigned NOT NULL default '0',
   `datalong` mediumint(8) unsigned NOT NULL default '0',
   `datalong2` int(10) unsigned NOT NULL default '0',
-  `datalong3` int(10) unsigned NOT NULL default '0',
-  `datalong4` int(10) unsigned NOT NULL default '0',
+  `buddy_entry` int(10) unsigned NOT NULL default '0',
+  `search_radius` int(10) unsigned NOT NULL default '0',
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
@@ -14173,8 +14153,8 @@ CREATE TABLE `quest_start_scripts` (
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
-  `dataint3` int(11) NOT NULL default '0',
-  `dataint4` int(11) NOT NULL default '0',
+  `buddy_entry` int(11) NOT NULL default '0',
+  `search_radius` int(11) NOT NULL default '0',
   `x` float NOT NULL default '0',
   `y` float NOT NULL default '0',
   `z` float NOT NULL default '0',
@@ -17853,8 +17833,8 @@ CREATE TABLE `spell_scripts` (
   `data_flags` tinyint(3) unsigned NOT NULL default '0',
   `dataint` int(11) NOT NULL default '0',
   `dataint2` int(11) NOT NULL default '0',
-  `dataint3` int(11) NOT NULL default '0',
-  `dataint4` int(11) NOT NULL default '0',
+  `buddy_entry` int(11) NOT NULL default '0',
+  `search_radius` int(11) NOT NULL default '0',
   `x` float NOT NULL default '0',
   `y` float NOT NULL default '0',
   `z` float NOT NULL default '0',

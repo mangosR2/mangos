@@ -113,7 +113,7 @@ void MovementInfo::Read(ByteBuffer &data)
 
     if (HasMovementFlag(MOVEFLAG_SPLINE_ELEVATION))
     {
-        data >> u_unk1;
+        data >> splineElevation;
     }
 }
 
@@ -158,7 +158,7 @@ void MovementInfo::Write(ByteBuffer &data) const
 
     if (HasMovementFlag(MOVEFLAG_SPLINE_ELEVATION))
     {
-        data << u_unk1;
+        data << splineElevation;
     }
 }
 
@@ -500,6 +500,8 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     if (relocate)
     {
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
+        if (m_movementInfo.HasMovementFlag(MOVEFLAG_HOVER))
+            z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
         if (GetTypeId() == TYPEID_PLAYER)
             GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
@@ -3134,15 +3136,12 @@ void Unit::SendMeleeAttackStart(Unit* pVictim)
 
 void Unit::SendMeleeAttackStop(Unit* victim)
 {
-    if(!victim)
-        return;
-
-    WorldPacket data( SMSG_ATTACKSTOP, (4+16) );            // we guess size
+    WorldPacket data( SMSG_ATTACKSTOP, (8+8+4) );                                      // we guess size
     data << GetPackGUID();
-    data << victim->GetPackGUID();                          // can be 0x00...
-    data << uint32(0);                                      // can be 0x1
+    data << (victim ? victim->GetPackGUID() : ObjectGuid().WriteAsPacked());           // can be 0x00...
+    data << uint32(0);                                                                 // can be 0x1
     SendMessageToSet(&data, true);
-    DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "%s %u stopped attacking %s %u", (GetTypeId()==TYPEID_PLAYER ? "player" : "creature"), GetGUIDLow(), (victim->GetTypeId()==TYPEID_PLAYER ? "player" : "creature"),victim->GetGUIDLow());
+    DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "%s stopped attacking %s", GetObjectGuid().GetString().c_str(), victim ? victim->GetObjectGuid().GetString().c_str() : "");
 
     /*if (victim->GetTypeId() == TYPEID_UNIT)
     ((Creature*)victim)->AI().EnterEvadeMode(this);*/
@@ -5700,6 +5699,20 @@ Aura* Unit::GetAura(AuraType type, SpellFamily family, ClassFamilyMask const& cl
     return NULL;
 }
 
+Aura* Unit::GetAuraByEffectMask(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid)
+{
+    AuraList const& auras = GetAurasByType(type);
+    for (AuraList::const_iterator i = auras.begin();i != auras.end(); ++i)
+    {
+        if ((*i)->GetAuraSpellClassMask() == classMask &&
+            (family <= SPELLFAMILY_PET &&  (*i)->GetSpellProto()->SpellFamilyName == family) &&
+            (!casterGuid || (*i)->GetCasterGuid() == casterGuid))
+            return *i;
+    }
+
+    return NULL;
+}
+
 Aura* Unit::GetTriggeredByClientAura(uint32 spellId)
 {
     if (spellId)
@@ -6616,6 +6629,10 @@ void Unit::AttackedBy(Unit *attacker)
         attacker->SetInCombatWith(this);
     }
 
+    // do not pet reaction for self inflicted damage (like environmental)
+    if (attacker == this)
+        return;
+
     // trigger pet AI reaction
     if (attacker->IsHostileTo(this))
     {
@@ -7062,21 +7079,21 @@ void Unit::UnsummonAllTotems()
             totem->UnSummon();
 }
 
-int32 Unit::DealHeal(Unit *pVictim, uint32 addhealth, SpellEntry const *spellProto, bool critical, uint32 absorb)
+int32 Unit::DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellProto, bool critical, uint32 absorb)
 {
     int32 gain = pVictim->ModifyHealth(int32(addhealth));
 
     Unit* unit = this;
 
-    if ( GetTypeId()==TYPEID_UNIT && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType()!=TOTEM_STATUE)
+    if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->IsTotem() && ((Totem*)this)->GetTotemType() != TOTEM_STATUE)
         unit = GetOwner();
 
-     // overheal = addhealth - gain
+    // overheal = addhealth - gain
     unit->SendHealSpellLog(pVictim, spellProto->Id, addhealth, addhealth - gain, critical, absorb);
 
-    if (unit->GetTypeId()==TYPEID_PLAYER)
+    if (unit->GetTypeId() == TYPEID_PLAYER)
     {
-        if (BattleGround *bg = ((Player*)unit)->GetBattleGround())
+        if (BattleGround* bg = ((Player*)unit)->GetBattleGround())
             bg->UpdatePlayerScore((Player*)unit, SCORE_HEALING_DONE, gain);
 
         // use the actual gain, as the overheal shall not be counted, skip gain 0 (it ignored anyway in to criteria)
@@ -7086,7 +7103,7 @@ int32 Unit::DealHeal(Unit *pVictim, uint32 addhealth, SpellEntry const *spellPro
         ((Player*)unit)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEAL_CASTED, addhealth);
     }
 
-    if (pVictim->GetTypeId()==TYPEID_PLAYER)
+    if (pVictim->GetTypeId() == TYPEID_PLAYER)
     {
         ((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_HEALING_RECEIVED, gain);
         ((Player*)pVictim)->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HEALING_RECEIVED, addhealth);
@@ -7506,17 +7523,20 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
                 }
             }
             // Torment the weak affected (Arcane Barrage, Arcane Blast, Frostfire Bolt, Arcane Missiles, Fireball, Pyroblast)
-            if (spellProto->SpellFamilyFlags.test<CF_MAGE_FIREBALL, CF_MAGE_FROSTBOLT, CF_MAGE_ARCANE_MISSILES2, CF_MAGE_ARCANE_BLAST, CF_MAGE_FROSTFIRE_BOLT, CF_MAGE_ARCANE_BARRAGE>() &&
-                (pVictim->HasAuraType(SPELL_AURA_MOD_DECREASE_SPEED) || pVictim->HasAuraType(SPELL_AURA_HASTE_ALL)))
+            if (spellProto->SpellFamilyFlags.test<CF_MAGE_FIREBALL, CF_MAGE_FROSTBOLT, CF_MAGE_ARCANE_MISSILES2, CF_MAGE_ARCANE_BLAST, CF_MAGE_FROSTFIRE_BOLT, CF_MAGE_ARCANE_BARRAGE>())
             {
                 //Search for Torment the weak dummy aura
-                Unit::AuraList const& ttw = GetAurasByType(SPELL_AURA_DUMMY);
-                for(Unit::AuraList::const_iterator i = ttw.begin(); i != ttw.end(); ++i)
+                if (Aura* ttwAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SpellFamily(spellProto->SpellFamilyName),ClassFamilyMask(0,0, 0x00240000)))
                 {
-                    if ((*i)->GetSpellProto()->SpellIconID == 3263)
+                    Unit::SpellAuraHolderMap const& holderMap = pVictim->GetSpellAuraHolderMap();
+                    for (Unit::SpellAuraHolderMap::const_iterator itr = holderMap.begin(); itr != holderMap.end(); ++itr)
                     {
-                        DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f) / 100.0f;
-                        break;
+                        if (itr->second && !itr->second->IsDeleted() && 
+                            itr->second->GetSpellProto()->Mechanic == ttwAura->GetModifier()->m_miscvalue)
+                        {
+                            DoneTotalMod *= ((float)ttwAura->GetModifier()->m_amount + 100.0f) / 100.0f;
+                            break;
+                        }
                     }
                 }
             }
@@ -11837,29 +11857,12 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid, uint32 /*spellID*/)
         SendMessageToSet(&data,true);
         */
 
-        GetUnitStateMgr().PushAction(UNIT_ACTION_IDLE, UNIT_ACTION_PRIORITY_IMMEDIATE);
-
-        if (GetTypeId() != TYPEID_PLAYER)
-            StopMoving();
-        else
-            ((Player*)this)->m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
-
-                                                            // blizz like 2.0.x
-        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
-                                                            // blizz like 2.0.x
-        SetFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
-                                                            // blizz like 2.0.x
-        SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
-
-        addUnitState(UNIT_STAT_DIED);
-        CombatStop();
-        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
-
         // prevent interrupt message
         if (casterGuid == GetObjectGuid())
             FinishSpell(CURRENT_GENERIC_SPELL,false);
-        InterruptNonMeleeSpells(true);
-        getHostileRefManager().deleteReferences();
+
+        GetUnitStateMgr().PushAction(UNIT_ACTION_FEIGNDEATH);
+        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION);
     }
     else
     {
@@ -11869,16 +11872,8 @@ void Unit::SetFeignDeath(bool apply, ObjectGuid casterGuid, uint32 /*spellID*/)
         data<<uint8(1);
         SendMessageToSet(&data,true);
         */
-                                                            // blizz like 2.0.x
-        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);
-                                                            // blizz like 2.0.x
-        RemoveFlag(UNIT_FIELD_FLAGS_2, UNIT_FLAG2_FEIGN_DEATH);
-                                                            // blizz like 2.0.x
-        RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
 
-        clearUnitState(UNIT_STAT_DIED);
-
-        GetUnitStateMgr().DropAction(UNIT_ACTION_IDLE, UNIT_ACTION_PRIORITY_IMMEDIATE);
+        GetUnitStateMgr().DropAction(UNIT_ACTION_FEIGNDEATH);
     }
 }
 
@@ -12365,7 +12360,11 @@ void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, 
 
                 for (int32 i = 0; i < MAX_EFFECT_INDEX; i++)
                 {
-                    if ((1 << (iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] - 1)) & mechMask)
+                    uint8 mechanic  = iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] ?
+                                      iter->second->GetSpellProto()->EffectMechanic[SpellEffectIndex(i)] :
+                                      iter->second->GetSpellProto()->Mechanic;
+
+                    if ((1 << (mechanic - 1)) & mechMask)
                     {
                         Aura* aura = iter->second->GetAuraByEffectIndex(SpellEffectIndex(i));
                         if (aura && !aura->IsDeleted())

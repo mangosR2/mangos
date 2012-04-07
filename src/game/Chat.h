@@ -456,7 +456,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleReloadLootTemplatesSpellCommand(char* args);
         bool HandleReloadMailLevelRewardCommand(char* args);
         bool HandleReloadMangosStringCommand(char* args);
-        bool HandleReloadNpcGossipCommand(char* args);
         bool HandleReloadNpcTextCommand(char* args);
         bool HandleReloadNpcTrainerCommand(char* args);
         bool HandleReloadNpcVendorCommand(char* args);

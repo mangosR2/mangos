@@ -645,7 +645,7 @@ void Aura::Update(uint32 diff)
     {
         if (m_periodicTimer <= 0)
         {
-            m_periodicTimer = SPELL_SPELL_CHANNEL_UPDATE_INTERVAL;
+            m_periodicTimer = NONPERIODIC_AURA_UPDATE_INTERVAL;
             PeriodicCheck();
         }
         else
@@ -1389,24 +1389,40 @@ void Aura::TriggerSpell()
                     }
                     case 23184:                             // Mark of Frost
                     case 25041:                             // Mark of Nature
+                    case 37125:                             // Mark of Death
                     {
                         std::list<Player*> targets;
 
                         // spells existed in 1.x.x; 23183 - mark of frost; 25042 - mark of nature; both had radius of 100.0 yards in 1.x.x DBC
                         // spells are used by Azuregos and the Emerald dragons in order to put a stun debuff on the players which resurrect during the encounter
                         // in order to implement the missing spells we need to make a grid search for hostile players and check their auras; if they are marked apply debuff
+                        // spell 37127 used for the Mark of Death, is used server side, so it needs to be implemented here
 
-                        // Mark of Frost or Mark of Nature
-                        uint32 markSpellId = auraId == 23184 ? 23182 : 25040;
-                        // Aura of Frost or Aura of Nature
-                        uint32 debufSpellId = auraId == 23184 ? 23186 : 25043;
+                        uint32 markSpellId = 0;
+                        uint32 debuffSpellId = 0;
+
+                        switch (auraId)
+                        {
+                            case 23184:
+                                markSpellId = 23182;
+                                debuffSpellId = 23186;
+                                break;
+                            case 25041:
+                                markSpellId = 25040;
+                                debuffSpellId = 25043;
+                                break;
+                            case 37125:
+                                markSpellId = 37128;
+                                debuffSpellId = 37131;
+                                break;
+                        }
 
                         MaNGOS::AnyPlayerInObjectRangeWithAuraCheck u_check(GetTarget(), 100.0f, markSpellId);
                         MaNGOS::PlayerListSearcher<MaNGOS::AnyPlayerInObjectRangeWithAuraCheck > checker(targets, u_check);
                         Cell::VisitWorldObjects(GetTarget(), checker, 100.0f);
 
                         for (std::list<Player*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-                            (*itr)->CastSpell((*itr), debufSpellId, true, NULL, NULL, casterGUID);
+                            (*itr)->CastSpell((*itr), debuffSpellId, true, NULL, NULL, casterGUID);
 
                         return;
                     }
@@ -3136,7 +3152,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                         Creature* pCreature = NULL;
 
-                        MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck creature_check(*Caster,  26591, true, 15.0f);
+                        MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck creature_check(*Caster,  26591, true, false, 15.0f);
                         MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(pCreature, creature_check);
 
                         Cell::VisitGridObjects(Caster, searcher, 15.0f);
@@ -3917,11 +3933,29 @@ void Aura::HandleAuraHover(bool apply, bool Real)
 
     WorldPacket data;
     if (apply)
-        data.Initialize(SMSG_MOVE_SET_HOVER, 8+4);
+    {
+        GetTarget()->m_movementInfo.AddMovementFlag(MOVEFLAG_HOVER);
+        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_SET_HOVER, 8+4);
+        data << GetTarget()->GetPackGUID();
+        if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+        {
+            data << uint32(0);
+        }
+        else
+            GetTarget()->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
+    }
     else
-        data.Initialize(SMSG_MOVE_UNSET_HOVER, 8+4);
-    data << GetTarget()->GetPackGUID();
-    data << uint32(0);
+    {
+        GetTarget()->m_movementInfo.RemoveMovementFlag(MOVEFLAG_HOVER);
+        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_UNSET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, 8+4);
+        data << GetTarget()->GetPackGUID();
+        if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
+        {
+            data << uint32(0);
+        }
+        else
+            GetTarget()->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
+    }
     GetTarget()->SendMessageToSet(&data, true);
 }
 
@@ -5003,6 +5037,9 @@ void Aura::HandleModConfuse(bool apply, bool Real)
     if(!Real)
         return;
 
+    if(!apply && GetTarget()->HasAuraType(GetModifier()->m_auraname))
+        return;
+
     GetTarget()->SetConfused(apply, GetCasterGuid(), GetId());
 }
 
@@ -5011,12 +5048,18 @@ void Aura::HandleModFear(bool apply, bool Real)
     if (!Real)
         return;
 
+    if(!apply && GetTarget()->HasAuraType(GetModifier()->m_auraname))
+        return;
+
     GetTarget()->SetFeared(apply, GetCasterGuid(), GetId());
 }
 
 void Aura::HandleFeignDeath(bool apply, bool Real)
 {
     if(!Real)
+        return;
+
+    if(!apply && GetTarget()->HasAuraType(GetModifier()->m_auraname))
         return;
 
     GetTarget()->SetFeignDeath(apply, GetCasterGuid(), GetId());

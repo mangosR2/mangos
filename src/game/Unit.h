@@ -164,17 +164,16 @@ enum UnitStandFlags
     UNIT_STAND_FLAGS_ALL          = 0xFF
 };
 
-// byte flags value (UNIT_FIELD_BYTES_1,2)
-// This corresponds to free talent points (pet case)
-
 // byte flags value (UNIT_FIELD_BYTES_1,3)
 enum UnitBytes1_Flags
 {
     UNIT_BYTE1_FLAG_ALWAYS_STAND = 0x01,
-    UNIT_BYTE1_FLAG_UNK_2        = 0x02,                    // Creature that can fly and are not on the ground appear to have this flag. If they are on the ground, flag is not present.
+    UNIT_BYTE1_FLAG_HOVER        = 0x02,                    // Creature that can fly and are not on the ground appear to have this flag. If they are on the ground, flag is not present.
     UNIT_BYTE1_FLAG_UNK_3        = 0x04,
     UNIT_BYTE1_FLAG_ALL          = 0xFF
 };
+
+#define UNIT_BYTE1_FLAG_UNK_2 UNIT_BYTE1_FLAG_HOVER
 
 // byte value (UNIT_FIELD_BYTES_2,0)
 enum SheathState
@@ -689,15 +688,15 @@ enum SplineFlags
     SPLINEFLAG_FINALTARGET  = 0x00010000,
     SPLINEFLAG_FINALFACING  = 0x00020000,
     SPLINEFLAG_CATMULLROM   = 0x00040000,
-    SPLINEFLAG_UNKNOWN1     = 0x00080000,
-    SPLINEFLAG_UNKNOWN2     = 0x00100000,
-    SPLINEFLAG_UNKNOWN3     = 0x00200000,
-    SPLINEFLAG_UNKNOWN4     = 0x00400000,
-    SPLINEFLAG_UNKNOWN5     = 0x00800000,
-    SPLINEFLAG_UNKNOWN6     = 0x01000000,
+    SPLINEFLAG_CYCLIC       = 0x00080000,
+    SPLINEFLAG_ENTER_CYCLE  = 0x00100000,
+    SPLINEFLAG_ANIMATION    = 0x00200000,
+    SPLINEFLAG_FROZEN       = 0x00400000,
+    SPLINEFLAG_TRANSPORT    = 0x00800000,
+    SPLINEFLAG_TRANSPORT_EXIT = 0x01000000,
     SPLINEFLAG_UNKNOWN7     = 0x02000000,
     SPLINEFLAG_UNKNOWN8     = 0x04000000,
-    SPLINEFLAG_UNKNOWN9     = 0x08000000,
+    SPLINEFLAG_ORIENTATION_INVERCED = 0x08000000,
     SPLINEFLAG_UNKNOWN10    = 0x10000000,
     SPLINEFLAG_UNKNOWN11    = 0x20000000,
     SPLINEFLAG_UNKNOWN12    = 0x40000000
@@ -725,7 +724,7 @@ class MovementInfo
 
     public:
         MovementInfo() : moveFlags(MOVEFLAG_NONE), moveFlags2(MOVEFLAG2_NONE), time(0),
-            t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), u_unk1(0.0f) {}
+            t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
 
         // Read/Write methods
         void Read(ByteBuffer &data);
@@ -791,7 +790,7 @@ class MovementInfo
                 moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
 
             moveFlags  = moveFlagsTmp;
-            u_unk1     = targetInfo.u_unk1;
+            splineElevation     = targetInfo.splineElevation;
             time       = targetInfo.time;
             pos        = targetInfo.pos;
             s_pitch    = targetInfo.s_pitch;
@@ -831,7 +830,7 @@ class MovementInfo
         // jumping
         JumpInfo jump;
         // spline
-        float    u_unk1;
+        float    splineElevation;
 };
 
 inline ByteBuffer& operator<< (ByteBuffer& buf, MovementInfo const& mi)
@@ -1889,6 +1888,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         Aura* GetAura(uint32 spellId, SpellEffectIndex effindex);
         Aura* GetAura(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid = ObjectGuid());
+        Aura* GetAuraByEffectMask(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid = ObjectGuid());
         Aura* GetAura(AuraType type, SpellFamily family, uint64 familyFlag, uint32 familyFlag2 = 0, ObjectGuid casterGuid = ObjectGuid())
         {
             return GetAura(type, family, ClassFamilyMask(familyFlag, familyFlag2), casterGuid);

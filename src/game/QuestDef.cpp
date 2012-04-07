@@ -257,12 +257,20 @@ uint32 Quest::XPValue(Player *pPlayer) const
     return 0;
 }
 
-int32  Quest::GetRewOrReqMoney() const
+int32 Quest::GetRewOrReqMoney() const
 {
-    if(RewOrReqMoney <=0)
+    if (RewOrReqMoney <=0)
         return RewOrReqMoney;
 
     return int32(RewOrReqMoney * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
+}
+
+uint32 Quest::GetRewMoneyMaxLevel() const
+{
+    if (RewMoneyMaxLevel < RewOrReqMoney)
+        return uint32(RewOrReqMoney * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
+
+    return uint32(RewMoneyMaxLevel * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
 }
 
 bool Quest::IsAllowedInRaid() const

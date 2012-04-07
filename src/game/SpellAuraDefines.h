@@ -364,4 +364,7 @@ enum AreaAuraType
     AREA_AURA_PET,
     AREA_AURA_OWNER
 };
+
+#define NONPERIODIC_AURA_UPDATE_INTERVAL 500
+
 #endif

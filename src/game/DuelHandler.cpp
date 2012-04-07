@@ -54,9 +54,9 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
     * Duel reset script
     *
     */
-   
+
     uint32 areaId = pl->GetAreaId();
-       
+
     if(sWorld.getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) && sWorld.IsAreaIdEnabledDuelReset(areaId)){
         //remove arena cds
         pl->RemoveArenaSpellCooldowns();
@@ -92,28 +92,40 @@ void WorldSession::HandleDuelAcceptedOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
 {
-    //DEBUG_LOG( "WORLD: received CMSG_DUEL_CANCELLED" );
+
+    // player either discarded the duel using the "discard button"
+    // or used "/forfeit" before countdown reached 0
+    ObjectGuid guid;
+    recvPacket >> guid;    // GO PLAYER_DUEL_ARBITER
+
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT,"WORLD: received CMSG_DUEL_CANCELLED player %s arbiter %s", GetPlayer()->GetObjectGuid().GetString().c_str(),guid.GetString().c_str());
 
     // no duel requested
     if(!GetPlayer()->duel)
         return;
 
+    if (GetPlayer()->duel->opponent)
+    {
+        if (GetPlayer()->GetGuidValue(PLAYER_DUEL_ARBITER) != guid ||
+            GetPlayer()->duel->opponent->GetGuidValue(PLAYER_DUEL_ARBITER) != guid)
+        {
+            sLog.outError("WorldSession::HandleDuelCancelledOpcode player %s try cancel duel with %s, but his different arbiters! Possible exploit use.",GetPlayer()->GetObjectGuid().GetString().c_str(),GetPlayer()->duel->opponent->GetObjectGuid().GetString().c_str());
+            GetPlayer()->DuelComplete(DUEL_INTERUPTED);
+            return;
+        }
+    }
+
     // player surrendered in a duel using /forfeit
-    if(GetPlayer()->duel->startTime != 0)
+    if (GetPlayer()->duel->startTime != 0)
     {
         GetPlayer()->CombatStopWithPets(true);
-        if(GetPlayer()->duel->opponent)
+        if (GetPlayer()->duel->opponent)
             GetPlayer()->duel->opponent->CombatStopWithPets(true);
 
         GetPlayer()->CastSpell(GetPlayer(), 7267, true);    // beg
         GetPlayer()->DuelComplete(DUEL_WON);
         return;
     }
-
-    // player either discarded the duel using the "discard button"
-    // or used "/forfeit" before countdown reached 0
-    ObjectGuid guid;
-    recvPacket >> guid;
 
     GetPlayer()->DuelComplete(DUEL_INTERUPTED);
 }

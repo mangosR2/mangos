@@ -109,8 +109,8 @@ bool FleeingMovementGenerator<T>::_getPoint(T &owner, float &x, float &y, float 
 template<class T>
 void FleeingMovementGenerator<T>::Initialize(T &owner)
 {
-    owner.addUnitState(UNIT_STAT_FLEEING|UNIT_STAT_FLEEING_MOVE);
     owner.StopMoving();
+    owner.addUnitState(UNIT_STAT_FLEEING|UNIT_STAT_FLEEING_MOVE);
 
     if(owner.GetTypeId() == TYPEID_UNIT)
         owner.SetTargetGuid(ObjectGuid());
@@ -129,14 +129,7 @@ template<>
 void FleeingMovementGenerator<Creature>::Finalize(Creature &owner)
 {
     owner.clearUnitState(UNIT_STAT_FLEEING|UNIT_STAT_FLEEING_MOVE);
-    if (Unit* victim = owner.getVictim())
-    {
-        if (owner.isAlive())
-        {
-            owner.AttackStop(true);
-            ((Creature*)&owner)->AI()->AttackStart(victim);
-        }
-    }
+    owner.AddEvent(new AttackResumeEvent(owner), ATTACK_DISPLAY_DELAY);
 }
 
 template<class T>
@@ -181,14 +174,7 @@ template bool FleeingMovementGenerator<Creature>::Update(Creature &, const uint3
 void TimedFleeingMovementGenerator::Finalize(Unit &owner)
 {
     owner.clearUnitState(UNIT_STAT_FLEEING|UNIT_STAT_FLEEING_MOVE);
-    if (Unit* victim = owner.getVictim())
-    {
-        if (owner.isAlive())
-        {
-            owner.AttackStop(true);
-            ((Creature*)&owner)->AI()->AttackStart(victim);
-        }
-    }
+    owner.AddEvent(new AttackResumeEvent(owner), ATTACK_DISPLAY_DELAY);
 }
 
 bool TimedFleeingMovementGenerator::Update(Unit & owner, const uint32 & time_diff)

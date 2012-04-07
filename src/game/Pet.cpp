@@ -128,6 +128,8 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
     // update for case of current pet "slot = 0"
     petentry = fields[1].GetUInt32();
 
+    PetSaveMode savemode = PetSaveMode(fields[7].GetUInt32());
+
     if (!petentry)
     {
         delete result;
@@ -262,14 +264,14 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     SetUInt32Value(UNIT_FIELD_PET_NAME_TIMESTAMP, uint32(time(NULL)));
 
-    //uint32 savedhealth = fields[10].GetUInt32();
-    //uint32 savedmana = fields[11].GetUInt32();
+    uint32 savedhealth = fields[10].GetUInt32();
+    uint32 savedmana = fields[11].GetUInt32();
 
     // set current pet as current
     // 0=current
     // 1..MAX_PET_STABLES in stable slot
     // PET_SAVE_NOT_IN_SLOT(100) = not stable slot (summoning))
-    if (fields[7].GetUInt32() != 0)
+    if (savemode != PET_SAVE_AS_CURRENT)
     {
         CharacterDatabase.BeginTransaction();
 
@@ -312,8 +314,24 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
     if (isControlled())
      //all (?) summon pets come with full health when called, note by virusav
     {
-        SetHealth(GetMaxHealth());
-        SetPower(getPowerType(), GetMaxPower(getPowerType()));
+        if (getPetType() == HUNTER_PET)
+        {
+            if (savedhealth < 1)
+            {
+                SetDeathState(JUST_DIED);
+                SetHealth(0);
+            }
+            else
+            {
+                SetHealth(savedhealth > GetMaxHealth() ? GetMaxHealth() : savedhealth);
+                SetPower(POWER_MANA, savedmana > GetMaxPower(POWER_MANA) ? GetMaxPower(POWER_MANA) : savedmana);
+            }
+        }
+        else
+        {
+            SetHealth(GetMaxHealth());
+            SetPower(getPowerType(), GetMaxPower(getPowerType()));
+        }
     }
 
     AIM_Initialize();
@@ -449,7 +467,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
         savePet.addUInt32(uint32(mode));
         savePet.addString(m_name);
         savePet.addUInt32(uint32(HasByteFlag(UNIT_FIELD_BYTES_2, 2, UNIT_CAN_BE_RENAMED) ? 0 : 1));
-        savePet.addUInt32((curhealth < 1 ? 1 : curhealth));
+        savePet.addUInt32(curhealth < 1 ? (getPetType() == HUNTER_PET ? 0 : 1) : curhealth);
         savePet.addUInt32(curmana);
         savePet.addUInt32(GetPower(POWER_HAPPINESS));
 

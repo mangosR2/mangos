@@ -210,15 +210,11 @@ void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket &/*recv_data
 
     DEBUG_LOG("CMSG_LFD_PLAYER_LOCK_INFO_REQUEST %u ", GetPlayer()->GetObjectGuid().GetCounter());
 
-    uint32 rsize = 0;
-    uint32 lsize = 0;
     LFGDungeonSet    randomlist = sLFGMgr.GetRandomDungeonsForPlayer(GetPlayer());
-    LFGLockStatusMap const* lockSet = GetPlayer()->GetLFGState()->GetLockMap();
+    LFGLockStatusMap const lockSet = *GetPlayer()->GetLFGState()->GetLockMap();
 
-    rsize = randomlist.size();
-
-    if (lockSet)
-        lsize = lockSet->size();
+    uint32 rsize = randomlist.size();
+    uint32 lsize = lockSet.size();
 
     WorldPacket data(SMSG_LFG_PLAYER_INFO, 1 + rsize * (4 + 1 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4) + 4 + lsize * (1 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4));
 
@@ -280,14 +276,14 @@ void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket &/*recv_data
         }
     }
 
-    if (!lockSet || lsize == 0)
+    if (lsize == 0)
     {
         data << uint8(0);
     }
     else
     {
-        data << uint32(lockSet->size());                             // Size of lock dungeons
-        for (LFGLockStatusMap::const_iterator itr = lockSet->begin(); itr != lockSet->end(); ++itr)
+        data << uint32(lockSet.size());                             // Size of lock dungeons
+        for (LFGLockStatusMap::const_iterator itr = lockSet.begin(); itr != lockSet.end(); ++itr)
         {
             data << uint32((*itr->first).Entry());                   // Dungeon entry + type
             data << uint32(itr->second);                             // Lock status

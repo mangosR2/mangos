@@ -206,6 +206,7 @@ class AntiCheat
         uint32                                  m_lastClientTime;
         DeathState                              m_lastLiveState;
         float                                   m_lastfallz;
+        float                                   m_lastSpeedRate;
         Player*                                 m_player;
         std::map<AntiCheatCheck, uint32>        m_counters;               // counter of alarms
         std::map<AntiCheatCheck, uint32>        m_oldCheckTime;           // last time when check processed

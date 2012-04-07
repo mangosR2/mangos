@@ -225,28 +225,6 @@ void MotionMaster::MoveWaypoint()
     }
 }
 
-void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
-{
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
-    {
-        if (path < sTaxiPathNodesByPath.size())
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s taxi to (Path %u node %u)", m_owner->GetGuidStr().c_str(), path, pathnode);
-            Mutate(new FlightPathMovementGenerator(sTaxiPathNodesByPath[path],pathnode), UNIT_ACTION_TAXI);
-        }
-        else
-        {
-            sLog.outError("MotionMaster: %s attempt taxi to (nonexistent Path %u node %u)",
-                m_owner->GetGuidStr().c_str(), path, pathnode);
-        }
-    }
-    else
-    {
-        sLog.outError("MotionMaster: %s attempt taxi to (Path %u node %u)",
-            m_owner->GetGuidStr().c_str(), path, pathnode);
-    }
-}
-
 void MotionMaster::MoveDistract(uint32 timer)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s distracted (timer: %u)", m_owner->GetGuidStr().c_str(), timer);
@@ -351,6 +329,19 @@ void MotionMaster::MoveToDestination(float x, float y, float z, float o, Unit* t
         init.SetFacing(o);
     init.Launch();
     Mutate(new EffectMovementGenerator(id), UNIT_ACTION_EFFECT);
+}
+
+void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horizontalSpeed, float max_height, bool eject)
+{
+    Movement::MoveSplineInit init(*m_owner);
+    init.MoveTo(x,y,z,false);
+    init.SetParabolic(max_height, 0);
+    init.SetVelocity(horizontalSpeed);
+    init.SetFacing(o);
+    if (!eject)
+        init.SetTransportExit();
+    init.Launch();
+    Mutate(new EffectMovementGenerator(0), UNIT_ACTION_EFFECT);
 }
 
 void MotionMaster::MoveFall()

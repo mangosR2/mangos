@@ -81,6 +81,7 @@ AntiCheat::AntiCheat(Player* player)
     m_currentDeltaZ       = 0.0f;
     m_lastfalltime        = 0;
     m_lastfallz           = 0.0f;
+    m_lastSpeedRate       = 1.0f;
     m_currentTimeSkipped  = 0;
     //
     m_immuneTime          = WorldTimer::getMSTime();
@@ -443,7 +444,6 @@ bool AntiCheat::CheckNeeded(AntiCheatCheck checktype)
         case CHECK_MOVEMENT_AIRJUMP:
             if (isCanFly() ||
                 !isActiveMover() ||
-                GetMover()->HasAuraType(SPELL_AURA_FEATHER_FALL) ||
                 GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z-5.0f))
                 return false;
             break;
@@ -529,26 +529,36 @@ bool AntiCheat::CheckSpeed()
 
     std::string mode;
 
-    if      (m_currentmovementInfo->GetMovementFlags() & MOVEFLAG_FLYING)
-        {
-            speedRate = GetMover()->GetSpeed(MOVE_FLIGHT);
-            mode = "MOVE_FLIGHT";
-        }
-    else if (m_currentmovementInfo->GetMovementFlags() & MOVEFLAG_SWIMMING)
-        {
-            speedRate = GetMover()->GetSpeed(MOVE_SWIM);
-            mode = "MOVE_SWIM";
-        }
-    else if (m_currentmovementInfo->GetMovementFlags() & MOVEFLAG_WALK_MODE)
-        {
-            speedRate = GetMover()->GetSpeed(MOVE_WALK);
-            mode = "MOVE_WALK";
-        }
+    if (m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FLYING))
+    {
+        speedRate = GetMover()->GetSpeed(MOVE_FLIGHT);
+        mode = "MOVE_FLIGHT";
+    }
+    else if (m_currentmovementInfo->HasMovementFlag(MOVEFLAG_SWIMMING))
+    {
+        speedRate = GetMover()->GetSpeed(MOVE_SWIM);
+        mode = "MOVE_SWIM";
+    }
+    else if (m_currentmovementInfo->HasMovementFlag(MOVEFLAG_WALK_MODE))
+    {
+        speedRate = GetMover()->GetSpeed(MOVE_WALK);
+        mode = "MOVE_WALK";
+    }
     else
-        {
-            speedRate = GetMover()->GetSpeed(MOVE_RUN);
-            mode = "MOVE_RUN";
-        }
+    {
+        speedRate = GetMover()->GetSpeed(MOVE_RUN);
+        mode = "MOVE_RUN";
+    }
+
+    if (m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FALLING))
+        speedRate = m_lastSpeedRate;
+
+    if (speedRate < m_lastSpeedRate)
+    {
+        m_lastSpeedRate = speedRate;
+        return true;
+    }
+    m_lastSpeedRate = speedRate;
 
     if ( moveSpeed / speedRate <= m_currentConfig->checkFloatParam[0] )
         return true;
@@ -635,13 +645,14 @@ bool AntiCheat::CheckFall()
 
 bool AntiCheat::CheckFly()
 {
-    if (GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z - 2.0f))
-        return true;
-
     if (!m_currentmovementInfo->HasMovementFlag(MovementFlags(MOVEFLAG_CAN_FLY | MOVEFLAG_FLYING | MOVEFLAG_ROOT)))
         return true;
 
-    if (GetMover()->HasAuraType(SPELL_AURA_FEATHER_FALL))
+    if (m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FALLING)
+        || m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FALLINGFAR))
+        return true;
+
+    if (GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z - 2.0f))
         return true;
 
     float ground_z = GetMover()->GetTerrain()->GetHeight(GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),MAX_HEIGHT);
@@ -649,9 +660,6 @@ bool AntiCheat::CheckFly()
     float map_z    = ((floor_z <= (INVALID_HEIGHT+5.0f)) ? ground_z : floor_z);
 
     if (map_z + m_currentConfig->checkFloatParam[0] > GetPlayer()->GetPositionZ() && map_z > (INVALID_HEIGHT + m_currentConfig->checkFloatParam[0] + 5.0f))
-        return true;
-
-    if (m_currentDeltaZ > 0.0f)
         return true;
 
     char buffer[255];
@@ -665,22 +673,13 @@ bool AntiCheat::CheckFly()
 
 bool AntiCheat::CheckAirJump()
 {
-
-    float ground_z = GetMover()->GetTerrain()->GetHeight(GetMover()->GetPositionX(),GetMover()->GetPositionY(),MAX_HEIGHT);
-    float floor_z  = GetMover()->GetTerrain()->GetHeight(GetMover()->GetPositionX(),GetMover()->GetPositionY(),GetMover()->GetPositionZ());
-    float map_z    = ((floor_z <= (INVALID_HEIGHT+5.0f)) ? ground_z : floor_z);
-
-    if  (!((map_z + m_currentConfig->checkFloatParam[0] + m_currentConfig->checkFloatParam[1] < GetPlayer()->GetPositionZ() &&
-         (m_currentmovementInfo->GetMovementFlags() & (MOVEFLAG_FALLINGFAR |MOVEFLAG_PENDINGSTOP)) == 0) ||
-         (map_z + m_currentConfig->checkFloatParam[0] < GetMover()->GetPositionZ() && m_currentOpcode == MSG_MOVE_JUMP)))
+    if (m_currentOpcode != MSG_MOVE_JUMP)
         return true;
-
-    if (m_currentDeltaZ > 0.0f)
+    if (!m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FALLING) || !GetMover()->m_movementInfo.HasMovementFlag(MOVEFLAG_FALLING))
         return true;
 
     char buffer[255];
-    sprintf(buffer," Map Z = %f, player Z = %f, opcode %s",
-                 map_z, GetPlayer()->GetPositionZ(), LookupOpcodeName(m_currentOpcode));
+    sprintf(buffer," player Z = %f, opcode %s", GetPlayer()->GetPositionZ(), LookupOpcodeName(m_currentOpcode));
 
     m_currentCheckResult.clear();
     m_currentCheckResult.append(buffer);
@@ -930,7 +929,6 @@ bool AntiCheat::isCanFly()
         || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED)
         || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACKING)
         || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_STACKING)
-        || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_NOT_STACKING)
         || GetMover()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED_NOT_STACKING)
        )
         return true;

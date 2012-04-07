@@ -161,10 +161,18 @@ UPDATE gameobject_template SET faction = 1997, flags = 0 WHERE entry IN (195315,
 UPDATE gameobject_template SET faction = 1997 WHERE entry = 195320;
 
 -- scriptnames
-UPDATE gameobject_template SET ScriptName = 'go_ic_teleport' WHERE entry BETWEEN 195313 AND 195316;
+UPDATE gameobject_template SET ScriptName = '' WHERE entry BETWEEN 195313 AND 195316;
 -- gunship portals
 -- disabled till fixed
 -- UPDATE gameobject_template SET ScriptName = 'go_ic_teleport' WHERE entry IN (195320, 195326);
+
+-- teleports
+DELETE FROM `spell_script_target`WHERE `entry` IN (66550, 66551);
+INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
+('66551', '0', '195313'), -- horde teleporters
+('66550', '0', '195314'),
+('66550', '0', '195315'), -- alliance teleporters
+('66551', '0', '195316');
 
 -- no regeneration buff for vehicles
 DELETE FROM creature_template_addon WHERE entry IN (34929, 34935, 34944, 34793, 34775, 34776, 35069, 34802, 35273, 34778, 36356, 34777, 36355);

@@ -117,8 +117,6 @@ CreatureEventAI::CreatureEventAI(Creature *c ) : CreatureAI(c)
 
     m_bEmptyList = m_CreatureEventAIList.empty();
     m_Phase = 0;
-    m_CombatMovementEnabled = true;
-    m_MeleeEnabled = true;
     m_AttackDistance = 0.0f;
     m_AttackAngle = 0.0f;
 
@@ -868,6 +866,9 @@ void CreatureEventAI::Reset()
 {
     m_EventUpdateTime = EVENT_UPDATE_TIME;
     m_EventDiff = 0;
+
+    m_CombatMovementEnabled = true;
+    m_MeleeEnabled = true;
 
     if (m_bEmptyList)
         return;

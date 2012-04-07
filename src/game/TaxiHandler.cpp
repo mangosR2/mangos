@@ -111,16 +111,18 @@ void WorldSession::SendTaxiMenu( Creature* unit )
     DEBUG_LOG( "WORLD: Sent SMSG_SHOWTAXINODES" );
 }
 
-void WorldSession::SendDoFlight( uint32 mountDisplayId, uint32 path, uint32 pathNode )
+void WorldSession::SendDoFlight(uint32 mountDisplayId, uint32 path, uint32 pathNode)
 {
-    // remove fake death
-    if (GetPlayer()->hasUnitState(UNIT_STAT_DIED))
-        GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
-
-    if (mountDisplayId)
-        GetPlayer()->Mount( mountDisplayId );
-
-    GetPlayer()->GetMotionMaster()->MoveTaxiFlight(path,pathNode);
+    if (path < sTaxiPathNodesByPath.size())
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "WorldSession::SendDoFlight %s taxi to (Path %u node %u, mount %u)", GetPlayer()->GetGuidStr().c_str(), path, pathNode, mountDisplayId);
+        GetPlayer()->GetUnitStateMgr().PushAction(UNIT_ACTION_TAXI,GetPlayer()->GetUnitStateMgr().CreateStandartState(UNIT_ACTION_TAXI,mountDisplayId,path,pathNode));
+    }
+    else
+    {
+        sLog.outError("WorldSession::SendDoFlight %s attempt taxi to (nonexistent Path %u node %u)",
+            GetPlayer()->GetGuidStr().c_str(), path, pathNode);
+    }
 }
 
 bool WorldSession::SendLearnNewTaxiNode( Creature* unit )

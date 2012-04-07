@@ -258,25 +258,15 @@ uint32 FlightPathMovementGenerator::GetPathAtMapEnd() const
     return i_path->size();
 }
 
-void FlightPathMovementGenerator::Initialize(Player &player)
+void FlightPathMovementGenerator::_Initialize(Player &player)
 {
-    Reset(player);
+    _Reset(player);
 }
 
-void FlightPathMovementGenerator::Finalize(Player & player)
+void FlightPathMovementGenerator::_Finalize(Player & player)
 {
-    // remove flag to prevent send object build movement packets for flight state and crash (movement generator already not at top of stack)
-    player.clearUnitState(UNIT_STAT_TAXI_FLIGHT);
-
-    player.Unmount();
-    player.RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_TAXI_FLIGHT);
-
     if(player.m_taxi.empty())
     {
-        player.getHostileRefManager().setOnlineOfflineState(true);
-        if(player.pvpInfo.inHostileArea)
-            player.CastSpell(&player, 2479, true);
-
         // update z position to ground and orientation for landing point
         // this prevent cheating with landing  point at lags
         // when client side flight end early in comparison server side
@@ -284,20 +274,14 @@ void FlightPathMovementGenerator::Finalize(Player & player)
     }
 }
 
-void FlightPathMovementGenerator::Interrupt(Player & player)
+void FlightPathMovementGenerator::_Interrupt(Player & player)
 {
-    player.clearUnitState(UNIT_STAT_TAXI_FLIGHT);
-    player.RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_TAXI_FLIGHT);
 }
 
 #define PLAYER_FLIGHT_SPEED        32.0f
 
-void FlightPathMovementGenerator::Reset(Player & player)
+void FlightPathMovementGenerator::_Reset(Player & player)
 {
-    player.getHostileRefManager().setOnlineOfflineState(false);
-    player.addUnitState(UNIT_STAT_TAXI_FLIGHT);
-    player.SetFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_TAXI_FLIGHT);
-
     Movement::MoveSplineInit init(player);
     uint32 end = GetPathAtMapEnd();
     for (uint32 i = GetCurrentNode(); i != end; ++i)
@@ -327,7 +311,7 @@ bool FlightPathMovementGenerator::Update(Player &player, const uint32 &diff)
         } while(true);
     }
 
-    return i_currentNode < (i_path->size()-1);
+    return !(player.movespline->Finalized() || i_currentNode >= (i_path->size()-1));
 }
 
 void FlightPathMovementGenerator::SetCurrentNodeAfterTeleport()

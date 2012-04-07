@@ -81,7 +81,7 @@ public:
 
     void Update(uint32 diff);
 
-    static UnitActionPtr CreateStandartState(UnitActionId stateId, int32 param = 0);
+    static UnitActionPtr CreateStandartState(UnitActionId stateId, ...);
 
     void DropAction(UnitActionId actionId);
     void DropAction(UnitActionId actionId, UnitActionPriority priority);
@@ -89,8 +89,8 @@ public:
 
     void DropAllStates();
 
-    void PushAction(UnitActionId actionId, int32 param = 0);
-    void PushAction(UnitActionId actionId, UnitActionPriority priority, int32 param = 0);
+    void PushAction(UnitActionId actionId);
+    void PushAction(UnitActionId actionId, UnitActionPriority priority);
     void PushAction(UnitActionId actionId, UnitActionPtr state);
     void PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable);
 

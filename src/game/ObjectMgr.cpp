@@ -8862,57 +8862,6 @@ void ObjectMgr::LoadVendorTemplates()
         sLog.outErrorDb("Table `npc_vendor_template` has vendor template %u not used by any vendors ", *vItr);
 }
 
-void ObjectMgr::LoadNpcGossips()
-{
-
-    m_mCacheNpcTextIdMap.clear();
-
-    QueryResult* result = WorldDatabase.Query("SELECT npc_guid, textid FROM npc_gossip");
-    if( !result )
-    {
-        BarGoLink bar(1);
-
-        bar.step();
-
-        sLog.outString();
-        sLog.outErrorDb(">> Loaded `npc_gossip`, table is empty!");
-        return;
-    }
-
-    BarGoLink bar(result->GetRowCount());
-
-    uint32 count = 0;
-    uint32 guid,textid;
-    do
-    {
-        bar.step();
-
-        Field* fields = result->Fetch();
-
-        guid   = fields[0].GetUInt32();
-        textid = fields[1].GetUInt32();
-
-        if (!GetCreatureData(guid))
-        {
-            sLog.outErrorDb("Table `npc_gossip` have nonexistent creature (GUID: %u) entry, ignore. ",guid);
-            continue;
-        }
-        if (!GetGossipText(textid))
-        {
-            sLog.outErrorDb("Table `npc_gossip` for creature (GUID: %u) have wrong Textid (%u), ignore. ", guid, textid);
-            continue;
-        }
-
-        m_mCacheNpcTextIdMap[guid] = textid ;
-        ++count;
-
-    } while (result->NextRow());
-    delete result;
-
-    sLog.outString();
-    sLog.outString( ">> Loaded %d NpcTextId ", count );
-}
-
 void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
 {
     m_mGossipMenusMap.clear();
@@ -8964,7 +8913,7 @@ void ObjectMgr::LoadGossipMenu(std::set<uint32>& gossipScriptSet)
         // Check script-id
         if (gMenu.script_id)
         {
-            if (sGossipScripts.find(gMenu.script_id) == sGossipScripts.end())
+            if (sGossipScripts.second.find(gMenu.script_id) == sGossipScripts.second.end())
             {
                 sLog.outErrorDb("Table gossip_menu for menu %u, text-id %u have script_id %u that does not exist in `gossip_scripts`, ignoring", gMenu.entry, gMenu.text_id, gMenu.script_id);
                 continue;
@@ -9173,7 +9122,7 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
 
         if (gMenuItem.action_script_id)
         {
-            if (sGossipScripts.find(gMenuItem.action_script_id) == sGossipScripts.end())
+            if (sGossipScripts.second.find(gMenuItem.action_script_id) == sGossipScripts.second.end())
             {
                 sLog.outErrorDb("Table gossip_menu_option for menu %u, id %u have action_script_id %u that does not exist in `gossip_scripts`, ignoring", gMenuItem.menu_id, gMenuItem.id, gMenuItem.action_script_id);
                 continue;
@@ -9210,7 +9159,7 @@ void ObjectMgr::LoadGossipMenus()
 {
     // Check which script-ids in gossip_scripts are not used
     std::set<uint32> gossipScriptSet;
-    for (ScriptMapMap::const_iterator itr = sGossipScripts.begin(); itr != sGossipScripts.end(); ++itr)
+    for (ScriptMapMap::const_iterator itr = sGossipScripts.second.begin(); itr != sGossipScripts.second.end(); ++itr)
         gossipScriptSet.insert(itr->first);
 
     // Load gossip_menu and gossip_menu_option data
