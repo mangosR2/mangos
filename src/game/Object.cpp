@@ -1396,9 +1396,6 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             Unit* pVictim = ((Creature const*)this)->getVictim();
             if (pVictim)
             {
-                // anyway creature move to victim if is in 2D melee attack distance (prevent some exploit bye cheaters)
-                if (GetDistance2d(x, y) <= ((Creature const*)this)->GetMeleeAttackDistance(pVictim))
-                    return;
                 // anyway creature move to victim for thinly Z distance (shun some VMAP wrong ground calculating)
                 if (fabs(GetPositionZ() - pVictim->GetPositionZ()) < 5.0f)
                     return;

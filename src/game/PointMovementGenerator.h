@@ -71,6 +71,7 @@ class EffectMovementGenerator : public MovementGenerator
         void Reset(Unit &) {}
         bool Update(Unit &u, const uint32 &);
         MovementGeneratorType GetMovementGeneratorType() const { return EFFECT_MOTION_TYPE; }
+        const char* Name() const { return "<Effect>"; }
     private:
         uint32 m_Id;
 };

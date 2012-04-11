@@ -41,6 +41,7 @@ INSERT INTO `player_factionchange_achievements` VALUES ('440', '452', 'Earned th
 INSERT INTO `player_factionchange_achievements` VALUES ('441', '450', 'Earned the title, Master Sergeant', 'Earned the title, Senior Sergeant');
 INSERT INTO `player_factionchange_achievements` VALUES ('442', '454', 'Earned the title, Private', 'Earned the title, Scout');
 INSERT INTO `player_factionchange_achievements` VALUES ('470', '468', 'Earned the title, Corporal', 'Earned the title, Grunt');
+INSERT INTO `player_factionchange_achievements` VALUES ('471', '453', 'Earned the title, Sergeant', 'Earned the title, Sergeant');
 INSERT INTO `player_factionchange_achievements` VALUES ('472', '449', 'Earned the title, Knight-Lieutenant', 'Earned the title, Blood Guard');
 INSERT INTO `player_factionchange_achievements` VALUES ('473', '446', 'Earned the title, Marshal', 'Earned the title, General');
 INSERT INTO `player_factionchange_achievements` VALUES ('604', '603', 'Kill 5 Horde players in each of the cities listed below', 'Kill 5 Alliance players in each of the cities listed below');
@@ -134,3 +135,4 @@ INSERT INTO `player_factionchange_achievements` VALUES ('3857', '3957', 'Complet
 INSERT INTO `player_factionchange_achievements` VALUES ('4156', '4079', 'In the Trial of the Grand Crusader, reach a Tribute Chest with 50 attempts remaining and without allowing any raid member to die during any of the boss encounters in 25-player mode.', 'In the Trial of the Grand Crusader, reach a Tribute Chest with 50 attempts remaining and without allowing any raid member to die during any of the boss encounters in 25-player mode.');
 INSERT INTO `player_factionchange_achievements` VALUES ('4436', '4437', 'Pelt the enemy leaders listed below.', 'Pelt the enemy leaders listed below.');
 INSERT INTO `player_factionchange_achievements` VALUES ('4786', '4790', 'You assisted High Tinker Mekkatorque and the Gnomeregan Exiles in the recapture of Gnomeregan\'s surface.', 'You assisted High Tinker Mekkatorque and the Gnomeregan Exiles in the recapture of Gnomeregan\'s surface.');
+INSERT INTO `player_factionchange_achievements` VALUES ('5332', '5347', 'Earn a battleground rating of 1300', 'Earn a battleground rating of 1300');

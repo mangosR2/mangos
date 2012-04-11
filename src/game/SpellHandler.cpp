@@ -621,7 +621,12 @@ void WorldSession::HandleTotemDestroyed( WorldPacket& recvPacket)
         return;
 
     if (Totem* totem = GetPlayer()->GetTotem(TotemSlot(slotId)))
+    {
+        if(totem->GetEntry() == SENTRY_TOTEM_ENTRY)
+            return;
+
         totem->UnSummon();
+    }
 }
 
 void WorldSession::HandleSelfResOpcode( WorldPacket & /*recv_data*/ )
