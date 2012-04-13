@@ -1526,15 +1526,13 @@ void Aura::TriggerSpell()
                         triggerTarget->CastCustomSpell(triggerTarget, 29879, &bpDamage, NULL, NULL, true, NULL, this, casterGUID);
                         return;
                     }
-                    case 27819:                             // Detonate Mana (Naxxramas: Kel'Thuzad)
+                    // Detonate Mana
+                    case 27819:
                     {
-                        if (!target->GetMaxPower(POWER_MANA))
-                            return;
-
-                        uint32 uiBurnMana = urand(1800, 2200);
-                        uint32 uiCurrMana = target->GetPower(POWER_MANA);
-                        target->SetPower(POWER_MANA, uiBurnMana > uiCurrMana ? 0 : uiCurrMana - uiBurnMana);
-                        target->CastSpell(target, 27820, true);
+                        // 33% Mana Burn on normal mode, 50% on heroic mode
+                        int32 bpDamage = (int32)triggerTarget->GetPower(POWER_MANA) / (triggerTarget->GetMap()->GetDifficulty() ? 2 : 3);
+                        triggerTarget->ModifyPower(POWER_MANA, -bpDamage);
+                        triggerTarget->CastCustomSpell(triggerTarget, 27820, &bpDamage, NULL, NULL, true, NULL, this, triggerTarget->GetObjectGuid());
                         return;
                     }
 //                    // Controller Timer

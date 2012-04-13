@@ -8101,14 +8101,19 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 27699, true);
                     return;
                 }
-                case 28374:                                 // Decimate (Gluth encounter)
+                case 28374:                                 // Decimate (Naxxramas: Gluth)
+                case 54426:                                 // Decimate (Naxxramas: Gluth (spells are identical))
+                case 71123:                                 // Decimate (ICC: Precious / Stinky)
                 {
-                    if (unitTarget && unitTarget != m_caster)
-                    {
-                        if (unitTarget->GetHealthPercent() > 5.0f)
-                            m_caster->CastSpell(unitTarget, 28375, true);
-                    }
-                    break;
+                    if (!unitTarget)
+                        return;
+
+                    float downToHealthPercent = (m_spellInfo->Id != 71123 ? 5 : m_spellInfo->CalculateSimpleValue(eff_idx)) * 0.01f;
+
+                    int32 damage = unitTarget->GetHealth() - unitTarget->GetMaxHealth() * downToHealthPercent;
+                    if (damage > 0)
+                        m_caster->CastCustomSpell(unitTarget, 28375, &damage, NULL, NULL, true);
+                    return;
                 }
                 case 28560:                                 // Summon Blizzard
                 {

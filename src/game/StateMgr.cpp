@@ -33,6 +33,7 @@ static const class staticActionInfo
     {
         actionInfo[UNIT_ACTION_IDLE](UNIT_ACTION_PRIORITY_IDLE);
         actionInfo[UNIT_ACTION_DOWAYPOINTS](UNIT_ACTION_PRIORITY_DOWAYPOINTS);
+        actionInfo[UNIT_ACTION_HOME](UNIT_ACTION_PRIORITY_HOME,ACTION_TYPE_NONRESTOREABLE);
         actionInfo[UNIT_ACTION_CHASE](UNIT_ACTION_PRIORITY_CHASE);
         actionInfo[UNIT_ACTION_ASSISTANCE](UNIT_ACTION_PRIORITY_ASSISTANCE,ACTION_TYPE_NONRESTOREABLE);
         actionInfo[UNIT_ACTION_CONTROLLED](UNIT_ACTION_PRIORITY_CONTROLLED);
@@ -383,27 +384,37 @@ UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId, ...)
     return state;
 }
 
-UnitStateMgr::UnitStateMgr(Unit* owner) : m_owner(owner)
+UnitStateMgr::UnitStateMgr(Unit* owner) : m_owner(owner), m_needReinit(false)
 {
     for (int32 i = UNIT_ACTION_IDLE; i != UNIT_ACTION_END; ++i)
         m_stateCounter[i] = 0;
 
-    InitDefaults();
+    InitDefaults(true);
 }
 
 UnitStateMgr::~UnitStateMgr()
 {
 }
 
-void UnitStateMgr::InitDefaults()
+void UnitStateMgr::InitDefaults(bool immediate)
 {
-    m_oldAction = NULL;
-    m_actions.clear();
-    PushAction(UNIT_ACTION_IDLE,UNIT_ACTION_PRIORITY_NONE);
+    if (immediate)
+    {
+        m_oldAction = NULL;
+        DropAllStates();
+    }
+    else
+        m_needReinit = true;
 }
 
 void UnitStateMgr::Update(uint32 diff)
 {
+    if (m_needReinit)
+    {
+        m_needReinit = false;
+        InitDefaults(true);
+    }
+
     ActionInfo* state = CurrentState();
 
     if (!m_oldAction || m_oldAction != state)
@@ -481,6 +492,12 @@ void UnitStateMgr::DropAction(UnitActionPriority priority)
     }
 }
 
+void UnitStateMgr::DropActionHigherThen(UnitActionPriority priority)
+{
+    for (int32 i = priority + 1; i != UNIT_ACTION_PRIORITY_END; ++i)
+        DropAction(UnitActionPriority(i));
+}
+
 void UnitStateMgr::PushAction(UnitActionId actionId)
 {
     UnitActionPtr state = CreateStandartState(actionId);
@@ -536,7 +553,8 @@ ActionInfo* UnitStateMgr::GetAction(UnitActionPriority priority)
 
 UnitActionPtr UnitStateMgr::CurrentAction()
 {
-    return CurrentState() ? CurrentState()->Action() : UnitActionPtr(NULL);
+    ActionInfo* action = CurrentState();
+    return action ? action->Action() : UnitActionPtr(NULL);
 }
 
 ActionInfo* UnitStateMgr::CurrentState()
@@ -546,14 +564,9 @@ ActionInfo* UnitStateMgr::CurrentState()
 
 void UnitStateMgr::DropAllStates()
 {
-    for (int32 i = UNIT_ACTION_PRIORITY_IDLE; i != UNIT_ACTION_PRIORITY_END; ++i)
-    {
-        if (ActionInfo* state = GetAction(UnitActionPriority(i)))
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop action %s", GetOwnerStr().c_str(), state->TypeName());
-            DropAction(UnitActionPriority(i));
-        }
-    }
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop all active states", GetOwnerStr().c_str());
+    DropActionHigherThen(UNIT_ACTION_PRIORITY_IDLE);
+    PushAction(UNIT_ACTION_IDLE);
 }
 
 std::string const UnitStateMgr::GetOwnerStr() 

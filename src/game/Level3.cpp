@@ -4422,22 +4422,6 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
     return true;
 }
 
-bool ChatHandler::HandleHoverCommand(char* args)
-{
-    uint32 flag;
-    if (!ExtractOptUInt32(&args, flag, 1))
-        return false;
-
-    m_session->GetPlayer()->SetHover(flag);
-
-    if (flag)
-        SendSysMessage(LANG_HOVER_ENABLED);
-    else
-        SendSysMessage(LANG_HOVER_DISABLED);
-
-    return true;
-}
-
 void ChatHandler::HandleCharacterLevel(Player* player, ObjectGuid player_guid, uint32 oldlevel, uint32 newlevel)
 {
     if(player)
@@ -6204,7 +6188,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
     UnitStateMgr& statemgr = unit->GetUnitStateMgr();
 
     float x,y,z;
-    for (int32 i = UNIT_ACTION_PRIORITY_NONE; i != UNIT_ACTION_PRIORITY_END; ++i)
+    for (int32 i = UNIT_ACTION_PRIORITY_IDLE; i != UNIT_ACTION_PRIORITY_END; ++i)
     {
         ActionInfo* actionInfo = statemgr.GetAction(UnitActionPriority(i));
         if (!actionInfo)

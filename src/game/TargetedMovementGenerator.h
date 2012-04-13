@@ -61,6 +61,7 @@ class MANGOS_DLL_SPEC TargetedMovementGeneratorMedium
         void UpdateFinalDistance(float fDistance);
         const char* Name() const { return "<TargetedMedium>"; }
 
+
     protected:
         void _setTargetLocation(T &);
 

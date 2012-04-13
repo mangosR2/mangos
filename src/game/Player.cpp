@@ -16435,37 +16435,39 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
         player_at_bg = currentBg && currentBg->IsPlayerInBattleGround(GetObjectGuid());
 
-        if (player_at_bg && currentBg->GetStatus() != STATUS_WAIT_LEAVE)
+        if (player_at_bg)
         {
-            BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(currentBg->GetTypeID(), currentBg->GetArenaType());
-            AddBattleGroundQueueId(bgQueueTypeId);
+            if (currentBg->GetStatus() != STATUS_WAIT_LEAVE)
+            {
+                BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(currentBg->GetTypeID(), currentBg->GetArenaType());
+                AddBattleGroundQueueId(bgQueueTypeId);
 
-            m_bgData.bgTypeID = currentBg->GetTypeID();     // bg data not marked as modified
+                m_bgData.bgTypeID = currentBg->GetTypeID();     // bg data not marked as modified
 
-            //join player to battleground group
-            currentBg->EventPlayerLoggedIn(this, GetObjectGuid());
-            currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), m_bgData.bgTeam);
+                //join player to battleground group
+                currentBg->EventPlayerLoggedIn(this, GetObjectGuid());
+                currentBg->AddOrSetPlayerToCorrectBgGroup(this, GetObjectGuid(), m_bgData.bgTeam);
 
-            SetInviteForBattleGroundQueueType(bgQueueTypeId,currentBg->GetInstanceID());
-        }
-        else
-        {
-            // leave bg
-            if (player_at_bg)
+                SetInviteForBattleGroundQueueType(bgQueueTypeId,currentBg->GetInstanceID());
+
+                SetLocationMapId(savedLocation.mapid);
+                Relocate(savedLocation.coord_x, savedLocation.coord_y, savedLocation.coord_z, savedLocation.orientation);
+            }
+            else
             {
                 currentBg->RemovePlayerAtLeave(GetObjectGuid(), false, true);
                 player_at_bg = false;
+
+                // move to bg enter point
+                const WorldLocation& _loc = GetBattleGroundEntryPoint();
+                SetLocationMapId(_loc.mapid);
+                Relocate(_loc.coord_x, _loc.coord_y, _loc.coord_z, _loc.orientation);
+
+                // We are not in BG anymore
+                SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
+                // remove outdated DB data in DB
+                _SaveBGData(true);
             }
-
-            // move to bg enter point
-            const WorldLocation& _loc = GetBattleGroundEntryPoint();
-            SetLocationMapId(_loc.mapid);
-            Relocate(_loc.coord_x, _loc.coord_y, _loc.coord_z, _loc.orientation);
-
-            // We are not in BG anymore
-            SetBattleGroundId(0, BATTLEGROUND_TYPE_NONE);
-            // remove outdated DB data in DB
-            _SaveBGData(true);
         }
     }
     else
@@ -16790,8 +16792,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
     if (m_bgData.HasTaxiPath())
     {
         m_taxi.ClearTaxiDestinations();
-        for (int i = 0; i < 2; ++i)
-            m_taxi.AddTaxiDestination(m_bgData.taxiPath[i]);
+        if (!player_at_bg)
+        {
+            for (int i = 0; i < 2; ++i)
+                m_taxi.AddTaxiDestination(m_bgData.taxiPath[i]);
+        }
     }
     else if (!m_taxi.LoadTaxiDestinationsFromString(taxi_nodes, GetTeam()))
     {
@@ -25186,7 +25191,7 @@ void Player::InterruptTaxiFlying()
     {
         GetUnitStateMgr().DropAction(UNIT_ACTION_TAXI);
         m_taxi.ClearTaxiDestinations();
-        GetUnitStateMgr().InitDefaults();
+        GetUnitStateMgr().InitDefaults(false);
     }
     // save only in non-flight case
     else
