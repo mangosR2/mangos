@@ -699,7 +699,7 @@ void Spell::FillTargetMap()
 
         if (tmpUnitLists[effToIndex[i]].size() == 1 && *tmpUnitLists[effToIndex[i]].begin() == m_caster->getVictim())
         {
-            if (Unit* pMagnetTarget = m_caster->SelectMagnetTarget(*tmpUnitLists[i /*==effToIndex[i]*/].begin(), this, SpellEffectIndex(i)))
+            if (Unit* pMagnetTarget = m_caster->SelectMagnetTarget(*tmpUnitLists[effToIndex[i]].begin(), this, SpellEffectIndex(i)))
                 if (pMagnetTarget != *tmpUnitLists[effToIndex[i]].begin())
                 {
                     tmpUnitLists[effToIndex[i]].clear();

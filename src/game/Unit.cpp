@@ -7130,13 +7130,21 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
                   spell->m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC ||
                   spell->m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_NONE ))
     {
-        Unit::AuraList const& magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
-        for(Unit::AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
+        AuraList const& magnetAuras = victim->GetAurasByType(SPELL_AURA_SPELL_MAGNET);
+        if (!magnetAuras.empty())
         {
-            if (Unit* magnet = (*itr)->GetCaster())
+            for (AuraList::const_iterator itr = magnetAuras.begin(); itr != magnetAuras.end(); ++itr)
             {
-                if (magnet->isAlive() && magnet->IsWithinLOSInMap(this) && spell->CheckTarget(magnet, eff))
-                    return magnet;
+                Aura* aura = *itr;
+                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                    continue;
+
+                if (Unit* magnet = aura->GetCaster())
+                {
+                    // spell->CheckTarget() include LOS check
+                    if (magnet->isAlive() && spell->CheckTarget(magnet, eff))
+                        return magnet;
+                }
             }
         }
     }
@@ -7144,14 +7152,22 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
     else
     {
         AuraList const& hitTriggerAuras = victim->GetAurasByType(SPELL_AURA_ADD_CASTER_HIT_TRIGGER);
-        for(AuraList::const_iterator i = hitTriggerAuras.begin(); i != hitTriggerAuras.end(); ++i)
+        if (!hitTriggerAuras.empty())
         {
-            if (Unit* magnet = (*i)->GetCaster())
+            for (AuraList::const_iterator itr = hitTriggerAuras.begin(); itr != hitTriggerAuras.end(); ++itr)
             {
-                if (magnet->isAlive() && magnet->IsWithinLOSInMap(this) && (!spell || spell->CheckTarget(magnet, eff)))
+                Aura* aura = *itr;
+                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                    continue;
+
+                if (Unit* magnet = aura->GetCaster())
                 {
-                    if (roll_chance_i((*i)->GetModifier()->m_amount))
-                        return magnet;
+                    // spell->CheckTarget() include LOS check
+                    if (magnet->isAlive() && ((!spell && magnet->IsWithinLOSInMap(this) || (spell && spell->CheckTarget(magnet, eff)))))
+                    {
+                        if (roll_chance_i(aura->GetModifier()->m_amount))
+                            return magnet;
+                    }
                 }
             }
         }

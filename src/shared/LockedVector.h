@@ -165,7 +165,13 @@ namespace ACE_Based
                 return m_storage.front();
             }
 
-            T& back()
+            const T& front() const
+            {
+                ReadGuard Guard(GetLock());
+                return m_storage.front();
+            }
+
+            const T& back() const
             {
                 ReadGuard Guard(GetLock());
                 return m_storage.back();

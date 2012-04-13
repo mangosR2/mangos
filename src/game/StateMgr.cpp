@@ -364,14 +364,25 @@ UnitActionPtr UnitStateMgr::CreateStandartState(UnitActionId stateId, ...)
             state = UnitActionPtr(new RootState());
             break;
         case UNIT_ACTION_ONVEHICLE:
-            state = UnitActionPtr(new OnVehicleState(va_arg(vargs,int32)));
+        {
+            uint32 param = va_arg(vargs,int32);
+            state = UnitActionPtr(new OnVehicleState(param));
             break;
+        }
         case UNIT_ACTION_CONTROLLED:
-            state = UnitActionPtr(new ControlledState(va_arg(vargs,int32)));
+        {
+            uint32 param = va_arg(vargs,int32);
+            state = UnitActionPtr(new ControlledState(param));
             break;
+        }
         case UNIT_ACTION_TAXI:
-            state = UnitActionPtr(new TaxiState(va_arg(vargs,uint32), va_arg(vargs,uint32), va_arg(vargs,uint32)));
+        {
+            uint32 mountDisplayId = va_arg(vargs,uint32);
+            uint32 path           = va_arg(vargs,uint32);
+            uint32 startNode      = va_arg(vargs,uint32);
+            state = UnitActionPtr(new TaxiState(mountDisplayId, path, startNode));
             break;
+        }
         default:
             break;
     }

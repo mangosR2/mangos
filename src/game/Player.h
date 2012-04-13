@@ -2322,7 +2322,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         // Temporarily removed pet cache
         uint8 GetTemporaryUnsummonedPetCount() const { return m_temporaryUnsummonedPetNumber.size(); }
-        void SetTemporaryUnsummonedPetNumber(uint32 petnumber, uint8 count = 0) { m_temporaryUnsummonedPetNumber.insert(std::make_pair<uint8, uint32>(count,petnumber)); }
+        void SetTemporaryUnsummonedPetNumber(uint32 petnumber, uint8 count = 0) { m_temporaryUnsummonedPetNumber.insert(PetNumberList::value_type(count,petnumber)); }
         uint32 GetTemporaryUnsummonedPetNumber(uint8 count = 0);
         void ClearTemporaryUnsummonedPetStorage() { m_temporaryUnsummonedPetNumber.clear(); }
         void UnsummonPetTemporaryIfAny(bool full = true);
