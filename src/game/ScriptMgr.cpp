@@ -1463,6 +1463,12 @@ void ScriptAction::HandleScriptStep()
                 break;
             }
 
+            if (!unitTarget || !pAttacker || !unitTarget->isInAccessablePlaceFor(pAttacker))
+            {
+                sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u target not accessable to attacker by some reason, can not attack (Attacker: %s, Target: %s)", m_table, m_script->id, m_script->command,pAttacker ? pAttacker->GetGuidStr().c_str() : "<none>", unitTarget ? unitTarget->GetGuidStr().c_str() : "<none>");
+                break;
+            }
+
             pAttacker->AI()->AttackStart(unitTarget);
 
             break;

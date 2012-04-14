@@ -165,6 +165,12 @@ namespace ACE_Based
                 return m_storage.front();
             }
 
+            T& back()
+            {
+                ReadGuard Guard(GetLock());
+                return m_storage.back();
+            }
+
             const T& front() const
             {
                 ReadGuard Guard(GetLock());
@@ -199,6 +205,18 @@ namespace ACE_Based
             {
                 ReadGuard Guard(GetLock());
                 return m_storage.end();
+            }
+
+            reverse_iterator rbegin()
+            {
+                ReadGuard Guard(GetLock());
+                return m_storage.rbegin();
+            }
+
+            reverse_iterator rend()
+            {
+                ReadGuard Guard(GetLock());
+                return m_storage.rend();
             }
 
             const_reverse_iterator rbegin() const

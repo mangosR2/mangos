@@ -75,7 +75,7 @@ enum AchievementCriteriaCondition
 {
     ACHIEVEMENT_CRITERIA_CONDITION_NONE      = 0,
     ACHIEVEMENT_CRITERIA_CONDITION_NO_DEATH  = 1,
-    ACHIEVEMENT_CRITERIA_CONDITION_UNK1      = 2,           // only used in "Complete a daily quest every day for five consecutive days"
+    ACHIEVEMENT_CRITERIA_CONDITION_DAILY     = 2,           // only used in "Complete a daily quest every day for five consecutive days"
     ACHIEVEMENT_CRITERIA_CONDITION_MAP       = 3,           // requires you to be on specific map
     ACHIEVEMENT_CRITERIA_CONDITION_NO_LOOSE  = 4,           // only used in "Win 10 arenas without losing"
     ACHIEVEMENT_CRITERIA_CONDITION_UNK2      = 9,           // unk
@@ -168,7 +168,6 @@ enum AchievementCriteriaTypes
     ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILLLINE_SPELLS= 75,
     ACHIEVEMENT_CRITERIA_TYPE_WIN_DUEL = 76,
     ACHIEVEMENT_CRITERIA_TYPE_LOSE_DUEL = 77,
-    // TODO: creature type (demon, undead etc.) is not stored in dbc
     ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE = 78,
     ACHIEVEMENT_CRITERIA_TYPE_GOLD_EARNED_BY_AUCTIONS= 80,
     ACHIEVEMENT_CRITERIA_TYPE_CREATE_AUCTION= 82,
