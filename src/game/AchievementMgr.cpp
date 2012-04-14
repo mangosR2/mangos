@@ -1425,25 +1425,62 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                 if (!miscvalue1 || miscvalue1 != achievementCriteria->be_spell_target.spellID)
                     continue;
 
-                // those requirements couldn't be found in the dbc
-                AchievementCriteriaRequirementSet const* data = sAchievementMgr.GetCriteriaRequirementSet(achievementCriteria);
-                if(!data)
-                    continue;
-
-                if(!data->Meets(GetPlayer(),unit))
-                    continue;
-
-                // Defense of the Ancients
-                if(achievementCriteria->referredAchievement == 1757 || achievementCriteria->referredAchievement == 2200)
+                // for special conditions
+                switch(achievementCriteria->referredAchievement)
                 {
-                    // If not in SotA
-                    BattleGround * bg = GetPlayer()->GetBattleGround();
-                    if(!bg || bg->GetTypeID(true) != BATTLEGROUND_SA)
-                        continue;
+                    case 1757:          // Defense of the Ancients(alliance)
+                    case 2200:          // Defense of the Ancients(horde)
+                    {
+                        // If not in SotA
+                        BattleGround * bg = GetPlayer()->GetBattleGround();
+                        if(!bg || bg->GetTypeID(true) != BATTLEGROUND_SA)
+                            continue;
 
-                    // If hasnt all walls.
-                    if(!((BattleGroundSA*)bg)->winSAwithAllWalls(GetPlayer()->GetTeam()))
-                        continue;
+                        // If hasnt all walls.
+                        if(!((BattleGroundSA*)bg)->winSAwithAllWalls(GetPlayer()->GetTeam()))
+                            continue;
+                        break;
+                    }
+                    case 1761:          // The Dapper Sapper (SotA)
+                    case 2193:          // Explosives Expert (SotA)
+                    {
+                        // If not in SotA
+                        BattleGround * bg = GetPlayer()->GetBattleGround();
+                        if(!bg || bg->GetTypeID(true) != BATTLEGROUND_SA)
+                            continue;
+                        break;
+                    }
+                    case 3850:          // Mowed Down (IoC) (both)
+                    {
+                        //if not at bg
+                        BattleGround* bg = GetPlayer()->GetBattleGround();
+                        if (!bg)
+                            continue;
+                        if (bg->GetTypeID(true) != BATTLEGROUND_IC)
+                            continue;
+                        if(!((GetPlayer()->GetVehicle()) && (GetPlayer()->GetVehicle()->GetBase()->GetEntry() == 34944)))
+                            continue;
+                        break;
+                    }
+                    case 1310:          // Storm the Beach (SotA)
+                    {
+                        // If not in SotA
+                        BattleGround * bg = GetPlayer()->GetBattleGround();
+                        if(!bg || bg->GetTypeID(true) != BATTLEGROUND_SA)
+                            continue;
+                        break;
+                    }
+                    default:
+                    {
+                        // those requirements couldn't be found in the dbc
+                        AchievementCriteriaRequirementSet const* data = sAchievementMgr.GetCriteriaRequirementSet(achievementCriteria);
+
+                        if (!data)
+                            continue;
+                        if (!data->Meets(GetPlayer(),unit))
+                            continue;
+                        break;
+                    }
                 }
 
                 change = 1;
