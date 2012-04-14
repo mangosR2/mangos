@@ -66,7 +66,7 @@ bool PathFinder::calculate(float destX, float destY, float destZ, bool forceDest
     // make sure navMesh works - we can run on map w/o mmap
     // check if the start and end point have a .mmtile loaded (can we pass via not loaded tile on the way?)
     if (!m_navMesh || !m_navMeshQuery || m_sourceUnit->hasUnitState(UNIT_STAT_IGNORE_PATHFINDING) ||
-        !HaveTile(start) || !HaveTile(dest))
+        !HaveTile(start) || !HaveTile(dest) || (m_sourceUnit->GetTypeId() == TYPEID_UNIT && ((Creature*)m_sourceUnit)->IsLevitating()))
     {
         BuildShortcut();
         m_type = PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH);
@@ -181,7 +181,7 @@ void PathFinder::BuildPolyPath(const Vector3 &startPos, const Vector3 &endPos)
     {
         DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ BuildPolyPath :: (startPoly == 0 || endPoly == 0)\n");
         BuildShortcut();
-        m_type = (m_sourceUnit->GetTypeId() == TYPEID_UNIT && ((Creature*)m_sourceUnit)->CanFly())
+        m_type = (m_sourceUnit->GetTypeId() == TYPEID_UNIT && ((Creature*)m_sourceUnit)->IsLevitating())
                     ? PathType(PATHFIND_NORMAL | PATHFIND_NOT_USING_PATH) : PATHFIND_NOPATH;
         return;
     }
@@ -207,7 +207,7 @@ void PathFinder::BuildPolyPath(const Vector3 &startPos, const Vector3 &endPos)
             else
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ BuildPolyPath :: flying case\n");
-                if (owner->CanFly())
+                if (owner->IsLevitating())
                     buildShotrcut = true;
             }
         }

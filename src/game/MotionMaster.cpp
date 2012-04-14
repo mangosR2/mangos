@@ -80,9 +80,6 @@ void MotionMaster::MoveTargetedHome()
    // if (m_owner->hasUnitState(UNIT_STAT_LOST_CONTROL))
        // return;
 
-    // home movement is command that returns AI to his default state
-    impl()->DropAllStates();
-
     if (m_owner->GetTypeId() == TYPEID_UNIT && !((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
         // Manual exception for linked mobs
@@ -91,7 +88,7 @@ void MotionMaster::MoveTargetedHome()
         else
         {
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s targeted home", m_owner->GetGuidStr().c_str());
-            Mutate(new HomeMovementGenerator<Creature>(), UNIT_ACTION_EFFECT);
+            Mutate(new HomeMovementGenerator<Creature>(), UNIT_ACTION_HOME);
         }
     }
     else if (m_owner->GetTypeId() == TYPEID_UNIT && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
@@ -99,7 +96,7 @@ void MotionMaster::MoveTargetedHome()
         if (Unit *target = ((Creature*)m_owner)->GetCharmerOrOwner())
         {
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s follow to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
-            Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,PET_FOLLOW_ANGLE), UNIT_ACTION_DOWAYPOINTS);
+            Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,PET_FOLLOW_ANGLE), UNIT_ACTION_HOME);
         }
         else
         {
@@ -143,9 +140,9 @@ void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s follow to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
 
     if (m_owner->GetTypeId() == TYPEID_PLAYER)
-        Mutate(new FollowMovementGenerator<Player>(*target,dist,angle), UNIT_ACTION_CHASE);
+        Mutate(new FollowMovementGenerator<Player>(*target,dist,angle), UNIT_ACTION_DOWAYPOINTS);
     else
-        Mutate(new FollowMovementGenerator<Creature>(*target,dist,angle), UNIT_ACTION_CHASE);
+        Mutate(new FollowMovementGenerator<Creature>(*target,dist,angle), UNIT_ACTION_DOWAYPOINTS);
 }
 
 void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generatePath)
@@ -222,28 +219,6 @@ void MotionMaster::MoveWaypoint()
     else
     {
         sLog.outError("MotionMaster: Non-creature %s attempt to MoveWaypoint()", m_owner->GetGuidStr().c_str());
-    }
-}
-
-void MotionMaster::MoveTaxiFlight(uint32 path, uint32 pathnode)
-{
-    if (m_owner->GetTypeId() == TYPEID_PLAYER)
-    {
-        if (path < sTaxiPathNodesByPath.size())
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s taxi to (Path %u node %u)", m_owner->GetGuidStr().c_str(), path, pathnode);
-            Mutate(new FlightPathMovementGenerator(sTaxiPathNodesByPath[path],pathnode), UNIT_ACTION_TAXI);
-        }
-        else
-        {
-            sLog.outError("MotionMaster: %s attempt taxi to (nonexistent Path %u node %u)",
-                m_owner->GetGuidStr().c_str(), path, pathnode);
-        }
-    }
-    else
-    {
-        sLog.outError("MotionMaster: %s attempt taxi to (Path %u node %u)",
-            m_owner->GetGuidStr().c_str(), path, pathnode);
     }
 }
 

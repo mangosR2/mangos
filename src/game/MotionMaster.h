@@ -52,7 +52,6 @@ class MANGOS_DLL_SPEC MotionMaster
         void MoveSeekAssistance(float x,float y,float z);
         void MoveSeekAssistanceDistract(uint32 timer);
         void MoveWaypoint();
-        void MoveTaxiFlight(uint32 path, uint32 pathnode);
         void MoveDistract(uint32 timeLimit);
         void MoveJump(float x, float y, float z, float horizontalSpeed, float max_height, uint32 id = 0);
         void MoveToDestination(float x, float y, float z, float o, Unit* target, float horizontalSpeed, float max_height, uint32 id = 0);

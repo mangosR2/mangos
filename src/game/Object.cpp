@@ -1396,9 +1396,6 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             Unit* pVictim = ((Creature const*)this)->getVictim();
             if (pVictim)
             {
-                // anyway creature move to victim if is in 2D melee attack distance (prevent some exploit bye cheaters)
-                if (GetDistance2d(x, y) <= ((Creature const*)this)->GetMeleeAttackDistance(pVictim))
-                    return;
                 // anyway creature move to victim for thinly Z distance (shun some VMAP wrong ground calculating)
                 if (fabs(GetPositionZ() - pVictim->GetPositionZ()) < 5.0f)
                     return;
@@ -1627,11 +1624,11 @@ void WorldObject::SendObjectDeSpawnAnim(ObjectGuid guid)
     SendMessageToSet(&data, true);
 }
 
-void WorldObject::SendGameObjectCustomAnim(ObjectGuid guid, uint32 animprogress)
+void WorldObject::SendGameObjectCustomAnim(ObjectGuid guid, uint32 animId /*= 0*/)
 {
     WorldPacket data(SMSG_GAMEOBJECT_CUSTOM_ANIM, 8+4);
     data << ObjectGuid(guid);
-    data << uint32(animprogress);
+    data << uint32(animId);
     SendMessageToSet(&data, true);
 }
 
@@ -1998,7 +1995,7 @@ Creature* WorldObject::GetClosestCreatureWithEntry(WorldObject* pSource, uint32 
 
    Cell cell(p);
    cell.SetNoCreate();
-   MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*pSource,uiEntry,true,fMaxSearchRange);
+   MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*pSource,uiEntry,true,false,fMaxSearchRange);
    MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
    TypeContainerVisitor<MaNGOS::CreatureLastSearcher<MaNGOS::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
    cell.Visit(p, grid_creature_searcher, *pSource->GetMap(), *this, fMaxSearchRange);

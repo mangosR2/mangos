@@ -77,20 +77,21 @@ public:
     explicit UnitStateMgr(Unit* owner);
     ~UnitStateMgr();
 
-    void InitDefaults();
+    void InitDefaults(bool immediate = true);
 
     void Update(uint32 diff);
 
-    static UnitActionPtr CreateStandartState(UnitActionId stateId, int32 param = 0);
+    static UnitActionPtr CreateStandartState(UnitActionId stateId, ...);
 
     void DropAction(UnitActionId actionId);
     void DropAction(UnitActionId actionId, UnitActionPriority priority);
     void DropAction(UnitActionPriority priority);
+    void DropActionHigherThen(UnitActionPriority priority);
 
     void DropAllStates();
 
-    void PushAction(UnitActionId actionId, int32 param = 0);
-    void PushAction(UnitActionId actionId, UnitActionPriority priority, int32 param = 0);
+    void PushAction(UnitActionId actionId);
+    void PushAction(UnitActionId actionId, UnitActionPriority priority);
     void PushAction(UnitActionId actionId, UnitActionPtr state);
     void PushAction(UnitActionId actionId, UnitActionPtr state, UnitActionPriority priority, eActionType restoreable);
 
@@ -99,7 +100,7 @@ public:
     UnitActionPtr CurrentAction();
     ActionInfo*   CurrentState();
 
-    UnitActionPtr GetCurrentState() const;
+    UnitActionId  GetCurrentState() { return CurrentState() ? CurrentState()->Id : UNIT_ACTION_IDLE; };
     Unit*         GetOwner() const  { return m_owner; };
 
     std::string const GetOwnerStr();
@@ -113,6 +114,7 @@ private:
     Unit*             m_owner;
     ActionInfo*       m_oldAction;
     uint32            m_stateCounter[UNIT_ACTION_END];
+    bool              m_needReinit;
 
 };
 

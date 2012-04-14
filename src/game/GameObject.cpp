@@ -548,7 +548,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                         ResetDoorOrButton();
                     break;
                 case GAMEOBJECT_TYPE_CHEST:
-                    if (m_groupLootTimer)
+                    if (m_groupLootId)
                     {
                         if (m_groupLootTimer <= update_diff)
                             StopGroupLoot();
@@ -1777,7 +1777,7 @@ void GameObject::Use(Unit* user)
                         case 179785:                        // Silverwing Flag
                         case 179786:                        // Warsong Flag
                             // check if it's correct bg
-                            if (bg->GetTypeID() == BATTLEGROUND_WS)
+                            if (bg->GetTypeID(true) == BATTLEGROUND_WS)
                                 bg->EventPlayerClickedOnFlag(player, this);
                             break;
                         case 184142:                        // Netherstorm Flag

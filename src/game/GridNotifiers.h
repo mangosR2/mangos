@@ -829,7 +829,7 @@ namespace MaNGOS
             WorldObject const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if(u->isAlive() && i_obj->IsWithinDistInMap(u, i_range) && !i_funit->IsFriendlyTo(u))
+                if(u->isAlive() && i_obj->IsWithinDistInMap(u, i_range) && !i_funit->IsFriendlyTo(u) && u->isTargetableForAttack())
                     return true;
                 else
                     return false;
@@ -1125,12 +1125,12 @@ namespace MaNGOS
     class NearestCreatureEntryWithLiveStateInObjectRangeCheck
     {
         public:
-            NearestCreatureEntryWithLiveStateInObjectRangeCheck(WorldObject const& obj,uint32 entry, bool alive, float range)
-                : i_obj(obj), i_entry(entry), i_alive(alive), i_range(range) {}
+            NearestCreatureEntryWithLiveStateInObjectRangeCheck(WorldObject const& obj,uint32 entry, bool onlyAlive, bool onlyDead, float range)
+                : i_obj(obj), i_entry(entry), i_onlyAlive(onlyAlive), i_onlyDead(onlyDead), i_range(range) {}
             WorldObject const& GetFocusObject() const { return i_obj; }
             bool operator()(Creature* u)
             {
-                if (u->GetEntry() == i_entry && u->GetObjectGuid() != i_obj.GetObjectGuid() && ((i_alive && u->isAlive()) || (!i_alive && u->IsCorpse())) && i_obj.IsWithinDistInMap(u, i_range))
+                if (u->GetEntry() == i_entry && u->GetObjectGuid() != i_obj.GetObjectGuid() && (i_onlyAlive && u->isAlive() || i_onlyDead && u->IsCorpse() || !i_onlyAlive && !i_onlyDead) && i_obj.IsWithinDistInMap(u, i_range))
                 {
                     i_range = i_obj.GetDistance(u);         // use found unit range as new range limit for next check
                     return true;
@@ -1141,7 +1141,8 @@ namespace MaNGOS
         private:
             WorldObject const& i_obj;
             uint32 i_entry;
-            bool   i_alive;
+            bool   i_onlyAlive;
+            bool   i_onlyDead;
             float  i_range;
 
             // prevent clone this object

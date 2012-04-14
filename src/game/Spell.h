@@ -398,13 +398,13 @@ class Spell
         void _handle_finish_phase();
 
         SpellCastResult CheckItems();
-        SpellCastResult CheckRange(bool strict);
+        SpellCastResult CheckRange(bool strict, WorldObject* target = NULL);
         SpellCastResult CheckPower();
         SpellCastResult CheckOrTakeRunePower(bool take);
         SpellCastResult CheckCasterAuras() const;
 
         int32 CalculateDamage(SpellEffectIndex i, Unit* target) { return m_caster->CalculateSpellDamage(target, m_spellInfo, i, &m_currentBasePoints[i]); }
-        static uint32 CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell = NULL, Item* castItem = NULL);
+        static int32 CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell const* spell = NULL, Item* castItem = NULL);
 
         bool HaveTargetsForEffect(SpellEffectIndex effect) const;
         void Delayed();
@@ -502,7 +502,7 @@ class Spell
         // m_originalCasterGUID can store GO guid, and in this case this is visual caster
         WorldObject* GetCastingObject() const;
 
-        uint32 GetPowerCost() const { return m_powerCost; }
+        int32 GetPowerCost() const { return m_powerCost; }
 
         void UpdatePointers();                              // must be used at call Spell code after time delay (non triggered spell cast/update spell call/etc)
 
@@ -539,7 +539,7 @@ class Spell
         //Spell data
         SpellSchoolMask m_spellSchoolMask;                  // Spell school (can be overwrite for some spells (wand shoot for example)
         WeaponAttackType m_attackType;                      // For weapon based attack
-        uint32 m_powerCost;                                 // Calculated spell cost     initialized only in Spell::prepare
+        int32 m_powerCost;                                  // Calculated spell cost     initialized only in Spell::prepare
         int32 m_casttime;                                   // Calculated spell cast time initialized only in Spell::prepare
         int32 m_duration;
         bool m_canReflect;                                  // can reflect this spell?

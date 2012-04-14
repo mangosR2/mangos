@@ -311,30 +311,25 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
             uint32 oldMask = m_completedEncountersMask;
             m_completedEncountersMask |= 1 << dbcEntry->encounterIndex;
 
+            DungeonMap* dungeon = (DungeonMap*)GetMap();
+
+            if (!dungeon || dungeon->GetPlayers().isEmpty())
+                return;
+
+            Player* player = dungeon->GetPlayers().begin()->getSource();
+
             if ( m_completedEncountersMask != oldMask)
             {
-                CharacterDatabase.PExecute("UPDATE instance SET encountersMask = '%u' WHERE id = '%u'", m_completedEncountersMask, GetInstanceId());
-
-                DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
-
-                uint32 dungeonId = itr->second->lastEncounterDungeon;
-
-                if (dungeonId)
-                    DEBUG_LOG("DungeonPersistentState:: Dungeon %s (Id %u) completed last encounter %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()]);
-
-                DungeonMap* dungeon = (DungeonMap*)GetMap();
-
-                if (!dungeon || dungeon->GetPlayers().isEmpty())
-                    return;
-
-                Player* player = dungeon->GetPlayers().begin()->getSource();
-
                 if (dungeon && player)
                     dungeon->PermBindAllPlayers(player, dungeon->IsRaidOrHeroicDungeon());
 
-                SaveToDB();
+                CharacterDatabase.PExecute("UPDATE instance SET encountersMask = '%u' WHERE id = '%u'", m_completedEncountersMask, GetInstanceId());
 
-                if (dungeon && player->GetGroup() && player->GetGroup()->isLFGGroup())
+                uint32 dungeonId = itr->second->lastEncounterDungeon;
+
+                DEBUG_LOG("DungeonPersistentState: Dungeon %s (Id %u) completed encounter %s %s", GetMap()->GetMapName(), GetInstanceId(), dbcEntry->encounterName[sWorld.GetDefaultDbcLocale()], dungeonId ? "(last)" : "");
+
+                if (dungeon && player && player->GetGroup() && player->GetGroup()->isLFGGroup())
                 {
                     sLFGMgr.DungeonEncounterReached(player->GetGroup());
 

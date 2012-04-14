@@ -1266,7 +1266,7 @@ void ChatHandler::ShowAchievementCriteriaListHelper(AchievementCriteriaEntry con
         ss << GetMangosString(LANG_COUNTER);
     else
     {
-        ss << " [" << AchievementMgr::GetCriteriaProgressMaxCounter(criEntry) << "]";
+        ss << " [" << AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry) << "]";
 
         if (target && target->GetAchievementMgr().IsCompletedCriteria(criEntry, achEntry))
             ss << GetMangosString(LANG_COMPLETE);
@@ -1346,7 +1346,9 @@ bool ChatHandler::HandleAchievementAddCommand(char* args)
             if (mgr.IsCompletedCriteria(*itr, achEntry))
                 continue;
 
-            uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(*itr);
+            uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(*itr, achEntry);
+            if (maxValue == std::numeric_limits<uint32>::max())
+                maxValue = 1;                               // Exception for counter like achievements, set them only to 1
             mgr.SetCriteriaProgress(*itr, achEntry, maxValue, AchievementMgr::PROGRESS_SET);
         }
     }
@@ -1421,7 +1423,9 @@ bool ChatHandler::HandleAchievementCriteriaAddCommand(char* args)
 
     LocaleConstant loc = GetSessionDbcLocale();
 
-    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry);
+    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry);
+    if (maxValue == std::numeric_limits<uint32>::max())
+        maxValue = 1;                                       // Exception for counter like achievements, set them only to 1
 
     AchievementMgr& mgr = target->GetAchievementMgr();
 
@@ -1486,7 +1490,9 @@ bool ChatHandler::HandleAchievementCriteriaRemoveCommand(char* args)
 
     LocaleConstant loc = GetSessionDbcLocale();
 
-    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry);
+    uint32 maxValue = AchievementMgr::GetCriteriaProgressMaxCounter(criEntry, achEntry);
+    if (maxValue == std::numeric_limits<uint32>::max())
+        maxValue = 1;                                       // Exception for counter like achievements, set them only to 1
 
     AchievementMgr& mgr = target->GetAchievementMgr();
 
@@ -4416,22 +4422,6 @@ bool ChatHandler::HandleExploreCheatCommand(char* args)
     return true;
 }
 
-bool ChatHandler::HandleHoverCommand(char* args)
-{
-    uint32 flag;
-    if (!ExtractOptUInt32(&args, flag, 1))
-        return false;
-
-    m_session->GetPlayer()->SetHover(flag);
-
-    if (flag)
-        SendSysMessage(LANG_HOVER_ENABLED);
-    else
-        SendSysMessage(LANG_HOVER_DISABLED);
-
-    return true;
-}
-
 void ChatHandler::HandleCharacterLevel(Player* player, ObjectGuid player_guid, uint32 oldlevel, uint32 newlevel)
 {
     if(player)
@@ -6198,7 +6188,7 @@ bool ChatHandler::HandleMovegensCommand(char* /*args*/)
     UnitStateMgr& statemgr = unit->GetUnitStateMgr();
 
     float x,y,z;
-    for (int32 i = UNIT_ACTION_PRIORITY_NONE; i != UNIT_ACTION_PRIORITY_END; ++i)
+    for (int32 i = UNIT_ACTION_PRIORITY_IDLE; i != UNIT_ACTION_PRIORITY_END; ++i)
     {
         ActionInfo* actionInfo = statemgr.GetAction(UnitActionPriority(i));
         if (!actionInfo)

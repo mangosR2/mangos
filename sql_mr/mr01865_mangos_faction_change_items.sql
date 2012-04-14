@@ -757,3 +757,4 @@ INSERT INTO `player_factionchange_items` VALUES ('0', '17902', 'Stormpike Insign
 INSERT INTO `player_factionchange_items` VALUES ('0', '17903', 'Stormpike Insignia Rank 5', '0', '17908', 'Frostwolf Insignia Rank 5');
 INSERT INTO `player_factionchange_items` VALUES ('0', '17904', 'Stormpike Insignia Rank 6', '0', '17909', 'Frostwolf Insignia Rank 6');
 INSERT INTO `player_factionchange_items` VALUES ('0', '15198', 'Knight\'s Colors', '0', '15199', 'Stone Guard\'s Herald');
+INSERT INTO `player_factionchange_items` VALUES ('0', '35467', 'Mooncloth Vestments(115)', '0', '35337', 'Mooncloth Vestments(115)');

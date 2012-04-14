@@ -25,7 +25,7 @@
 #include "UnitEvents.h"
 #include "Timer.h"
 #include "ObjectGuid.h"
-#include <list>
+#include "LockedVector.h"
 
 //==============================================================
 
@@ -134,8 +134,7 @@ class MANGOS_DLL_SPEC HostileReference : public Reference<Unit, ThreatManager>
 //==============================================================
 class ThreatManager;
 
-typedef std::list<HostileReference*> ThreatList;
-
+typedef ACE_Based::LockedVector<HostileReference*> ThreatList;
 
 class MANGOS_DLL_SPEC ThreatContainer
 {
