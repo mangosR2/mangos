@@ -123,3 +123,7 @@ INSERT INTO `achievement_criteria_requirement` VALUES (12182,6,4710,0);
 
 INSERT INTO `achievement_criteria_requirement` VALUES (13254,0,0,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (13255,6,4710,0);
+
+-- Friend or Fowl
+DELETE FROM  `achievement_criteria_requirement` WHERE criteria_id=3821;
+INSERT INTO `achievement_criteria_requirement` VALUES (3821,0,0,0);

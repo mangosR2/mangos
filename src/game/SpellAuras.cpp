@@ -6222,6 +6222,15 @@ void Aura::HandleAuraPeriodicDummy(bool apply, bool Real)
         {
             switch(spell->Id)
             {
+                case 25281:                             // Turkey Marker
+                {
+                    if (target && target->GetTypeId() != TYPEID_PLAYER)
+                        break;
+                    if (Aura* aura = target->GetAura(25281, EFFECT_INDEX_0))
+                    if (aura->GetStackAmount() == 15)
+                        target->CastSpell(target, 25285, true);     // Friend or Fowl criteria
+                    break;
+                }
                 case 49555:                             // Corpse Explode (Trollgore - Drak'Tharon Keep Normal)
                     if (!apply)
                     {
@@ -10906,6 +10915,10 @@ void SpellAuraHolder::SetStackAmount(uint32 stackAmount)
             }
         }
     }
+    // Turkey Marker
+    // Hack for not changing duration of timed achievement
+    if (m_spellProto->Id == 25281)
+        refresh = false;
 
     if (refresh)
         // Stack increased refresh duration
