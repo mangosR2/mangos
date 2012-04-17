@@ -24,8 +24,8 @@ class BattleGround;
 #define BG_SA_GRY_MAX 3
 #define BG_SA_GATE_MAX 6
 #define BG_SA_MAX_WS 4
-#define BG_SA_EVENT_START_BATTLE_1      23748       // Ally / Horde likely
-#define BG_SA_EVENT_START_BATTLE_2      21702
+#define BG_SA_EVENT_START_BATTLE_1      23748       // First Round Start
+#define BG_SA_EVENT_START_BATTLE_2      21702       // Second Round Start
 
 enum BG_SA_WorldStates
 {
@@ -78,6 +78,13 @@ enum BG_SA_GraveYardStatus
     BG_SA_GRAVE_STATUS_OCCUPIED          = 3,
     BG_SA_GRAVE_STATUS_ALLY_OCCUPIED     = 3,   // Captured by the Allies, not clickable by anyone
     BG_SA_GRAVE_STATUS_HORDE_OCCUPIED    = 4    // Captured by the Horde, not clickable by anyone
+};
+
+enum BG_SA_Spells
+{
+    BG_SA_END_OF_ROUND                  = 52459, // Achievement Criteria
+    BG_SA_PLANT_SEAFORIUM_CHARGE        = 60937, // Spell doesnt exist(Achievement Criteria)
+    BG_SA_STORM_THE_BEACH               = 65246, // Spell doesnt exist(Achievement Criteria)
 };
 
 enum BG_SA_Timers

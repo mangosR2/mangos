@@ -1224,7 +1224,33 @@ namespace MaNGOS
             const WorldObject* m_pObject;
             uint32 m_uiEntry;
             float m_fRange;
+
+            // prevent clone this object
+            AllGameObjectsWithEntryInRange(AllGameObjectsWithEntryInRange const&);
     };
+
+    class AllCreaturesOfEntryInRangeCheck
+    {
+        public:
+            AllCreaturesOfEntryInRangeCheck(const WorldObject* pObject, uint32 uiEntry, float fMaxRange) : m_pObject(pObject), m_uiEntry(uiEntry), m_fRange(fMaxRange) {}
+            WorldObject const& GetFocusObject() const { return *m_pObject; }
+            bool operator() (Unit* pUnit)
+            {
+                if (pUnit->GetEntry() == m_uiEntry && m_pObject->IsWithinDist(pUnit,m_fRange,false))
+                    return true;
+
+                return false;
+            }
+
+        private:
+            const WorldObject* m_pObject;
+            uint32 m_uiEntry;
+            float m_fRange;
+
+            // prevent clone this object
+            AllCreaturesOfEntryInRangeCheck(AllCreaturesOfEntryInRangeCheck const&);
+    };
+
 
     // Player checks and do
 

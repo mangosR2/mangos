@@ -7163,7 +7163,7 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
                 if (Unit* magnet = aura->GetCaster())
                 {
                     // spell->CheckTarget() include LOS check
-                    if (magnet->isAlive() && ((!spell && magnet->IsWithinLOSInMap(this) || (spell && spell->CheckTarget(magnet, eff)))))
+                    if (magnet->isAlive() && ((!spell && magnet->IsWithinLOSInMap(this)) || (spell && spell->CheckTarget(magnet, eff))))
                     {
                         if (roll_chance_i(aura->GetModifier()->m_amount))
                             return magnet;
@@ -11162,20 +11162,21 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
             {
                 case COMMAND_STAY:                          //flat=1792  //STAY
                 {
-                    InterruptNonMeleeSpells(false);
+                    if (IsNonMeleeSpellCasted(false))
+                        InterruptNonMeleeSpells(false);
                     AttackStop();
                     StopMoving();
-                    GetMotionMaster()->Clear(false);
-                    GetMotionMaster()->MoveIdle();
+                    GetMotionMaster()->Clear(true);
                     GetCharmInfo()->SetState(CHARM_STATE_COMMAND,COMMAND_STAY);
                     SendCharmState();
                     break;
                 }
                 case COMMAND_FOLLOW:                        //spellid=1792  //FOLLOW
                 {
-                    InterruptNonMeleeSpells(false);
+                    if (IsNonMeleeSpellCasted(false))
+                        InterruptNonMeleeSpells(false);
                     AttackStop();
-                    GetMotionMaster()->Clear(false);
+                    GetMotionMaster()->Clear(true);
                     GetMotionMaster()->MoveFollow(owner,PET_FOLLOW_DIST,((Pet*)this)->GetPetFollowAngle());
                     GetCharmInfo()->SetState(CHARM_STATE_COMMAND,COMMAND_FOLLOW);
                     SendCharmState();
@@ -11183,22 +11184,27 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                 }
                 case COMMAND_ATTACK:                        //spellid=1792  //ATTACK
                 {
-                    Unit *TargetUnit = owner->GetMap()->GetUnit(targetGuid);
+                    Unit* TargetUnit = owner->GetMap()->GetUnit(targetGuid);
                     if(!TargetUnit)
                         return;
 
                     // not let attack friendly units.
                     if (owner->IsFriendlyTo(TargetUnit))
                         return;
+
                     // Not let attack through obstructions
-                    if(!IsWithinLOSInMap(TargetUnit))
+                    if(!IsWithinLOSInMap(TargetUnit) && !owner->IsWithinLOSInMap(TargetUnit) && !TargetUnit->isInAccessablePlaceFor(this))
                         return;
 
                     // This is true if pet has no target or has target but targets differs.
                     if (getVictim() != TargetUnit)
                     {
                         if (getVictim())
+                        {
+                            if (IsNonMeleeSpellCasted(false))
+                                InterruptNonMeleeSpells(false);
                             AttackStop();
+                        }
 
                         if (hasUnitState(UNIT_STAT_CONTROLLED))
                         {
@@ -11213,7 +11219,7 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                                 ((Creature*)this)->AI()->AttackStart(TargetUnit);
 
                             // 10% chance to play special pet attack talk, else growl
-                            if(((Creature*)this)->IsPet() && ((Pet*)this)->getPetType() == SUMMON_PET && this != TargetUnit && roll_chance_i(10))
+                            if(((Creature*)this)->IsPet() && ((Pet*)this)->getPetType() == SUMMON_PET && roll_chance_i(10))
                                 SendPetTalk((uint32)PET_TALK_ATTACK);
                             else
                             {
@@ -11227,11 +11233,11 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                 }
                 case COMMAND_ABANDON:                       // abandon (hunter pet) or dismiss (summoned pet)
                 {
-                    InterruptNonMeleeSpells(false);
+                    if (IsNonMeleeSpellCasted(false))
+                        InterruptNonMeleeSpells(false);
                     AttackStop();
                     StopMoving();
-                    GetMotionMaster()->Clear(false);
-                    GetMotionMaster()->MoveIdle();
+                    GetMotionMaster()->Clear(true);
 
                     if(((Creature*)this)->IsPet())
                     {
