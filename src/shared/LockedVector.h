@@ -123,14 +123,26 @@ namespace ACE_Based
                 }
             }
 
-            void find(const T& item)
+            T* find(const T& item)
             {
                 ReadGuard Guard(GetLock());
-                for (size_type i = 0; i < m_storage.size();)
+                for (size_type i = 0; i < m_storage.size(); ++i)
                 {
                     if (item == m_storage[i])
                         return &m_storage[i];
                 }
+                return NULL;
+            }
+
+            const T* find(const T& item) const
+            {
+                ReadGuard Guard(GetLock());
+                for (size_type i = 0; i < m_storage.size(); ++i)
+                {
+                    if (item == m_storage[i])
+                        return &m_storage[i];
+                }
+                return NULL;
             }
 
             void clear()
@@ -142,8 +154,6 @@ namespace ACE_Based
             T& operator[](size_type idx) 
             {
                 ReadGuard Guard(GetLock());
-//                if (idx >= m_storage.size() || idx < 0)
-//                    return NULL;
                 return m_storage[idx];
             }
 

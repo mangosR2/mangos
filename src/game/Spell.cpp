@@ -499,7 +499,7 @@ void Spell::FillTargetMap()
         if (IsAreaAuraEffect(m_spellInfo->Effect[i]))
             AddUnitTarget(m_caster, SpellEffectIndex(i));
 
-/*
+
         // no double fill for same targets
         for (int j = 0; j < i; ++j)
         {
@@ -512,7 +512,7 @@ void Spell::FillTargetMap()
                 break;
             }
         }
-*/
+
         // New target combination and fail custom fill method
         if (!FillCustomTargetMap(SpellEffectIndex(i),tmpUnitLists[i]) && effToIndex[i] == i)
         {
@@ -7759,6 +7759,9 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
         return false;
     if (m_spellInfo->TargetAuraStateNot && target->HasAura(m_spellInfo->TargetAuraStateNot))
         return false;
+    // check right target                                                                                       // should activ for spells 72034, 72096
+    if (m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_TARGET_ONLY_PLAYER && target->GetTypeId() != TYPEID_PLAYER /*&& m_spellInfo->EffectImplicitTargetA[eff] != TARGET_SCRIPT*/)
+        return false;
 
     // Check targets for not_selectable unit flag and remove
     // A player can cast spells on his pet (or other controlled unit) though in any state
@@ -7799,8 +7802,8 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
     }
 
     // Check Sated & Exhaustion debuffs
-    if (((m_spellInfo->Id == 2825) && (target->HasAura(57724))) ||
-        ((m_spellInfo->Id == 32182) && (target->HasAura(57723))))
+    if (((m_spellInfo->Id == 2825) && (target->HasAura(57724) || target->HasAura(57723))) ||
+        ((m_spellInfo->Id == 32182) && (target->HasAura(57724)|| target->HasAura(57723))))
         return false;
 
     // Check vampiric bite

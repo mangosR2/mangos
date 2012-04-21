@@ -967,28 +967,42 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
     // Absorb, resist some environmental damage type
     uint32 absorb = 0;
     uint32 resist = 0;
-    if (type == DAMAGE_LAVA)
-        CalculateDamageAbsorbAndResist(this, SPELL_SCHOOL_MASK_FIRE, DIRECT_DAMAGE, damage, &absorb, &resist);
-    else if (type == DAMAGE_SLIME)
-        CalculateDamageAbsorbAndResist(this, SPELL_SCHOOL_MASK_NATURE, DIRECT_DAMAGE, damage, &absorb, &resist);
 
-    damage-=absorb+resist;
+    //16455 lava, 16456 slime
+    uint32 spellID = 0;
+    switch (type)
+    {
+        case DAMAGE_LAVA:
+            spellID = 16455;
+            break;
+        case DAMAGE_SLIME:
+            spellID = 16456;
+            //as i think, not used NATURE mask for slime damage.
+            break;
+        default:
+            break;
+    }
+    DamageInfo damageInfo = DamageInfo(this,this,spellID);
+    damageInfo.damage     = damage;
+    damageInfo.damageType = SELF_DAMAGE;
+
+    CalculateDamageAbsorbAndResist(this, &damageInfo);
 
     DealDamageMods(this,damage,&absorb);
 
     WorldPacket data(SMSG_ENVIRONMENTALDAMAGELOG, (21));
     data << GetObjectGuid();
-    data << uint8(type!=DAMAGE_FALL_TO_VOID ? type : DAMAGE_FALL);
-    data << uint32(damage);
-    data << uint32(absorb);
-    data << uint32(resist);
+    data << uint8(type != DAMAGE_FALL_TO_VOID ? type : DAMAGE_FALL);
+    data << uint32(damageInfo.damage);
+    data << uint32(damageInfo.absorb);
+    data << uint32(damageInfo.resist);
     SendMessageToSet(&data, true);
 
-    uint32 final_damage = DealDamage(this, damage, NULL, SELF_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+    uint32 final_damage = DealDamage(this, &damageInfo, false);
 
     if(!isAlive())
     {
-        if (type==DAMAGE_FALL)                               // DealDamage not apply item durability loss at self damage
+        if (type == DAMAGE_FALL)                               // DealDamage not apply item durability loss at self damage
         {
             DEBUG_LOG("We are fall to death, loosing 10 percents durability");
             DurabilityLossAll(0.10f,false);
@@ -13797,6 +13811,14 @@ void Player::PrepareGossipMenu(WorldObject *pSource, uint32 menuId)
 
         if (!isGameMaster())                                // Let GM always see menu items regardless of conditions
         {
+            if (itr->second.conditionId && !sObjectMgr.IsPlayerMeetToNEWCondition(this, itr->second.conditionId))
+            {
+                if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
+                    canSeeQuests = false;
+                continue;
+            }
+            else if (!itr->second.conditionId)
+        {
             if (itr->second.cond_1 && !sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1))
             {
                 if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
@@ -13817,6 +13839,7 @@ void Player::PrepareGossipMenu(WorldObject *pSource, uint32 menuId)
                     canSeeQuests = false;
                 continue;
             }
+        }
         }
 
         if (pSource->GetTypeId() == TYPEID_UNIT)
@@ -14167,7 +14190,18 @@ uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* pSource)
 
     GossipMenusMapBounds pMenuBounds = sObjectMgr.GetGossipMenusMapBounds(menuId);
 
-    for(GossipMenusMap::const_iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
+    for (GossipMenusMap::const_iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
+    {
+        if (itr->second.conditionId && sObjectMgr.IsPlayerMeetToNEWCondition(this, itr->second.conditionId))
+        {
+            textId = itr->second.text_id;
+
+            // Start related script
+            if (itr->second.script_id)
+                GetMap()->ScriptsStart(sGossipScripts, itr->second.script_id, this, pSource);
+            break;
+        }
+        else if (!itr->second.conditionId)
     {
         if (sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1) && sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_2))
         {
@@ -14178,6 +14212,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* pSource)
                 GetMap()->ScriptsStart(sGossipScripts, itr->second.script_id, this, pSource);
             break;
         }
+    }
     }
 
     return textId;

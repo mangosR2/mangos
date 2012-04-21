@@ -133,6 +133,12 @@ ALTER TABLE `character_instance`
 ALTER TABLE `characters`
     ADD COLUMN `grantableLevels` tinyint(3) unsigned NOT NULL default '0' AFTER `actionBars`;
 
+-- Refer new WorldStateMgr by rsa
+-- Commit adf97bc1d3d55c4c0fecc72020a61e3e39257f9a
+
+ALTER TABLE `characters`
+    CHANGE `dungeon_difficulty` `dungeon_difficulty` INT(10) UNSIGNED NOT NULL DEFAULT '0';
+
 -- Saved Variables
 -- Commit 0525ca144e282cec2478
 

@@ -349,7 +349,7 @@ const uint32 ItemQualityColors[MAX_ITEM_QUALITY] = {
 #define SPELL_ATTR_EX3_UNK5                       0x00000020            // 5
 #define SPELL_ATTR_EX3_UNK6                       0x00000040            // 6
 #define SPELL_ATTR_EX3_STACK_FOR_DIFF_CASTERS     0x00000080            // 7 create a separate (de)buff stack for each caster
-#define SPELL_ATTR_EX3_UNK8                       0x00000100            // 8
+#define SPELL_ATTR_EX3_TARGET_ONLY_PLAYER         0x00000100            // 8 Can target only player
 #define SPELL_ATTR_EX3_UNK9                       0x00000200            // 9
 #define SPELL_ATTR_EX3_MAIN_HAND                  0x00000400            // 10 Main hand weapon required
 #define SPELL_ATTR_EX3_BATTLEGROUND               0x00000800            // 11 Can casted only on battleground
@@ -374,7 +374,7 @@ const uint32 ItemQualityColors[MAX_ITEM_QUALITY] = {
 #define SPELL_ATTR_EX3_DONT_DISPLAY_RANGE         0x40000000            // 30 client doesn't display range in tooltip for those spells
 #define SPELL_ATTR_EX3_UNK31                      0x80000000            // 31
 
-#define SPELL_ATTR_EX4_UNK0                       0x00000001            // 0
+#define SPELL_ATTR_EX4_IGNORE_RESISTANCES         0x00000001            // 0 not may be resisted (in magic case) and have binary resistance method (in melee case).
 #define SPELL_ATTR_EX4_UNK1                       0x00000002            // 1 proc on finishing move?
 #define SPELL_ATTR_EX4_UNK2                       0x00000004            // 2
 #define SPELL_ATTR_EX4_UNK3                       0x00000008            // 3

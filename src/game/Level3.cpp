@@ -436,6 +436,14 @@ bool ChatHandler::HandleReloadCreatureQuestInvRelationsCommand(char* /*args*/)
     return true;
 }
 
+bool ChatHandler::HandleReloadConditionsCommand(char* /*args*/)
+{
+    sLog.outString( "Re-Loading `conditions`... " );
+    sObjectMgr.LoadConditions();
+    SendGlobalSysMessage("DB table `conditions` reloaded.");
+    return true;
+}
+
 bool ChatHandler::HandleReloadGossipMenuCommand(char* /*args*/)
 {
     sObjectMgr.LoadGossipMenus();
@@ -3922,30 +3930,22 @@ bool ChatHandler::HandleDamageCommand(char* args)
     // melee damage by specific school
     if (!*args)
     {
-        uint32 absorb = 0;
-        uint32 resist = 0;
-
-        target->CalculateDamageAbsorbAndResist(m_session->GetPlayer(),schoolmask, SPELL_DIRECT_DAMAGE, damage, &absorb, &resist);
-
-        if (damage <= absorb + resist)
-            return true;
-
-        damage -= absorb + resist;
-
-        m_session->GetPlayer()->DealDamageMods(target,damage,&absorb);
-        m_session->GetPlayer()->DealDamage(target, damage, NULL, DIRECT_DAMAGE, schoolmask, NULL, false);
         DamageInfo damageInfo  = DamageInfo(m_session->GetPlayer(), target, spellid);
         damageInfo.damage      = damage;
-        damageInfo.absorb      = absorb;
-        damageInfo.resist      = resist;
+        damageInfo.absorb      = 0;
+        damageInfo.resist      = 0;
         damageInfo.HitInfo     = HITINFO_NORMALSWING2;
         damageInfo.TargetState = VICTIMSTATE_NORMAL;
+
+        target->CalculateDamageAbsorbAndResist(m_session->GetPlayer(),&damageInfo, false);
+
+        m_session->GetPlayer()->DealDamageMods(target, damageInfo.damage, &damageInfo.absorb);
+        m_session->GetPlayer()->DealDamage(target,&damageInfo,false);
         m_session->GetPlayer()->SendAttackStateUpdate(&damageInfo);
         return true;
     }
 
     // non-melee damage
-
 
     m_session->GetPlayer()->SpellNonMeleeDamageLog(target, spellid, damage);
     return true;

@@ -698,7 +698,7 @@ REPLACE INTO creature_template_addon (entry,auras) VALUES (29414,'57403');
 -- Quest: Defending Wyrmrest Temple (12372)
 DELETE FROM gossip_scripts WHERE id=9568;
 REPLACE INTO gossip_scripts (id,command,datalong,datalong2,comments) VALUES (9568,15,49256,3,'');
-REPLACE INTO gossip_menu_option VALUES (9568,0,0,'We need to get into the fight. Are you ready?',1,1,-1,0,9568,0,0,NULL,9,12372,0,0,0,0,0,0,0);
+REPLACE INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `cond_1`, `cond_1_val_1`, `cond_1_val_2`, `cond_2`, `cond_2_val_1`, `cond_2_val_2`, `cond_3`, `cond_3_val_1`, `cond_3_val_2`, `condition_id`) values('9568','0','0','We need to get into the fight. Are you ready?','1','1','-1','0','9568','0','0',NULL,'9','12372','0','0','0','0','0','0','0','0');
 UPDATE creature_template SET spell1=49161,spell2=49243,spell3=49263,spell4=49264,spell5=49367,unit_flags=0,InhabitType=3 WHERE entry=27629;
 REPLACE INTO creature_template_addon (entry,bytes1,b2_0_sheath,auras) VALUES (27629,33554432,1,'50069');
 REPLACE INTO creature_ai_scripts VALUES (2769801,27698,8,0,100,0,49367,-1,0,0,33,27698,6,0,0,0,0,0,0,0,0,0,'q12372');
@@ -813,7 +813,3 @@ INSERT INTO `creature_template_addon` (`entry`, `mount`, `bytes1`, `b2_0_sheath`
 -- Wyrmrest skytalon
 -- DELETE FROM npc_spellclick_spells WHERE npc_entry = 32535;
 -- INSERT INTO npc_spellclick_spells VALUES (32535, 61245, 0, 0, 0, 1);
-
-
-
-

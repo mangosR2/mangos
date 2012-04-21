@@ -1267,6 +1267,10 @@ void World::SetInitialWorldSettings()
     sLog.outString( ">>> Game Event Data loaded" );
     sLog.outString();
 
+    // Load Conditions
+    sLog.outString( "Loading Conditions..." );
+    sObjectMgr.LoadConditions();
+
     sLog.outString( "Creating map persistent states for non-instanceable maps..." );   // must be after PackInstances(), LoadCreatures(), sPoolMgr.LoadFromDB(), sGameEventMgr.LoadFromDB();
     sMapPersistentStateMgr.InitWorldMaps();
 
@@ -1628,6 +1632,8 @@ void World::DetectDBCLang()
 /// Update the World !
 void World::Update(uint32 diff)
 {
+    m_updateTime = diff;
+
     ///- Update the different timers
     for(int i = 0; i < WUPDATE_COUNT; ++i)
     {

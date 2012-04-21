@@ -4920,6 +4920,12 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
     if (!ExtractUint32KeyFromLink(&args, "Hpool", pool_id))
         return false;
 
+    if (pool_id > sPoolMgr.GetMaxPoolId())
+    {
+        PSendSysMessage("Pool %u not found", pool_id);
+        return true;
+    }
+
     Player* player = m_session ? m_session->GetPlayer() : NULL;
 
     MapPersistentState* mapState = player ? player->GetMap()->GetPersistentState() : NULL;

@@ -287,17 +287,19 @@ void Spell::EffectInstaKill(SpellEffectIndex /*eff_idx*/)
 
 void Spell::EffectEnvironmentalDMG(SpellEffectIndex eff_idx)
 {
-    uint32 absorb = 0;
-    uint32 resist = 0;
-
     // Note: this hack with damage replace required until GO casting not implemented
     // environment damage spells already have around enemies targeting but this not help in case nonexistent GO casting support
     // currently each enemy selected explicitly and self cast damage, we prevent apply self casted spell bonuses/etc
+    DamageInfo damageInfo = DamageInfo(m_caster,m_caster,m_spellInfo);
+    damageInfo.damage     = damage;
+    damageInfo.damageType = SELF_DAMAGE;
+
     damage = m_spellInfo->CalculateSimpleValue(eff_idx);
 
-    m_caster->CalculateDamageAbsorbAndResist(m_caster, GetSpellSchoolMask(m_spellInfo), SPELL_DIRECT_DAMAGE, damage, &absorb, &resist);
+    m_caster->CalculateDamageAbsorbAndResist(m_caster, &damageInfo);
 
-    m_caster->SendSpellNonMeleeDamageLog(m_caster, m_spellInfo->Id, damage, GetSpellSchoolMask(m_spellInfo), absorb, resist, false, 0, false);
+    m_caster->SendSpellNonMeleeDamageLog(&damageInfo);
+
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
         ((Player*)m_caster)->EnvironmentalDamage(DAMAGE_FIRE, damage);
 }

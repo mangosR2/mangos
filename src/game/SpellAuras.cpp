@@ -820,6 +820,9 @@ void Aura::AreaAuraUpdate(uint32 diff)
                 if (i_target->GetTypeId() == TYPEID_PLAYER && ((Player*)i_target)->IsBeingTeleportedFar())
                     continue;
 
+                if (GetSpellProto()->AttributesEx3 & SPELL_ATTR_EX3_TARGET_ONLY_PLAYER && i_target->GetTypeId() != TYPEID_PLAYER)
+                    continue;
+
                 if (i_target->IsImmuneToSpell(GetSpellProto()))
                     continue;
                 else
@@ -8634,7 +8637,7 @@ void Aura::PeriodicTick()
             if (GetSpellProto()->Id == 50344) // Dream Funnel Oculus drake spell
                 damageInfo.damage = uint32(pCaster->GetMaxHealth()*0.05f);
 
-            target->CalculateDamageAbsorbAndResist(pCaster, damageInfo.SchoolMask(), DOT, damageInfo.damage, &damageInfo.absorb, &damageInfo.resist, !(GetSpellProto()->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
+            target->CalculateDamageAbsorbAndResist(pCaster, &damageInfo, !(GetSpellProto()->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
 
             DETAIL_FILTER_LOG(LOG_FILTER_PERIODIC_AFFECTS, "PeriodicTick: %s attacked %s for %u dmg inflicted by %u abs is %u",
                 GetAffectiveCasterGuid().GetString().c_str(), target->GetGuidStr().c_str(), damageInfo.damage, GetId(), damageInfo.absorb);
@@ -8731,7 +8734,7 @@ void Aura::PeriodicTick()
             if (GetAffectiveCasterGuid().IsPlayer())
                 damageInfo.damage -= target->GetSpellDamageReduction(damageInfo.damage);
 
-            target->CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), DOT, damageInfo.damage, &damageInfo.absorb, &damageInfo.resist, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
+            target->CalculateDamageAbsorbAndResist(pCaster, &damageInfo, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
 
             DETAIL_FILTER_LOG(LOG_FILTER_PERIODIC_AFFECTS, "PeriodicTick: %s health leech of %s for %u dmg inflicted by %u abs is %u",
                 GetAffectiveCasterGuid().GetString().c_str(), target->GetGuidStr().c_str(), damageInfo.damage, GetId(),damageInfo.absorb);

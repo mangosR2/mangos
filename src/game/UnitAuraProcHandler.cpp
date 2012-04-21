@@ -5292,10 +5292,10 @@ SpellAuraProcResult Unit::HandleDamageShieldAuraProc(Unit* pVictim, DamageInfo* 
     procDamageInfo.damage = SpellDamageBonusDone(pVictim, spellProto, procDamageInfo.damage, SPELL_DIRECT_DAMAGE);
     procDamageInfo.damage = pVictim->SpellDamageBonusTaken(this, spellProto, procDamageInfo.damage, SPELL_DIRECT_DAMAGE);
 
-
     procDamageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
 
-    pVictim->CalculateDamageAbsorbAndResist(this, GetSpellSchoolMask(spellProto), SPELL_DIRECT_DAMAGE, procDamageInfo.damage, &procDamageInfo.absorb, &procDamageInfo.resist, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
+
+    pVictim->CalculateDamageAbsorbAndResist(this, &procDamageInfo, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
 
     DealDamageMods(pVictim, procDamageInfo.damage, &procDamageInfo.absorb);
 

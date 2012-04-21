@@ -1909,9 +1909,8 @@ void Unit::CalculateMeleeDamage(Unit *pVictim, uint32 damage, DamageInfo* damage
         damageInfo->procEx |= PROC_EX_DIRECT_DAMAGE;
 
         // Calculate absorb & resists
-        uint32 absorb_affected_damage = CalcNotIgnoreAbsorbDamage(damageInfo->damage,damageInfo->SchoolMask());
-        damageInfo->target->CalculateDamageAbsorbAndResist(this, damageInfo->SchoolMask(), DIRECT_DAMAGE, absorb_affected_damage, &damageInfo->absorb, &damageInfo->resist, true);
-        damageInfo->damage-=damageInfo->absorb + damageInfo->resist;
+        damageInfo->target->CalculateDamageAbsorbAndResist(this, damageInfo, true);
+
         if (damageInfo->absorb)
         {
             damageInfo->HitInfo|=HITINFO_ABSORB;
@@ -2123,18 +2122,20 @@ uint32 Unit::CalcArmorReducedDamage(Unit* pVictim, const uint32 damage)
     return (newdamage > 1) ? newdamage : 1;
 }
 
-void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolMask, DamageEffectType damagetype, const uint32 damage, uint32 *absorb, uint32 *resist, bool canReflect)
+void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo, bool canReflect)
 {
-    if(!pCaster || !isAlive() || !damage)
+    if(!pCaster || !isAlive() || !damageInfo || damageInfo->damage == 0)
         return;
 
     // Magic damage, check for resists
-    if ((schoolMask & SPELL_SCHOOL_MASK_NORMAL)==0)
+    if (!(damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
+        !damageInfo->IsMeleeDamage() &&
+        !(damageInfo->m_spellInfo->AttributesEx4 & SPELL_ATTR_EX4_IGNORE_RESISTANCES))
     {
         // Get base resistance for schoolmask
-        float tmpvalue2 = (float)GetResistance(schoolMask);
+        float tmpvalue2 = (float)GetResistance(damageInfo->SchoolMask());
         // Ignore resistance by self SPELL_AURA_MOD_TARGET_RESISTANCE aura
-        tmpvalue2 += (float)pCaster->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, schoolMask);
+        tmpvalue2 += (float)pCaster->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, damageInfo->SchoolMask());
 
         if (pCaster->GetTypeId() == TYPEID_PLAYER)
             tmpvalue2 -= (float)((Player*)pCaster)->GetSpellPenetrationItemMod();
@@ -2156,17 +2157,20 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
             else
                 break;
         }
-        if (damagetype == DOT && m == 4)
-            *resist += uint32(damage - 1);
+        if (damageInfo->damageType == DOT && m == 4)
+            damageInfo->resist += uint32(damageInfo->damage);
+            // need make more correct this hack.
         else
-            *resist += uint32(damage * m / 4);
-        if(*resist > damage)
-            *resist = damage;
+            damageInfo->resist += uint32(damageInfo->damage * m / 4);
+
+        // full resist mode granted
+        if (damageInfo->resist > damageInfo->damage)
+            damageInfo->resist = damageInfo->damage;
     }
     else
-        *resist = 0;
+        damageInfo->resist = 0;
 
-    int32 RemainingDamage = damage - *resist;
+    int32 RemainingDamage = damageInfo->damage - damageInfo->resist;
 
     // Get unit state (need for some absorb check)
     uint32 unitflag = GetUInt32Value(UNIT_FIELD_FLAGS);
@@ -2178,13 +2182,18 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
     SpellEntry const*  preventDeathSpell = NULL;
     int32  preventDeathAmount = 0;
 
+    // for absorb use only absorb_affected_damage
+    uint32 absorb_affected_damage = CalcNotIgnoreAbsorbDamage(damageInfo->damage,damageInfo->SchoolMask());
+    if (RemainingDamage > absorb_affected_damage)
+        RemainingDamage = absorb_affected_damage;
+
     // full absorb cases (by chance)
     AuraList const& vAbsorb = GetAurasByType(SPELL_AURA_SCHOOL_ABSORB);
     for(AuraList::const_iterator i = vAbsorb.begin(); i != vAbsorb.end() && RemainingDamage > 0; ++i)
     {
         // only work with proper school mask damage
         Modifier* i_mod = (*i)->GetModifier();
-        if (!(i_mod->m_miscvalue & schoolMask))
+        if (!(i_mod->m_miscvalue & damageInfo->SchoolMask()))
             continue;
 
         SpellEntry const* i_spellProto = (*i)->GetSpellProto();
@@ -2227,7 +2236,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
     for(AuraList::const_iterator i = vSchoolAbsorb.begin(); i != vSchoolAbsorb.end() && RemainingDamage > 0; ++i)
     {
         Modifier* mod = (*i)->GetModifier();
-        if (!(mod->m_miscvalue & schoolMask))
+        if (!(mod->m_miscvalue & damageInfo->SchoolMask()))
             continue;
 
         SpellEntry const* spellProto = (*i)->GetSpellProto();
@@ -2269,7 +2278,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
                 if (spellProto->SpellIconID == 3006)
                 {
                     // You have a chance equal to your Parry chance
-                    if (damagetype == SPELL_DIRECT_DAMAGE &&             // Only for direct spell damage
+                    if (damageInfo->damageType == SPELL_DIRECT_DAMAGE &&             // Only for direct spell damage
                         roll_chance_f(GetUnitParryChance()))             // Roll chance
                         RemainingDamage -= RemainingDamage * currentAbsorb / 100;
                     continue;
@@ -2475,7 +2484,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
 
                     uint32 ab_damage = absorbed;
                     pCaster->DealDamageMods(caster,ab_damage,NULL);
-                    pCaster->DealDamage(caster, ab_damage, NULL, damagetype, schoolMask, 0, false);
+                    pCaster->DealDamage(caster, ab_damage, NULL, damageInfo->damageType, damageInfo->SchoolMask(), 0, false);
                     continue;
                 }
                 // Will of Necropolis
@@ -2546,7 +2555,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
         next = i; ++next;
 
         // check damage school mask
-        if(((*i)->GetModifier()->m_miscvalue & schoolMask)==0)
+        if(((*i)->GetModifier()->m_miscvalue & damageInfo->SchoolMask()) == 0)
             continue;
 
         int32 currentAbsorb;
@@ -2618,7 +2627,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
             next = i; ++next;
 
             // check damage school mask
-            if(((*i)->GetModifier()->m_miscvalue & schoolMask)==0)
+            if(((*i)->GetModifier()->m_miscvalue & damageInfo->SchoolMask()) == 0)
                 continue;
 
             // Damage can be splitted only if aura has an alive caster
@@ -2626,22 +2635,22 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
             if(!caster || caster == this || !caster->IsInWorld() || !caster->isAlive())
                 continue;
 
-            DamageInfo damageInfo = DamageInfo(pCaster, caster, (*i)->GetSpellProto());
-            damageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
-            damageInfo.damageType = damagetype;
+            DamageInfo splitdamageInfo = DamageInfo(pCaster, caster, (*i)->GetSpellProto());
+            splitdamageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
+            splitdamageInfo.damageType = damageInfo->damageType;
 
             if (RemainingDamage >= (*i)->GetModifier()->m_amount)
-                damageInfo.damage = (*i)->GetModifier()->m_amount;
+                splitdamageInfo.damage = (*i)->GetModifier()->m_amount;
             else
-                damageInfo.damage = RemainingDamage;
+                splitdamageInfo.damage = RemainingDamage;
 
-            RemainingDamage -= damageInfo.damage;
+            RemainingDamage -= splitdamageInfo.damage;
 
-            pCaster->DealDamageMods(caster,damageInfo.damage,&damageInfo.absorb);
+            pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
 
-            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, damageInfo.damage, schoolMask, damageInfo.absorb, 0, false, 0, false);
-            damageInfo.cleanDamage = damageInfo.damage - damageInfo.absorb;
-            pCaster->DealDamage(caster, &damageInfo, false);
+            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
+            splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
+            pCaster->DealDamage(caster, &splitdamageInfo, false);
         }
 
         AuraList const& vSplitDamagePct = GetAurasByType(SPELL_AURA_SPLIT_DAMAGE_PCT);
@@ -2650,7 +2659,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
             next = i; ++next;
 
             // check damage school mask
-            if(((*i)->GetModifier()->m_miscvalue & schoolMask)==0)
+            if(((*i)->GetModifier()->m_miscvalue & damageInfo->SchoolMask()) == 0)
                 continue;
 
             // Damage can be splitted only if aura has an alive caster
@@ -2658,19 +2667,19 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
             if(!caster || caster == this || !caster->IsInWorld() || !caster->isAlive())
                 continue;
 
-            DamageInfo damageInfo = DamageInfo(pCaster, caster, (*i)->GetSpellProto());
-            damageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
-            damageInfo.damageType = damagetype;
+            DamageInfo splitdamageInfo = DamageInfo(pCaster, caster, (*i)->GetSpellProto());
+            splitdamageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
+            splitdamageInfo.damageType = damageInfo->damageType;
 
-            damageInfo.damage = uint32(RemainingDamage * (*i)->GetModifier()->m_amount / 100.0f);
+            splitdamageInfo.damage = uint32(RemainingDamage * (*i)->GetModifier()->m_amount / 100.0f);
 
-            RemainingDamage -=  int32(damageInfo.damage);
+            RemainingDamage -=  int32(splitdamageInfo.damage);
 
-            pCaster->DealDamageMods(caster,damageInfo.damage,&damageInfo.absorb);
+            pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
 
-            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, damageInfo.damage, schoolMask, damageInfo.absorb, 0, false, 0, false);
-            damageInfo.cleanDamage = damageInfo.damage - damageInfo.absorb;
-            pCaster->DealDamage(caster, &damageInfo, false);
+            pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
+            splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
+            pCaster->DealDamage(caster, &splitdamageInfo, false);
         }
     }
 
@@ -2709,7 +2718,12 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, SpellSchoolMask schoolM
         }
     }
 
-    *absorb = damage - RemainingDamage - *resist;
+    damageInfo->absorb = damageInfo->damage - damageInfo->resist - RemainingDamage;
+
+    if (damageInfo->damage < (damageInfo->absorb + damageInfo->resist))
+        damageInfo->damage = 0;
+    else
+        damageInfo->damage -= damageInfo->absorb + damageInfo->resist;
 }
 
 void Unit::CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, SpellEntry const* spellProto, WeaponAttackType attType)
@@ -2735,9 +2749,7 @@ void Unit::CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, Spe
         damageInfo->damage-=damageInfo->blocked;
     }
 
-    uint32 absorb_affected_damage = pCaster->CalcNotIgnoreAbsorbDamage(damageInfo->damage,GetSpellSchoolMask(spellProto),spellProto);
-    CalculateDamageAbsorbAndResist(pCaster, GetSpellSchoolMask(spellProto), SPELL_DIRECT_DAMAGE, absorb_affected_damage, &damageInfo->absorb, &damageInfo->resist, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
-    damageInfo->damage-= damageInfo->absorb + damageInfo->resist;
+    CalculateDamageAbsorbAndResist(pCaster, damageInfo, !(spellProto->AttributesEx & SPELL_ATTR_EX_CANT_REFLECTED));
 }
 
 void Unit::CalculateHealAbsorb(const uint32 heal, uint32 *absorb)
