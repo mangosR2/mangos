@@ -5559,8 +5559,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     if (m_triggeredByAuraSpell)              // not report pet not existence for triggered spells
                         return SPELL_FAILED_DONT_REPORT;
-                    else
+                    else if (!pet)
                         return SPELL_FAILED_NO_PET;
+                    else
+                        return SPELL_FAILED_TARGETS_DEAD;
                 }
                 break;
             }

@@ -3,8 +3,9 @@
 DELETE FROM achievement_criteria_requirement WHERE criteria_id IN
 (608,609,610,1242,1803,1804,1805,1806,1807,1808,1809,1810,1811,1812,1813,1814,1815,1816,1817,1818,1819,1820,1821,
 1822,1823,1825,1826,4227,5512,5529,5530,5531,5532,5533,5534,5535,5536,5537,5538,5539,5540,5541,5542,5543,5544,5545,
+6641,6642,6643,6644,6651,6652,6653,6654,6655,6656,6657,6659,
 5546,5547,5548,5726,5727,5728,5734,5735,5736,5737,5738,5739,5809,5810,7020,7625,7628,8587,8588,8589,8590,8599,8600,8601,
-8602,8607,8608,8609,8610,8615,8616,8617,8618,8759,8758,9165,9166,11497,11498,11500,11501,12178,12179,12181,12182,13254,13255);
+8602,8607,8608,8609,8610,8615,8616,8617,8618,8759,8758,9165,9166,10391,11497,11498,11500,11501,12178,12179,12181,12182,12398,13254,13255);
 
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (608, 11);
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (609, 11);
@@ -79,6 +80,42 @@ INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (5
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (5809, 11);
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (5810, 11);
 
+INSERT INTO `achievement_criteria_requirement` VALUES (6641,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6641,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6642,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6642,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6643,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6643,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6644,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6644,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6651,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6651,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6652,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6652,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6653,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6653,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6654,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6654,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6655,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6655,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6656,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6656,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6657,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6657,16,201,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (6659,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (6659,16,201,0);
+
 -- INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (7020, 11); 
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`, `value1`) VALUES (7020, 6, 4571);
 INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`, `value1`) VALUES (7020, 7, 23335);
@@ -111,6 +148,9 @@ INSERT INTO `achievement_criteria_requirement` (`criteria_id`, `type`) VALUES (8
 INSERT INTO `achievement_criteria_requirement` VALUES (9165,0,0,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (9166,0,0,0);
 
+INSERT INTO `achievement_criteria_requirement` VALUES (10391,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (10391,16,201,0);
+
 INSERT INTO `achievement_criteria_requirement` VALUES (11497,6,4710,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (11498,6,4710,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (11500,6,4710,0);
@@ -120,6 +160,9 @@ INSERT INTO `achievement_criteria_requirement` VALUES (12178,6,4710,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (12179,6,4710,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (12181,6,4710,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (12182,6,4710,0);
+
+INSERT INTO `achievement_criteria_requirement` VALUES (12398,5,58818,0);
+INSERT INTO `achievement_criteria_requirement` VALUES (12398,16,201,0);
 
 INSERT INTO `achievement_criteria_requirement` VALUES (13254,0,0,0);
 INSERT INTO `achievement_criteria_requirement` VALUES (13255,6,4710,0);
