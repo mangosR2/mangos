@@ -1412,7 +1412,6 @@ void GameObject::Use(Unit* user)
                 }
 
                 player->RewardPlayerAndGroupAtCast(this);
-
             }
 
             if (scriptReturnValue)

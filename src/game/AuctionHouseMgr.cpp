@@ -912,11 +912,13 @@ AuctionEntry* AuctionHouseObject::AddAuction(AuctionHouseEntry const* auctionHou
     sAuctionMgr.AddAItem(newItem);
 
     CharacterDatabase.BeginTransaction();
+
     newItem->SaveToDB();
     AH->SaveToDB();
 
     if (pl)
         pl->SaveInventoryAndGoldToDB();
+
     CharacterDatabase.CommitTransaction();
 
     return AH;
@@ -1023,7 +1025,6 @@ bool AuctionEntry::UpdateBid(uint32 newbid, Player* newbidder /*=NULL*/)
 
     if ((newbid < buyout) || (buyout == 0))                 // bid
     {
-
         if (auction_owner)
             auction_owner->GetSession()->SendAuctionOwnerNotification(this);
 

@@ -440,7 +440,7 @@ void ArenaTeam::DelMember(ObjectGuid guid)
         }
     }
 
-    if(Player *player = sObjectMgr.GetPlayer(guid))
+    if (Player* player = sObjectMgr.GetPlayer(guid))
     {
         player->GetSession()->SendArenaTeamCommandResult(ERR_ARENA_TEAM_QUIT_S, GetName(), "", 0);
         // delete all info regarding this team
