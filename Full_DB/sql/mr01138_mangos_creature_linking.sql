@@ -18,12 +18,12 @@
  *   FLAG_CANT_SPAWN_IF_BOSS_ALIVE  = 0x0800, 2048
  */
 
-INSERT IGNORE INTO creature_linking_template VALUES
-(12119, 409, 12118, 521, 0), -- Lucifron
-(11661, 409, 12259, 7, 0), -- Gehennas
-(11673, 409, 11982, 1024, 0), -- Magmadar, testing, prevent respawning of his dogs
-(12099, 409, 12057, 2, 0), -- Garr (testing)
-(11672, 409, 11988, 39, 0), -- Golemagg
-(11666, 409, 12057, 7, 0), -- Garr- testing, despawn other npcs in area
-(11662, 409, 12098, 135, 0), -- Sulfuron (test)
-(11658, 409, 448, 256, 0); -- testing..
+INSERT IGNORE INTO creature_linking_template (entry, map, master_entry, flag) VALUES
+(12119, 409, 12118, 521), -- Lucifron
+(11661, 409, 12259, 7), -- Gehennas
+(11673, 409, 11982, 1024), -- Magmadar, testing, prevent respawning of his dogs
+(12099, 409, 12057, 2), -- Garr (testing)
+(11672, 409, 11988, 39), -- Golemagg
+(11666, 409, 12057, 7), -- Garr- testing, despawn other npcs in area
+(11662, 409, 12098, 135), -- Sulfuron (test)
+(11658, 409, 448, 256); -- testing..

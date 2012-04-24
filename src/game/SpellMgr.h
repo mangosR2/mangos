@@ -253,8 +253,7 @@ inline bool IsSpellRemoveAllMovementAndControlLossEffects(SpellEntry const* spel
 
 inline bool IsDeathOnlySpell(SpellEntry const *spellInfo)
 {
-    return spellInfo->AttributesEx3 & SPELL_ATTR_EX3_CAST_ON_DEAD
-        || spellInfo->Id == 2584;
+    return spellInfo->HasAttribute(SPELL_ATTR_EX3_CAST_ON_DEAD) || spellInfo->Id == 2584;
 }
 
 bool IsEffectCauseDamage(SpellEntry const* spellInfo, SpellEffectIndex effecIdx);
@@ -280,7 +279,7 @@ uint32 GetProcFlag(SpellEntry const* spellInfo);
 
 inline bool IsDeathPersistentSpell(SpellEntry const *spellInfo)
 {
-    return spellInfo->AttributesEx3 & SPELL_ATTR_EX3_DEATH_PERSISTENT;
+    return spellInfo->HasAttribute(SPELL_ATTR_EX3_DEATH_PERSISTENT);
 }
 inline bool IsNonCombatSpell(SpellEntry const *spellInfo)
 {
@@ -497,13 +496,11 @@ inline bool IsChanneledSpell(SpellEntry const* spellInfo)
 
 inline bool IsNeedCastSpellAtFormApply(SpellEntry const* spellInfo, ShapeshiftForm form)
 {
-
-    if (!(spellInfo->Attributes & (SPELL_ATTR_PASSIVE | SPELL_ATTR_HIDDEN_CLIENTSIDE)) || !form)
-//    if ((!spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) && spellInfo->HasAttribute(SPELL_ATTR_HIDDEN_CLIENTSIDE)) || !form)
+    if ((!spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) && !spellInfo->HasAttribute(SPELL_ATTR_HIDDEN_CLIENTSIDE)) || !form)
         return false;
 
     // passive spells with SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT are already active without shapeshift, do no recast!
-    return (spellInfo->Stances & (1<<(form-1)) && !(spellInfo->AttributesEx2 & SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT));
+    return (spellInfo->Stances & (1<<(form-1)) && !spellInfo->HasAttribute(SPELL_ATTR_EX2_NOT_NEED_SHAPESHIFT));
 }
 
 

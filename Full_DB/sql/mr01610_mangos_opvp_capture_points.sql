@@ -135,9 +135,9 @@ INSERT INTO `creature_movement_template` (`entry`, `point`, `position_x`, `posit
  (17995, 13, 3166.813, -4349.198, 137.569);
  
  -- creature linking for EP soldiers
- INSERT IGNORE INTO creature_linking_template VALUES
- (17647, 0, 17635, 515, 0),
- (17996, 0, 17995, 515, 0);
+ INSERT IGNORE INTO creature_linking_template (entry, map, master_entry, flag) VALUES
+ (17647, 0, 17635, 515),
+ (17996, 0, 17995, 515);
  /* ################################# */
  
  -- Halaa fixes

@@ -707,21 +707,6 @@ void Spell::FillTargetMap()
             }
         }
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        {
-            Player* me = (Player*)m_caster;
-            for (UnitList::const_iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end(); ++itr)
-            {
-                Player *targetOwner = (*itr)->GetCharmerOrOwnerPlayerOrPlayerItself();
-                if (targetOwner && targetOwner != me && targetOwner->IsPvP() && !me->IsInDuelWith(targetOwner))
-                {
-                    me->UpdatePvP(true);
-                    me->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
-                    break;
-                }
-            }
-        }
-
         if (tmpUnitLists[effToIndex[i]].size() == 1 && *tmpUnitLists[effToIndex[i]].begin() == m_caster->getVictim())
         {
             if (Unit* pMagnetTarget = m_caster->SelectMagnetTarget(*tmpUnitLists[effToIndex[i]].begin(), this, SpellEffectIndex(i)))
@@ -3242,6 +3227,9 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                                 targetUnitMap.push_back(m_targets.getUnitTarget());
                             break;
                     }
+                    // Add AoE target-mask to self, if no target-dest provided already
+                    if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
+                        m_targets.setDestination(m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ());
                     break;
                 }
                 case SPELL_EFFECT_BIND:
