@@ -2633,7 +2633,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     case 63322:                             // Saronite Vapors
                         if (Unit* caster = GetCaster())
                         {
-                            int32 damage = 50 << GetStackAmount();
+                            int32 damage = 100 << GetStackAmount();
                             target->CastCustomSpell(target, 63338, &damage, 0, 0, true, 0, 0, caster->GetObjectGuid()); // damage spell
                             damage = damage >> 1;
                             target->CastCustomSpell(target, 63337, &damage, 0, 0, true); // manareg spell
