@@ -200,7 +200,7 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
         float allowed_dist = 0.0f;
         bool targetIsVictim = owner.getVictim() && owner.getVictim()->GetObjectGuid() == i_target->GetObjectGuid();
         if (targetIsVictim)
-            allowed_dist = owner.GetMeleeAttackDistance(owner.getVictim()) - i_target->GetObjectBoundingRadius();
+            allowed_dist = owner.GetMeleeAttackDistance(owner.getVictim()) + owner.GetObjectBoundingRadius();
         else
             allowed_dist = i_target->GetObjectBoundingRadius() + owner.GetObjectBoundingRadius() + sWorld.getConfig(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE);
 

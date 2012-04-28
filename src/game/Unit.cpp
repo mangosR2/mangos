@@ -595,8 +595,10 @@ void Unit::resetAttackTimer(WeaponAttackType type)
 float Unit::GetMeleeAttackDistance(Unit* pVictim /* NULL */) const
 {
     // The measured values show BASE_MELEE_OFFSET in (1.3224, 1.342)
+    float sizefactor = GetObjectBoundingRadius() + pVictim->GetObjectBoundingRadius();
     float dist = GetFloatValue(UNIT_FIELD_COMBATREACH) + 
         (pVictim ? pVictim->GetFloatValue(UNIT_FIELD_COMBATREACH) : 0.0f) +
+        sizefactor +
         BASE_MELEERANGE_OFFSET;
 
     return (dist < ATTACK_DISTANCE) ? ATTACK_DISTANCE : dist;
@@ -4101,6 +4103,9 @@ bool Unit::isInAccessablePlaceFor(Unit const* unit) const
 
     if (unit->GetObjectGuid().IsAnyTypeCreature())
     {
+        if (((Creature*)unit)->IsInEvadeMode())
+            return false;
+
         float targetReach = ((Creature*)unit)->GetReachDistance(this);
         if (IsWithinDistInMap(unit, targetReach, true))
             return true;
@@ -6597,7 +6602,7 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
     else
     {
         // set position before any AI calls/assistance
-        if (GetTypeId()==TYPEID_UNIT)
+        if (GetTypeId() == TYPEID_UNIT && !((Creature*)this)->IsInEvadeMode())
             ((Creature*)this)->SetCombatStartPosition(GetPositionX(), GetPositionY(), GetPositionZ());
     }
 
@@ -9874,6 +9879,10 @@ bool Unit::CanHaveThreatList() const
 
     // totems can not have threat list
     if (creature->IsTotem())
+        return false;
+
+    // Civilian creatures can not have a threat list
+    if (creature->IsCivilian())
         return false;
 
     // pets can not have a threat list, unless they are controlled by a creature

@@ -593,10 +593,11 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 //any return here in case battleground traps
             }
 
-            if (GetOwnerGuid())
+            if (!HasStaticDBSpawnData())                    // Remove wild summoned after use
             {
-                if (Unit* owner = GetOwner())
-                    owner->RemoveGameObject(this, false);
+                if (GetOwnerGuid())
+                    if (Unit* owner = GetOwner())
+                        owner->RemoveGameObject(this, false);
 
                 SetRespawnTime(0);
                 Delete();

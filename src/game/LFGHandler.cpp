@@ -962,7 +962,7 @@ void WorldSession::SendLfgQueueStatus(LFGDungeonEntry const* dungeon, LFGQueueSt
         return;
 
     WorldPacket data(SMSG_LFG_QUEUE_STATUS, 4 + 4 + 4 + 4 + 4 +4 + 1 + 1 + 1 + 4);
-    data << uint32(dungeon->Entry());                              // Dungeon
+    data << uint32(dungeon->ID);                                   // Dungeon
     data << int32(status->avgWaitTime);                            // Average Wait time
     data << int32(status->waitTime);                               // Wait Time
     data << int32(status->waitTimeTanks);                          // Wait Tanks
