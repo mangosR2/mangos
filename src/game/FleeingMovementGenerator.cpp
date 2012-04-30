@@ -24,6 +24,7 @@
 #include "movement/MoveSplineInit.h"
 #include "movement/MoveSpline.h"
 #include "PathFinder.h"
+#include "World.h"
 
 #define MIN_QUIET_DISTANCE 28.0f
 #define MAX_QUIET_DISTANCE 43.0f
@@ -100,6 +101,9 @@ bool FleeingMovementGenerator<T>::_getPoint(T &owner, float &x, float &y, float 
     x = curr_x + dist*cos(angle);
     y = curr_y + dist*sin(angle);
     z = curr_z;
+
+    if (owner.GetTypeId() == TYPEID_PLAYER)
+        owner.GetTerrain()->CheckPathAccurate(curr_x, curr_y, curr_z, x,y,z, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? &owner : NULL );
 
     owner.UpdateAllowedPositionZ(x, y, z);
 

@@ -1747,6 +1747,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 case 38794:                                 // Murmur's Touch (h)
                 case 44869:                                 // Spectral Blast
                 case 45976:                                 // Open Portal
+                case 47669:                                 // Wakeup Subboss (Utgarde Pinnacle)
                 case 48278:                                 // Paralyze (Utgarde Pinnacle)
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
                 case 54148:                                 // Ritual of the Sword (Utgarde Pinnacle, Svala)
@@ -3339,6 +3340,24 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         default:
             //sLog.outError( "SPELL: Unknown implicit target (%u) for spell ID %u", targetMode, m_spellInfo->Id );
             break;
+    }
+
+    if (unMaxTargets && targetUnitMap.size() > unMaxTargets)
+    {
+        // cleanup list for a right solution (without this spells with unMaxTargets = 1 hit possible nothing, if target is not valid with CheckTarget())
+        for (UnitList::iterator itr = targetUnitMap.begin(), next; itr != targetUnitMap.end();)
+        {
+            if (!*itr)
+            {
+                ++itr;
+                continue;
+            }
+
+            if (!CheckTargetBeforeLimitation(*itr))
+                itr = targetUnitMap.erase(itr);
+            else
+                ++itr;
+        }
     }
 
     if (unMaxTargets && targetUnitMap.size() > unMaxTargets)
@@ -7760,6 +7779,25 @@ CurrentSpellTypes Spell::GetCurrentContainer()
         return(CURRENT_GENERIC_SPELL);
 }
 
+bool Spell::CheckTargetBeforeLimitation(Unit* target)
+{
+    if (!target)
+        return false;
+    // check right target                                                                                       // should activ for spells 72034, 72096
+    if (!target->isAlive() && !IsSpellAllowDeadTarget(m_spellInfo))
+        return false;
+    if (m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_TARGET_ONLY_PLAYER && target->GetTypeId() != TYPEID_PLAYER /*&& m_spellInfo->EffectImplicitTargetA[eff] != TARGET_SCRIPT*/)
+        return false;
+    // Check Aura spell req (need for AoE spells)
+    if (m_spellInfo->targetAuraSpell && !target->HasAura(m_spellInfo->targetAuraSpell))
+        return false;
+    if (m_spellInfo->excludeTargetAuraSpell && target->HasAura(m_spellInfo->excludeTargetAuraSpell))
+        return false;
+    if (m_spellInfo->TargetAuraStateNot && target->HasAura(m_spellInfo->TargetAuraStateNot))
+        return false;
+    return true;
+}
+
 bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
 {
     // Check targets for creature type mask and remove not appropriate (skip explicit self target case, maybe need other explicit targets)
@@ -8628,24 +8666,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                  if ((*itr)->HasAura(48267))
                      targetUnitMap.push_back(*itr);
             }
-            break;
-        }
-        case 54148: // Svala Choose Only Player
-        {
-            UnitList tmpUnitMap;
-            FillAreaTargets(tmpUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-
-            if (tmpUnitMap.empty())
-                break;
-
-            for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
-            {
-                 if (!*itr) continue;
-
-                 if ((*itr)->GetTypeId() == TYPEID_PLAYER)
-                     targetUnitMap.push_back(*itr);
-            }
-
             break;
         }
         case 58912: // Deathstorm

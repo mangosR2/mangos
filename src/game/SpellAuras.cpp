@@ -2634,9 +2634,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         if (Unit* caster = GetCaster())
                         {
                             int32 damage = 100 << GetStackAmount();
-                            target->CastCustomSpell(target, 63338, &damage, 0, 0, true, 0, 0, caster->GetObjectGuid()); // damage spell
+                            caster->CastCustomSpell(target, 63338, &damage, 0, 0, true); // damage spell
                             damage = damage >> 1;
-                            target->CastCustomSpell(target, 63337, &damage, 0, 0, true); // manareg spell
+                            caster->CastCustomSpell(target, 63337, &damage, 0, 0, true); // manareg spell
                         }
                         return;
                     case 63624:                             // Learn a Second Talent Specialization
@@ -7220,8 +7220,10 @@ void Aura::HandleAuraModIncreaseHealthPercent(bool apply, bool /*Real*/)
         switch (GetId())
         {
             case 60430:                                         // Molten Fury
+            case 61254:                                         // Will of Sartharion
             case 64193:                                         // Heartbreak
             case 65737:                                         // Heartbreak
+            case 64582:                                         // Emergency Mode (Ulduar - Mimiron)
                 target->SetHealth(target->GetMaxHealth());
                 break;
             default:
@@ -10475,6 +10477,7 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
         case 55166:                                         // Tidal Force
         case 58914:                                         // Kill Command (pet part)
         case 62519:                                         // Attuned to Nature
+        case 63050:                                         // Sanity (Ulduar - Yogg Saron)
         case 64455:                                         // Feral Essence
         case 66228:                                         // Nether Power (ToC: Lord Jaraxxus)
         case 67106:                                         // Nether Power (ToC: Lord Jaraxxus)
@@ -11212,6 +11215,23 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     }
                     else
                         return;
+                    break;
+                }
+                case 62056:                                 // Stone Grip (Kologarn encounter)
+                case 63985:                                 // Stone Grip (Kologarn encounter) heroic
+                {
+                    if (!apply)
+                    {
+                        spellId1 = GetId() == 62056 ? 64290 : 64292;
+                    }
+                }
+                case 62546:                                 // Scorch (Ignis encounter)
+                case 63474:                                 // Scorch (Ignis encounter) heroic
+                {
+                    if (apply)
+                    {
+                        spellId1 = 62551;
+                    }
                     break;
                 }
                 case 62619:                                 // Potent Pheromones (Freya encounter)

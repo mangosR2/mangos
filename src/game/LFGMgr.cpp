@@ -1412,11 +1412,14 @@ void LFGMgr::UpdateProposal(uint32 ID, ObjectGuid guid, bool accept)
                 player->RemoveFromGroup();
                 player->GetSession()->SendLfgUpdateParty(LFG_UPDATETYPE_GROUP_FOUND, player->GetLFGState()->GetType());
             }
-            else
-                if (player->GetGroup() && player->GetGroup() == group)
+            else if (player->GetGroup() && player->GetGroup() == group)
+            {
                     player->GetSession()->SendLfgUpdateParty(LFG_UPDATETYPE_GROUP_FOUND, player->GetLFGState()->GetType());
+            }
             else
+            {
                 player->GetSession()->SendLfgUpdatePlayer(LFG_UPDATETYPE_GROUP_FOUND, player->GetLFGState()->GetType());
+            }
 
             group->AddMember(player->GetObjectGuid(), player->GetName());
             pProposal->RemoveMember(*itr);

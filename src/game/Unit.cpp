@@ -4103,9 +4103,6 @@ bool Unit::isInAccessablePlaceFor(Unit const* unit) const
 
     if (unit->GetObjectGuid().IsAnyTypeCreature())
     {
-        if (((Creature*)unit)->IsInEvadeMode())
-            return false;
-
         float targetReach = ((Creature*)unit)->GetReachDistance(this);
         if (IsWithinDistInMap(unit, targetReach, true))
             return true;
@@ -9879,10 +9876,6 @@ bool Unit::CanHaveThreatList() const
 
     // totems can not have threat list
     if (creature->IsTotem())
-        return false;
-
-    // Civilian creatures can not have a threat list
-    if (creature->IsCivilian())
         return false;
 
     // pets can not have a threat list, unless they are controlled by a creature

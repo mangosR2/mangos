@@ -133,7 +133,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectPull,                                     // 70 SPELL_EFFECT_PULL                     one spell: Distract Move
     &Spell::EffectPickPocket,                               // 71 SPELL_EFFECT_PICKPOCKET
     &Spell::EffectAddFarsight,                              // 72 SPELL_EFFECT_ADD_FARSIGHT
-    &Spell::EffectNULL,                                     // 73 SPELL_EFFECT_UNTRAIN_TALENTS          one spell: Trainer: Untrain Talents
+    &Spell::EffectUntrainTalents,                           // 73 SPELL_EFFECT_UNTRAIN_TALENTS          one spell: Trainer: Untrain Talents
     &Spell::EffectApplyGlyph,                               // 74 SPELL_EFFECT_APPLY_GLYPH
     &Spell::EffectHealMechanical,                           // 75 SPELL_EFFECT_HEAL_MECHANICAL          one spell: Mechanical Patch Kit
     &Spell::EffectSummonObjectWild,                         // 76 SPELL_EFFECT_SUMMON_OBJECT_WILD
@@ -6472,12 +6472,6 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     float center_y = m_targets.m_destY;
     float center_z = m_targets.m_destZ;
 
-    float ox, oy, oz;
-    m_caster->GetPosition(ox, oy, oz);
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        m_caster->GetTerrain()->CheckPathAccurate(ox,oy,oz, center_x, center_y, center_z, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? m_caster : NULL );
-    m_caster->UpdateAllowedPositionZ(center_x,center_y,center_z);
-
     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
     TempSummonType summonType = (m_duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
 
@@ -6488,6 +6482,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     for(int32 count = 0; count < amount; ++count)
     {
         float px, py, pz;
+        bool checkPath = false;
         // If dest location if present
         if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
         {
@@ -6500,7 +6495,10 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
             }
             // Summon in random point all other units if location present
             else
+            {
                 m_caster->GetRandomPoint(center_x, center_y, center_z, radius, px, py, pz);
+                checkPath = true;
+            }
         }
         // Summon if dest location not present near caster
         else
@@ -6509,6 +6507,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
             {
                 // not using bounding radius of caster here
                 m_caster->GetClosePoint(px, py, pz, 0.0f, radius);
+                checkPath = true;
             }
             else
             {
@@ -6519,9 +6518,13 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
             }
         }
 
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        if (checkPath)
+        {
+            float ox, oy, oz;
+            m_caster->GetPosition(ox, oy, oz);
             m_caster->GetTerrain()->CheckPathAccurate(ox,oy,oz, px, py, pz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? m_caster : NULL );
-        m_caster->UpdateAllowedPositionZ(px,py,pz);
+            m_caster->UpdateAllowedPositionZ(px,py,pz);
+        }
 
         if (Creature* summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->GetOrientation(), summonType, m_duration))
         {
@@ -9519,6 +9522,17 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                     break;
                 }
+                case 63633:                                 // Summon Rubble (Kologarn)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    for (uint8 i = 0; i < 5; ++i)
+                    {
+                        unitTarget->CastSpell(unitTarget, 63634, true);
+                    }
+                    break;
+                }
                 case 63795:                                 // Psychosis normal (Ulduar - Yogg Saron)
                 case 65301:                                 // Psychosis heroic (Ulduar - Yogg Saron)
                 case 64164:                                 // Lunatic Gaze spell from Yogg Saron
@@ -9604,6 +9618,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     uint32 spellid = 0;
                     unitTarget->GetMap()->IsRegularDifficulty() ? spellid = 64468 : spellid = 64469;
                     unitTarget->CastSpell(unitTarget, spellid, true);
+                    break;
+                }
+                case 64475:                                 // Ignis Strength of the Creator stack decreasing
+                {
+                    if (!unitTarget)
+                        return;
+                    if (SpellAuraHolderPtr holder = unitTarget->GetSpellAuraHolder(64473))
+                        if (holder->ModStackAmount(-1))
+                            unitTarget->RemoveSpellAuraHolder(holder);
                     break;
                 }
                 case 65238:                                 // Shattered Illusion (Ulduar - Yogg Saron)
@@ -11608,6 +11631,11 @@ void Spell::EffectKnockBack(SpellEffectIndex eff_idx)
     if (unitTarget->hasUnitState(UNIT_STAT_ROOT))
         return;
 
+    // Can't knockback BG vehicles
+    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+        if (((Creature*)unitTarget)->IsVehicle() && ((Creature*)unitTarget)->GetMap()->IsBattleGround())
+            return;
+
     // Typhoon
     if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->SpellFamilyFlags.test<CF_DRUID_TYPHOON>())
         if (m_caster->HasAura(62135)) // Glyph of Typhoon
@@ -12614,4 +12642,18 @@ void Spell::EffectSuspendGravity(SpellEffectIndex eff_idx)
     float height = float(unitTarget->GetDistance(x,y,z) / 10.0f);
 
     unitTarget->MonsterMoveToDestination(x, y, z + 0.1f, unitTarget->GetOrientation(), speed, height, true, m_caster == unitTarget ? NULL : m_caster);
+}
+
+void Spell::EffectUntrainTalents(SpellEffectIndex eff_idx)
+{
+    if (!unitTarget)
+        return;
+
+    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+        return;
+
+    Player* pTarget = (Player*)unitTarget;
+
+    pTarget->resetTalents(true);
+    pTarget->SendTalentsInfoData(false);
 }
