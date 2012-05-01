@@ -69,6 +69,7 @@ class UpdateMask;
 class InstanceData;
 class TerrainInfo;
 class ZoneScript;
+class Transport;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
 
@@ -456,6 +457,13 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void GetPosition( WorldLocation &loc ) const
             { loc.mapid = m_mapId; GetPosition(loc.coord_x, loc.coord_y, loc.coord_z); loc.orientation = GetOrientation(); }
         float GetOrientation( ) const { return m_position.o; }
+
+        virtual Transport* GetTransport() const { return NULL; }
+        virtual float GetTransOffsetX() const { return 0.0f; }
+        virtual float GetTransOffsetY() const { return 0.0f; }
+        virtual float GetTransOffsetZ() const { return 0.0f; }
+        virtual float GetTransOffsetO() const { return 0.0f; }
+
         void GetNearPoint2D( float &x, float &y, float distance, float absAngle) const;
         void GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float searcher_bounding_radius, float distance2d, float absAngle) const;
         void GetClosePoint(float &x, float &y, float &z, float bounding_radius, float distance2d = 0, float angle = 0, const WorldObject* obj = NULL ) const
@@ -623,6 +631,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
+
 
     protected:
         explicit WorldObject();

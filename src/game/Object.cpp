@@ -248,13 +248,6 @@ void Object::DestroyForPlayer( Player *target, bool anim ) const
 
 void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
 {
-/* removed by zergtmn. strange...
-    uint16 moveFlags2 = (isType(TYPEMASK_UNIT) ? ((Unit*)this)->m_movementInfo.GetMovementFlags2() : MOVEFLAG2_NONE);
-
-    if (GetTypeId() == TYPEID_UNIT)
-        if(((Creature*)this)->GetVehicleKit())
-            moveFlags2 |= MOVEFLAG2_ALLOW_PITCHING;         // always allow pitch
-*/
 
     *data << uint16(updateFlags);                           // update flags
 
@@ -262,15 +255,6 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     if (updateFlags & UPDATEFLAG_LIVING)
     {
         Unit *unit = ((Unit*)this);
-
-        if (GetTypeId() == TYPEID_PLAYER)
-        {
-            Player *player = ((Player*)unit);
-            if (player->GetTransport())
-                player->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
-            else
-                player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
-        }
 
         if (unit->GetTransport() || unit->GetVehicle())
             unit->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
@@ -301,13 +285,27 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     {
         if (updateFlags & UPDATEFLAG_POSITION)
         {
-            *data << uint8(0);                              // unk PGUID!
+            Transport* transport = ((WorldObject*)this)->GetTransport();
+            if (transport)
+                *data << transport->GetPackGUID();
+            else
+                *data << uint8(0);
+
             *data << float(((WorldObject*)this)->GetPositionX());
             *data << float(((WorldObject*)this)->GetPositionY());
             *data << float(((WorldObject*)this)->GetPositionZ());
-            *data << float(((WorldObject*)this)->GetPositionX());
-            *data << float(((WorldObject*)this)->GetPositionY());
-            *data << float(((WorldObject*)this)->GetPositionZ());
+            if (transport)
+            {
+                *data << float(((WorldObject*)this)->GetTransOffsetX());
+                *data << float(((WorldObject*)this)->GetTransOffsetY());
+                *data << float(((WorldObject*)this)->GetTransOffsetZ());
+            }
+            else
+            {
+                *data << float(((WorldObject*)this)->GetPositionX());
+                *data << float(((WorldObject*)this)->GetPositionY());
+                *data << float(((WorldObject*)this)->GetPositionZ());
+            }
             *data << float(((WorldObject*)this)->GetOrientation());
 
             if (GetTypeId() == TYPEID_CORPSE)
@@ -327,6 +325,13 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
                     *data << float(0);
                     *data << float(0);
                     *data << float(((WorldObject *)this)->GetOrientation());
+                }
+                else if (updateFlags & UPDATEFLAG_TRANSPORT)
+                {
+                    *data << float(((WorldObject*)this)->GetTransOffsetX());
+                    *data << float(((WorldObject*)this)->GetTransOffsetY());
+                    *data << float(((WorldObject*)this)->GetTransOffsetZ());
+                    *data << float(((WorldObject*)this)->GetTransOffsetO());
                 }
                 else
                 {
@@ -1168,6 +1173,9 @@ bool WorldObject::IsWithinLOSInMap(const WorldObject* obj, bool strict) const
 
     float ox,oy,oz;
     obj->GetPosition(ox,oy,oz);
+
+    if (obj->GetObjectGuid().IsUnit() && ((Unit*)obj)->IsLevitating())
+        strict = false;
 
     return(IsWithinLOS(ox, oy, oz, strict ));
 }

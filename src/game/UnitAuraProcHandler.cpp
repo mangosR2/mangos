@@ -136,7 +136,7 @@ pAuraProcHandler AuraProcHandler[TOTAL_AURAS]=
     &Unit::HandleNULLProc,                                  //101 SPELL_AURA_MOD_RESISTANCE_PCT
     &Unit::HandleNULLProc,                                  //102 SPELL_AURA_MOD_MELEE_ATTACK_POWER_VERSUS
     &Unit::HandleNULLProc,                                  //103 SPELL_AURA_MOD_TOTAL_THREAT
-    &Unit::HandleNULLProc,                                  //104 SPELL_AURA_WATER_WALK
+    &Unit::HandleRemoveByDamageProc,                        //104 SPELL_AURA_WATER_WALK
     &Unit::HandleNULLProc,                                  //105 SPELL_AURA_FEATHER_FALL
     &Unit::HandleNULLProc,                                  //106 SPELL_AURA_HOVER
     &Unit::HandleAddFlatModifierAuraProc,                   //107 SPELL_AURA_ADD_FLAT_MODIFIER
@@ -5221,6 +5221,8 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
 
             switch (auraName)
             {
+                // Removable by damage auras (same rules as for CC auras)
+                case SPELL_AURA_WATER_WALK:
                 // Crowd Control auras
                 case SPELL_AURA_MOD_CONFUSE:
                 case SPELL_AURA_MOD_FEAR:
@@ -5269,7 +5271,16 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                         return SPELL_AURA_PROC_CANT_TRIGGER;
                 }
                 default:
+                {
+                // Default rules for all other auras.
+                    if (EventProcFlag || spellProcEvent)
+                        return SPELL_AURA_PROC_FAILED;
+                    else if (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
+                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
+                        spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE))
+                        return SPELL_AURA_PROC_OK;
                     break;
+                }
             }
 
         }
