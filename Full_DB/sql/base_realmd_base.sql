@@ -55,7 +55,7 @@ CREATE TABLE `account` (
   `locked` tinyint(3) unsigned NOT NULL default '0',
   `last_login` timestamp NOT NULL default '0000-00-00 00:00:00',
   `active_realm_id` int(11) unsigned NOT NULL default '0',
-  `expansion` tinyint(3) unsigned NOT NULL default '0',
+  `expansion` tinyint(3) unsigned NOT NULL default '2',
   `mutetime` bigint(40) unsigned NOT NULL default '0',
   `locale` tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (`id`),
