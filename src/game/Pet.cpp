@@ -25,6 +25,7 @@
 #include "Formulas.h"
 #include "SpellAuras.h"
 #include "CreatureAI.h"
+#include "PetAI.h"
 #include "Unit.h"
 #include "Util.h"
 
@@ -2059,6 +2060,8 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
             }
         }
     }
+    if (PetAI* ai = ((PetAI*)AI()))
+        ai->Reset();
 }
 
 bool Pet::IsPermanentPetFor(Player* owner)
@@ -3291,4 +3294,183 @@ void ApplyArenaPreparationWithHelper::operator() (Unit* unit) const
 
     if (unit->IsInWorld())
         unit->HandleArenaPreparation(apply);
+}
+
+Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
+{
+    Unit* target = NULL;
+
+    if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+        return NULL;
+    if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        return NULL;
+
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
+
+    float max_range_friendly = GetSpellMaxRange(srange,true);
+    float max_range_unfriendly = (spellInfo->rangeIndex == SPELL_RANGE_IDX_COMBAT) ? 
+                                    GetObjectBoundingRadius() + 1.0f :
+                                    GetSpellMaxRange(srange,false);
+
+    if (Player* modOwner = GetSpellModOwner())
+    {
+        modOwner->ApplySpellMod(spellInfo->Id, SPELLMOD_RANGE, max_range_friendly);
+        modOwner->ApplySpellMod(spellInfo->Id, SPELLMOD_RANGE, max_range_unfriendly);
+    }
+
+    switch (GetPreferredTargetForSpell(spellInfo))
+    {
+        case SPELL_PREFERRED_TARGET_SELF:
+            target = this;
+            break;
+
+        case SPELL_PREFERRED_TARGET_VICTIM:
+            if (getVictim())
+                target = getVictim();
+            else
+                target = SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 0, spellInfo, 0);
+            break;
+
+        case SPELL_PREFERRED_TARGET_ENEMY:
+            target = SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 0, spellInfo, 0);
+            break;
+
+        case SPELL_PREFERRED_TARGET_OWNER:
+            if (GetOwner())
+                target = GetOwner();
+            else
+                target = this;
+            break;
+
+        case SPELL_PREFERRED_TARGET_FRIEND:
+        {
+            if (PetAI* ai = ((PetAI*)AI()))
+            {
+                ObjectGuidSet const& allys = ai->GetAllyGuids();
+                uint32 ally_size = allys.size();
+                switch (ally_size)
+                {
+                    case 0:
+                        target = NULL;
+                        break;
+                    case 1:
+                        target = GetMap()->GetUnit(*allys.begin());
+                        break;
+                    default:
+                    {
+                        target = NULL;
+                        uint32 t_num = urand(0,ally_size -1);
+                        for(ObjectGuidSet::const_iterator itr = allys.begin(); itr != allys.end(); ++itr)
+                        {
+                            if (t_num > 0)
+                            {
+                                --t_num;
+                                continue;
+                            }
+                            target = GetMap()->GetUnit(*itr);
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+                target = SelectRandomFriendlyTarget(this,max_range_friendly);
+
+            if (target == this)
+                target = NULL;
+            break;
+        }
+        case SPELL_PREFERRED_TARGET_RANDOM:
+            target = urand(0,1) ? SelectRandomFriendlyTarget(NULL,max_range_friendly) : SelectRandomUnfriendlyTarget(NULL, max_range_unfriendly);
+            break;
+
+        case SPELL_PREFERRED_TARGET_AREA:
+        case SPELL_PREFERRED_TARGET_MAX:
+        default:
+            break;
+    }
+    /*
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"PetAI::SelectPreferredTargetForSpell %s, spell %u preferred %u Target %s",
+                            GetObjectGuid().GetString().c_str(),
+                            spellInfo->Id,
+                            GetPreferredTargetForSpell(spellInfo),
+                            target ? target->GetObjectGuid().GetString().c_str() : "<none>");
+    */
+    if (!target)
+        return NULL;
+
+    if (target && target != this)
+    {
+        if (spellInfo->rangeIndex == SPELL_RANGE_IDX_COMBAT)
+            max_range_unfriendly = GetMeleeAttackDistance(target);
+
+        bool friendly = IsFriendlyTo(target);
+        float dist = GetDistance(target);
+        if ((dist > (friendly ? max_range_friendly : max_range_unfriendly)) || dist < GetSpellMinRange(srange, friendly))
+            return NULL;
+    }
+
+    if (target && IsSpellAppliesAura(spellInfo))
+    {
+        for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+        {
+            if (target && spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AURA)
+            {
+                if (spellInfo->StackAmount <= 1)
+                {
+                    if (target->HasAura(spellInfo->Id, SpellEffectIndex(j)) )
+                        return NULL;
+                }
+                else
+                {
+                    if (Aura* aura = target->GetAura(spellInfo->Id, SpellEffectIndex(j)))
+                        if (aura->GetStackAmount() >= spellInfo->StackAmount)
+                            return NULL;
+                }
+            }
+            else if (target && IsAreaAuraEffect(spellInfo->Effect[j]))
+            {
+                if (target->HasAura(spellInfo->Id))
+                    return NULL;
+            }
+        }
+    }
+
+    if (target && IsDispelSpell(spellInfo))
+    {
+        uint8 dispel_count = 0;
+
+        Unit::SpellAuraHolderMap const& auras = target->GetSpellAuraHolderMap();
+        for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+        {
+            if (!itr->second || itr->second->IsDeleted())
+                continue;
+
+            if ((1 << itr->second->GetSpellProto()->Dispel) & GetDispellMask(DispelType(spellInfo->EffectMiscValue[EFFECT_INDEX_0])))
+            {
+                if (itr->second->GetSpellProto()->Dispel == DISPEL_MAGIC)
+                {
+                    bool positive = true;
+                    if (!itr->second->IsPositive())
+                        positive = false;
+                    else
+                        positive = (itr->second->GetSpellProto()->AttributesEx & SPELL_ATTR_EX_NEGATIVE) == 0;
+
+                    if (positive == IsFriendlyTo(target))
+                        continue;
+                }
+                ++dispel_count;
+            }
+        }
+        if (dispel_count == 0)
+            return NULL;
+    }
+
+    if (target && HasInterruptSpellEffect(spellInfo))
+    {
+        if (!target->IsNonMeleeSpellCasted(false))
+            return NULL;
+    }
+
+    return target;
 }

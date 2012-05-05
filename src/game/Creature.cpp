@@ -2669,3 +2669,89 @@ bool AttackResumeEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
+Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
+{
+    Unit* target = NULL;
+
+    if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED))
+        return NULL;
+    if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+        return NULL;
+
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
+    float max_range = GetSpellMaxRange(srange);
+    if (Player* modOwner = GetSpellModOwner())
+        modOwner->ApplySpellMod(spellInfo->Id, SPELLMOD_RANGE, max_range);
+
+    switch (GetPreferredTargetForSpell(spellInfo))
+    {
+        case SPELL_PREFERRED_TARGET_SELF:
+            target = this;
+            break;
+
+        case SPELL_PREFERRED_TARGET_VICTIM:
+            if (getVictim())
+                target = getVictim();
+            else
+                target = SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 0, spellInfo, 0);
+            break;
+
+        case SPELL_PREFERRED_TARGET_ENEMY:
+                target = SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 0, spellInfo, 0);
+            break;
+
+        case SPELL_PREFERRED_TARGET_OWNER:
+            if (GetCharmerOrOwner())
+                target = GetCharmerOrOwner();
+            else
+                target = this;
+            break;
+
+        case SPELL_PREFERRED_TARGET_FRIEND:
+            target = SelectRandomFriendlyTarget(this,max_range);
+            break;
+
+        case SPELL_PREFERRED_TARGET_AREA:
+        case SPELL_PREFERRED_TARGET_MAX:
+        default:
+            break;
+    }
+
+    if (!target)
+        return NULL;
+
+    if (target && target != this)
+    {
+        float dist = GetDistance(target);
+        if ( dist > max_range || dist < GetSpellMinRange(srange))
+            target = NULL;
+    }
+
+    if (target && IsSpellAppliesAura(spellInfo))
+    {
+        for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+        {
+            if (target && spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AURA)
+            {
+                if (spellInfo->StackAmount <= 1)
+                {
+                    if (target->HasAura(spellInfo->Id, SpellEffectIndex(j)) )
+                        target = NULL;
+                }
+                else
+                {
+                    if (Aura* aura = target->GetAura(spellInfo->Id, SpellEffectIndex(j)))
+                        if (aura->GetStackAmount() >= spellInfo->StackAmount)
+                            target = NULL;
+                }
+            }
+            else if (IsAreaAuraEffect(spellInfo->Effect[j]))
+            {
+                if (target->HasAura(spellInfo->Id, SpellEffectIndex(j)) )
+                    target = NULL;
+            }
+        }
+    }
+
+    return target;
+}

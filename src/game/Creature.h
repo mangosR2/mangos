@@ -681,6 +681,8 @@ class MANGOS_DLL_SPEC Creature : public Unit
         Unit* SelectAttackingTarget(AttackingTarget target, uint32 position, uint32 uiSpellEntry, uint32 selectFlags = 0) const;
         Unit* SelectAttackingTarget(AttackingTarget target, uint32 position, SpellEntry const* pSpellInfo = NULL, uint32 selectFlags = 0) const;
 
+        virtual Unit* SelectPreferredTargetForSpell(SpellEntry const* spellInfo);
+
         bool HasQuest(uint32 quest_id) const;
         bool HasInvolvedQuest(uint32 quest_id)  const;
 

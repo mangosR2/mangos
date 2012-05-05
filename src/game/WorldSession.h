@@ -272,8 +272,6 @@ class MANGOS_DLL_SPEC WorldSession
         void SendGMTicketGetTicket(uint32 status, GMTicket *ticket = NULL);
         void SendGMResponse(GMTicket *ticket);
 
-        void SendAttackStop(Unit const* enemy);
-
         void SendBattlegGroundList(ObjectGuid guid, BattleGroundTypeId bgTypeId);
 
         void SendTradeStatus(TradeStatus status);

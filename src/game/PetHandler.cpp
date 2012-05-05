@@ -57,13 +57,17 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
         return;
     }
 
-    if (!pet->isAlive())
-        return;
 
     CharmInfo* charmInfo = pet->GetCharmInfo();
     if (!charmInfo)
     {
         sLog.outError("WorldSession::HandlePetAction: object (GUID: %u TypeId: %u) is considered pet-like but doesn't have a charminfo!", pet->GetGUIDLow(), pet->GetTypeId());
+        return;
+    }
+
+    if (!pet->isAlive())
+    {
+        pet->SendPetActionFeedback(FEEDBACK_PET_DEAD);
         return;
     }
 
@@ -105,7 +109,10 @@ void WorldSession::HandlePetStopAttack(WorldPacket& recv_data)
     }
 
     if (!pet->isAlive())
+    {
+        pet->SendPetActionFeedback(FEEDBACK_PET_DEAD);
         return;
+    }
 
     GroupPetList m_groupPets = GetPlayer()->GetPets();
     if (!m_groupPets.empty())
@@ -498,7 +505,6 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
 
     if (pet->IsNonMeleeSpellCasted(false) && !triggered)
         pet->InterruptNonMeleeSpells(false);
-
 
     if (pet->IsPet() || pet->isCharmed())
         GetPlayer()->CallForAllControlledUnits(DoPetCastWithHelper(GetPlayer(), cast_count, &targets, spellInfo ),CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);

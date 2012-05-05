@@ -44,7 +44,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
         sLog.outError( "WORLD: Enemy %s not found", guid.GetString().c_str());
 
         // stop attack state at client
-        SendAttackStop(NULL);
+        GetPlayer()->SendMeleeAttackStop(NULL);
         return;
     }
 
@@ -53,7 +53,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
         sLog.outError( "WORLD: Enemy %s is friendly",guid.GetString().c_str());
 
         // stop attack state at client
-        SendAttackStop(pEnemy);
+        GetPlayer()->SendMeleeAttackStop(pEnemy);
         return;
     }
 
@@ -61,7 +61,7 @@ void WorldSession::HandleAttackSwingOpcode( WorldPacket & recv_data )
     {
         // client can generate swing to known dead target if autoswitch between autoshot and autohit is enabled in client options
         // stop attack state at client
-        SendAttackStop(pEnemy);
+        GetPlayer()->SendMeleeAttackStop(pEnemy);
         return;
     }
 
@@ -89,11 +89,3 @@ void WorldSession::HandleSetSheathedOpcode( WorldPacket & recv_data )
     GetPlayer()->SetSheath(SheathState(sheathed));
 }
 
-void WorldSession::SendAttackStop(Unit const* enemy)
-{
-    WorldPacket data( SMSG_ATTACKSTOP, (4+20) );            // we guess size
-    data << GetPlayer()->GetPackGUID();
-    data << (enemy ? enemy->GetPackGUID() : PackedGuid());  // must be packed guid
-    data << uint32(0);                                      // unk, can be 1 also
-    SendPacket(&data);
-}

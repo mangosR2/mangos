@@ -26,11 +26,41 @@
 class Creature;
 class Spell;
 
+enum PetAIType
+{
+    PET_AI_PASSIVE,
+    PET_AI_MELEE,
+    PET_AI_RANGED,
+    PET_AI_RANGED_NOAMMO,
+    PET_AI_HEALER,
+    PET_AI_SLACKER,
+    PET_AI_MAX
+};
+
+enum PetAutoSpellType
+{
+    PET_SPELL_PASSIVE,
+    PET_SPELL_NONCOMBAT,
+    PET_SPELL_BUFF,
+    PET_SPELL_DEBUFF,
+    PET_SPELL_FREEACTION,
+    PET_SPELL_ATTACKSTART,
+    PET_SPELL_THREAT,
+    PET_SPELL_MELEE,
+    PET_SPELL_RANGED,
+    PET_SPELL_DEFENCE,
+    PET_SPELL_SPECIAL,
+    PET_SPELL_HEAL,
+    PET_SPELL_MAX
+};
+
 class MANGOS_DLL_DECL PetAI : public CreatureAI
 {
     public:
 
         explicit PetAI(Creature *c);
+
+        void Reset();
 
         void MoveInLineOfSight(Unit *);
         void AttackStart(Unit *);
@@ -41,19 +71,32 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         void UpdateAI(const uint32);
         static int Permissible(const Creature *);
 
+        bool UpdateAIType();
+        void MoveToVictim(Unit* unit);
+        bool IsInCombat();
+
+        ObjectGuidSet const& GetAllyGuids() { return m_AllySet; };
+
     private:
         bool _isVisible(Unit *) const;
         bool _needToStop(void) const;
         void _stopAttack(void);
 
         void UpdateAllies();
-        bool CanAutoCast(Unit* target, SpellEntry const* spellInfo);
+        SpellCastResult CanAutoCast(Unit* target, SpellEntry const* spellInfo);
+        uint32 GetSpellType(PetAutoSpellType type);
 
         TimeTracker i_tracker;
         bool inCombat;
 
-        typedef std::set<ObjectGuid> AllySet;
-        AllySet m_AllySet;
+        ObjectGuidSet m_AllySet;
         uint32 m_updateAlliesTimer;
+
+        PetAIType       m_AIType;
+        PetAIType       m_savedAIType;
+        float           attackDistance;
+        uint32          m_attackDistanceRecheckTimer;
+        ObjectGuid      m_savedTargetGuid;
+        Unit::SpellIdSet      m_spellType[PET_SPELL_MAX]; //Classified autospell storage
 };
 #endif

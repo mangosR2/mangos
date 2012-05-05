@@ -24584,6 +24584,9 @@ bool Player::CheckRAFConditions()
             if (member->GetAccountLinkedState() == STATE_NOT_LINKED)
                 continue;
 
+            if (!IsReferAFriendLinked(member))
+                continue;
+
             if (GetDistance(member) < 100 && (getLevel() <= member->getLevel() + 4))
                 return true;
         }

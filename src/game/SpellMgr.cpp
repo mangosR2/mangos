@@ -4945,3 +4945,55 @@ bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
             return true;
     }
 }
+
+SpellPreferredTargetType GetPreferredTargetForSpell(SpellEntry const* spellInfo)
+{
+    if (!spellInfo)
+        return SPELL_PREFERRED_TARGET_SELF;
+
+    if (IsSpellWithCasterSourceTargetsOnly(spellInfo))
+        return SPELL_PREFERRED_TARGET_SELF;
+
+    bool positive = IsExplicitPositiveTarget(spellInfo->Id) || IsPositiveSpell(spellInfo);
+
+    if (IsAreaOfEffectSpell(spellInfo))
+        return positive ? SPELL_PREFERRED_TARGET_SELF : SPELL_PREFERRED_TARGET_VICTIM;
+
+    uint32 firstTarget = spellInfo->EffectImplicitTargetA[EFFECT_INDEX_0];
+
+    if (!IsSpellCauseDamage(spellInfo) && firstTarget == TARGET_DUELVSPLAYER)
+        return SPELL_PREFERRED_TARGET_RANDOM;
+
+    if (positive)
+    {
+        switch (firstTarget)
+        {
+            case TARGET_MASTER:
+                return SPELL_PREFERRED_TARGET_OWNER;
+            case TARGET_SINGLE_FRIEND_2:
+                return SPELL_PREFERRED_TARGET_FRIEND;
+            default:
+                break;
+        }
+
+        if (IsCasterSourceTarget(firstTarget))
+            return SPELL_PREFERRED_TARGET_SELF;
+
+        if (IsSpellAppliesAura(spellInfo))
+            return HasAreaAuraEffect(spellInfo) ? SPELL_PREFERRED_TARGET_SELF : SPELL_PREFERRED_TARGET_FRIEND;
+
+        return SPELL_PREFERRED_TARGET_SELF;
+    }
+    else
+    {
+        if (IsCasterSourceTarget(firstTarget))
+            return SPELL_PREFERRED_TARGET_SELF;
+
+        if (IsSpellCauseDamage(spellInfo))
+            return SPELL_PREFERRED_TARGET_VICTIM;
+
+        return SPELL_PREFERRED_TARGET_ENEMY;
+    }
+
+    return SPELL_PREFERRED_TARGET_SELF;
+}
