@@ -743,8 +743,6 @@ void PetAI::UpdateAI(const uint32 diff)
                         else
                             m_creature->SendPetCastFail(spellID, result);
 
-                        if (owner && !(m_creature->HasSpellCooldown(spellID)))
-                            owner->SendClearCooldown(spellID, m_creature);
                         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"PetAI::Update cast %s, AI %u Target %s spell %u result %u",
                             m_creature->GetObjectGuid().GetString().c_str(),
                             m_AIType,

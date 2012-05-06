@@ -34,6 +34,7 @@ ScriptMapMapName sQuestEndScripts;
 ScriptMapMapName sQuestStartScripts;
 ScriptMapMapName sSpellScripts;
 ScriptMapMapName sGameObjectScripts;
+ScriptMapMapName sGameObjectTemplateScripts;
 ScriptMapMapName sEventScripts;
 ScriptMapMapName sGossipScripts;
 ScriptMapMapName sCreatureMovementScripts;
@@ -536,6 +537,38 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
             {
                 break;
             }
+            case SCRIPT_COMMAND_SEND_TAXI_PATH:
+            {
+                if (!sTaxiPathStore.LookupEntry(tmp.sendTaxiPath.taxiPathId))
+                {
+                    sLog.outErrorDb("Table `%s` has datalong = %u in SCRIPT_COMMAND_SEND_TAXI_PATH for script id %u, but this taxi path does not exist.", tablename, tmp.sendTaxiPath.taxiPathId, tmp.id);
+                    continue;
+                }
+                // Check if this taxi path can be triggered with a spell
+                if (!sLog.HasLogFilter(LOG_FILTER_DB_STRICTED_CHECK))
+                {
+                    uint32 taxiSpell = 0;
+                    for (uint32 i = 1; i < sSpellStore.GetNumRows() && taxiSpell == 0; ++i)
+                    {
+                        if (SpellEntry const* spell = sSpellStore.LookupEntry(i))
+                            for (int j = 0; j < MAX_EFFECT_INDEX; ++j)
+                            {
+                                if (spell->Effect[j] == SPELL_EFFECT_SEND_TAXI && spell->EffectMiscValue[j] == tmp.sendTaxiPath.taxiPathId)
+                                {
+                                    taxiSpell = i;
+                                    break;
+                                }
+                            }
+                    }
+
+                    if (taxiSpell)
+                    {
+                        sLog.outErrorDb("Table `%s` has datalong = %u in SCRIPT_COMMAND_SEND_TAXI_PATH for script id %u, but this taxi path can be triggered by spell %u.", tablename, tmp.sendTaxiPath.taxiPathId, tmp.id, taxiSpell);
+                        continue;
+                    }
+                }
+                break;
+            }
         }
 
         if (scripts.second.find(tmp.id) == scripts.second.end())
@@ -563,6 +596,18 @@ void ScriptMgr::LoadGameObjectScripts()
     {
         if (!sObjectMgr.GetGOData(itr->first))
             sLog.outErrorDb("Table `gameobject_scripts` has not existing gameobject (GUID: %u) as script id", itr->first);
+    }
+}
+
+void ScriptMgr::LoadGameObjectTemplateScripts()
+{
+    LoadScripts(sGameObjectTemplateScripts, "gameobject_template_scripts");
+
+    // check ids
+    for (ScriptMapMap::const_iterator itr = sGameObjectTemplateScripts.second.begin(); itr != sGameObjectTemplateScripts.second.end(); ++itr)
+    {
+        if (!sObjectMgr.GetGameObjectInfo(itr->first))
+            sLog.outErrorDb("Table `gameobject_template_scripts` has not existing gameobject (Entry: %u) as script id", itr->first);
     }
 }
 
@@ -722,6 +767,7 @@ void ScriptMgr::LoadDbScriptStrings()
     CheckScriptTexts(sQuestStartScripts, ids);
     CheckScriptTexts(sSpellScripts, ids);
     CheckScriptTexts(sGameObjectScripts, ids);
+    CheckScriptTexts(sGameObjectTemplateScripts, ids);
     CheckScriptTexts(sEventScripts, ids);
     CheckScriptTexts(sGossipScripts, ids);
     CheckScriptTexts(sCreatureMovementScripts, ids);
@@ -1544,6 +1590,16 @@ void ScriptAction::HandleScriptStep()
                     pSource->SetFlag(UNIT_NPC_FLAGS, m_script->npcFlag.flag);
             }
 
+            break;
+        }
+        case SCRIPT_COMMAND_SEND_TAXI_PATH:
+        {
+            // only Player
+            Player* pPlayer = GetPlayerTargetOrSourceAndLog(pSource, pTarget);
+            if (!pPlayer)
+                break;
+
+            pPlayer->ActivateTaxiPathTo(m_script->sendTaxiPath.taxiPathId);
             break;
         }
         default:

@@ -88,6 +88,7 @@ enum ScriptCommand                                          // resSource, resTar
     SCRIPT_COMMAND_MODIFY_NPC_FLAGS         = 29,           // resSource = Creature
                                                             // datalong=NPCFlags
                                                             // datalong2:0x00=toggle, 0x01=add, 0x02=remove
+    SCRIPT_COMMAND_SEND_TAXI_PATH           = 30,           // datalong = taxi path id (source or target must be player)
 };
 
 #define MAX_TEXT_ID 4                                       // used for SCRIPT_COMMAND_TALK
@@ -285,6 +286,12 @@ struct ScriptInfo
 
         struct
         {
+            uint32 taxiPathId;                              // datalong
+            uint32 empty;
+        } sendTaxiPath;
+
+        struct
+        {
             uint32 data[2];
         } raw;
     };
@@ -381,6 +388,7 @@ extern ScriptMapMapName sQuestEndScripts;
 extern ScriptMapMapName sQuestStartScripts;
 extern ScriptMapMapName sSpellScripts;
 extern ScriptMapMapName sGameObjectScripts;
+extern ScriptMapMapName sGameObjectTemplateScripts;
 extern ScriptMapMapName sEventScripts;
 extern ScriptMapMapName sGossipScripts;
 extern ScriptMapMapName sCreatureMovementScripts;
@@ -400,6 +408,7 @@ class ScriptMgr
         ~ScriptMgr();
 
         void LoadGameObjectScripts();
+        void LoadGameObjectTemplateScripts();
         void LoadQuestEndScripts();
         void LoadQuestStartScripts();
         void LoadEventScripts();

@@ -2099,18 +2099,20 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_TOTEM_FIRE:
         {
             float angle = m_caster->GetOrientation();
-            switch(targetMode)
+            switch (targetMode)
             {
-                case TARGET_TOTEM_EARTH:                       break;
-                case TARGET_TOTEM_WATER: angle += M_PI_F;      break;
-                case TARGET_TOTEM_AIR:   angle += M_PI_F / 2;  break;
-                case TARGET_TOTEM_FIRE:  angle -= M_PI_F / 2;  break;
+                case TARGET_TOTEM_EARTH:                         break;
+                case TARGET_TOTEM_WATER: angle += M_PI_F;        break;
+                case TARGET_TOTEM_AIR:   angle += M_PI_F * 0.5f; break;
+                case TARGET_TOTEM_FIRE:  angle += M_PI_F * 1.5f; break;
             }
             float dest_x, dest_y;
-            m_caster->GetNearPoint2D(dest_x, dest_y, radius, angle);
-            m_targets.setDestination(dest_x, dest_y, m_caster->GetPositionZ());
+            m_caster->GetNearPoint2D(dest_x, dest_y, radius > M_NULL_F ? radius - m_caster->GetObjectBoundingRadius() + 0.01f : 2.0f, angle);
+            float dest_z = m_caster->GetPositionZ();
+            m_caster->UpdateAllowedPositionZ(dest_x, dest_y, dest_z);
+            m_targets.setDestination(dest_x, dest_y, dest_z);
 
-            if (radius > 0.0f)
+            if (radius > M_NULL_F)
             {
                 // caster included here?
                 FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_ALL);
