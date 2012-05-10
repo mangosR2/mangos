@@ -4383,12 +4383,23 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
     // Script based implementation. Must be used only for not good for implementation in core spell effects
     // So called only for not processed cases
+    bool libraryResult = false;
     if (gameObjTarget)
-        sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, gameObjTarget);
+        libraryResult = sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, gameObjTarget);
     else if (unitTarget && unitTarget->GetTypeId() == TYPEID_UNIT)
-        sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, (Creature*)unitTarget);
+        libraryResult = sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, (Creature*)unitTarget);
     else if (itemTarget)
-        sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, itemTarget);
+        libraryResult = sScriptMgr.OnEffectDummy(m_caster, m_spellInfo->Id, eff_idx, itemTarget);
+
+    if (libraryResult || !unitTarget)
+        return;
+
+    // Previous effect might have started script
+    if (!ScriptMgr::CanSpellEffectStartDBScript(m_spellInfo, eff_idx))
+        return;
+
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectDummy", m_spellInfo->Id);
+    m_caster->GetMap()->ScriptsStart(sSpellScripts, m_spellInfo->Id, m_caster, unitTarget);
 }
 
 void Spell::EffectTriggerSpellWithValue(SpellEffectIndex eff_idx)
@@ -4584,10 +4595,19 @@ void Spell::EffectTriggerSpell(SpellEffectIndex effIndex)
     }
 
     // normal case
-    SpellEntry const *spellInfo = sSpellStore.LookupEntry( triggered_spell_id );
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(triggered_spell_id);
     if (!spellInfo)
     {
-        sLog.outError("EffectTriggerSpell of spell %u: triggering unknown spell id %i", m_spellInfo->Id,triggered_spell_id);
+        // No previous Effect might have started a script
+        bool startDBScript = unitTarget && ScriptMgr::CanSpellEffectStartDBScript(m_spellInfo, effIndex);
+        if (startDBScript)
+        {
+            DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectTriggerSpell", m_spellInfo->Id);
+            startDBScript = m_caster->GetMap()->ScriptsStart(sSpellScripts, m_spellInfo->Id, m_caster, unitTarget);
+        }
+
+        if (!startDBScript)
+            sLog.outError("EffectTriggerSpell of spell %u: triggering unknown spell id %i", m_spellInfo->Id, triggered_spell_id);
         return;
     }
 
@@ -4625,8 +4645,8 @@ void Spell::EffectTriggerSpell(SpellEffectIndex effIndex)
                 return;
         }
     }
-    else if (spellInfo->Targets & TARGET_FLAG_DEST_LOCATION &&
-         m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
+    else if ((spellInfo->Targets & TARGET_FLAG_DEST_LOCATION) &&
+         (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
     {
         // Init dest coordinates
         float x,y,z;
@@ -4674,7 +4694,7 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
         ((Player*)m_caster)->RemoveSpellCooldown(triggered_spell_id);
 
-    if (m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION || m_caster == unitTarget )
+    if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || m_caster == unitTarget )
     {
         // Init dest coordinates
         float x,y,z;
@@ -6357,7 +6377,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
                 data << uint32(dispelledHolder->GetId());   // Spell Id
                 data << uint8(0);                           // 0 - dispelled !=0 cleansed
 
-                if (dispelledHolder->GetSpellProto()->AttributesEx7 & SPELL_ATTR_EX7_DISPEL_CHARGES && dispelledHolder->GetAuraCharges() > 1)
+                if (dispelledHolder->GetSpellProto()->HasAttribute(SPELL_ATTR_EX7_DISPEL_CHARGES) && dispelledHolder->GetAuraCharges() > 1)
                 {
                     if (dispelledHolder->DropAuraCharge())
                         unitTarget->RemoveSpellAuraHolder(dispelledHolder, AURA_REMOVE_BY_DISPEL);
@@ -6868,7 +6888,7 @@ void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
     }
 
     // Using enchant stored on scroll does not increase enchanting skill! (Already granted on scroll creation)
-    if (!(m_CastItem && m_CastItem->GetProto()->Flags & ITEM_FLAG_ENCHANT_SCROLL))
+    if (!(m_CastItem && (m_CastItem->GetProto()->Flags & ITEM_FLAG_ENCHANT_SCROLL)))
         p_caster->UpdateCraftSkill(m_spellInfo->Id);
 
     if (item_owner!=p_caster && p_caster->GetSession()->GetSecurity() > SEC_PLAYER && sWorld.getConfig(CONFIG_BOOL_GM_LOG_TRADE) )
@@ -8934,7 +8954,8 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                         if (pSummon->GetSummonerGuid().IsPlayer())
                         {
-                            if (Player* pSummoner = sObjectMgr.GetPlayer(pSummon->GetSummonerGuid()))
+                            Player* pSummoner = sObjectMgr.GetPlayer(pSummon->GetSummonerGuid());
+                            if (pSummoner)
                                 pSummoner->CastSpell(pSummoner, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                         }
                     }
@@ -9193,7 +9214,8 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 // Glyph of Starfire
                 case 54846:
                 {
-                    if (Aura* aura = unitTarget->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DRUID, CF_DRUID_MOONFIRE>(m_caster->GetObjectGuid()))
+                    Aura* aura = unitTarget->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_DRUID, CF_DRUID_MOONFIRE>(m_caster->GetObjectGuid());
+                    if (aura)
                     {
                         uint32 countMin = aura->GetAuraMaxDuration();
                         uint32 countMax = GetSpellMaxDuration(aura->GetSpellProto());
@@ -10831,9 +10853,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
             m_caster->CastSpell(unitTarget, *itr, true, NULL, NULL, m_caster->GetObjectGuid(), m_spellInfo);
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectScriptEffect ", m_spellInfo->Id);
-    if (m_caster->IsInWorld())
-        m_caster->GetMap()->ScriptsStart(sSpellScripts, m_spellInfo->Id, m_caster, unitTarget);
+    // Previous effect might have started script
+    if (!ScriptMgr::CanSpellEffectStartDBScript(m_spellInfo, eff_idx))
+        return;
+
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell ScriptStart spellid %u in EffectScriptEffect", m_spellInfo->Id);
+    m_caster->GetMap()->ScriptsStart(sSpellScripts, m_spellInfo->Id, m_caster, unitTarget);
 }
 
 void Spell::EffectSanctuary(SpellEffectIndex /*eff_idx*/)
@@ -12124,7 +12149,7 @@ void Spell::EffectStealBeneficialBuff(SpellEffectIndex eff_idx)
     for(Unit::SpellAuraHolderMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
     {
         SpellAuraHolderPtr holder = itr->second;
-        if (holder && (1<<holder->GetSpellProto()->Dispel) & dispelMask)
+        if (holder && ((1<<holder->GetSpellProto()->Dispel) & dispelMask))
         {
             // Need check for passive? this
             if (holder->IsPositive() && !holder->IsPassive() && !holder->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_NOT_STEALABLE))

@@ -319,7 +319,7 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
             if (updateFlags & UPDATEFLAG_HAS_POSITION)
             {
                 // 0x02
-                if (updateFlags & UPDATEFLAG_TRANSPORT && ((GameObject*)this)->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
+                if ((updateFlags & UPDATEFLAG_TRANSPORT) && ((GameObject*)this)->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
                 {
                     *data << float(0);
                     *data << float(0);
@@ -2092,7 +2092,8 @@ void WorldObject::StopGroupLoot()
     if (!m_groupLootId)
         return;
 
-    if (Group* group = sObjectMgr.GetGroupById(m_groupLootId))
+    Group* group = sObjectMgr.GetGroupById(m_groupLootId);
+    if (group)
         group->EndRoll();
 
     m_groupLootTimer = 0;

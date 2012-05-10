@@ -384,7 +384,7 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit *pVictim, SpellAuraHolderPtr holder,
         return false;
 
     // In most cases req get honor or XP from kill
-    if (EventProcFlag & PROC_FLAG_KILL && GetTypeId() == TYPEID_PLAYER)
+    if ((EventProcFlag & PROC_FLAG_KILL) && GetTypeId() == TYPEID_PLAYER)
     {
         bool allow = ((Player*)this)->isHonorOrXPTarget(pVictim);
         // Shadow Word: Death - can trigger from every kill
@@ -539,7 +539,10 @@ SpellAuraProcResult Unit::HandleSpellCritChanceAuraProc(Unit *pVictim, DamageInf
                     break;
                 }
             }
+            break;
         }
+        default:
+            break;
     }
 
     // processed charge only counting case
@@ -2901,7 +2904,8 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                 // Item - Shaman T10 Elemental 4P Bonus
                 case 70817:
                 {
-                    if (Aura* aura = pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid()))
+                    Aura* aura = pVictim->GetAura<SPELL_AURA_PERIODIC_DAMAGE, SPELLFAMILY_SHAMAN, CF_SHAMAN_FLAME_SHOCK>(GetObjectGuid());
+                    if (aura)
                     {
                         SpellAuraHolderPtr holder = aura->GetHolder();
                         if (holder)
@@ -4856,6 +4860,7 @@ SpellAuraProcResult Unit::HandleAddFlatModifierAuraProc(Unit* pVictim, DamageInf
 
             int bp = triggeredByAura->GetModifier()->m_amount;
             CastCustomSpell(pVictim, 68055, &bp, NULL, NULL, true, NULL, triggeredByAura);
+            break;
         }
         default:
             break;
@@ -5093,8 +5098,8 @@ SpellAuraProcResult Unit::HandleRemoveByDamageProc(Unit* pVictim, DamageInfo* da
 
     if (procSpell && triggeredByAura->GetModifier()->m_auraname == SPELL_AURA_MOD_STEALTH)
     {
-            if (procSpell->AttributesEx & (SPELL_ATTR_EX_NOT_BREAK_STEALTH | SPELL_ATTR_EX_NO_THREAT) ||
-                procSpell->AttributesEx2 & SPELL_ATTR_EX2_UNK28)
+            if (procSpell->HasAttribute(SPELL_ATTR_EX_NOT_BREAK_STEALTH) || procSpell->HasAttribute(SPELL_ATTR_EX_NO_THREAT) ||
+                procSpell->HasAttribute(SPELL_ATTR_EX2_UNK28))
             return SPELL_AURA_PROC_FAILED;
     }
 
@@ -5230,16 +5235,16 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                 case SPELL_AURA_MOD_ROOT:
                 case SPELL_AURA_TRANSFORM:
                 {
-                    if (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE &&
-                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
-                        spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE))
+                    if ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE) &&
+                        ((spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE) ||
+                        (spellProto->HasAttribute(SPELL_ATTR_BREAKABLE_BY_DAMAGE))))
                         return SPELL_AURA_PROC_OK;
-                    if ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
-                        procExtra & PROC_EX_ABSORB) &&
-                        (spellProto->AttributesEx & SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE &&
-                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE ||
-                        spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE ||
-                        spellProto->Attributes & SPELL_ATTR_BREAKABLE_BY_DAMAGE)))
+                    if (((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE) ||
+                        (procExtra & PROC_EX_ABSORB)) &&
+                        (spellProto->HasAttribute(SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE) &&
+                        ((spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DIRECT_DAMAGE) ||
+                        (spellProto->AuraInterruptFlags & AURA_INTERRUPT_FLAG_DAMAGE) ||
+                        spellProto->HasAttribute(SPELL_ATTR_BREAKABLE_BY_DAMAGE))))
                         return SPELL_AURA_PROC_OK;
                     else if (EventProcFlag || spellProcEvent)
                         return SPELL_AURA_PROC_FAILED;
@@ -5257,12 +5262,12 @@ SpellAuraProcResult Unit::IsTriggeredAtCustomProcEvent(Unit *pVictim, SpellAuraH
                 case SPELL_AURA_MOD_INVISIBILITY:
                 {
                     if ((!EventProcFlag && !spellProcEvent) &&
-                        (procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE ||
-                        procExtra & PROC_EX_DIRECT_DAMAGE) &&
-                        !(procFlag &  PROC_FLAG_TAKEN_AOE_SPELL_HIT ||
-                        procFlag &  PROC_FLAG_ON_TAKE_PERIODIC) &&
-                        !(procFlag & PROC_FLAG_SUCCESSFUL_AOE_SPELL_HIT ||
-                        procFlag & PROC_FLAG_ON_DO_PERIODIC)
+                        ((procFlag & PROC_FLAG_TAKEN_ANY_DAMAGE) ||
+                        (procExtra & PROC_EX_DIRECT_DAMAGE)) &&
+                        !((procFlag &  PROC_FLAG_TAKEN_AOE_SPELL_HIT) ||
+                        (procFlag &  PROC_FLAG_ON_TAKE_PERIODIC)) &&
+                        !((procFlag & PROC_FLAG_SUCCESSFUL_AOE_SPELL_HIT) ||
+                        (procFlag & PROC_FLAG_ON_DO_PERIODIC))
                         )
                         return SPELL_AURA_PROC_OK;
                     else if (EventProcFlag || spellProcEvent)

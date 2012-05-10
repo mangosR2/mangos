@@ -318,7 +318,7 @@ enum SpellAttributesEx
 
 enum SpellAttributesEx2
 {
-    SPELL_ATTR2_ALLOW_DEAD_TARGET              = 0x00000001,            // 0
+    SPELL_ATTR_EX2_ALLOW_DEAD_TARGET           = 0x00000001,            // 0
     SPELL_ATTR_EX2_UNK1                        = 0x00000002,            // 1
     SPELL_ATTR_EX2_IGNORE_LOS                  = 0x00000004,            // 2 do not need LOS (e.g. 18220 since 3.3.3)
     SPELL_ATTR_EX2_UNK3                        = 0x00000008,            // 3 auto targeting? (e.g. fishing skill enhancement items since 3.3.3)

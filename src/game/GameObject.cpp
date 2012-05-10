@@ -346,7 +346,8 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
                 }
             }
             // call capture point events
-            if (Player* usePlayer = sObjectMgr.GetPlayer(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin()))))
+            Player* usePlayer = sObjectMgr.GetPlayer(rangePlayers > 0 ? (*(m_capturePlayers[TEAM_INDEX_ALLIANCE].begin())) : (*(m_capturePlayers[TEAM_INDEX_HORDE].begin())));
+            if (usePlayer)
                 Use(usePlayer); // TODO: We actually now dont need player pointer in the Use() function of capture points
         }
         else
@@ -400,6 +401,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             }
             // NO BREAK for switch (m_lootState)
         }
+        /* no break */
         case GO_READY:
         {
             if (m_respawnTime > 0)                          // timer on
@@ -2249,7 +2251,8 @@ void GameObject::StopGroupLoot()
     if (!m_groupLootId)
         return;
 
-    if (Group* group = sObjectMgr.GetGroupById(m_groupLootId))
+    Group* group = sObjectMgr.GetGroupById(m_groupLootId);
+    if (group)
         group->EndRoll();
 
     m_groupLootTimer = 0;

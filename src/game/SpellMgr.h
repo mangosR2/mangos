@@ -641,7 +641,7 @@ inline bool IsSpellIncreaseThreat(SpellEntry const* spellInfo)
 
 inline bool IsSpellAllowDeadTarget(SpellEntry const* spellInfo)
 {
-    return spellInfo ? spellInfo->AttributesEx2 & SPELL_ATTR2_ALLOW_DEAD_TARGET : false;
+    return spellInfo ? spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET) : false;
 }
 
 bool IsSpellAffectedBySpellMods(SpellEntry const* spellInfo);

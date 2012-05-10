@@ -1668,71 +1668,71 @@ struct ClassFamilyMask
     template <CFM_ARGS_1>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_1>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_1>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_1>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_1>::value);
     }
 
     template <CFM_ARGS_2>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_2>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_2>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_2>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_2>::value);
     }
 
     template <CFM_ARGS_3>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_3>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_3>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_3>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_3>::value);
     }
 
     template <CFM_ARGS_4>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_4>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_4>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_4>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_4>::value);
     }
 
     template <CFM_ARGS_5>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_5>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_5>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_5>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_5>::value);
     }
 
     template <CFM_ARGS_6>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_6>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_6>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_6>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_6>::value);
     }
 
     template <CFM_ARGS_7>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_7>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_7>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_7>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_7>::value);
     }
 
     template <CFM_ARGS_8>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_8>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_8>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_8>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_8>::value);
     }
 
     template <CFM_ARGS_9>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_9>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_9>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_9>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_9>::value);
     }
 
     template <CFM_ARGS_10>
     bool test() const
     {
-        return Flags  & BitMask<uint64, true,  CFM_VALUES_10>::value ||
-               Flags2 & BitMask<uint32, false, CFM_VALUES_10>::value;
+        return (Flags  & BitMask<uint64, true,  CFM_VALUES_10>::value) ||
+               (Flags2 & BitMask<uint32, false, CFM_VALUES_10>::value);
     }
 
     // named constructors (compile-time)
@@ -2434,7 +2434,7 @@ struct VehicleSeatEntry
                                                             // 55       m_cameraEnteringZoom"
                                                             // 56       m_cameraSeatZoomMin
                                                             // 57       m_cameraSeatZoomMax
-    bool IsUsable() const { return (m_flags & SEAT_FLAG_USABLE || m_flags & SEAT_FLAG_CAN_CONTROL); }
+    bool IsUsable() const { return ((m_flags & SEAT_FLAG_USABLE) || (m_flags & SEAT_FLAG_CAN_CONTROL)); }
 };
 
 struct WMOAreaTableEntry
