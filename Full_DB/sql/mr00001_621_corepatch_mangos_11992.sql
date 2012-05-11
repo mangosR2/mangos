@@ -1,9 +1,5 @@
 ALTER TABLE db_version CHANGE COLUMN required_11968_01_mangos_creature_linking_template required_11985_01_mangos_gameobject_template_scripts bit;
 
---
--- Table structure for table `gameobject_template_scripts`
---
-
 DROP TABLE IF EXISTS `gameobject_template_scripts`;
 CREATE TABLE `gameobject_template_scripts` (
   `id` mediumint(8) unsigned NOT NULL default '0',
@@ -25,11 +21,22 @@ CREATE TABLE `gameobject_template_scripts` (
   `comments` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
---
--- Dumping data for table `gameobject_template_scripts`
---
 
-LOCK TABLES `gameobject_template_scripts` WRITE;
-/*!40000 ALTER TABLE `gameobject_template_scripts` DISABLE KEYS */;
-/*!40000 ALTER TABLE `gameobject_template_scripts` ENABLE KEYS */;
-UNLOCK TABLES;
+# SD2_2546
+UPDATE instance_template SET ScriptName='instance_icecrown_citadel' WHERE map=631;
+DELETE FROM scripted_event_id WHERE id IN (23426,23438);
+INSERT INTO scripted_event_id VALUES
+(23426,'event_gameobject_citadel_valve'),
+(23438,'event_gameobject_citadel_valve');
+UPDATE creature_template SET ScriptName='boss_lord_marrowgar' WHERE entry=36612;
+UPDATE creature_template SET ScriptName='boss_lady_deathwhisper' WHERE entry=36855;
+UPDATE creature_template SET ScriptName='boss_deathbringer_saurfang' WHERE entry=37813;
+UPDATE creature_template SET ScriptName='' WHERE entry=14965;
+UPDATE creature_template SET ScriptName='npc_gurubashi_bat_rider' WHERE entry=14750;
+DELETE FROM scripted_areatrigger WHERE entry IN (5732);
+INSERT INTO scripted_areatrigger VALUES
+(5732,'at_icecrown_citadel');
+DELETE FROM scripted_areatrigger WHERE entry IN (5709);
+INSERT INTO scripted_areatrigger VALUES
+(5709,'at_icecrown_citadel');
+UPDATE creature_template SET ScriptName='' WHERE entry=15041;
