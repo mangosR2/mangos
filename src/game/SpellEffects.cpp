@@ -10015,9 +10015,20 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     return;
                 }
-                case 69147:                                 // Coldflame (circle, Lord Marrowgar - Icecrown Citadel)
+                case 69140:                                 // Coldflame (random target selection)
                 {
-                    m_caster->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
+                }
+                case 69147:                                 // Coldflame
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     return;
                 }
                 case 69538:                                 // Small Ooze Combine (Rotface)
@@ -10296,12 +10307,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         m_caster->CastSpell(unitTarget, 72423, true);
                     return;
                 }
-                case 72705:                                 // Coldflame (in bone storm, Lord Marrowgar - Icecrown Citadel)
+                case 72705:                                 // Coldflame (summon around the caster)
                 {
-                    m_caster->CastSpell(m_caster, 72701, true);
-                    m_caster->CastSpell(m_caster, 72702, true);
-                    m_caster->CastSpell(m_caster, 72703, true);
-                    m_caster->CastSpell(m_caster, 72704, true);
+                    if (!unitTarget)
+                        return;
+
+                    // Cast summon spells 72701, 72702, 72703, 72704
+                    for (uint32 triggeredSpell = m_spellInfo->CalculateSimpleValue(eff_idx); triggeredSpell < m_spellInfo->Id; ++triggeredSpell)
+                        unitTarget->CastSpell(unitTarget, triggeredSpell, true);
+
                     return;
                 }
                 case 72864:                                 // Death plague

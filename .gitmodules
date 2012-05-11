@@ -1,0 +1,3 @@
+[submodule "src/bindings/ScriptDev2"]
+	path = src/bindings/ScriptDev2
+	url = git@github.com:mangosR2/scriptdev2.git

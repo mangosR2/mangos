@@ -1,0 +1,8 @@
+__mangosR2__ is not a separate project. This is a fork of the "MaNGOS project":http://github.com/mangos and "scriptdev2 project":http://github.com/scriptdev2 and is intended to test the new code, which for some reason was not accepted (or will never be accepted) to those projects. R2 tries to take the best from MaNGOS, TrinityCore and other projects, while trying to preserve consistency and simplicity of MaNGOS code.
+     
+Attention please! By opinion of the Mangos Team,
+
+**This "mangosR2" is not mangos! It's some custom fork with god knows what mods and hacks.
+So please everyone stop flooding ... with problems with it... could aswell ask for arcemu or trinity support**
+
+Don't even try to send bug reports to official mangos community resources, you will never get help on mangosR2, just waste your time...

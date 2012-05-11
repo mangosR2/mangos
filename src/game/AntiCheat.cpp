@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 /dev/rsa for MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2010-2012 /dev/rsa for MangosR2 <http://github.com/MangosR2>
  * based on Xeross code
  *
  * This program is free software; you can redistribute it and/or modify

@@ -3187,8 +3187,8 @@ void SpellMgr::LoadSpellScriptTarget()
                 spellProto->EffectImplicitTargetB[i] == TARGET_AREAEFFECT_INSTANT ||
                 spellProto->EffectImplicitTargetA[i] == TARGET_AREAEFFECT_CUSTOM ||
                 spellProto->EffectImplicitTargetB[i] == TARGET_AREAEFFECT_CUSTOM ||
-                spellProto->EffectImplicitTargetA[i] == TARGET_OBJECT_AREA_SRC ||
-                spellProto->EffectImplicitTargetB[i] == TARGET_OBJECT_AREA_SRC ||
+                spellProto->EffectImplicitTargetA[i] == TARGET_AREAEFFECT_GO_AROUND_SOURCE ||
+                spellProto->EffectImplicitTargetB[i] == TARGET_AREAEFFECT_GO_AROUND_SOURCE ||
                 spellProto->EffectImplicitTargetA[i] == TARGET_AREAEFFECT_GO_AROUND_DEST ||
                 spellProto->EffectImplicitTargetB[i] == TARGET_AREAEFFECT_GO_AROUND_DEST)
             {
