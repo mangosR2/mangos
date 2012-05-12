@@ -332,7 +332,10 @@ void PetAI::MoveToVictim(Unit* u)
                 m_creature->GetMotionMaster()->MoveChase(owner, PET_FOLLOW_DIST, m_creature->IsPet() ? ((Pet*)m_creature)->GetPetFollowAngle() : PET_FOLLOW_ANGLE);
             break;
         case PET_AI_RANGED:
-            m_creature->GetMotionMaster()->MoveChase(u, attackDistance, m_creature->GetAngle(u) + frand(-M_PI_F/4.0f, M_PI_F/4.0f));
+            if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI))
+                m_creature->GetMotionMaster()->MoveChase(u, attackDistance, m_creature->GetAngle(u) + frand(-M_PI_F/4.0f, M_PI_F/4.0f));
+            else
+                m_creature->GetMotionMaster()->MoveChase(u);
             break;
         case PET_AI_MELEE:
         case PET_AI_RANGED_NOAMMO:

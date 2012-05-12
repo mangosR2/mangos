@@ -11420,14 +11420,33 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
     Creature* pet = dynamic_cast<Creature*>(this);
 
     Unit* unit_target = targets ? targets->getUnitTarget() : NULL;
+
+    // target corrects
     if (!unit_target && !(targets->m_targetMask & TARGET_FLAG_DEST_LOCATION))
     {
-        DEBUG_LOG("DoPetCastSpell: %s guid %u tryed to cast spell %u without target!.",GetObjectGuid().IsPet() ? "Pet" : "Creature",GetObjectGuid().GetCounter(), spellInfo->Id);
+        DEBUG_LOG("Unit::DoPetCastSpell %s guid %u tryed to cast spell %u without target! Trying auto-search",GetObjectGuid().IsPet() ? "Pet" : "Creature",GetObjectGuid().GetCounter(), spellInfo->Id);
     }
     else if (targets && !unit_target && targets->m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
-        DEBUG_LOG("Unit::DoPetCastSpell: %s tryed to cast spell %u with setted dest. location without target. Set unitTarget to caster.",GetObjectGuid().GetString().c_str(), spellInfo->Id);
-//        targets->setUnitTarget((Unit*)pet);
+        DEBUG_LOG("Unit::DoPetCastSpell %s tryed to cast spell %u with setted dest. location without target. Trying auto-search.",GetObjectGuid().GetString().c_str(), spellInfo->Id);
+    }
+    else if (unit_target && IsFriendlyTo(unit_target) != IsPositiveSpell(spellInfo))
+    {
+        DEBUG_LOG("Unit::DoPetCastSpell %s tryed to cast spell %u, but target not good. Trying auto-search.",GetObjectGuid().GetString().c_str(), spellInfo->Id);
+        unit_target = NULL;
+    }
+
+    // autosearch for target
+    if (!unit_target)
+    {
+        unit_target =  GetObjectGuid().IsPet() ? ((Pet*)this)->SelectPreferredTargetForSpell(spellInfo) :
+                                                   pet->SelectPreferredTargetForSpell(spellInfo);
+        DEBUG_LOG("Unit::DoPetCastSpell %s, spell %u preferred %u Target %s",
+                            GetObjectGuid().GetString().c_str(),
+                            spellInfo->Id,
+                            GetPreferredTargetForSpell(spellInfo),
+                            unit_target ? unit_target->GetObjectGuid().GetString().c_str() : "<none>");
+        targets->setUnitTarget(unit_target);
     }
 
     Spell *spell = new Spell(this, spellInfo, triggered, GetObjectGuid(), triggeredBy);

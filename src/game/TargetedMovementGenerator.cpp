@@ -45,10 +45,15 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     bool targetIsVictim = owner.getVictim() && owner.getVictim()->GetObjectGuid() == i_target->GetObjectGuid();
 
     // prevent redundant micro-movement for pets, other followers.
-    if ((fabs(i_offset) > M_NULL_F) &&
-        (targetIsVictim ?
-        (fabs(i_target->GetDistance(&owner) - i_offset) < 2 * PET_FOLLOW_DIST) :
-        i_target->IsWithinDistInMap(&owner,2 * i_offset)))
+    if (!sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && (fabs(i_offset) > M_NULL_F) && i_target->IsWithinDistInMap(&owner, i_offset + PET_FOLLOW_DIST))
+    {
+        if (!owner.movespline->Finalized())
+            return;
+
+        owner.GetPosition(x, y, z);
+    }
+    else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && (fabs(i_offset) > M_NULL_F) && 
+        fabs((i_target->GetDistance(&owner)  + owner.GetObjectBoundingRadius() + i_target->GetObjectBoundingRadius() - i_offset) < 2 * PET_FOLLOW_DIST))
     {
         if (!owner.movespline->Finalized())
             return;
