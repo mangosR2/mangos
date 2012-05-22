@@ -875,6 +875,7 @@ bool ChatHandler::HandleGetValueHelper(Object* target, uint32 field, char* typeS
             default:
                 DEBUG_LOG(GetMangosString(LANG_GET_UINT), guid.GetString().c_str(), field, iValue);
                 PSendSysMessage(LANG_GET_UINT_FIELD, guid.GetString().c_str(), field, iValue);
+                break;
         }
     }
     else

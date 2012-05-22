@@ -1339,7 +1339,7 @@ bool ChatHandler::HandleAchievementAddCommand(char* args)
         return false;
 
     AchievementEntry const *achEntry = sAchievementStore.LookupEntry(achId);
-    if (!achEntry || achEntry->flags & ACHIEVEMENT_FLAG_COUNTER)
+    if (!achEntry || (achEntry->flags & ACHIEVEMENT_FLAG_COUNTER))
     {
         PSendSysMessage(LANG_ACHIEVEMENT_NOT_EXIST, achId);
         SetSentErrorMessage(true);

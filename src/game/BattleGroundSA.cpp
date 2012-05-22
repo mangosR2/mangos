@@ -138,7 +138,8 @@ void BattleGroundSA::StartShips()
     {
         for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
         {
-            if (Player* p = sObjectMgr.GetPlayer(itr->first))
+            Player* p = sObjectMgr.GetPlayer(itr->first);
+            if (p)
             {
                 UpdateData data;
                 WorldPacket pkt;
@@ -201,8 +202,11 @@ void BattleGroundSA::Update(uint32 diff)
                 RoundScores[0].time = BG_SA_ROUNDLENGTH;
 
                 for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-                    if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+                {
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
                         plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_END_OF_ROUND);
+                }
 
                 ResetBattle(0, defender);
             }
@@ -212,8 +216,11 @@ void BattleGroundSA::Update(uint32 diff)
                 RoundScores[1].winner = GetDefender();
 
                 for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
-                    if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+                {
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
                         plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_END_OF_ROUND);
+                }
 
                 if (RoundScores[0].winner == GetDefender())
                     EndBattleGround(GetDefender());
@@ -433,7 +440,8 @@ void BattleGroundSA::UpdatePhase()
         // adding Preparation buff for the 2nd round, has to be added in status STATUS_WAIT_JOIN
         for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
         {
-            if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+            Player* plr = sObjectMgr.GetPlayer(itr->first);
+            if (plr)
                 plr->CastSpell(plr, SPELL_PREPARATION, true);
         }
         HandleInteractivity();
@@ -874,6 +882,7 @@ int32 BattleGroundSA::_GatesName(GameObject* obj)
         case BG_SA_GO_GATES_YELLOW_MOON:  return LANG_BG_SA_GATE_YELLOW_MOON;
         default:
             MANGOS_ASSERT(0);
+            break;
     }
     return 0;
 }
@@ -887,6 +896,7 @@ int32 BattleGroundSA::_GydName(uint8 gyd)
         case 2: return LANG_BG_SA_SOUTH_GRAVEYARD;
         default:
             MANGOS_ASSERT(0);
+            break;
     }
     return 0;
 }

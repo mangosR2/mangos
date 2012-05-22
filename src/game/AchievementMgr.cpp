@@ -504,6 +504,7 @@ void AchievementMgr::ResetAchievementCriteria(AchievementCriteriaTypes type, uin
                         SetCriteriaProgress(achievementCriteria, achievement, 0, PROGRESS_SET);
                     default: continue; // Do not reset progress for other achievements.
                 }
+                break;
             }
             default:                                        // reset all cases
                 break;
@@ -678,7 +679,8 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
     if(achievement->flags & ACHIEVEMENT_FLAG_HIDDEN)
         return;
 
-    if (Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId()))
+    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    if (guild)
     {
         MaNGOS::AchievementChatBuilder say_builder(*GetPlayer(), CHAT_MSG_GUILD_ACHIEVEMENT, LANG_ACHIEVEMENT_EARNED,achievement->ID);
         MaNGOS::LocalizedPacketDo<MaNGOS::AchievementChatBuilder> say_do(say_builder);
@@ -2343,7 +2345,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                                                          // WS, capture 3 flags without dying
                         if (achievementCriteria->referredAchievement == 204)
                         {
-                            if (!(bg->GetPlayerScore(GetPlayer(), SCORE_DEATHS) == 0 && bg->GetPlayerScore(GetPlayer(), SCORE_FLAG_CAPTURES) >= 3))
+                            if (bg->GetPlayerScore(GetPlayer(), SCORE_DEATHS))
                                 continue;
                         }
                         break;
@@ -2385,7 +2387,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                             }
                             case 216:                    // EY, capture 3 flags without dying
                             {
-                                if (!(bg->GetPlayerScore(GetPlayer(), SCORE_DEATHS) == 0 && bg->GetPlayerScore(GetPlayer(), SCORE_FLAG_CAPTURES) >= 3))
+                                if (bg->GetPlayerScore(GetPlayer(), SCORE_DEATHS))
                                     continue;
                                 break;
                             }
@@ -2653,7 +2655,7 @@ uint32 AchievementMgr::GetCriteriaProgressMaxCounter(AchievementCriteriaEntry co
             break;
     }
 
-    if (achievement && achievement->flags & ACHIEVEMENT_FLAG_COUNTER)
+    if (achievement && (achievement->flags & ACHIEVEMENT_FLAG_COUNTER))
         resultValue = std::numeric_limits<uint32>::max();
 
     return resultValue;
@@ -2680,7 +2682,7 @@ bool AchievementMgr::IsCompletedCriteria(AchievementCriteriaEntry const* achieve
 
     uint32 maxcounter = GetCriteriaProgressMaxCounter(achievementCriteria, achievement);
 
-    return progress->counter >= maxcounter || (achievement->flags & ACHIEVEMENT_FLAG_REQ_COUNT && progress->counter);
+    return progress->counter >= maxcounter || ((achievement->flags & ACHIEVEMENT_FLAG_REQ_COUNT) && progress->counter);
 }
 
 void AchievementMgr::CompletedCriteriaFor(AchievementEntry const* achievement)
@@ -2833,7 +2835,7 @@ void AchievementMgr::SetCriteriaProgress(AchievementCriteriaEntry const* criteri
     SendCriteriaUpdate(criteria->ID, progress);
 
     // nothing do for counter case
-    if (achievement->flags & ACHIEVEMENT_FLAG_COUNTER && !(achievement->flags & ACHIEVEMENT_FLAG_SUMM)) //second check for "Tastes Like Chicken" and alike
+    if ((achievement->flags & ACHIEVEMENT_FLAG_COUNTER) && !(achievement->flags & ACHIEVEMENT_FLAG_SUMM)) //second check for "Tastes Like Chicken" and alike
         return;
 
     // update dependent achievements state at criteria complete
@@ -2882,7 +2884,7 @@ void AchievementMgr::SetCriteriaProgress(AchievementCriteriaEntry const* criteri
 void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement)
 {
     DETAIL_LOG("AchievementMgr::CompletedAchievement(%u)", achievement->ID);
-    if(achievement->flags & ACHIEVEMENT_FLAG_COUNTER || m_completedAchievements.find(achievement->ID)!=m_completedAchievements.end())
+    if((achievement->flags & ACHIEVEMENT_FLAG_COUNTER) || m_completedAchievements.find(achievement->ID)!=m_completedAchievements.end())
         return;
 
     SendAchievementEarned(achievement);
@@ -3210,6 +3212,7 @@ void AchievementGlobalMgr::LoadAchievementCriteriaRequirements()
                     default:
                         continue;
                 }
+                break;
             }
             case ACHIEVEMENT_CRITERIA_TYPE_FALL_WITHOUT_DYING:
                 break;                                      // any cases

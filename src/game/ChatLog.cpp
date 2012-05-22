@@ -353,6 +353,7 @@ void ChatLog::RaidMsg(Player *player, std::string &msg, uint32 type)
 
         default:
         log_str.append("]->RAID_UNKNOWN:");
+        break;
     }
 
     Group *group = player->GetGroup();
@@ -429,6 +430,7 @@ void ChatLog::BattleGroundMsg(Player *player, std::string &msg, uint32 type)
 
         default:
         log_str.append("]->BG_UNKNOWN:");
+        break;
     }
 
     Group *group = player->GetGroup();

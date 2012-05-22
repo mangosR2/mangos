@@ -482,6 +482,7 @@ bool PlayerbotPaladinAI::BuffPlayer(Player* target)
                 if (Bless(BLESSING_OF_SANCTUARY, pet))
                     return true;
             }
+            break;
         case CLASS_ROGUE:
         case CLASS_WARRIOR:
             if (Bless(BLESSING_OF_MIGHT, target))
@@ -507,6 +508,7 @@ bool PlayerbotPaladinAI::BuffPlayer(Player* target)
                 if (Bless(BLESSING_OF_SANCTUARY, pet))
                     return true;
             }
+            break;
         case CLASS_PRIEST:
         case CLASS_MAGE:
             if (Bless(BLESSING_OF_WISDOM, target))

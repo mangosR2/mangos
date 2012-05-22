@@ -256,6 +256,7 @@ int32 BattleGroundAB::_GetNodeNameId(uint8 node)
         case BG_AB_NODE_GOLD_MINE:  return LANG_BG_AB_NODE_GOLD_MINE;
         default:
             MANGOS_ASSERT(0);
+            break;
     }
     return 0;
 }

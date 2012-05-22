@@ -299,7 +299,7 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
             ((Creature*)m_pBase)->SetWalk(false);
 
     }
-    else if (seatInfo->m_flags & SEAT_FLAG_FREE_ACTION || seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK)
+    else if ((seatInfo->m_flags & SEAT_FLAG_FREE_ACTION) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
     {
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
@@ -320,7 +320,7 @@ bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)
             ((Creature*)m_pBase)->AI()->PassengerBoarded(passenger, seat->first, true);
     }
 
-    if (b_dstSet && seatInfo->m_flagsB & VEHICLE_SEAT_FLAG_B_EJECTABLE_FORCED)
+    if (b_dstSet && (seatInfo->m_flagsB & VEHICLE_SEAT_FLAG_B_EJECTABLE_FORCED))
     {
         uint32 delay = seatInfo->m_exitMaxDuration * IN_MILLISECONDS;
         m_pBase->AddEvent(new PassengerEjectEvent(seatId,*m_pBase), delay);
@@ -599,9 +599,9 @@ bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 bool VehicleSeat::IsProtectPassenger() const
 {
     if (seatInfo &&
-        (seatInfo->m_flags & SEAT_FLAG_UNATTACKABLE ||
-        seatInfo->m_flags &  SEAT_FLAG_HIDE_PASSENGER ||
-        seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL) &&
+        ((seatInfo->m_flags & SEAT_FLAG_UNATTACKABLE) ||
+        (seatInfo->m_flags &  SEAT_FLAG_HIDE_PASSENGER) ||
+        (seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL)) &&
         !(seatInfo->m_flags &  SEAT_FLAG_FREE_ACTION))
         return true;
 

@@ -176,8 +176,7 @@ void PlayerbotWarlockAI::DoNextCombatManeuver(Unit *pTarget)
             }
             LastSpellCurse = 0;
         //SpellSequence = SPELL_AFFLICTION;
-        //break;
-
+            /* no break */
         case SPELL_AFFLICTION:
             if (LIFE_TAP && LastSpellAffliction < 1 && ai->GetManaPercent() <= 50 && ai->GetHealthPercent() > 50)
             {
@@ -257,8 +256,7 @@ void PlayerbotWarlockAI::DoNextCombatManeuver(Unit *pTarget)
             }
             LastSpellAffliction = 0;
         //SpellSequence = SPELL_DESTRUCTION;
-        //break;
-
+            /* no break */
         case SPELL_DESTRUCTION:
             if (SHADOWFURY && LastSpellDestruction < 1 && !pTarget->HasAura(SHADOWFURY))
             {
@@ -354,6 +352,9 @@ void PlayerbotWarlockAI::DoNextCombatManeuver(Unit *pTarget)
                 LastSpellDestruction = 0;
                 SpellSequence = SPELL_CURSES;
             }
+            break;
+        default:
+            break;
     }
 } // end DoNextCombatManeuver
 
@@ -557,6 +558,7 @@ void PlayerbotWarlockAI::DoNonCombatActions()
                     break;
                 default:
                     summonSpellId = 0;
+                    break;
             }
             if (ai->CastSpell(summonSpellId))
             {

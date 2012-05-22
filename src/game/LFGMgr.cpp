@@ -529,11 +529,11 @@ void LFGMgr::AddToQueue(ObjectGuid guid, LFGType type, bool inBegin)
                 if (member && member->IsInWorld())
                 {
                     uint8 roles = member->GetLFGState()->GetRoles();
-                    if (roles & LFG_ROLE_MASK_TANK && pqInfo->tanks > 0)
+                    if ((roles & LFG_ROLE_MASK_TANK) && pqInfo->tanks > 0)
                         pqInfo->tanks -= 1;
-                    else if (roles & LFG_ROLE_MASK_HEALER && pqInfo->healers > 0)
+                    else if ((roles & LFG_ROLE_MASK_HEALER) && pqInfo->healers > 0)
                         pqInfo->healers -= 1;
-                    else if (roles & LFG_ROLE_MASK_DAMAGE && pqInfo->dps > 0)
+                    else if ((roles & LFG_ROLE_MASK_DAMAGE) && pqInfo->dps > 0)
                         pqInfo->dps -= 1;
                 }
             }
@@ -546,11 +546,11 @@ void LFGMgr::AddToQueue(ObjectGuid guid, LFGType type, bool inBegin)
             MANGOS_ASSERT(player);
 
             uint8 roles = player->GetLFGState()->GetRoles();
-            if (roles & LFG_ROLE_MASK_TANK && pqInfo->tanks > 0)
+            if ((roles & LFG_ROLE_MASK_TANK) && pqInfo->tanks > 0)
                 pqInfo->tanks -= 1;
-            else if (roles & LFG_ROLE_MASK_HEALER && pqInfo->healers > 0)
+            else if ((roles & LFG_ROLE_MASK_HEALER) && pqInfo->healers > 0)
                 pqInfo->healers -= 1;
-            else if (roles & LFG_ROLE_MASK_DAMAGE && pqInfo->dps > 0)
+            else if ((roles & LFG_ROLE_MASK_DAMAGE) && pqInfo->dps > 0)
                 pqInfo->dps -= 1;
 
             WriteGuard Guard(GetLock());
@@ -1495,7 +1495,8 @@ void LFGMgr::RemoveProposal(Player* decliner, uint32 ID)
                 if (guid.IsEmpty())
                     continue;
 
-                if (Player* player = sObjectMgr.GetPlayer(guid))
+                Player* player = sObjectMgr.GetPlayer(guid);
+                if (player)
                     player->GetSession()->SendLfgUpdatePlayer(LFG_UPDATETYPE_PROPOSAL_DECLINED, LFGType(pProposal->GetDungeon()->type));
             }
         }
@@ -1517,7 +1518,8 @@ void LFGMgr::RemoveProposal(uint32 ID, bool success)
         LFGQueueSet const proposalGuids = pProposal->GetMembers();
         for (LFGQueueSet::const_iterator itr2 = proposalGuids.begin(); itr2 != proposalGuids.end(); ++itr2 )
         {
-            if (Player* player = sObjectMgr.GetPlayer(*itr2))
+            Player* player = sObjectMgr.GetPlayer(*itr2);
+            if (player)
             {
                 player->GetSession()->SendLfgUpdatePlayer(LFG_UPDATETYPE_PROPOSAL_FAILED, LFGType(pProposal->GetDungeon()->type));
                 player->GetLFGState()->SetProposal(NULL);
@@ -1613,7 +1615,8 @@ void LFGMgr::OfferContinue(Group* group)
             DEBUG_LOG("LFGMgr::OfferContinue: group %u not have required attributes!", group->GetObjectGuid().GetCounter());
             return;
         }
-        if (Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid()))
+        Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid());
+        if (leader)
             leader->GetSession()->SendLfgOfferContinue(dungeon);
         group->GetLFGState()->SetStatus(LFG_STATUS_OFFER_CONTINUE);
     }
@@ -2098,11 +2101,11 @@ bool LFGMgr::CheckRoles(LFGRolesMap* rolesMap)
 
     for (std::vector<LFGRoleMask>::const_iterator itr = rolesVector.begin(); itr != rolesVector.end(); ++itr)
     {
-        if (*itr & LFG_ROLE_MASK_TANK && tanks > 0)
+        if ((*itr & LFG_ROLE_MASK_TANK) && tanks > 0)
             --tanks;
-        else if (*itr & LFG_ROLE_MASK_HEALER && healers > 0)
+        else if ((*itr & LFG_ROLE_MASK_HEALER) && healers > 0)
             --healers;
-        else if (*itr & LFG_ROLE_MASK_DAMAGE && dps > 0)
+        else if ((*itr & LFG_ROLE_MASK_DAMAGE) && dps > 0)
             --dps;
     }
 
@@ -2613,7 +2616,8 @@ void LFGMgr::UpdateQueueStatus(LFGType type)
             damagersTime += uint64( time(NULL) - pqInfo->joinTime);
         if (itr->first.IsGroup())
         {
-            if (Group* group = sObjectMgr.GetGroup(itr->first))
+            Group* group = sObjectMgr.GetGroup(itr->first);
+            if (group)
             {
                 fullTime  += uint64( time(NULL) - pqInfo->joinTime)*group->GetMembersCount();
                 fullCount += group->GetMembersCount();
@@ -2876,7 +2880,8 @@ bool LFGMgr::CheckTeam(Group* group, Player* player)
     if (sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GROUP))
         return true;
 
-    if (Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid()))
+    Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid());
+    if (leader)
     {
         if (leader->GetTeam() == player->GetTeam())
             return true;

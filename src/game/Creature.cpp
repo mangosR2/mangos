@@ -2078,27 +2078,27 @@ void Creature::SetInCombatWithZone()
 
 bool Creature::MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* pSpellInfo, uint32 selectFlags) const
 {
-    if (selectFlags & SELECT_FLAG_PLAYER && pTarget->GetTypeId() != TYPEID_PLAYER)
+    if ((selectFlags & SELECT_FLAG_PLAYER) && pTarget->GetTypeId() != TYPEID_PLAYER)
         return false;
 
-    if (selectFlags & SELECT_FLAG_POWER_MANA && pTarget->getPowerType() != POWER_MANA)
+    if ((selectFlags & SELECT_FLAG_POWER_MANA) && pTarget->getPowerType() != POWER_MANA)
         return false;
-    else if (selectFlags & SELECT_FLAG_POWER_RAGE && pTarget->getPowerType() != POWER_RAGE)
+    else if ((selectFlags & SELECT_FLAG_POWER_RAGE) && pTarget->getPowerType() != POWER_RAGE)
         return false;
-    else if (selectFlags & SELECT_FLAG_POWER_ENERGY && pTarget->getPowerType() != POWER_ENERGY)
+    else if ((selectFlags & SELECT_FLAG_POWER_ENERGY) && pTarget->getPowerType() != POWER_ENERGY)
         return false;
-    else if (selectFlags & SELECT_FLAG_POWER_RUNIC && pTarget->getPowerType() != POWER_RUNIC_POWER)
-        return false;
-
-    if (selectFlags & SELECT_FLAG_IN_MELEE_RANGE && !CanReachWithMeleeAttack(pTarget))
-        return false;
-    if (selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE && CanReachWithMeleeAttack(pTarget))
+    else if ((selectFlags & SELECT_FLAG_POWER_RUNIC) && pTarget->getPowerType() != POWER_RUNIC_POWER)
         return false;
 
-    if (selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE && CanReachWithMeleeAttack(pTarget))
+    if ((selectFlags & SELECT_FLAG_IN_MELEE_RANGE) && !CanReachWithMeleeAttack(pTarget))
+        return false;
+    if ((selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE) && CanReachWithMeleeAttack(pTarget))
         return false;
 
-    if (selectFlags & SELECT_FLAG_IN_LOS && !IsWithinLOSInMap(pTarget))
+    if ((selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE) && CanReachWithMeleeAttack(pTarget))
+        return false;
+
+    if ((selectFlags & SELECT_FLAG_IN_LOS) && !IsWithinLOSInMap(pTarget))
         return false;
 
     if (pSpellInfo)

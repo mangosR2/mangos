@@ -1130,7 +1130,7 @@ namespace MaNGOS
             WorldObject const& GetFocusObject() const { return i_obj; }
             bool operator()(Creature* u)
             {
-                if (u->GetEntry() == i_entry && u->GetObjectGuid() != i_obj.GetObjectGuid() && (i_onlyAlive && u->isAlive() || i_onlyDead && u->IsCorpse() || !i_onlyAlive && !i_onlyDead) && i_obj.IsWithinDistInMap(u, i_range))
+                if (u->GetEntry() == i_entry && u->GetObjectGuid() != i_obj.GetObjectGuid() && ((i_onlyAlive && u->isAlive()) || (i_onlyDead && u->IsCorpse()) || (!i_onlyAlive && !i_onlyDead)) && i_obj.IsWithinDistInMap(u, i_range))
                 {
                     i_range = i_obj.GetDistance(u);         // use found unit range as new range limit for next check
                     return true;

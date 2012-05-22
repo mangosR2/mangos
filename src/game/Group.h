@@ -378,8 +378,8 @@ class MANGOS_DLL_SPEC Group
         LFGGroupState* GetLFGState() { return m_LFGState; };
         bool ConvertToLFG(LFGType type);
         bool isLFDGroup()  const { return m_groupType & GROUPTYPE_LFD; }
-        bool isLFGGroup()  const { return (m_groupType & GROUPTYPE_LFD && !(m_groupType & GROUPTYPE_RAID)) ; }
-        bool isLFRGroup()  const { return (m_groupType & GROUPTYPE_LFD && m_groupType & GROUPTYPE_RAID) ; }
+        bool isLFGGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && !(m_groupType & GROUPTYPE_RAID)) ; }
+        bool isLFRGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && (m_groupType & GROUPTYPE_RAID)) ; }
         void SetGroupRoles(ObjectGuid guid, uint8 roles);
         uint8 GetGroupRoles(ObjectGuid guid);
 

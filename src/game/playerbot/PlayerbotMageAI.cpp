@@ -199,8 +199,9 @@ void PlayerbotMageAI::DoNextCombatManeuver(Unit *pTarget)
                 break;
             }
             LastSpellFrost = 0;
+
         //SpellSequence = SPELL_FIRE;
-        //break;
+            /* no break */
 
         case SPELL_FIRE:
             if (FIRE_WARD > 0 && !m_bot->HasAura(FIRE_WARD, EFFECT_INDEX_0) && LastSpellFire < 1 && ai->GetManaPercent() >= 3)
@@ -282,8 +283,7 @@ void PlayerbotMageAI::DoNextCombatManeuver(Unit *pTarget)
             }
             LastSpellFire = 0;
         //SpellSequence = SPELL_ARCANE;
-        //break;
-
+            /* no break */
         case SPELL_ARCANE:
             if (ARCANE_POWER > 0 && LastSpellArcane < 1 && ai->GetManaPercent() >= 37)
             {
@@ -354,6 +354,9 @@ void PlayerbotMageAI::DoNextCombatManeuver(Unit *pTarget)
                 LastSpellArcane = 0;
                 SpellSequence = SPELL_FROST;
             }
+            break;
+        default:
+            break;
     }
 } // end DoNextCombatManeuver
 

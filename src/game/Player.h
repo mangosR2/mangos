@@ -1059,7 +1059,7 @@ class MANGOS_DLL_SPEC Player : public Unit
     friend void Item::RemoveFromUpdateQueueOf(Player *player);
     public:
         explicit Player (WorldSession *session);
-        ~Player ( );
+        ~Player ();
 
         void CleanupsBeforeDelete();
 

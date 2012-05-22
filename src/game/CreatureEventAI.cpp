@@ -1255,7 +1255,7 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
             for (int8 seatId = 0; seatId < MAX_VEHICLE_SEAT; ++seatId)
                 if (Unit* passenger = m_creature->GetVehicleKit()->GetPassenger(seatId))
                     return passenger;
-            return NULL;
+            break;
         }
         case TARGET_T_VEHICLE_PASSENGER_0:
         case TARGET_T_VEHICLE_PASSENGER_1:
@@ -1269,7 +1269,7 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
             if (m_creature->GetObjectGuid().IsVehicle())
                 if (Unit* passenger = m_creature->GetVehicleKit()->GetPassenger(Target - TARGET_T_VEHICLE_PASSENGER_0))
                     return passenger;
-            return NULL;
+            break;
         }
 
         case TARGET_T_CURRENT_VEHICLE:
@@ -1277,12 +1277,13 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
             if (VehicleKit* vehicle = m_creature->GetVehicle())
                 if (Unit* base = vehicle->GetBase())
                     return base;
-            return NULL;
+            break;
         }
 
         default:
-            return NULL;
-    };
+            break;
+    }
+    return NULL;
 }
 
 Unit* CreatureEventAI::DoSelectLowestHpFriendly(float range, uint32 MinHPDiff)

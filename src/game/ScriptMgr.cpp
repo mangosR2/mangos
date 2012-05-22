@@ -201,12 +201,12 @@ void ScriptMgr::LoadScripts(ScriptMapMapName& scripts, const char* tablename)
                 sLog.outErrorDb("Table `%s` has invalid data_flags %u in command %u for script id %u, skipping.", tablename, tmp.data_flags, tmp.command, tmp.id);
                 continue;
             }
-            if (!tmp.HasAdditionalScriptFlag() && tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
+            if (!tmp.HasAdditionalScriptFlag() && (tmp.data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL))
             {
                 sLog.outErrorDb("Table `%s` has invalid data_flags %u in command %u for script id %u, skipping.", tablename, tmp.data_flags, tmp.command, tmp.id);
                 continue;
             }
-            if (tmp.data_flags & SCRIPT_FLAG_BUDDY_AS_TARGET && ! tmp.buddyEntry)
+            if ((tmp.data_flags & SCRIPT_FLAG_BUDDY_AS_TARGET) && ! tmp.buddyEntry)
             {
                 sLog.outErrorDb("Table `%s` has buddy required in data_flags %u in command %u for script id %u, but no buddy defined, skipping.", tablename, tmp.data_flags, tmp.command, tmp.id);
                 continue;
@@ -886,6 +886,7 @@ bool ScriptAction::GetScriptCommandObject(const ObjectGuid guid, bool includeIte
             }
             // else no break, but display error message
         }
+        /* no break */
         default:
             sLog.outError(" DB-SCRIPTS: Process table `%s` id %u, command %u with unsupported guid %s, skipping", m_table, m_script->id, m_script->command, guid.GetString().c_str());
             return false;
@@ -1123,7 +1124,7 @@ void ScriptAction::HandleScriptStep()
                 break;
 
             // Just turn around
-            if (m_script->x == 0.0f && m_script->y == 0.0f && m_script->z == 0.0f ||
+            if ((m_script->x == 0.0f && m_script->y == 0.0f && m_script->z == 0.0f) ||
                 // Check point-to-point distance, hence revert effect of bounding radius
                 ((Unit*)pSource)->IsWithinDist3d(m_script->x, m_script->y, m_script->z, 0.01f - ((Unit*)pSource)->GetObjectBoundingRadius()))
             {
@@ -1353,8 +1354,8 @@ void ScriptAction::HandleScriptStep()
                 break;
             }
 
-            if (m_script->command == SCRIPT_COMMAND_OPEN_DOOR && pDoor->GetGoState() != GO_STATE_READY ||
-                m_script->command == SCRIPT_COMMAND_CLOSE_DOOR && pDoor->GetGoState() == GO_STATE_READY)
+            if ((m_script->command == SCRIPT_COMMAND_OPEN_DOOR && pDoor->GetGoState() != GO_STATE_READY) ||
+                (m_script->command == SCRIPT_COMMAND_CLOSE_DOOR && pDoor->GetGoState() == GO_STATE_READY))
                 break;                                      // to be opened door already open, or to be closed door already closed
 
             pDoor->UseDoorOrButton(time_to_reset);
@@ -1620,6 +1621,7 @@ void ScriptAction::HandleScriptStep()
                 pGo->SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
             else if (m_script->goLockState.lockState & 0x08)
                 pGo->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NO_INTERACT);
+            break;
         }
         case SCRIPT_COMMAND_STAND_STATE:                    // 28
         {

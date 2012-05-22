@@ -80,6 +80,7 @@ enum SpellNotifyPushType
     PUSH_IN_BACK,
     PUSH_SELF_CENTER,
     PUSH_DEST_CENTER,
+    PUSH_INHERITED_CENTER,
     PUSH_TARGET_CENTER
 };
 
@@ -779,6 +780,20 @@ namespace MaNGOS
                         i_centerZ = i_spell.m_targets.m_srcZ;
                     }
                     break;
+                case PUSH_INHERITED_CENTER:
+                {
+                    if ((i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || (i_spell.m_targets.m_targetMask & TARGET_FLAG_UNIT))
+                    {
+                        i_centerX = i_spell.m_targets.m_destX;
+                        i_centerY = i_spell.m_targets.m_destY;
+                    }
+                    else if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+                    {
+                        i_centerX = i_spell.m_targets.m_srcX;
+                        i_centerY = i_spell.m_targets.m_srcY;
+                    }
+                    break;
+                }
                 case PUSH_TARGET_CENTER:
                     if (Unit* target = i_spell.m_targets.getUnitTarget())
                     {
@@ -788,6 +803,7 @@ namespace MaNGOS
                     break;
                 default:
                     sLog.outError("SpellNotifierCreatureAndPlayer: unsupported PUSH_* case %u.", i_push_type);
+                    break;
             }
         }
 
@@ -881,6 +897,20 @@ namespace MaNGOS
                         if (itr->getSource()->IsWithinDist3d(i_centerX, i_centerY, i_centerZ, i_radius))
                             i_data->push_back(itr->getSource());
                         break;
+                    case PUSH_INHERITED_CENTER:
+                    {
+                        if ((i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || (i_spell.m_targets.m_targetMask & TARGET_FLAG_UNIT))
+                        {
+                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.m_destX, i_spell.m_targets.m_destY, i_spell.m_targets.m_destZ,i_radius))
+                                i_data->push_back(itr->getSource());
+                        }
+                        else if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+                        {
+                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.m_srcX, i_spell.m_targets.m_srcY, i_spell.m_targets.m_srcZ, i_radius))
+                                i_data->push_back(itr->getSource());
+                        }
+                        break;
+                    }
                     case PUSH_TARGET_CENTER:
                         if (i_spell.m_targets.getUnitTarget() && i_spell.m_targets.getUnitTarget()->IsWithinDist((Unit*)(itr->getSource()), i_radius))
                             i_data->push_back(itr->getSource());

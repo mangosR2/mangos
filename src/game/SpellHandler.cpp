@@ -386,7 +386,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     Unit* mover = NULL;
 
-    if (spellInfo->AttributesEx6 & SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE && _mover->IsCharmerOrOwnerPlayerOrPlayerItself())
+    if (spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE) && _mover->IsCharmerOrOwnerPlayerOrPlayerItself())
         mover = _mover->GetCharmerOrOwnerPlayerOrPlayerItself();
     else
         mover = _mover;
@@ -396,8 +396,8 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     {
         Player *plr = mover->GetCharmerOrOwnerPlayerOrPlayerItself();
         if (mover->GetVehicleKit()->GetSeatInfo(plr) &&
-           (mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_ATTACK ||
-            mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_CAST ))
+           ((mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_ATTACK) ||
+            (mover->GetVehicleKit()->GetSeatInfo(plr)->m_flags & SEAT_FLAG_CAN_CAST) ))
             mover = plr;
     }
 

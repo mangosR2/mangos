@@ -307,6 +307,20 @@ enum MapTypes                                               // Lua_IsInInstance
     MAP_ARENA           = 4                                 // arena
 };
 
+enum MapFlags                                               // Map flags (need more research)
+{
+    MAP_FLAG_NONE                = 0x00000000,              // none specific
+    MAP_FLAG_INSTANCEABLE        = 0x00000001,              // or possible splittable for continent maps
+    MAP_FLAG_DEVELOPMENT         = 0x00000002,              // testing or development maps only
+    MAP_FLAG_UNK3                = 0x00000004,              //
+    MAP_FLAG_UNK4                = 0x00000008,              //
+    MAP_FLAG_UNK5                = 0x00000010,              //
+    MAP_FLAG_UNK6                = 0x00000020,              //
+    MAP_FLAG_UNK7                = 0x00000040,              //
+    MAP_FLAG_UNK8                = 0x00000080,              //
+    MAP_FLAG_VARIABLE_DIFFICULTY = 0x00000100,              // maps, where has changeable difficulty
+};
+
 enum AbilytyLearnType
 {
     ABILITY_LEARNED_ON_GET_PROFESSION_SKILL     = 1,

@@ -729,8 +729,9 @@ uint32 BattleGroundAV::GetNodeName(BG_AV_Nodes node)
         case BG_AV_NODES_FROSTWOLF_ETOWER:  return LANG_BG_AV_NODE_TOWER_FROST_E;
         case BG_AV_NODES_FROSTWOLF_WTOWER:  return LANG_BG_AV_NODE_TOWER_FROST_W;
         case BG_AV_NODES_FROSTWOLF_HUT:     return LANG_BG_AV_NODE_GRAVE_FROST_HUT;
-        default: return 0; break;
+        default: break;
     }
+    return 0;
 }
 
 void BattleGroundAV::AssaultNode(BG_AV_Nodes node, TeamIndex teamIdx)

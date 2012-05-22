@@ -102,7 +102,7 @@ void CreatureLinkingMgr::LoadFromDB()
             continue;
 
         // Store db-guid for master of whom pTmp is spawn dependend (only non-local bosses)
-        if (tmp.searchRange == 0 && tmp.linkingFlag & (FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE))
+        if (tmp.searchRange == 0 && (tmp.linkingFlag & (FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE)))
         {
             if (QueryResult* guid_result = WorldDatabase.PQuery("SELECT guid FROM creature WHERE id=%u AND map=%u LIMIT 1", tmp.masterId, tmp.mapId))
             {
@@ -223,14 +223,14 @@ bool CreatureLinkingMgr::IsLinkingEntryValid(uint32 slaveEntry, CreatureLinkingI
         }
     }
 
-    if (pTmp->linkingFlag & ~(LINKING_FLAG_INVALID - 1)  || pTmp->linkingFlag == 0)
+    if ((pTmp->linkingFlag & ~(LINKING_FLAG_INVALID - 1))  || pTmp->linkingFlag == 0)
     {
         sLog.outErrorDb("`creature_linking%s` has invalid flag, (entry: %u, map: %u, flags: %u), skipped", byEntry ? "_template" : "", slaveEntry, pTmp->mapId, pTmp->linkingFlag);
         return false;
     }
 
     // Additional checks, depending on flags
-    if (pTmp->linkingFlag & FLAG_DESPAWN_ON_RESPAWN && slaveEntry == pTmp->masterId)
+    if ((pTmp->linkingFlag & FLAG_DESPAWN_ON_RESPAWN) && slaveEntry == pTmp->masterId)
     {
         sLog.outErrorDb("`creature_linking%s` has pointless FLAG_DESPAWN_ON_RESPAWN for self, (entry: %u, map: %u), skipped", byEntry ? "_template" : "", slaveEntry, pTmp->mapId);
         return false;
@@ -239,7 +239,7 @@ bool CreatureLinkingMgr::IsLinkingEntryValid(uint32 slaveEntry, CreatureLinkingI
     if (byEntry)
     {
         // Check for uniqueness of mob whom is followed, on whom spawning is dependend
-        if (pTmp->searchRange == 0 && pTmp->linkingFlag & (FLAG_FOLLOW | FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE))
+        if (pTmp->searchRange == 0 && (pTmp->linkingFlag & (FLAG_FOLLOW | FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE)))
         {
             // Painfully slow, needs better idea
             QueryResult *result = WorldDatabase.PQuery("SELECT COUNT(guid) FROM creature WHERE id=%u AND map=%u", pTmp->masterId, pTmp->mapId);
@@ -296,7 +296,7 @@ bool CreatureLinkingMgr::IsSpawnedByLinkedMob(Creature* pCreature)
 {
     CreatureLinkingInfo const* pInfo = CreatureLinkingMgr::GetLinkedTriggerInformation(pCreature);
 
-    return pInfo && pInfo->linkingFlag & (FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE) && (pInfo->masterDBGuid || pInfo->searchRange);
+    return pInfo && (pInfo->linkingFlag & (FLAG_CANT_SPAWN_IF_BOSS_DEAD | FLAG_CANT_SPAWN_IF_BOSS_ALIVE)) && (pInfo->masterDBGuid || pInfo->searchRange);
 }
 
 // This gives the information of a linked NPC (describes action when its ActionTrigger triggers)
@@ -471,6 +471,9 @@ void CreatureLinkingHolder::DoCreatureLinkingEvent(CreatureLinkingEvent eventTyp
                     case LINKING_EVENT_RESPAWN:
                         if (pMaster->isAlive())
                             SetFollowing(pSource, pMaster);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -523,17 +526,17 @@ void CreatureLinkingHolder::ProcessSlave(CreatureLinkingEvent eventType, Creatur
             }
             break;
         case LINKING_EVENT_EVADE:
-            if (flag & FLAG_DESPAWN_ON_EVADE && pSlave->isAlive())
+            if ((flag & FLAG_DESPAWN_ON_EVADE) && pSlave->isAlive())
                 pSlave->ForcedDespawn();
-            if (flag & FLAG_RESPAWN_ON_EVADE && !pSlave->isAlive())
+            if ((flag & FLAG_RESPAWN_ON_EVADE) && !pSlave->isAlive())
                 pSlave->Respawn();
             break;
         case LINKING_EVENT_DIE:
-            if (flag & FLAG_SELFKILL_ON_DEATH && pSlave->isAlive())
+            if ((flag & FLAG_SELFKILL_ON_DEATH) && pSlave->isAlive())
                 pSlave->DealDamage(pSlave, pSlave->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
-            if (flag & FLAG_DESPAWN_ON_DEATH && pSlave->isAlive())
+            if ((flag & FLAG_DESPAWN_ON_DEATH) && pSlave->isAlive())
                 pSlave->ForcedDespawn();
-            if (flag & FLAG_RESPAWN_ON_DEATH && !pSlave->isAlive())
+            if ((flag & FLAG_RESPAWN_ON_DEATH) && !pSlave->isAlive())
                 pSlave->Respawn();
             break;
         case LINKING_EVENT_RESPAWN:
@@ -543,10 +546,10 @@ void CreatureLinkingHolder::ProcessSlave(CreatureLinkingEvent eventType, Creatur
                 if (!pSlave->isAlive() && pSlave->GetRespawnTime() > time(NULL))
                     pSlave->Respawn();
             }
-            else if (flag & FLAG_DESPAWN_ON_RESPAWN && pSlave->isAlive())
+            else if ((flag & FLAG_DESPAWN_ON_RESPAWN) && pSlave->isAlive())
                 pSlave->ForcedDespawn();
 
-            if (flag & FLAG_FOLLOW && pSlave->isAlive() && !pSlave->isInCombat())
+            if ((flag & FLAG_FOLLOW) && pSlave->isAlive() && !pSlave->isInCombat())
                 SetFollowing(pSlave, pSource);
 
             break;

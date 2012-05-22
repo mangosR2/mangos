@@ -285,16 +285,25 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     {
         if (updateFlags & UPDATEFLAG_POSITION)
         {
-            Transport* transport = ((WorldObject*)this)->GetTransport();
-            if (transport)
-                *data << transport->GetPackGUID();
+            ObjectGuid transportGuid;
+            if (GetObjectGuid().IsUnit())
+            {
+                if (((Unit*)this)->m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
+                    transportGuid = ((Unit*)this)->m_movementInfo.GetTransportGuid();
+            }
+            else if (Transport* transport = ((WorldObject*)this)->GetTransport())
+                transportGuid = transport->GetObjectGuid();
+
+            if (transportGuid)
+                *data << transportGuid.WriteAsPacked();
             else
                 *data << uint8(0);
 
             *data << float(((WorldObject*)this)->GetPositionX());
             *data << float(((WorldObject*)this)->GetPositionY());
             *data << float(((WorldObject*)this)->GetPositionZ());
-            if (transport)
+
+            if (transportGuid)
             {
                 *data << float(((WorldObject*)this)->GetTransOffsetX());
                 *data << float(((WorldObject*)this)->GetTransOffsetY());

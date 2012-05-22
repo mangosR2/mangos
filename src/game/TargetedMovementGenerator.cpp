@@ -20,6 +20,7 @@
 #include "TargetedMovementGenerator.h"
 #include "Errors.h"
 #include "Creature.h"
+#include "CreatureAI.h"
 #include "Player.h"
 #include "World.h"
 #include "movement/MoveSplineInit.h"
@@ -53,7 +54,7 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
         owner.GetPosition(x, y, z);
     }
     else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && (fabs(i_offset) > M_NULL_F) && 
-        fabs((i_target->GetDistance(&owner)  + owner.GetObjectBoundingRadius() + i_target->GetObjectBoundingRadius() - i_offset) < 2 * PET_FOLLOW_DIST))
+        (fabs(i_target->GetDistance(&owner)  + owner.GetObjectBoundingRadius() + i_target->GetObjectBoundingRadius() - i_offset) < 2 * PET_FOLLOW_DIST))
     {
         if (!owner.movespline->Finalized())
             return;
@@ -301,9 +302,8 @@ void ChaseMovementGenerator<T>::Finalize(T &owner)
     {
         if (!owner.isInCombat() || ( this->i_target.getTarget() && !this->i_target.getTarget()->isInAccessablePlaceFor(&owner)))
         {
-            if (owner.isInCombat())
-                owner.CombatStop(true);
-            owner.GetMotionMaster()->MoveTargetedHome();
+            if (((Creature*)&owner)->AI())
+                ((Creature*)&owner)->AI()->EnterEvadeMode();
         }
     }
 }

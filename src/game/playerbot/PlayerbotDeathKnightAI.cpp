@@ -256,7 +256,7 @@ void PlayerbotDeathKnightAI::DoNextCombatManeuver(Unit *pTarget)
             }
 
             LastSpellUnholyDK = 0;
-
+            /* no break */
         case SPELL_DK_FROST:
             if (FROST_PRESENCE > 0)
                 (!m_bot->HasAura(FROST_PRESENCE, EFFECT_INDEX_0) && !m_bot->HasAura(BLOOD_PRESENCE, EFFECT_INDEX_0) && !m_bot->HasAura(UNHOLY_PRESENCE, EFFECT_INDEX_0) && ai->CastSpell (FROST_PRESENCE, *m_bot));
@@ -370,7 +370,7 @@ void PlayerbotDeathKnightAI::DoNextCombatManeuver(Unit *pTarget)
             }
 
             LastSpellFrostDK = 0;
-
+            /* no break */
         case SPELL_DK_BLOOD:
             if (BLOOD_PRESENCE > 0)
                 (!m_bot->HasAura(BLOOD_PRESENCE, EFFECT_INDEX_0) && !m_bot->HasAura(UNHOLY_PRESENCE, EFFECT_INDEX_0) && !m_bot->HasAura(FROST_PRESENCE, EFFECT_INDEX_0) && ai->CastSpell (BLOOD_PRESENCE, *m_bot));
@@ -483,6 +483,9 @@ void PlayerbotDeathKnightAI::DoNextCombatManeuver(Unit *pTarget)
                 LastSpellBloodDK = 0;
                 SpellSequence = SPELL_DK_UNHOLY;
             }
+            break;
+        default:
+            break;
     }
     if (ai->GetManager()->m_confDebugWhisper)
         ai->TellMaster(out.str().c_str());

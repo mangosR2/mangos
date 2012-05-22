@@ -335,6 +335,7 @@ int32 BattleGroundIC::_GetNodeNameId(uint8 node)
         case BG_IC_NODE_H_KEEP:   return LANG_BG_IC_HORDE_KEEP;
         default:
             MANGOS_ASSERT(0);
+            break;
     }
     return 0;
 }
@@ -827,7 +828,8 @@ void BattleGroundIC::HandleBuffs()
 {
     for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
     {
-        if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+        Player *plr = sObjectMgr.GetPlayer(itr->first);
+        if (plr)
         {
             // quarry / refinery buffs
             for (uint8 node = BG_IC_NODE_QUARRY; node <= BG_IC_NODE_REFINERY; node++)
@@ -869,6 +871,7 @@ uint32 BattleGroundIC::GetCorrectFactionIC(uint8 vehicleType) const
 
             else if (m_Nodes[BG_IC_NODE_WORKSHOP] == BG_IC_NODE_STATUS_HORDE_OCCUPIED)
                 return VEHICLE_FACTION_HORDE;
+            break;
         }
         case VEHICLE_IC_CATAPULT:
         {
@@ -877,9 +880,10 @@ uint32 BattleGroundIC::GetCorrectFactionIC(uint8 vehicleType) const
 
             else if (m_Nodes[BG_IC_NODE_DOCKS] == BG_IC_NODE_STATUS_HORDE_OCCUPIED)
                 return VEHICLE_FACTION_HORDE;
+            break;
         }
         default:
-            return VEHICLE_FACTION_NEUTRAL;
+            break;
     }
     return VEHICLE_FACTION_NEUTRAL;
 }

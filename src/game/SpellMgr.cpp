@@ -360,9 +360,8 @@ bool IsNoStackAuraDueToAura(uint32 spellId_1, uint32 spellId_2)
 bool IsSpellAffectedBySpellMods(SpellEntry const* spellInfo)
 {
     return !(IsPassiveSpell(spellInfo) &&
-            !(spellInfo->Attributes & SPELL_ATTR_ABILITY) &&
-            spellInfo->AttributesEx3 & SPELL_ATTR_EX3_CAN_PROC_WITH_TRIGGERED
-            );
+        !spellInfo->HasAttribute(SPELL_ATTR_ABILITY) &&
+        spellInfo->HasAttribute(SPELL_ATTR_EX3_CAN_PROC_WITH_TRIGGERED));
 }
 
 
@@ -434,7 +433,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 if (spellInfo->HasAttribute(SPELL_ATTR_EX2_FOOD_BUFF) || spellInfo->SpellIconID == 2560)
                     return SPELL_WELL_FED;
                 else if (spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_STAT && spellInfo->SpellFamilyName == SPELLFAMILY_GENERIC &&
-                     spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NATURE && spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
+                     (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NATURE) && spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE)
                      return SPELL_SCROLL;
             }
             break;
@@ -509,7 +508,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
 
             // skip Heart of the Crusader and Judgements of the Just that have also same spell family mask
             if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_JUDGEMENT_OF_RIGHT, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_HEART_OF_THE_CRUSADER, CF_PALADIN_JUDGEMENT_OF_BLOOD_MARTYR>() &&
-                (spellInfo->AttributesEx3 & SPELL_ATTR_EX3_UNK9) && !spellInfo->SpellFamilyFlags.test<CF_PALADIN_HEART_OF_THE_CRUSADER,CF_PALADIN_JUDGEMENT_OF_JUST>())
+                (spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK9) && !spellInfo->SpellFamilyFlags.test<CF_PALADIN_HEART_OF_THE_CRUSADER,CF_PALADIN_JUDGEMENT_OF_JUST>()))
                 return SPELL_JUDGEMENT;
 
             // only paladin auras have this (for palaldin class family)
@@ -539,7 +538,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
     if ((IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_CREATURES) ||
         IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_RESOURCES)  ||
         IsSpellHaveAura(spellInfo, SPELL_AURA_TRACK_STEALTHED)) &&
-        ((spellInfo->AttributesEx & SPELL_ATTR_EX_UNK17) || (spellInfo->AttributesEx6 & SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE)))
+        (spellInfo->HasAttribute(SPELL_ATTR_EX_UNK17) || spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE)))
         return SPELL_TRACKER;
 
     // elixirs can have different families, but potion most ofc.
@@ -1054,7 +1053,7 @@ bool IsNonPositiveSpell(SpellEntry const* spellProto)
     if (!spellProto)
         return false;
 
-    if (spellProto->AttributesEx6 & SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR)
+    if (spellProto->HasAttribute(SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR))
         return true;
 
     if (IsPositiveSpell(spellProto))
@@ -1142,7 +1141,7 @@ SpellCastResult GetErrorAtShapeshiftedCast (SpellEntry const *spellInfo, uint32 
 
     if (actAsShifted)
     {
-        if (spellInfo->Attributes & SPELL_ATTR_NOT_SHAPESHIFT) // not while shapeshifted
+        if (spellInfo->HasAttribute(SPELL_ATTR_NOT_SHAPESHIFT)) // not while shapeshifted
         {
             //but we must allow cast of Berserk+modifier from any form... where for the hell should we do it?
             if (!(spellInfo->SpellIconID == 1680 && (spellInfo->AttributesEx & 0x8000)))
@@ -1587,6 +1586,7 @@ bool IsCastEndProcModifierAura(SpellEntry const *spellInfo, SpellEffectIndex eff
                 default:
                     break;
             }
+            break;
         }
         case SPELL_AURA_MOD_DAMAGE_PERCENT_DONE:
         {
@@ -1594,11 +1594,12 @@ bool IsCastEndProcModifierAura(SpellEntry const *spellInfo, SpellEffectIndex eff
                 if (IsEffectHandledOnDelayedSpellLaunch(procSpell, SpellEffectIndex(i)))
                     return true;
 
-            return false;
+            break;
         }
         default:
-            return false;
+            break;
     }
+    return false;
 }
 
 struct DoSpellBonuses
@@ -1970,7 +1971,7 @@ bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const * spellP
     if (procEvent_procEx == PROC_EX_NONE)
     {
         // Don't allow proc from periodic heal if no extra requirement is defined
-        if (EventProcFlag & (PROC_FLAG_ON_DO_PERIODIC | PROC_FLAG_ON_TAKE_PERIODIC) && (procExtra & PROC_EX_PERIODIC_POSITIVE))
+        if ((EventProcFlag & (PROC_FLAG_ON_DO_PERIODIC | PROC_FLAG_ON_TAKE_PERIODIC)) && (procExtra & PROC_EX_PERIODIC_POSITIVE))
             return false;
 
         // No extra req, so can trigger for (damage/healing present) and cast end/hit/crit
@@ -2445,6 +2446,7 @@ bool SpellMgr::IsGroupBuff(SpellEntry const *spellInfo)
                 {
                     return true;
                 }
+                break;
             default:
                 break;
         }
@@ -2465,7 +2467,7 @@ bool SpellMgr::IsGroupBuff(SpellEntry const *spellInfo)
 // is holder stackable from different casters
 bool SpellMgr::IsStackableSpellAuraHolder(SpellEntry const* spellInfo)
 {
-    if (spellInfo->AttributesEx3 & SPELL_ATTR_EX3_STACK_FOR_DIFF_CASTERS)
+    if (spellInfo->HasAttribute(SPELL_ATTR_EX3_STACK_FOR_DIFF_CASTERS))
         return true;
 
     if (GetSpellSpecific(spellInfo->Id) == SPELL_JUDGEMENT)
@@ -3340,13 +3342,6 @@ void SpellMgr::LoadSpellPetAuras()
             {
                 sLog.outErrorDb("Spell %u listed in `spell_pet_auras` does not exist", spell);
                 continue;
-            }
-
-            if (spellInfo->Effect[eff] != SPELL_EFFECT_DUMMY &&
-               (spellInfo->Effect[eff] != SPELL_EFFECT_APPLY_AURA ||
-                spellInfo->EffectApplyAuraName[eff] != SPELL_AURA_DUMMY))
-            {
-                DEBUG_LOG("PetAuras load: Spell %u listed in `spell_pet_auras` does not have dummy aura or dummy effect", spell);
             }
 
             SpellEntry const* spellInfo2 = sSpellStore.LookupEntry(aura);
@@ -4848,7 +4843,7 @@ bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32
     if (questStart)
     {
         // not in expected required quest state
-        if(!player || (!questStartCanActive || !player->IsActiveQuest(questStart)) && !player->GetQuestRewardStatus(questStart))
+        if(!player || ((!questStartCanActive || !player->IsActiveQuest(questStart)) && !player->GetQuestRewardStatus(questStart)))
             return false;
     }
 

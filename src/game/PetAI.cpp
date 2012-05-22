@@ -671,8 +671,8 @@ void PetAI::UpdateAI(const uint32 diff)
                 }
                 if (m_creature->IsCrowdControlled() || m_creature->GetCharmerOrOwner()->IsCrowdControlled())
                     currentSpells.push_back(GetSpellType(PET_SPELL_FREEACTION));
-                // no break here!
             }
+            /* no break here!*/
             default:
             {
                 if (!IsInCombat())

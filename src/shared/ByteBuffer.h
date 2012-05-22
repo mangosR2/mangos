@@ -58,7 +58,6 @@ class ByteBuffer
         // constructor
         ByteBuffer(): _rpos(0), _wpos(0)
         {
-            _storage.reserve(DEFAULT_SIZE);
         }
 
         // constructor

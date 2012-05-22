@@ -323,7 +323,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                     if (temp.percent_range.percentMax <= temp.percent_range.percentMin)
                         sLog.outErrorDb("CreatureEventAI:  Creature %u are using percentage event(%u) with param1 <= param2 (MaxPercent <= MinPercent). Event will never trigger! ", temp.creature_id, i);
 
-                    if (temp.event_flags & EFLAG_REPEATABLE && !temp.percent_range.repeatMin && !temp.percent_range.repeatMax)
+                    if ((temp.event_flags & EFLAG_REPEATABLE) && !temp.percent_range.repeatMin && !temp.percent_range.repeatMax)
                     {
                         sLog.outErrorDb("CreatureEventAI:  Creature %u has param3 and param4=0 (RepeatMin/RepeatMax) but cannot be repeatable without timers. Removing EFLAG_REPEATABLE for event %u.", temp.creature_id, i);
                         temp.event_flags &= ~EFLAG_REPEATABLE;
@@ -371,6 +371,7 @@ void CreatureEventAIMgr::LoadCreatureEventAI_Scripts()
                         case SPAWNED_EVENT_ZONE:
                             if(!GetAreaEntryByAreaID(temp.spawned.conditionValue1))
                                 sLog.outErrorDb("CreatureEventAI:  Creature %u are using spawned event(%u) with param1 = %u 'area specific' but area (param2: %u) does not exist. Event will never repeat.", temp.creature_id, i, temp.spawned.condition, temp.spawned.conditionValue1);
+                            break;
                         default:
                             sLog.outErrorDb("CreatureEventAI:  Creature %u are using invalid spawned event %u mode (%u) in param1", temp.creature_id, i, temp.spawned.condition);
                             break;

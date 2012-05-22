@@ -295,8 +295,7 @@ void PlayerbotShamanAI::DoNextCombatManeuver(Unit *pTarget)
             }
             LastSpellEnhancement = LastSpellEnhancement + 1;
         //SpellSequence = SPELL_RESTORATION;
-        //break;
-
+            /* no break */
         case SPELL_RESTORATION:
             if (HEALING_STREAM_TOTEM > 0 && LastSpellRestoration < 3 && ai->GetHealthPercent() < 50 && (!m_bot->HasAura(HEALING_STREAM_TOTEM, EFFECT_INDEX_0)) && (!m_bot->HasAura(MANA_SPRING_TOTEM, EFFECT_INDEX_0)) && ai->GetManaPercent() >= 4)
             {
@@ -334,8 +333,7 @@ void PlayerbotShamanAI::DoNextCombatManeuver(Unit *pTarget)
             }
             LastSpellRestoration = LastSpellRestoration + 1;
         //SpellSequence = SPELL_ELEMENTAL;
-        //break;
-
+            /* no break */
         case SPELL_ELEMENTAL:
             if (LIGHTNING_BOLT > 0 && LastSpellElemental == 1 && ai->GetManaPercent() >= 13)
             {
@@ -460,6 +458,9 @@ void PlayerbotShamanAI::DoNextCombatManeuver(Unit *pTarget)
                 LastSpellElemental = LastSpellElemental + 1;
                 SpellSequence = SPELL_ENHANCEMENT;
             }
+            break;
+        default:
+            break;
     }
 } // end DoNextCombatManeuver
 
