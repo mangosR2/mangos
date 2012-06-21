@@ -1,7 +1,7 @@
 #ifndef LOAD_LIB_H
 #define LOAD_LIB_H
 
-#ifdef WIN32
+#if defined (WIN32) && !defined (__MINGW32__)
 typedef __int64            int64;
 typedef __int32            int32;
 typedef __int16            int16;
@@ -12,10 +12,10 @@ typedef unsigned __int16   uint16;
 typedef unsigned __int8    uint8;
 #else
 #include <stdint.h>
-#ifndef uint64_t
-#ifdef __linux__
-#include <linux/types.h>
-#endif
+#if defined (__MINGW32__)
+    #include <sys/types.h>
+#elif defined(__linux__)
+    #include <linux/types.h>
 #endif
 typedef int64_t            int64;
 typedef int32_t            int32;

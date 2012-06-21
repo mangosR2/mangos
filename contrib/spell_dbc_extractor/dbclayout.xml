@@ -25,8 +25,8 @@
     <field type="uint" name="mfacingCasterFlags" method="skip" />
     <field type="uint" name="CasterAuraState" method="read" />
     <field type="uint" name="TargetAuraState" method="read" />
-    <field type="uint" name="ExcludeCasterAuraState" method="read" />
-    <field type="uint" name="ExcludeTargetAuraState" method="read" />
+    <field type="uint" name="CasterAuraStateNot" method="read" />
+    <field type="uint" name="TargetAuraStateNot" method="read" />
     <field type="uint" name="CasterAuraSpell" method="read" />
     <field type="uint" name="TargetAuraSpell" method="read" />
     <field type="uint" name="ExcludeCasterAuraSpell" method="read" />
@@ -207,7 +207,7 @@
     <field type="string" name="mauraDescriptionlang15" method="skip" />
     <field type="string" name="mauraDescriptionlang16" method="skip" />
     <field type="uint" name="mauraDescriptionflag" method="skip" />
-    <field type="uint" name="ManaCostPct" method="read" />
+    <field type="uint" name="ManaCostPercentage" method="read" />
     <field type="uint" name="StartRecoveryCategory" method="read" />
     <field type="uint" name="StartRecoveryTime" method="read" />
     <field type="uint" name="MaxTargetLevel" method="read" />

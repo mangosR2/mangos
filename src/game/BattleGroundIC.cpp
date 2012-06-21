@@ -395,7 +395,8 @@ bool BattleGroundIC::SetupBattleGround()
     //Send transport init packet to all player in map
     for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end();itr++)
     {
-        if (Player* player = sObjectMgr.GetPlayer(itr->first))
+        Player* player = sObjectMgr.GetPlayer(itr->first);
+        if (player)
             SendTransportInit(player);
     }
 

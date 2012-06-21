@@ -580,7 +580,8 @@ void WorldSession::HandleGroupChangeSubGroupOpcode( WorldPacket & recv_data )
     /********************/
 
     // everything is fine, do it
-    if (Player* player = sObjectMgr.GetPlayer(name.c_str()))
+    Player* player = sObjectMgr.GetPlayer(name.c_str());
+    if (player)
         group->ChangeMembersGroup(player, groupNr);
     else
     {

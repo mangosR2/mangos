@@ -1289,7 +1289,9 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
     {
         uint32 groupId = (*resultGroup)[0].GetUInt32();
         delete resultGroup;
-        if (Group* group = sObjectMgr.GetGroupById(groupId))
+
+        Group* group = sObjectMgr.GetGroupById(groupId);
+        if (group)
             Player::RemoveFromGroup(group, guid);
     }
 
@@ -1308,9 +1310,12 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
         CharacterDatabase.PExecute("DELETE FROM `character_queststatus` WHERE `status` = 3 AND guid ='%u'", guid.GetCounter());
         // Reset guild
         if (uint32 guildId = Player::GetGuildIdFromDB(guid))
-            if (Guild* guild = sGuildMgr.GetGuildById(guildId))
+        {
+            Guild* guild = sGuildMgr.GetGuildById(guildId);
+            if (guild)
                 if (guild->DelMember(guid))
                     deletedGuild = guildId;
+        }
 
         // Delete Friend List
         // Cleanup friends for online players
@@ -1447,7 +1452,8 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
 
     if (deletedGuild)
     {
-        if (Guild* guild = sGuildMgr.GetGuildById(deletedGuild))
+        Guild* guild = sGuildMgr.GetGuildById(deletedGuild);
+        if (guild)
         {
             guild->Disband();
             delete guild;

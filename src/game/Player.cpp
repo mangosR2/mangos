@@ -458,6 +458,8 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     m_DailyQuestChanged = false;
     m_WeeklyQuestChanged = false;
 
+    m_lastLiquid = NULL;
+
     for (int i=0; i<MAX_TIMERS; ++i)
         m_MirrorTimer[i] = DISABLED_MIRROR_TIMER;
 
@@ -983,8 +985,7 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
         default:
             break;
     }
-    DamageInfo damageInfo = DamageInfo(this,this,spellID);
-    damageInfo.damage     = damage;
+    DamageInfo damageInfo = DamageInfo(this,this,spellID, damage);
     damageInfo.damageType = SELF_DAMAGE;
 
     CalculateDamageAbsorbAndResist(this, &damageInfo);
@@ -1135,14 +1136,14 @@ void Player::HandleDrowning(uint32 time_diff)
             SendMirrorTimer(FATIGUE_TIMER, DarkWaterTime, m_MirrorTimer[FATIGUE_TIMER], 10);
     }
 
-    if (m_MirrorTimerFlags & (UNDERWATER_INLAVA|UNDERWATER_INSLIME))
+    if (m_MirrorTimerFlags & (UNDERWATER_INLAVA /*| UNDERWATER_INSLIME*/) && !(m_lastLiquid && m_lastLiquid->SpellId))
     {
         // Breath timer not activated - activate it
         if (m_MirrorTimer[FIRE_TIMER] == DISABLED_MIRROR_TIMER)
             m_MirrorTimer[FIRE_TIMER] = getMaxTimer(FIRE_TIMER);
         else
         {
-            m_MirrorTimer[FIRE_TIMER]-=time_diff;
+            m_MirrorTimer[FIRE_TIMER] -= time_diff;
             if (m_MirrorTimer[FIRE_TIMER] < 0)
             {
                 m_MirrorTimer[FIRE_TIMER] += 2 * IN_MILLISECONDS;
@@ -1153,8 +1154,6 @@ void Player::HandleDrowning(uint32 time_diff)
                     EnvironmentalDamage(DAMAGE_LAVA, damage);
                 // need to skip Slime damage in Undercity and Ruins of Lordaeron arena
                 // maybe someone can find better way to handle environmental damage
-                else if (m_zoneUpdateId != 1497 && m_zoneUpdateId != 3968)
-                    EnvironmentalDamage(DAMAGE_SLIME, damage);
             }
         }
     }
@@ -4552,6 +4551,8 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             sLog.outError("Player::DeleteFromDB: Unsupported delete method: %u.", charDelete_method);
             break;
     }
+
+    sAccountMgr.ClearPlayerDataCache(playerguid);
 
     if (updateRealmChars)
         sAccountMgr.UpdateCharactersCount(accountId, realmID);
@@ -15653,14 +15654,16 @@ void Player::AreaExploredOrEventHappens( uint32 questId )
 //not used in mangosd, function for external script library
 void Player::GroupEventHappens( uint32 questId, WorldObject const* pEventObject )
 {
-    if ( Group *pGroup = GetGroup() )
+    if (Group* pGroup = GetGroup())
     {
-        for(GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
         {
-            Player *pGroupGuy = itr->getSource();
+            Player* pGroupGuy = itr->getSource();
+            if (!pGroupGuy)
+                continue;
 
             // for any leave or dead (with not released body) group member at appropriate distance
-            if ( pGroupGuy && pGroupGuy->IsAtGroupRewardDistance(pEventObject) && !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST) )
+            if (pGroupGuy->IsAtGroupRewardDistance(pEventObject) && !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
                 pGroupGuy->AreaExploredOrEventHappens(questId);
         }
     }
@@ -22286,22 +22289,25 @@ void Player::RewardSinglePlayerAtKill(Unit* pVictim)
     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GET_KILLING_BLOWS, 1, 0, pVictim);
 
     // xp and reputation only in !PvP case
-    if(!PvP)
+    if (!PvP)
     {
-        RewardReputation(pVictim,1);
+        RewardReputation(pVictim, 1.0f);
         GiveXP(xp, pVictim);
 
         if (Pet* pet = GetPet())
             pet->GivePetXP(xp);
 
         // normal creature (not pet/etc) can be only in !PvP case
-        if (pVictim->GetTypeId()==TYPEID_UNIT)
+        if (pVictim->GetTypeId() == TYPEID_UNIT)
+        {
             if (CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(pVictim->GetEntry()))
             {
                 KilledMonster(normalInfo, pVictim->GetObjectGuid());
-                if(uint32 normalType = normalInfo->type)
+
+                if (uint32 normalType = normalInfo->type)
                     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, normalType, xp);
             }
+        }
     }
 }
 
@@ -22310,9 +22316,9 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, WorldObject* pRewar
     ObjectGuid creature_guid = pRewardSource && pRewardSource->GetTypeId() == TYPEID_UNIT ? pRewardSource->GetObjectGuid() : ObjectGuid();
 
     // prepare data for near group iteration
-    if (Group *pGroup = GetGroup())
+    if (Group* pGroup = GetGroup())
     {
-        for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
             if (!pGroupGuy)
@@ -22322,7 +22328,7 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, WorldObject* pRewar
                 continue;                               // member (alive or dead) or his corpse at req. distance
 
             // quest objectives updated only for alive group member or dead but with not released body
-            if (pGroupGuy->isAlive()|| !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+            if (pGroupGuy->isAlive() || !pGroupGuy->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
                 pGroupGuy->KilledMonsterCredit(creature_id, creature_guid);
         }
     }
@@ -22333,15 +22339,15 @@ void Player::RewardPlayerAndGroupAtEvent(uint32 creature_id, WorldObject* pRewar
 void Player::RewardPlayerAndGroupAtCast(WorldObject* pRewardSource, uint32 spellid)
 {
     // prepare data for near group iteration
-    if (Group *pGroup = GetGroup())
+    if (Group* pGroup = GetGroup())
     {
-        for(GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
         {
             Player* pGroupGuy = itr->getSource();
-            if(!pGroupGuy)
+            if (!pGroupGuy)
                 continue;
 
-            if(!pGroupGuy->IsAtGroupRewardDistance(pRewardSource))
+            if (!pGroupGuy->IsAtGroupRewardDistance(pRewardSource))
                 continue;                               // member (alive or dead) or his corpse at req. distance
 
             // quest objectives updated only for alive group member or dead but with not released body
@@ -22355,7 +22361,11 @@ void Player::RewardPlayerAndGroupAtCast(WorldObject* pRewardSource, uint32 spell
 
 bool Player::IsAtGroupRewardDistance(WorldObject const* pRewardSource) const
 {
-    if (pRewardSource->IsWithinDistInMap(this,sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE)))
+
+    if (!pRewardSource)
+        return false;
+
+    if (pRewardSource->IsWithinDistInMap(this, sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE)))
         return true;
 
     if (isAlive())
@@ -22365,7 +22375,7 @@ bool Player::IsAtGroupRewardDistance(WorldObject const* pRewardSource) const
     if (!corpse)
         return false;
 
-    return pRewardSource->IsWithinDistInMap(corpse,sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE));
+    return pRewardSource->IsWithinDistInMap(corpse, sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE));
 }
 
 uint32 Player::GetBaseWeaponSkillValue (WeaponAttackType attType) const
@@ -22642,15 +22652,85 @@ void Player::UpdateUnderwaterState( Map* m, float x, float y, float z )
     GridMapLiquidStatus res = m->GetTerrain()->getLiquidStatus(x, y, z, MAP_ALL_LIQUIDS, &liquid_status);
     if (!res)
     {
-        m_MirrorTimerFlags &= ~(UNDERWATER_INWATER|UNDERWATER_INLAVA|UNDERWATER_INSLIME|UNDERWATER_INDARKWATER);
-        // Small hack for enable breath in WMO
-        /* if (IsInWater())
-            m_MirrorTimerFlags|=UNDERWATER_INWATER; */
+        m_MirrorTimerFlags &= ~(UNDERWATER_INWATER | UNDERWATER_INLAVA | UNDERWATER_INSLIME | UNDERWATER_INDARKWATER);
+        if (m_lastLiquid && m_lastLiquid->SpellId)
+        {
+            RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            if (GetVehicle() && GetVehicle()->GetBase())
+            {
+                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            }
+        }
+        m_lastLiquid = NULL;
         return;
     }
 
+    if (uint32 liqEntry = liquid_status.entry)
+    {
+        LiquidTypeEntry const* liquid = sLiquidTypeStore.LookupEntry(liqEntry);
+
+        // Player change LiquidTypeEntry
+        if (m_lastLiquid && m_lastLiquid->SpellId && m_lastLiquid->Id != liqEntry)
+        {
+            RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            if (GetVehicle() && GetVehicle()->GetBase())
+            {
+                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            }
+        }
+
+
+        if (liquid && liquid->SpellId)
+        {
+            if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER))
+            {
+                if (SpellEntry const *pSpellEntry = sSpellStore.LookupEntry(liquid->SpellId))
+                {
+                    // check aura for no double cast
+                    if (!HasAura(liquid->SpellId))
+                    {
+                        if (sSpellMgr.IsTargetMatchedWithCreatureType(pSpellEntry, this))
+                        {
+                            CastSpell(this, pSpellEntry, true);
+                        }
+                    }
+                    if (GetVehicle() && GetVehicle()->GetBase())
+                    {
+                        if (!GetVehicle()->GetBase()->HasAura(liquid->SpellId))
+                        {
+                            if (sSpellMgr.IsTargetMatchedWithCreatureType(pSpellEntry, GetVehicle()->GetBase()))
+                            {
+                                GetVehicle()->GetBase()->CastSpell(GetVehicle()->GetBase(), pSpellEntry, true);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Player is above Water or walk on Water
+                RemoveAurasDueToSpell(liquid->SpellId);
+                if (GetVehicle() && GetVehicle()->GetBase())
+                {
+                    GetVehicle()->GetBase()->RemoveAurasDueToSpell(liquid->SpellId);
+                }
+            }
+        }
+
+        m_lastLiquid = liquid;
+    }
+    else if (m_lastLiquid && m_lastLiquid->SpellId)
+    {
+        // Player change to no specific LiquidEntry (= 0)
+        RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+        if (GetVehicle() && GetVehicle()->GetBase())
+        {
+            GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+        }
+    }
+
     // All liquids type - check under water position
-    if (liquid_status.type&(MAP_LIQUID_TYPE_WATER|MAP_LIQUID_TYPE_OCEAN|MAP_LIQUID_TYPE_MAGMA|MAP_LIQUID_TYPE_SLIME))
+    if (liquid_status.type_flags&(MAP_LIQUID_TYPE_WATER | MAP_LIQUID_TYPE_OCEAN | MAP_LIQUID_TYPE_MAGMA | MAP_LIQUID_TYPE_SLIME))
     {
         if ( res & LIQUID_MAP_UNDER_WATER)
             m_MirrorTimerFlags |= UNDERWATER_INWATER;
@@ -22659,23 +22739,23 @@ void Player::UpdateUnderwaterState( Map* m, float x, float y, float z )
     }
 
     // Allow travel in dark water on taxi or transport
-    if ((liquid_status.type & MAP_LIQUID_TYPE_DARK_WATER) && !IsTaxiFlying() && !GetTransport())
+    if ((liquid_status.type_flags & MAP_LIQUID_TYPE_DARK_WATER) && !IsTaxiFlying() && !GetTransport())
         m_MirrorTimerFlags |= UNDERWATER_INDARKWATER;
     else
         m_MirrorTimerFlags &= ~UNDERWATER_INDARKWATER;
 
     // in lava check, anywhere in lava level
-    if (liquid_status.type&MAP_LIQUID_TYPE_MAGMA)
+    if (liquid_status.type_flags&MAP_LIQUID_TYPE_MAGMA)
     {
-        if (res & (LIQUID_MAP_UNDER_WATER|LIQUID_MAP_IN_WATER|LIQUID_MAP_WATER_WALK))
+        if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))
             m_MirrorTimerFlags |= UNDERWATER_INLAVA;
         else
             m_MirrorTimerFlags &= ~UNDERWATER_INLAVA;
     }
     // in slime check, anywhere in slime level
-    if (liquid_status.type&MAP_LIQUID_TYPE_SLIME)
+    if (liquid_status.type_flags&MAP_LIQUID_TYPE_SLIME)
     {
-        if (res & (LIQUID_MAP_UNDER_WATER|LIQUID_MAP_IN_WATER|LIQUID_MAP_WATER_WALK))
+        if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER | LIQUID_MAP_WATER_WALK))
             m_MirrorTimerFlags |= UNDERWATER_INSLIME;
         else
             m_MirrorTimerFlags &= ~UNDERWATER_INSLIME;

@@ -59,7 +59,8 @@ GridMap::GridMap()
     m_liquid_width  = 0;
     m_liquid_height = 0;
     m_liquidLevel = INVALID_HEIGHT_VALUE;
-    m_liquid_type = NULL;
+    m_liquidEntry = NULL;
+    m_liquidFlags = NULL;
     m_liquid_map  = NULL;
 }
 
@@ -128,8 +129,11 @@ void GridMap::unloadData()
     if (m_V8)
         delete[] m_V8;
 
-    if (m_liquid_type)
-        delete[] m_liquid_type;
+    if (m_liquidEntry)
+        delete[] m_liquidEntry;
+
+    if (m_liquidFlags)
+        delete[] m_liquidFlags;
 
     if (m_liquid_map)
         delete[] m_liquid_map;
@@ -137,7 +141,8 @@ void GridMap::unloadData()
     m_area_map = NULL;
     m_V9 = NULL;
     m_V8 = NULL;
-    m_liquid_type = NULL;
+    m_liquidEntry = NULL;
+    m_liquidFlags = NULL;
     m_liquid_map  = NULL;
     m_gridGetHeight = &GridMap::getHeightFromFlat;
 }
@@ -221,8 +226,11 @@ bool GridMap::loadGridMapLiquidData(FILE *in, uint32 offset, uint32 /*size*/)
 
     if (!(header.flags & MAP_LIQUID_NO_TYPE))
     {
-        m_liquid_type = new uint8 [16*16];
-        fread(m_liquid_type, sizeof(uint8), 16*16, in);
+        m_liquidEntry = new uint16[16*16];
+        fread(m_liquidEntry, sizeof(uint16), 16*16, in);
+
+        m_liquidFlags = new uint8[16*16];
+        fread(m_liquidFlags, sizeof(uint8), 16*16, in);
     }
 
     if (!(header.flags & MAP_LIQUID_NO_HEIGHT))
@@ -491,21 +499,21 @@ float GridMap::getLiquidLevel(float x, float y)
 
 uint8 GridMap::getTerrainType(float x, float y)
 {
-    if (!m_liquid_type)
+    if (!m_liquidFlags)
         return (uint8)m_liquidType;
 
     x = 16 * (32 - x/SIZE_OF_GRIDS);
     y = 16 * (32 - y/SIZE_OF_GRIDS);
     int lx = (int)x & 15;
     int ly = (int)y & 15;
-    return m_liquid_type[lx*16 + ly];
+    return m_liquidFlags[lx*16 + ly];
 }
 
 // Get water state on map
 GridMapLiquidStatus GridMap::getLiquidStatus(float x, float y, float z, uint8 ReqLiquidType, GridMapLiquidData *data)
 {
     // Check water type (if no water return)
-    if (!m_liquid_type && !m_liquidType)
+    if (!m_liquidFlags && !m_liquidType)
         return LIQUID_MAP_NO_WATER;
 
     // Get cell
@@ -516,7 +524,40 @@ GridMapLiquidStatus GridMap::getLiquidStatus(float x, float y, float z, uint8 Re
     int y_int = (int)cy & (MAP_RESOLUTION-1);
 
     // Check water type in cell
-    uint8 type = m_liquid_type ? m_liquid_type[(x_int>>3)*16 + (y_int>>3)] : m_liquidType;
+    int idx = (x_int>>3)*16 + (y_int>>3);
+    uint8 type = m_liquidFlags ? m_liquidFlags[idx] : m_liquidType;
+    uint32 entry = 0;
+    if (m_liquidEntry)
+    {
+        if (LiquidTypeEntry const* liquidEntry = sLiquidTypeStore.LookupEntry(m_liquidEntry[idx]))
+        {
+            entry = liquidEntry->Id;
+            type &= MAP_LIQUID_TYPE_DARK_WATER;
+            uint32 liqTypeIdx = liquidEntry->Type;
+            if (entry < 21)
+            {
+                if (AreaTableEntry const* area = sAreaStore.LookupEntry(getArea(x, y)))
+                {
+                    uint32 overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
+                    if (!overrideLiquid && area->zone)
+                    {
+                        area = GetAreaEntryByAreaID(area->zone);
+                        if (area)
+                            overrideLiquid = area->LiquidTypeOverride[liquidEntry->Type];
+                    }
+
+                    if (LiquidTypeEntry const* liq = sLiquidTypeStore.LookupEntry(overrideLiquid))
+                    {
+                        entry = overrideLiquid;
+                        liqTypeIdx = liq->Type;
+                    }
+                }
+            }
+
+            type |= 1 << liqTypeIdx;
+        }
+    }
+
     if (type == 0)
         return LIQUID_MAP_NO_WATER;
 
@@ -547,7 +588,8 @@ GridMapLiquidStatus GridMap::getLiquidStatus(float x, float y, float z, uint8 Re
     // All ok in water -> store data
     if (data)
     {
-        data->type  = type;
+        data->entry = entry;
+        data->type_flags = type;
         data->level = liquid_level;
         data->depth_level = ground_level;
     }
@@ -742,7 +784,7 @@ int TerrainInfo::UnrefGrid(const uint32& x, const uint32& y)
     return 0;
 }
 
-float TerrainInfo::GetHeight(float x, float y, float z, bool pUseVmaps, float maxSearchDist) const
+float TerrainInfo::GetHeightStatic(float x, float y, float z, bool pUseVmaps, float maxSearchDist) const
 {
     // find raw .map surface under Z coordinates
     float mapHeight;
@@ -781,6 +823,7 @@ float TerrainInfo::GetHeight(float x, float y, float z, bool pUseVmaps, float ma
     else
         vmapHeight = VMAP_INVALID_HEIGHT_VALUE;
 
+    //I thing not need with dynmaicVMaps, I hope someone with ICC-Content can check and REPORT this
     //hack for LK frozen throne true height
     if (GetAreaId(x,y,z) == 4859)
     {
@@ -944,22 +987,54 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z, uint
 {
     GridMapLiquidStatus result = LIQUID_MAP_NO_WATER;
     VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager();
-    float liquid_level, ground_level;
-    uint32 liquid_type;
 
-    ground_level = GetHeight(x,y,z,true,DEFAULT_WATER_SEARCH);
+    float liquid_level = INVALID_HEIGHT_VALUE;
+    float ground_level = INVALID_HEIGHT_VALUE;
+    uint32 liquid_type = 0;
+    ground_level = GetHeightStatic(x,y,z,true,DEFAULT_WATER_SEARCH);
+
     if (vmgr->GetLiquidLevel(GetMapId(), x, y, z, ReqLiquidType, liquid_level, ground_level, liquid_type))
     {
-        DEBUG_LOG("getLiquidStatus(): vmap liquid level: %f ground: %f type: %u", liquid_level, ground_level, liquid_type);
+        // DEBUG_LOG("getLiquidStatus(): vmap liquid level: %f ground: %f type: %u", liquid_level, ground_level, liquid_type);
         // Check water level and ground level
         if (liquid_level > ground_level && z > ground_level - 2)
         {
             // All ok in water -> store data
             if (data)
             {
-                data->type  = liquid_type;
+                // hardcoded in client like this
+                if (GetMapId() == 530 && liquid_type == 2)
+                    liquid_type = 15;
+
+                uint32 liquidFlagType = 0;
+                if (LiquidTypeEntry const* liq = sLiquidTypeStore.LookupEntry(liquid_type))
+                    liquidFlagType = liq->Type;
+
+                if (liquid_type && liquid_type < 21)
+                {
+                    if (AreaTableEntry const* area = GetAreaEntryByAreaFlagAndMap(GetAreaFlag(x, y, z), GetMapId()))
+                    {
+                        uint32 overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
+                        if (!overrideLiquid && area->zone)
+                        {
+                            area = GetAreaEntryByAreaID(area->zone);
+                            if (area)
+                                overrideLiquid = area->LiquidTypeOverride[liquidFlagType];
+                        }
+
+                        if (LiquidTypeEntry const* liq = sLiquidTypeStore.LookupEntry(overrideLiquid))
+                        {
+                            liquid_type = overrideLiquid;
+                            liquidFlagType = liq->Type;
+                        }
+                    }
+                }
+
                 data->level = liquid_level;
                 data->depth_level = ground_level;
+
+                data->entry = liquid_type;
+                data->type_flags = 1 << liquidFlagType;
             }
 
             // For speed check as int values
@@ -983,7 +1058,12 @@ GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z, uint
         if (map_result != LIQUID_MAP_NO_WATER && (map_data.level > ground_level))
         {
             if (data)
+            {
+                // hardcoded in client like this
+                if (GetMapId() == 530 && map_data.entry == 2)
+                    map_data.entry = 15;
                 *data = map_data;
+            }
             return map_result;
         }
     }
@@ -1067,7 +1147,7 @@ float TerrainInfo::GetWaterOrGroundLevel(float x, float y, float z, float* pGrou
     if (const_cast<TerrainInfo*>(this)->GetGrid(x, y))
     {
         // we need ground level (including grid height version) for proper return water level in point
-        float ground_z = GetHeight(x, y, z, true, DEFAULT_WATER_SEARCH) + 0.05f;
+        float ground_z = GetHeightStatic(x, y, z, true, DEFAULT_WATER_SEARCH) + 0.05f;
         if (pGround)
             *pGround = ground_z;
 
@@ -1158,7 +1238,7 @@ float TerrainInfo::GetWaterLevel(float x, float y, float z, float* pGround /*= N
     if (const_cast<TerrainInfo*>(this)->GetGrid(x, y))
     {
         // we need ground level (including grid height version) for proper return water level in point
-        float ground_z = GetHeight(x, y, z, true, DEFAULT_WATER_SEARCH);
+        float ground_z = GetHeightStatic(x, y, z, true, DEFAULT_WATER_SEARCH);
         if (pGround)
             *pGround = ground_z;
 
@@ -1176,225 +1256,7 @@ float TerrainInfo::GetWaterLevel(float x, float y, float z, float* pGround /*= N
 
 bool TerrainInfo::IsNextZcoordOK(float x, float y, float oldZ, float maxDiff) const
 {
-    return ((fabs(GetHeight(x, y, oldZ, true) - oldZ) < maxDiff ) || (fabs(GetHeight(x, y, oldZ, false) - oldZ) < maxDiff ));
-}
-
-bool TerrainInfo::CheckPath(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ) const
-{
-    VMAP::IVMapManager* vMapManager = VMAP::VMapFactory::createOrGetVMapManager();
-    bool result = vMapManager->isInLineOfSight(GetMapId(), srcX, srcY, srcZ+0.5f, dstX, dstY, dstZ+1.0f);
-    if (!result)
-    {
-        // check if your may correct destination
-        float fx2, fy2, fz2;                                // getObjectHitPos overwrite last args in any result case
-        bool result2 = vMapManager->getObjectHitPos(GetMapId(), srcX,srcY,srcZ+0.5f,dstX,dstY,dstZ+0.5f,fx2,fy2,fz2,-0.1f);
-        if (result2)
-        {
-            dstX = fx2;
-            dstY = fy2;
-            dstZ = fz2;
-            result = true;
-        }
-    }
-    return result;
-}
-
-bool TerrainInfo::CheckPathAccurate(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ, Unit* mover, bool onlyLOS ) const
-{
-
-    const float DELTA    = 0.5f;
-
-    float tstX = dstX;
-    float tstY = dstY;
-
-    // test LOS at least on 4*DELTA under source coord (as in clean mangos)
-    float tstZ = dstZ + 4*DELTA;
-    srcZ += 4*DELTA;
-
-    const bool  isVMAPBroken = !IsNextZcoordOK(srcX, srcY, srcZ, 8.0f);
-
-    // check by standart way. may be not need path checking?
-    if (!mover && CheckPath(srcX, srcY, srcZ, tstX, tstY, tstZ) && (isVMAPBroken || IsNextZcoordOK(tstX, tstY, tstZ, 5.0f)))
-    {
-        DEBUG_LOG("TerrainInfo::CheckPathAccurate vmaps hit! delta is %f %f %f",dstX - tstX,dstY - tstY,dstZ - tstZ);
-        dstX = tstX;
-        dstY = tstY;
-        dstZ = tstZ + 0.1f;
-        return true;
-    }
-
-    const float distance = sqrt((dstY - srcY)*(dstY - srcY) + (dstX - srcX)*(dstX - srcX));
-    const uint8 numChecks = ceil(fabs(distance/DELTA));
-    const float DELTA_X  = (dstX-srcX)/numChecks;
-    const float DELTA_Y  = (dstY-srcY)/numChecks;
-    const float DELTA_Z  = (dstZ-srcZ)/numChecks;
-
-    float lastGoodX = srcX;
-    float lastGoodY = srcY;
-    float lastGoodZ = srcZ;
-
-    uint32 errorsCount = 0;
-    uint32 goodCount   = 0;
-    uint32 vmaperrorsCount   = 0;
-
-    std::set<GameObject*> inLOSGOList;
-    bool bGOCheck = false;
-    if (mover)
-    {
-        std::list<GameObject*> tempTargetGOList;
-        MaNGOS::GameObjectInRangeCheck check(mover, tstX, tstY, tstZ, distance + 2.0f *mover->GetObjectBoundingRadius());
-        MaNGOS::GameObjectListSearcher<MaNGOS::GameObjectInRangeCheck> searcher(tempTargetGOList, check);
-        Cell::VisitAllObjects(mover, searcher, 2*mover->GetObjectBoundingRadius());
-        if (!tempTargetGOList.empty())
-        {
-            for(std::list<GameObject*>::iterator iter = tempTargetGOList.begin(); iter != tempTargetGOList.end(); ++iter)
-            {
-                GameObject* pGo = *iter;
-
-                if (!pGo || !pGo->IsInWorld())
-                    continue;
-
-                // Not require check GO's, if his not in path
-                // first fast check
-                if (pGo->GetPositionX() > std::max(srcX, dstX)
-                    || pGo->GetPositionX() < std::min(srcX, dstX)
-                    || pGo->GetPositionY() > std::max(srcY, dstY)
-                    || pGo->GetPositionY() < std::min(srcY, dstY))
-                    continue;
-
-                // don't check very small and very large objects
-                if (pGo->GetDeterminativeSize(true) < mover->GetObjectBoundingRadius() * 0.5f ||
-                    pGo->GetDeterminativeSize(false) > mover->GetObjectBoundingRadius() * 100.0f)
-                    continue;
-
-                // second check by angle
-                float angle = mover->GetAngle(pGo) - mover->GetAngle(dstX, dstY);
-                if (abs(sin(angle)) * pGo->GetExactDist2d(srcX, srcY) > pGo->GetObjectBoundingRadius() * 0.5f)
-                    continue;
-
-                bool bLOSBreak = false;
-                switch (pGo->GetGoType())
-                {
-                        case GAMEOBJECT_TYPE_TRAP:
-                        case GAMEOBJECT_TYPE_SPELL_FOCUS:
-                        case GAMEOBJECT_TYPE_MO_TRANSPORT:
-                        case GAMEOBJECT_TYPE_CAMERA:
-                        case GAMEOBJECT_TYPE_FISHINGNODE:
-                        case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
-                        case GAMEOBJECT_TYPE_SPELLCASTER:
-                        case GAMEOBJECT_TYPE_FISHINGHOLE:
-                        case GAMEOBJECT_TYPE_CAPTURE_POINT:
-                        case GAMEOBJECT_TYPE_DUEL_ARBITER:
-                            break;
-                        case GAMEOBJECT_TYPE_DOOR:
-                            if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_READY)
-                                bLOSBreak = true;
-                            break;
-                        case GAMEOBJECT_TYPE_TRANSPORT:
-                            if (pGo->isSpawned() && pGo->GetGoState() == GO_STATE_ACTIVE)
-                                bLOSBreak = true;
-                            break;
-                        case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
-                            if (!pGo->HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DESTROYED))
-                                bLOSBreak = true;
-                            break;
-                        default:
-                            if (pGo->isSpawned())
-                                bLOSBreak = true;
-                            break;
-                }
-                if (bLOSBreak)
-                    inLOSGOList.insert(pGo);
-            }
-        }
-        if (!inLOSGOList.empty())
-            bGOCheck = true;
-    }
-
-    //Going foward until max distance
-    for (uint8 i = 1; i < numChecks; ++i)
-    {
-        float prevX = srcX + (float(i-1)*DELTA_X);
-        float prevY = srcY + (float(i-1)*DELTA_Y);
-        float prevZ = srcZ + (float(i-1)*DELTA_Z);
-
-        tstX = srcX + (float(i)*DELTA_X);
-        tstY = srcY + (float(i)*DELTA_Y);
-        tstZ = srcZ + (float(i)*DELTA_Z);
-
-        MaNGOS::NormalizeMapCoord(tstX);
-        MaNGOS::NormalizeMapCoord(tstY);
-
-        if (!CheckPath(prevX, prevY, prevZ, tstX, tstY, tstZ))
-        {
-            ++vmaperrorsCount;
-            ++errorsCount;
-            goodCount = 0;
-        }
-        else if (!isVMAPBroken && !IsNextZcoordOK(tstX, tstY, tstZ, 8.0f + 4*DELTA))
-        {
-            ++errorsCount;
-            goodCount = 0;
-        }
-        else if (mover && bGOCheck)
-        {
-            bool bError = false;
-            for(std::set<GameObject*>::const_iterator iter = inLOSGOList.begin(); iter != inLOSGOList.end(); ++iter)
-            {
-                if (!(*iter) || (*iter)->GetDistance2d(tstX, tstY) > (*iter)->GetObjectBoundingRadius())
-                    continue;
-
-                DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES,"TerrainInfo::CheckPathAccurate GO %s in LOS found, %f %f %f ",(*iter)->GetObjectGuid().GetString().c_str(),tstX,tstY,tstZ);
-                bError = true;
-                break;
-            }
-
-            if (bError)
-            {
-                ++errorsCount;
-                goodCount = 0;
-            }
-            else
-                ++goodCount;
-        }
-        else
-        {
-            ++goodCount;
-        }
-
-        DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES,"TerrainInfo::CheckPathAccurate test data %f %f %f good=%u, errors=%u vmap=%u",tstX,tstY,tstZ, goodCount, errorsCount, vmaperrorsCount);
-
-        if (!errorsCount)
-        {
-            lastGoodX = prevX;
-            lastGoodY = prevY;
-            lastGoodZ = prevZ;
-        }
-        else
-            if (onlyLOS)
-                break;
-
-        if (errorsCount && goodCount > 10)
-        {
-            --errorsCount;
-            goodCount -= 10;
-        }
-    }
-
-    if (errorsCount)
-    {
-        dstX = lastGoodX;
-        dstY = lastGoodY;
-        dstZ = isVMAPBroken ? lastGoodZ - 4*DELTA + 0.1f: GetHeight(lastGoodX, lastGoodY, lastGoodZ + DELTA) + 0.1f;
-    }
-    else
-    {
-        dstX = tstX;
-        dstY = tstY;
-        dstZ = isVMAPBroken ? tstZ - 4*DELTA + 0.1f : GetHeight(tstX, tstY, tstZ + DELTA) + 0.1f;
-    }
-
-    return (errorsCount == 0);
+    return ((fabs(GetHeightStatic(x, y, oldZ, true) - oldZ) < maxDiff ) || (fabs(GetHeightStatic(x, y, oldZ, false) - oldZ) < maxDiff ));
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1417,7 +1279,7 @@ TerrainInfo * TerrainManager::LoadTerrain(const uint32 mapId)
 {
     Guard _guard(*this);
 
-    TerrainInfo * ptr = NULL;
+    TerrainInfo* ptr = NULL;
     TerrainDataMap::const_iterator iter = i_TerrainMap.find(mapId);
     if(iter == i_TerrainMap.end())
     {

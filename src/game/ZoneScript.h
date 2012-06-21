@@ -28,7 +28,8 @@ class GameObject;
 class ZoneScript
 {
     public:
-        explicit ZoneScript() {}
+        ZoneScript() {}
+        virtual ~ZoneScript(){}
 
         // Called when a creature or gameobject is created
         virtual void OnCreatureCreate(Creature *) {}

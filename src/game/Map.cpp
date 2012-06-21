@@ -287,6 +287,7 @@ bool Map::EnsureGridLoaded(const Cell &cell)
 
         // Add resurrectable corpses to world object list in grid
         sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
+        m_dyn_tree.balance();
         return true;
     }
 
@@ -459,6 +460,8 @@ bool Map::loaded(const GridPair &p) const
 
 void Map::Update(const uint32 &t_diff)
 {
+    m_dyn_tree.update(t_diff);
+
     /// update worldsessions for existing players
     for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
@@ -1087,7 +1090,7 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
 
     //we must find visible range in cells so we unload only non-visible cells...
     float viewDist = GetVisibilityDistance();
-    int cell_range = (int)ceilf(viewDist / SIZE_OF_GRID_CELL) + 1;
+    int cell_range = (int)ceil(viewDist / SIZE_OF_GRID_CELL) + 1;
 
     cell_min << cell_range;
     cell_min -= cell_range;
@@ -1732,6 +1735,7 @@ Player* Map::GetPlayer(ObjectGuid guid)
  */
 Creature* Map::GetCreature(ObjectGuid guid)
 {
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     return m_objectsStore.find<Creature>(guid, (Creature*)NULL);
 }
 
@@ -1742,6 +1746,7 @@ Creature* Map::GetCreature(ObjectGuid guid)
  */
 Pet* Map::GetPet(ObjectGuid guid)
 {
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     return m_objectsStore.find<Pet>(guid, (Pet*)NULL);
 }
 
@@ -1783,6 +1788,7 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
  */
 GameObject* Map::GetGameObject(ObjectGuid guid)
 {
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     return m_objectsStore.find<GameObject>(guid, (GameObject*)NULL);
 }
 
@@ -1793,6 +1799,7 @@ GameObject* Map::GetGameObject(ObjectGuid guid)
  */
 DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
 {
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     return m_objectsStore.find<DynamicObject>(guid, (DynamicObject*)NULL);
 }
 
@@ -2210,4 +2217,59 @@ float Map::GetVisibilityDistance(WorldObject* obj) const
         return (m_VisibleDistance + ((GameObject*)obj)->GetDeterminativeSize());
     else
         return m_VisibleDistance; 
+}
+
+bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
+{
+    return VMAP::VMapFactory::createOrGetVMapManager()->isInLineOfSight(GetId(), srcX, srcY, srcZ, destX, destY, destZ)
+        && m_dyn_tree.isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+}
+
+/**
+test if we hit an object. return true if we hit one. the dest position will hold the orginal dest position or the possible hit position
+return true if we hit something
+*/
+// return HitPosition in dest point
+bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, uint32 phasemask, float modifyDist) const
+{
+    // at first check all static objects
+    float tempX, tempY, tempZ = 0.0f;
+    bool result0 = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(GetId(), srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
+    if (result0)
+    {
+        DEBUG_LOG("Map::GetHitPosition vmaps corrects gained with static objects! new dest coords are X:%f Y:%f Z:%f",destX, destY, destZ);
+        destX = tempX;
+        destY = tempY;
+        destZ = tempZ;
+    }
+    // at second all dynamic objects, if static check has an hit, then we can calculate only to this point and NOT to end, because we need closely hit point
+    bool result1 = m_dyn_tree.getObjectHitPos(phasemask, srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
+    if (result1)
+    {
+        DEBUG_LOG("Map::GetHitPosition vmaps corrects gained with dynamic objects! new dest coords are X:%f Y:%f Z:%f",destX, destY, destZ);
+        destX = tempX;
+        destY = tempY;
+        destZ = tempZ;
+    }
+    return result0 || result1;
+}
+
+float Map::GetHeight(uint32 phasemask, float x, float y, float z, bool pCheckVMap/*=true*/, float maxSearchDist/*=DEFAULT_HEIGHT_SEARCH*/) const
+{
+    return std::max<float>(m_TerrainData->GetHeightStatic(x,y,z,pCheckVMap,maxSearchDist), m_dyn_tree.getHeight(x, y,z,maxSearchDist, phasemask));
+}
+
+void Map::InsertGameObjectModel(const GameObjectModel& mdl)
+{
+    m_dyn_tree.insert(mdl);
+}
+
+void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
+{
+    m_dyn_tree.remove(mdl);
+}
+
+bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
+{
+    return m_dyn_tree.contains(mdl);
 }

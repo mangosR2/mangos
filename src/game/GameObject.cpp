@@ -39,11 +39,15 @@
 #include "BattleGroundAV.h"
 #include "Util.h"
 #include "ScriptMgr.h"
+#include "vmap/GameObjectModel.h"
+#include "vmap/DynamicTree.h"
 #include <G3D/Quat.h>
+
 
 GameObject::GameObject() : WorldObject(),
     m_goInfo(NULL),
-    m_displayInfo(NULL)
+    m_displayInfo(NULL),
+    m_model(NULL)
 {
     m_objectType |= TYPEMASK_GAMEOBJECT;
     m_objectTypeId = TYPEID_GAMEOBJECT;
@@ -70,13 +74,22 @@ GameObject::GameObject() : WorldObject(),
 
 GameObject::~GameObject()
 {
+    delete m_model;
 }
 
 void GameObject::AddToWorld()
 {
     ///- Register the gameobject for guid lookup
     if(!IsInWorld())
+    {
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().insert<GameObject>(GetObjectGuid(), (GameObject*)this);
+    }
+
+    if (m_model)
+        GetMap()->InsertGameObjectModel(*m_model);
+    bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
+    EnableCollision(!startOpen);
 
     Object::AddToWorld();
 }
@@ -98,6 +111,11 @@ void GameObject::RemoveFromWorld()
             }
         }
 
+        if (m_model)
+            if (GetMap()->ContainsGameObjectModel(*m_model))
+                GetMap()->RemoveGameObjectModel(*m_model);
+
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
     }
 
@@ -152,6 +170,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map *map, uint32 phaseMa
     SetEntry(goinfo->id);
     SetDisplayId(goinfo->displayId);
 
+    m_model = GameObjectModel::construct(this);
     // GAMEOBJECT_BYTES_1, index at 0, 1, 2 and 3
     SetGoState(go_state);
     SetGoType(GameobjectTypes(goinfo->type));
@@ -2234,10 +2253,74 @@ bool GameObject::IsFriendlyTo(Unit const* unit) const
     return tester_faction->IsFriendlyTo(*target_faction);
 }
 
+void GameObject::SetLootState(LootState state)
+{
+    m_lootState = state;
+    if (m_model)
+    {
+        // startOpen determines whether we are going to add or remove the LoS on activation
+        bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
+
+        if (state == GO_ACTIVATED || state == GO_JUST_DEACTIVATED)
+            EnableCollision(startOpen);
+        else if (state == GO_READY)
+            EnableCollision(!startOpen);
+    }
+}
+
+void GameObject::SetGoState(GOState state)
+{
+    SetByteValue(GAMEOBJECT_BYTES_1, 0, state);
+    if (m_model)
+    {
+        if (!IsInWorld())
+            return;
+
+        // startOpen determines whether we are going to add or remove the LoS on activation
+        bool startOpen = (GetGoType() == GAMEOBJECT_TYPE_DOOR || GetGoType() == GAMEOBJECT_TYPE_BUTTON ? GetGOInfo()->door.startOpen : false);
+
+        if (state == GO_STATE_ACTIVE || state == GO_STATE_ACTIVE_ALTERNATIVE)
+            EnableCollision(startOpen);
+        else if (state == GO_STATE_READY)
+            EnableCollision(!startOpen);
+    }
+}
+
 void GameObject::SetDisplayId(uint32 modelId)
 {
     SetUInt32Value(GAMEOBJECT_DISPLAYID, modelId);
     m_displayInfo = sGameObjectDisplayInfoStore.LookupEntry(modelId);
+    UpdateModel();
+}
+
+void GameObject::SetPhaseMask(uint32 newPhaseMask, bool update)
+{
+    WorldObject::SetPhaseMask(newPhaseMask, update);
+    EnableCollision(true);
+}
+
+void GameObject::EnableCollision(bool enable)
+{
+    if (!m_model)
+        return;
+
+    /*if (enable && !GetMap()->Contains(*m_model))
+        GetMap()->Insert(*m_model);*/
+
+    m_model->enable(enable ? GetPhaseMask() : 0);
+}
+
+void GameObject::UpdateModel()
+{
+    if (!IsInWorld())
+        return;
+    if (m_model)
+        if (GetMap()->ContainsGameObjectModel(*m_model))
+            GetMap()->RemoveGameObjectModel(*m_model);
+    delete m_model;
+    m_model = GameObjectModel::construct(this);
+    if (m_model)
+        GetMap()->InsertGameObjectModel(*m_model);
 }
 
 void GameObject::StartGroupLoot(Group* group, uint32 timer)
@@ -2327,7 +2410,8 @@ float GameObject::GetObjectBoundingRadius() const
     // 1. This is clearly hack way because GameObjectDisplayInfoEntry have 6 floats related to GO sizes, but better that use DEFAULT_WORLD_OBJECT_SIZE
     // 2. In some cases this must be only interactive size, not GO size, current way can affect creature target point auto-selection in strange ways for big underground/virtual GOs
     if (m_displayInfo)
-        return fabs(m_displayInfo->minX) * GetObjectScale();
+//        return fabs(m_displayInfo->minX) * GetObjectScale();
+        return GetDeterminativeSize(false) * GetObjectScale();
 
     return DEFAULT_WORLD_OBJECT_SIZE;
 }

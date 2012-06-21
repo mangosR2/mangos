@@ -526,7 +526,8 @@ bool Guild::DelMember(ObjectGuid guid, bool isDisbanding)
         SetLeader(newLeaderGUID);
 
         // If player not online data in data field will be loaded from guild tabs no need to update it !!
-        if (Player *newLeader = sObjectMgr.GetPlayer(newLeaderGUID))
+        Player* newLeader = sObjectMgr.GetPlayer(newLeaderGUID);
+        if (newLeader)
             newLeader->SetRank(GR_GUILDMASTER);
 
         // when leader non-exist (at guild load with deleted leader only) not send broadcasts

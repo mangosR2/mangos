@@ -357,7 +357,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNULL,                                      //301 SPELL_AURA_HEAL_ABSORB 5 spells
     &Aura::HandleUnused,                                    //302 unused (3.2.2a)
     &Aura::HandleNoImmediateEffect,                         //303 SPELL_AURA_DAMAGE_DONE_VERSUS_AURA_STATE_PCT 17 spells implemented in Unit::*DamageBonus
-    &Aura::HandleNULL,                                      //304 2 spells (alcohol effect?)
+    &Aura::HandleAuraFakeInebriation,                       //304 SPELL_AURA_FAKE_INEBRIATE
     &Aura::HandleAuraModIncreaseSpeed,                      //305 SPELL_AURA_MOD_MINIMUM_SPEED
     &Aura::HandleNULL,                                      //306 1 spell
     &Aura::HandleNULL,                                      //307 absorb healing?
@@ -3214,6 +3214,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 break;
             }
+            case 48385:                                     // Create Spirit Fount Beam
+            {
+                target->CastSpell(target, target->GetMap()->IsRegularDifficulty() ? 48380 : 59320, true);
+                return;
+            }
             case 49356:                                     // Flesh Decay - Tharonja
             {
                 if (Unit* caster = GetCaster())
@@ -3388,7 +3393,7 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             {
                 float x, y, z;
                 target->GetPosition(x, y, z);
-                z = target->GetTerrain()->GetHeight(x, y, z, true, MAX_FALL_DISTANCE);
+                z = target->GetMap()->GetHeight(target->GetPhaseMask(), x, y, z, true, MAX_FALL_DISTANCE);
                 target->GetMotionMaster()->Clear();
                 target->GetMotionMaster()->MovePoint(0, x, y, z);
                 return;
@@ -5614,6 +5619,25 @@ void Aura::HandleModTaunt(bool apply, bool Real)
         // When taunt aura fades out, mob will switch to previous target if current has less than 1.1 * secondthreat
         target->TauntFadeOut(caster);
     }
+}
+
+void Aura::HandleAuraFakeInebriation(bool apply, bool Real)
+{
+    // all applied/removed only at real aura add/remove
+    if (!Real)
+        return;
+
+    Unit* target = GetTarget();
+
+    if (target->GetTypeId() == TYPEID_PLAYER)
+    {
+        int32 point = target->GetInt32Value(PLAYER_FAKE_INEBRIATION);
+        point += (apply ? 1 : -1) * GetBasePoints();
+
+        target->SetInt32Value(PLAYER_FAKE_INEBRIATION, point);
+    }
+
+    target->UpdateObjectVisibility();
 }
 
 /*********************************************************/
@@ -9138,10 +9162,10 @@ void Aura::PeriodicTick()
 
             damageInfo.cleanDamage = uint32(-target->ModifyPower(powerType, -damageInfo.damage));
 
-            damageInfo.cleanDamage = uint32(damageInfo.cleanDamage * spellProto->EffectMultipleValue[GetEffIndex()]);
+            damageInfo.damage = uint32(damageInfo.cleanDamage * spellProto->EffectMultipleValue[GetEffIndex()]);
 
             // maybe has to be sent different to client, but not by SMSG_PERIODICAURALOG
-            pCaster->CalculateSpellDamage(&damageInfo, damageInfo.cleanDamage, spellProto);
+            pCaster->CalculateSpellDamage(&damageInfo);
 
             damageInfo.target->CalculateAbsorbResistBlock(pCaster, &damageInfo, spellProto);
 

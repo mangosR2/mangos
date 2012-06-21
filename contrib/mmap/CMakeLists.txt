@@ -27,8 +27,6 @@ include_directories(
     ../../src/game/vmap
     ../../dep/include/g3dlite
     ../../src/framework
-    ../../dep/ACE_wrappers
-    ../../objdir/dep/ACE_wrappers
     ../../dep/recastnavigation/Detour/Include
     ../../dep/recastnavigation/Recast/Include
     ../../dep/src/zlib
@@ -174,4 +172,4 @@ set(SOURCES
 
 add_executable( MoveMapGen ${SOURCES} )
 
-target_link_libraries( MoveMapGen g3dlite vmap Detour Recast zlib )
+target_link_libraries( MoveMapGen g3dlite vmap Detour Recast zlib pthread ACE)

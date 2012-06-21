@@ -275,7 +275,8 @@ void BattleGroundSA::Update(uint32 diff)
 
             for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
             {
-                if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+                Player* plr = sObjectMgr.GetPlayer(itr->first);
+                if (plr)
                     plr->RemoveAurasDueToSpell(SPELL_PREPARATION);
             }
         }
@@ -490,7 +491,8 @@ bool BattleGroundSA::SetupShips()
     {
         for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
         {
-            if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+            Player* plr = sObjectMgr.GetPlayer(itr->first);
+            if (plr)
                 SendTransportsRemove(plr);
         }
     }
@@ -531,7 +533,8 @@ bool BattleGroundSA::SetupShips()
 
     for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
     {
-        if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+        Player* plr = sObjectMgr.GetPlayer(itr->first);
+        if (plr)
             SendTransportInit(plr);
     }
     return true;
@@ -819,9 +822,12 @@ void BattleGroundSA::EventPlayerDamageGO(Player *player, GameObject* target_obj,
                 //Achievement Storm the Beach (1310)
                 for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
                 {
-                    if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
+                    {
                         if (plr->GetTeam() != defender)
                             plr->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, BG_SA_STORM_THE_BEACH);
+                    }
                 }
 
                 if (Phase == SA_ROUND_ONE) // Victory at first round

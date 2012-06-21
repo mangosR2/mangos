@@ -655,8 +655,8 @@ bool AntiCheat::CheckFly()
     if (GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z - 2.0f))
         return true;
 
-    float ground_z = GetMover()->GetTerrain()->GetHeight(GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),MAX_HEIGHT);
-    float floor_z  = GetMover()->GetTerrain()->GetHeight(GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),GetPlayer()->GetPositionZ());
+    float ground_z = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),MAX_HEIGHT);
+    float floor_z  = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),GetPlayer()->GetPositionZ());
     float map_z    = ((floor_z <= (INVALID_HEIGHT+5.0f)) ? ground_z : floor_z);
 
     if (map_z + m_currentConfig->checkFloatParam[0] > GetPlayer()->GetPositionZ() && map_z > (INVALID_HEIGHT + m_currentConfig->checkFloatParam[0] + 5.0f))
@@ -696,7 +696,7 @@ bool AntiCheat::CheckTp2Plane()
 
     float plane_z = 0.0f;
 
-    plane_z = GetMover()->GetTerrain()->GetHeight(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, MAX_HEIGHT) - m_currentmovementInfo->GetPos()->z;
+    plane_z = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, MAX_HEIGHT) - m_currentmovementInfo->GetPos()->z;
     plane_z = (plane_z < -500.0f) ? 0 : plane_z; //check holes in heigth map
     if(plane_z < m_currentConfig->checkFloatParam[1] && plane_z > -m_currentConfig->checkFloatParam[1])
             return true;

@@ -103,7 +103,7 @@ bool FleeingMovementGenerator<T>::_getPoint(T &owner, float &x, float &y, float 
     z = curr_z;
 
     if (owner.GetTypeId() == TYPEID_PLAYER)
-        owner.GetTerrain()->CheckPathAccurate(curr_x, curr_y, curr_z, x,y,z, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? &owner : NULL );
+        owner.GetMap()->GetHitPosition(curr_x, curr_y, curr_z, x,y,z, owner.GetPhaseMask(), -0.1f);
 
     owner.UpdateAllowedPositionZ(x, y, z);
 

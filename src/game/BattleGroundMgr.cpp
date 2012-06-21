@@ -216,7 +216,8 @@ GroupQueueInfo * BattleGroundQueue::AddGroup(Player *leader, Group* grp, BattleG
         //announce to world, this code needs mutex
         if (arenaType == ARENA_TYPE_NONE && !isRated && !isPremade && sWorld.getConfig(CONFIG_UINT32_BATTLEGROUND_QUEUE_ANNOUNCER_JOIN))
         {
-            if (BattleGround* bg = sBattleGroundMgr.GetBattleGroundTemplate(ginfo->BgTypeId))
+            BattleGround* bg = sBattleGroundMgr.GetBattleGroundTemplate(ginfo->BgTypeId);
+            if (bg)
             {
                 char const* bgName = bg->GetName();
                 uint32 MinPlayers = bg->GetMinPlayersPerTeam();

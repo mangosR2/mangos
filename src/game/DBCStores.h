@@ -156,6 +156,7 @@ extern DBCStorage <ItemSetEntry>                 sItemSetStore;
 extern DBCStorage <LFGDungeonEntry>              sLFGDungeonStore;
 extern DBCStorage <LFGDungeonExpansionEntry>     sLFGDungeonExpansionStore;
 extern LFGDungeonExpansionMap                    sLFGDungeonExpansionMap;
+extern DBCStorage <LiquidTypeEntry>              sLiquidTypeStore;
 extern DBCStorage <LockEntry>                    sLockStore;
 extern DBCStorage <MailTemplateEntry>            sMailTemplateStore;
 extern DBCStorage <MapEntry>                     sMapStore;

@@ -64,20 +64,6 @@ namespace VMAP
         return pos;
     }
 
-    //=========================================================
-
-    Vector3 VMapManager2::convertPositionToMangosRep(float x, float y, float z) const
-    {
-        Vector3 pos;
-        const float mid = 0.5f * 64.0f * 533.33333333f;
-        pos.x = mid - x;
-        pos.y = mid - y;
-        pos.z = z;
-
-        return pos;
-    }
-    //=========================================================
-
     // move to MapTree too?
     std::string VMapManager2::getMapFileName(unsigned int pMapId)
     {
@@ -111,7 +97,7 @@ namespace VMAP
         if (instanceTree == iInstanceMapTrees.end())
         {
             std::string mapFileName = getMapFileName(pMapId);
-            StaticMapTree *newTree = new StaticMapTree(pMapId, basePath);
+            StaticMapTree* newTree = new StaticMapTree(pMapId, basePath);
             if (!newTree->InitMap(mapFileName, this))
                 return false;
             instanceTree = iInstanceMapTrees.insert(InstanceTreeMap::value_type(pMapId, newTree)).first;
@@ -160,8 +146,8 @@ namespace VMAP
         InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree != iInstanceMapTrees.end())
         {
-            Vector3 pos1 = convertPositionToInternalRep(x1,y1,z1);
-            Vector3 pos2 = convertPositionToInternalRep(x2,y2,z2);
+            Vector3 pos1 = convertPositionToInternalRep(x1, y1, z1);
+            Vector3 pos2 = convertPositionToInternalRep(x2, y2, z2);
             if (pos1 != pos2)
             {
                 result = instanceTree->second->isInLineOfSight(pos1, pos2);
@@ -185,11 +171,11 @@ namespace VMAP
             InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
             if (instanceTree != iInstanceMapTrees.end())
             {
-                Vector3 pos1 = convertPositionToInternalRep(x1,y1,z1);
-                Vector3 pos2 = convertPositionToInternalRep(x2,y2,z2);
+                Vector3 pos1 = convertPositionToInternalRep(x1, y1, z1);
+                Vector3 pos2 = convertPositionToInternalRep(x2, y2, z2);
                 Vector3 resultPos;
                 result = instanceTree->second->getObjectHitPos(pos1, pos2, resultPos, pModifyDist);
-                resultPos = convertPositionToMangosRep(resultPos.x,resultPos.y,resultPos.z);
+                resultPos = convertPositionToInternalRep(resultPos.x,resultPos.y,resultPos.z);
                 rx = resultPos.x;
                 ry = resultPos.y;
                 rz = resultPos.z;
@@ -211,7 +197,7 @@ namespace VMAP
             InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
             if (instanceTree != iInstanceMapTrees.end())
             {
-                Vector3 pos = convertPositionToInternalRep(x,y,z);
+                Vector3 pos = convertPositionToInternalRep(x, y, z);
                 height = instanceTree->second->getHeight(pos, maxSearchDist);
                 if (!(height < G3D::inf()))
                 {
@@ -235,7 +221,7 @@ namespace VMAP
             // z is not touched by convertPositionToMangosRep(), so just copy
             z = pos.z;
         }
-        return(result);
+        return result;
     }
 
     bool VMapManager2::GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 ReqLiquidType, float &level, float &floor, uint32 &type) const
@@ -248,7 +234,7 @@ namespace VMAP
             if (instanceTree->second->GetLocationInfo(pos, info))
             {
                 floor = info.ground_Z;
-                type = info.hitModel->GetLiquidType();
+                type = info.hitModel->GetLiquidType();  // entry from LiquidType.dbc
                 if (ReqLiquidType && !(type & ReqLiquidType))
                     return false;
                 if (info.hitInstance->GetLiquidLevel(pos, info, level))
@@ -265,7 +251,7 @@ namespace VMAP
         ModelFileMap::iterator model = iLoadedModelFiles.find(filename);
         if (model == iLoadedModelFiles.end())
         {
-            WorldModel *worldmodel = new WorldModel();
+            WorldModel* worldmodel = new WorldModel();
             if (!worldmodel->readFile(basepath + filename + ".vmo"))
             {
                 ERROR_LOG("VMapManager2: could not load '%s%s.vmo'!", basepath.c_str(), filename.c_str());

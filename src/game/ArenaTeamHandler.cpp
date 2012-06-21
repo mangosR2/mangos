@@ -35,13 +35,15 @@ void WorldSession::HandleInspectArenaTeamsOpcode(WorldPacket & recv_data)
     recv_data >> guid;
     DEBUG_LOG("Inspect Arena stats %s", guid.GetString().c_str());
 
-    if(Player *plr = sObjectMgr.GetPlayer(guid))
+    Player* plr = sObjectMgr.GetPlayer(guid);
+    if(plr)
     {
         for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
         {
             if(uint32 a_id = plr->GetArenaTeamId(i))
             {
-                if(ArenaTeam *at = sObjectMgr.GetArenaTeamById(a_id))
+                ArenaTeam* at = sObjectMgr.GetArenaTeamById(a_id);
+                if(at)
                     at->InspectStats(this, plr->GetObjectGuid());
             }
         }
@@ -55,7 +57,8 @@ void WorldSession::HandleArenaTeamQueryOpcode(WorldPacket & recv_data)
     uint32 ArenaTeamId;
     recv_data >> ArenaTeamId;
 
-    if(ArenaTeam *arenateam = sObjectMgr.GetArenaTeamById(ArenaTeamId))
+    ArenaTeam* arenateam = sObjectMgr.GetArenaTeamById(ArenaTeamId);
+    if(arenateam)
     {
         arenateam->Query(this);
         arenateam->Stats(this);
@@ -69,7 +72,8 @@ void WorldSession::HandleArenaTeamRosterOpcode(WorldPacket & recv_data)
     uint32 ArenaTeamId;                                     // arena team id
     recv_data >> ArenaTeamId;
 
-    if(ArenaTeam *arenateam = sObjectMgr.GetArenaTeamById(ArenaTeamId))
+    ArenaTeam* arenateam = sObjectMgr.GetArenaTeamById(ArenaTeamId);
+    if(arenateam)
         arenateam->Roster(this);
 }
 
@@ -234,7 +238,8 @@ void WorldSession::HandleArenaTeamDisbandOpcode(WorldPacket & recv_data)
     uint32 ArenaTeamId;                                     // arena team id
     recv_data >> ArenaTeamId;
 
-    if (ArenaTeam *at = sObjectMgr.GetArenaTeamById(ArenaTeamId))
+    ArenaTeam* at = sObjectMgr.GetArenaTeamById(ArenaTeamId);
+    if (at)
     {
         if (at->GetCaptainGuid() != _player->GetObjectGuid())
             return;

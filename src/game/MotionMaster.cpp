@@ -145,14 +145,14 @@ void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
         Mutate(new FollowMovementGenerator<Creature>(*target,dist,angle), UNIT_ACTION_DOWAYPOINTS);
 }
 
-void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generatePath)
+void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generatePath /*= true*/, bool lowPriority /*= false*/)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s targeted point (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), id, x, y, z );
 
     if (m_owner->GetTypeId() == TYPEID_PLAYER)
-        Mutate(new PointMovementGenerator<Player>(id,x,y,z, generatePath), UNIT_ACTION_ASSISTANCE);
+        Mutate(new PointMovementGenerator<Player>(id,x,y,z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
     else
-        Mutate(new PointMovementGenerator<Creature>(id,x,y,z, generatePath), UNIT_ACTION_ASSISTANCE);
+        Mutate(new PointMovementGenerator<Creature>(id,x,y,z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
 }
 
 void MotionMaster::MoveSeekAssistance(float x, float y, float z)
@@ -344,7 +344,7 @@ void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horiz
 void MotionMaster::MoveFall()
 {
     // use larger distance for vmap height search than in most other cases
-    float tz = m_owner->GetTerrain()->GetHeight(m_owner->GetPositionX(), m_owner->GetPositionY(), m_owner->GetPositionZ(), true, MAX_FALL_DISTANCE);
+    float tz = m_owner->GetMap()->GetHeight(m_owner->GetPhaseMask(), m_owner->GetPositionX(), m_owner->GetPositionY(), m_owner->GetPositionZ(), true, MAX_FALL_DISTANCE);
     if (tz <= INVALID_HEIGHT)
     {
         sLog.outError("MotionMaster::MoveFall: unable retrive a proper height at map %u (x: %f, y: %f, z: %f).",

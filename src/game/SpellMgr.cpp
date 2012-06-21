@@ -830,6 +830,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                         case 27201:
                         case 27202:
                         case 27203:
+                        case 47669:
                             return true;
                         default:
                             break;
@@ -2462,6 +2463,37 @@ bool SpellMgr::IsGroupBuff(SpellEntry const *spellInfo)
     }
 
     return false;
+}
+
+bool SpellMgr::IsTargetMatchedWithCreatureType(SpellEntry const* pSpellInfo, Unit* pTarget)
+{
+    uint32 spellCreatureTargetMask = pSpellInfo->TargetCreatureType;
+
+    // Curse of Doom: not find another way to fix spell target check :/
+    if (pSpellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && pSpellInfo->Category == 1179)
+    {
+        // not allow cast at player
+        if (pTarget->GetTypeId() == TYPEID_PLAYER)
+            return false;
+
+        spellCreatureTargetMask = 0x7FF;
+    }
+
+    // Dismiss Pet and Taming Lesson skipped
+    if (pSpellInfo->Id == 2641 || pSpellInfo->Id == 23356)
+        spellCreatureTargetMask =  0;
+
+    // skip creature type check for Grounding Totem
+    if (pTarget->GetUInt32Value(UNIT_CREATED_BY_SPELL) == 8177)
+        return true;
+
+    if (spellCreatureTargetMask)
+    {
+        uint32 TargetCreatureType = pTarget->GetCreatureTypeMask();
+
+        return !TargetCreatureType || (spellCreatureTargetMask & TargetCreatureType);
+    }
+    return true;
 }
 
 // is holder stackable from different casters

@@ -2951,16 +2951,11 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 54092:                                 // Monster Slayer's Kit
                 {
-                    uint32 spell_id = 0;
-                    switch(urand(0,3))
-                    {
-                        case 0: spell_id = 51853; break;
-                        case 1: spell_id = 54063; break;
-                        case 2: spell_id = 54071; break;
-                        case 3: spell_id = 54086; break;
-                        default: return;
-                    }
-                    m_caster->CastSpell(unitTarget,spell_id,true,NULL);
+                    if (!unitTarget)
+                        return;
+
+                    uint32 spellIds[] = {51853, 54063, 54071, 54086};
+                    m_caster->CastSpell(unitTarget, spellIds[urand(0, 3)], true);
                     return;
                 }
                 case 54148:                                 // Svala - Ritual Of Sword
@@ -5199,31 +5194,13 @@ void Spell::EffectPowerBurn(SpellEffectIndex eff_idx)
     new_damage = int32(new_damage * multiplier);
     m_damage += new_damage;
 
-    // "Mana Burn now causes Fear, Hex and Psychic Scream to break early when used."
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST)
-    {
-        // Hex
-        if (SpellAuraHolderPtr holder = unitTarget->GetSpellAuraHolder(51514))
-            unitTarget->RemoveSpellAuraHolder(holder, AURA_REMOVE_BY_CANCEL);
-
-        Unit::AuraList const& fearAuras = unitTarget->GetAurasByType(SPELL_AURA_MOD_FEAR);
-        for (Unit::AuraList::const_iterator itr = fearAuras.begin(); itr != fearAuras.end();)
-        {
-            if (*itr)
-            {
-                SpellEntry const *spellInfo = (*itr)->GetSpellProto();
-                if ((spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && spellInfo->SpellIconID == 98) || // Fear
-                    (spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST &&                                   // Psychic Scream
-                    spellInfo->SpellFamilyFlags.test<CF_PRIEST_PSYCHIC_SCREAM>()))
-                {
-                    ++itr;
-                    unitTarget->RemoveAurasDueToSpell(spellInfo->Id, SpellAuraHolderPtr(NULL), AURA_REMOVE_BY_CANCEL);
-                    continue;
-                }
-            }
-            ++itr;
-        }
-    }
+    DamageInfo damageInfo(m_caster, unitTarget, m_spellInfo);
+    damageInfo.damage = new_damage;
+    // Set trigger flag
+    damageInfo.procAttacker = PROC_FLAG_NONE;
+    damageInfo.procVictim   = PROC_FLAG_TAKEN_ANY_DAMAGE;
+    damageInfo.procEx       = PROC_EX_DIRECT_DAMAGE | PROC_EX_IGNORE_CC;
+    unitTarget->ProcDamageAndSpellFor(true,&damageInfo);
 }
 
 void Spell::EffectHeal(SpellEffectIndex eff_idx)
@@ -6565,7 +6542,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
         {
             float ox, oy, oz;
             m_caster->GetPosition(ox, oy, oz);
-            m_caster->GetTerrain()->CheckPathAccurate(ox,oy,oz, px, py, pz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? m_caster : NULL );
+            m_caster->GetMap()->GetHitPosition(ox,oy,oz, px, py, pz, m_caster->GetPhaseMask(),-0.1f);
             m_caster->UpdateAllowedPositionZ(px,py,pz);
         }
 
@@ -8524,13 +8501,13 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveAurasDueToSpell(46394);
                     return;
                 }
-                case 45204: // Clone Me!
+                case 45204:                                 // Clone Me!
                 {
                     if (!unitTarget)
                         return;
 
-                    unitTarget->CastSpell(m_caster, damage, true);
-                    break;
+                    unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
                 }
                 case 45206:                                 // Copy Off-hand Weapon
                 {
@@ -8766,12 +8743,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveAurasDueToSpell(47636);
                     return;
                 }
-                case 47703:                                 // Unholy Union for Quest In Service of the Unholy
+                case 47703:                                 // Unholy Union
                 {
                     m_caster->CastSpell(m_caster, 50254, true);
                     return;
                 }
-                case 47724:                                 // Frost Draw for Quest In Service of Frost
+                case 47724:                                 // Frost Draw
                 {
                     m_caster->CastSpell(m_caster, 50239, true);
                     return;
@@ -8791,6 +8768,29 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(m_caster, 47955, true);
                     m_caster->CastSpell(m_caster, 47956, true);
                     m_caster->CastSpell(m_caster, 47957, true);
+                    return;
+                }
+/*                case 48590:                                 // Avenging Spirits
+                {
+                    if (!unitTarget)
+                        return;
+
+                    // Summon 4 spirits summoners
+                    unitTarget->CastSpell(unitTarget, 48586, true);
+                    unitTarget->CastSpell(unitTarget, 48587, true);
+                    unitTarget->CastSpell(unitTarget, 48588, true);
+                    unitTarget->CastSpell(unitTarget, 48589, true);
+                    return;
+                }*/
+                case 48590:                                 // Avenging Spirits (summon Avenging Spirit Summoners)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 48586, true);
+                    unitTarget->CastSpell(unitTarget, 48587, true);
+                    unitTarget->CastSpell(unitTarget, 48588, true);
+                    unitTarget->CastSpell(unitTarget, 48589, true);
                     return;
                 }
                 case 48603:                                 // High Executor's Branding Iron
@@ -8906,17 +8906,6 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     return;
                 }
-                case 48590:                                 // Avenging Spirits (summon Avenging Spirit Summoners)
-                {
-                    if (!unitTarget)
-                        return;
-
-                    unitTarget->CastSpell(unitTarget, 48586, true);
-                    unitTarget->CastSpell(unitTarget, 48587, true);
-                    unitTarget->CastSpell(unitTarget, 48588, true);
-                    unitTarget->CastSpell(unitTarget, 48589, true);
-                    return;
-                }
                 case 50217:                                 // The Cleansing: Script Effect Player Cast Mirror Image
                 {
                     // Summon Your Inner Turmoil
@@ -8972,7 +8961,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     return;
                 }
-                case 50252:                                 // Blood Draw for Quest In Service of Blood
+                case 50252:                                 // Blood Draw
                 {
                     m_caster->CastSpell(m_caster, 50250, true);
                     return;
@@ -9026,6 +9015,34 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                             ((Creature*)unitTarget)->ForcedDespawn(1);
                         }
                     }
+
+                    return;
+                }
+                case 51519:                                 // Death Knight Initiate Visual
+                {
+                    if (!unitTarget)
+                        return;
+
+                    uint8 gender = unitTarget->getGender();
+                    uint8 race = unitTarget->getRace();
+                    uint32 spellId = 0;
+                    switch (race)
+                    {
+                        case RACE_HUMAN:            spellId = (gender == GENDER_MALE ? 51520 : 51534); break;
+                        case RACE_DWARF:            spellId = (gender == GENDER_MALE ? 51538 : 51537); break;
+                        case RACE_NIGHTELF:         spellId = (gender == GENDER_MALE ? 51535 : 51536); break;
+                        case RACE_GNOME:            spellId = (gender == GENDER_MALE ? 51539 : 51540); break;
+                        case RACE_DRAENEI:          spellId = (gender == GENDER_MALE ? 51541 : 51542); break;
+                        case RACE_ORC:              spellId = (gender == GENDER_MALE ? 51543 : 51544); break;
+                        case RACE_UNDEAD:           spellId = (gender == GENDER_MALE ? 51549 : 51550); break;
+                        case RACE_TAUREN:           spellId = (gender == GENDER_MALE ? 51547 : 51548); break;
+                        case RACE_TROLL:            spellId = (gender == GENDER_MALE ? 51546 : 51545); break;
+                        case RACE_BLOODELF:         spellId = (gender == GENDER_MALE ? 51551 : 51552); break;
+                        default:
+                            return;
+                    }
+                    if (spellId)
+                        unitTarget->CastSpell(unitTarget, spellId, true);
 
                     return;
                 }
@@ -9365,13 +9382,13 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     m_caster->CastSpell(unitTarget, 58919, true);
                     return;
-                }
+                }                                           // random spell learn instead placeholder
                 case 59789:                                 // Oracle Ablutions
                 {
                     if (!unitTarget)
                         return;
 
-                    switch(unitTarget->getPowerType())
+                    switch (unitTarget->getPowerType())
                     {
                         case POWER_RUNIC_POWER:
                         {
@@ -9381,7 +9398,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         case POWER_MANA:
                         {
                             int32 manapool = unitTarget->GetMaxPower(POWER_MANA) * 0.05;
-                            unitTarget->CastCustomSpell(unitTarget, 59813, &manapool, 0, 0, true);
+                            unitTarget->CastCustomSpell(unitTarget, 59813, &manapool, NULL, NULL, true);
                             break;
                         }
                         case POWER_RAGE:
@@ -11368,41 +11385,35 @@ void Spell::EffectSummonObject(SpellEffectIndex eff_idx)
 
 void Spell::EffectResurrect(SpellEffectIndex eff_idx)
 {
-    if (!unitTarget)
+    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    if (unitTarget->isAlive())
-        return;
-
-    if (!unitTarget->IsInWorld())
+    if (unitTarget->isAlive() || !unitTarget->IsInWorld())
         return;
 
     switch (m_spellInfo->Id)
     {
-        // Defibrillate (Goblin Jumper Cables) have 33% chance on success
-        case 8342:
-            if (roll_chance_i(67))
+        case 8342:                                          // Defibrillate (Goblin Jumper Cables) has 33% chance on success
+        case 22999:                                         // Defibrillate (Goblin Jumper Cables XL) has 50% chance on success
+        case 54732:                                         // Defibrillate (Gnomish Army Knife) has 67% chance on success
+        {
+            uint32 failChance = 0;
+            uint32 failSpellId = 0;
+            switch (m_spellInfo->Id)
             {
-                m_caster->CastSpell(m_caster, 8338, true, m_CastItem);
+                case 8342:  failChance=67; failSpellId = 8338;  break;
+                case 22999: failChance=50; failSpellId = 23055; break;
+                case 54732: failChance=33; failSpellId = 0; break;
+            }
+
+            if (roll_chance_i(failChance))
+            {
+                if (failSpellId)
+                    m_caster->CastSpell(m_caster, failSpellId, true, m_CastItem);
                 return;
             }
             break;
-        // Defibrillate (Goblin Jumper Cables XL) have 50% chance on success
-        case 22999:
-            if (roll_chance_i(50))
-            {
-                m_caster->CastSpell(m_caster, 23055, true, m_CastItem);
-                return;
-            }
-            break;
-        // Defibrillate (Gnomish Army Knife) has 67% chance of success
-        case 54732:
-            if (roll_chance_i(33))
-                return;
-            break;
+        }
         default:
             break;
     }
@@ -12002,7 +12013,7 @@ void Spell::EffectTransmitted(SpellEffectIndex eff_idx)
             }
 
             // finally, check LoS
-            if (!m_caster->IsWithinLOS(fx, fy, fz, false))
+            if (!m_caster->IsWithinLOS(fx, fy, fz))
             {
                 SendCastResult(SPELL_FAILED_LINE_OF_SIGHT);
                 SendChannelUpdate(0);

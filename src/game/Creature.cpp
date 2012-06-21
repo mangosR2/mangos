@@ -192,7 +192,10 @@ void Creature::AddToWorld()
 {
     ///- Register the creature for guid lookup
     if (!IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
+    {
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().insert<Creature>(GetObjectGuid(), (Creature*)this);
+    }
 
     if (IsInWorld() && GetObjectGuid().IsPet())
     {
@@ -210,7 +213,10 @@ void Creature::RemoveFromWorld()
 {
     ///- Remove the creature from the accessor
     if (IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
+    {
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetMap()->GetObjectsStore().erase<Creature>(GetObjectGuid(), (Creature*)NULL);
+    }
 
     if (IsInWorld() && GetObjectGuid().IsPet())
     {
@@ -1335,7 +1341,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map *map)
         m_deathState = DEAD;
         if (CanFly())
         {
-            float tz = GetTerrain()->GetHeight(data->posX, data->posY, data->posZ, false);
+            float tz = GetMap()->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, false);
             if (data->posZ - tz > 0.1)
                 Relocate(data->posX, data->posY, tz);
         }
@@ -1365,7 +1371,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map *map)
             // Just set to dead, so need to relocate like above
             if (CanFly())
             {
-                float tz = GetTerrain()->GetHeight(data->posX, data->posY, data->posZ, false);
+                float tz = GetMap()->GetHeight(data->phaseMask, data->posX, data->posY, data->posZ, false);
                 if (data->posZ - tz > 0.1)
                     Relocate(data->posX, data->posY, tz);
             }
@@ -2092,9 +2098,6 @@ bool Creature::MeetsSelectAttackingRequirement(Unit* pTarget, SpellEntry const* 
 
     if ((selectFlags & SELECT_FLAG_IN_MELEE_RANGE) && !CanReachWithMeleeAttack(pTarget))
         return false;
-    if ((selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE) && CanReachWithMeleeAttack(pTarget))
-        return false;
-
     if ((selectFlags & SELECT_FLAG_NOT_IN_MELEE_RANGE) && CanReachWithMeleeAttack(pTarget))
         return false;
 

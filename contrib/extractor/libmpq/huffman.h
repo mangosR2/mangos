@@ -27,9 +27,9 @@
 #ifndef _HUFFMAN_H
 #define _HUFFMAN_H
 
-#define PTR_NOT(ptr)	(struct huffman_tree_item *)(~(unsigned long)(ptr))
+#define PTR_NOT(ptr)	(struct huffman_tree_item *)(~(size_t)(ptr))
 #define PTR_PTR(ptr)	((struct huffman_tree_item *)(ptr))
-#define PTR_INT(ptr)	(long)(ptr)
+#define PTR_INT(ptr)	(size_t)(ptr)
 
 #define INSERT_ITEM	1
 #define SWITCH_ITEMS	2				/* Switch the item1 and item2 */
@@ -49,8 +49,8 @@ struct huffman_input_stream {
 struct huffman_tree_item {
 	struct huffman_tree_item *next;			/* 00 - Pointer to next huffman_tree_item */
 	struct huffman_tree_item *prev;			/* 04 - Pointer to prev huffman_tree_item (< 0 if none) */
-	unsigned long dcmp_byte;			/* 08 - Index of this item in item pointer array, decompressed byte value */
-	unsigned long byte_value;			/* 0C - Some byte value */
+	size_t dcmp_byte;		        	/* 08 - Index of this item in item pointer array, decompressed byte value */
+	size_t byte_value;	         		/* 0C - Some byte value */
 	struct huffman_tree_item *parent;		/* 10 - Pointer to parent huffman_tree_item (NULL if none) */
 	struct huffman_tree_item *child;		/* 14 - Pointer to child huffman_tree_item */
 };

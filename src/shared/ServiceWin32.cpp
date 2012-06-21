@@ -24,6 +24,11 @@
 #include <windows.h>
 #include <winsvc.h>
 
+// Solve conflict with ACE
+#ifdef main
+#undef main
+#endif
+
 #if !defined(WINADVAPI)
 #if !defined(_ADVAPI32_)
 #define WINADVAPI DECLSPEC_IMPORT

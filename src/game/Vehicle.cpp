@@ -91,10 +91,14 @@ void VehicleKit::RemoveAllPassengers()
     }
 }
 
+/*
+ * Checks a specific seat for empty
+ * If seatId < 0, every seat check
+ */
 bool VehicleKit::HasEmptySeat(int8 seatId) const
 {
     if (seatId < 0)
-        return (GetNextEmptySeat(0,true) != -1);
+        return (GetNextEmptySeatWithFlag(0) != -1);
 
     SeatMap::const_iterator seat = m_Seats.find(seatId);
     // need add check on accessories-only seats...
@@ -105,6 +109,32 @@ bool VehicleKit::HasEmptySeat(int8 seatId) const
     return !seat->second.passenger;
 }
 
+/*
+ * return next free seat with a specific vehicleSeatFlag
+ * -1 will returned if no free seat found
+ */
+int8 VehicleKit::GetNextEmptySeatWithFlag(int8 seatId, bool next /*= true*/, uint32 vehicleSeatFlag /*= 0 */) const
+{
+
+    if (m_Seats.empty() || seatId >= MAX_VEHICLE_SEAT)
+        return -1;
+
+    if (next)
+    {
+        for (SeatMap::const_iterator seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
+            if ((seatId < 0 || seat->first >= seatId) && !seat->second.passenger && (!vehicleSeatFlag || (seat->second.seatInfo->m_flags & vehicleSeatFlag)))
+                return seat->first;
+    }
+    else
+    {
+        for (SeatMap::const_reverse_iterator seat = m_Seats.rbegin(); seat != m_Seats.rend(); ++seat)
+            if ((seatId < 0 || seat->first <= seatId) && !seat->second.passenger && (!vehicleSeatFlag || (seat->second.seatInfo->m_flags & vehicleSeatFlag)))
+                return seat->first;
+    }
+
+    return -1;
+}
+
 Unit *VehicleKit::GetPassenger(int8 seatId) const
 {
     SeatMap::const_iterator seat = m_Seats.find(seatId);
@@ -113,37 +143,6 @@ Unit *VehicleKit::GetPassenger(int8 seatId) const
         return NULL;
 
     return seat->second.passenger;
-}
-
-int8 VehicleKit::GetNextEmptySeat(int8 seatId, bool next) const
-{
-
-    if (m_Seats.empty() || seatId >= MAX_VEHICLE_SEAT)
-        return -1;
-
-    // some vehicles (those - found in ICC) dont return proper seatID
-    // maybe some wrong flags interpretation? (usable)
-    if (m_pBase->GetEntry() == 37672 || m_pBase->GetEntry() == 38285 ||
-        m_pBase->GetEntry() == 36609 || m_pBase->GetEntry() == 36598 ||
-        m_pBase->GetEntry() == 37187)
-    {
-        return 0;
-    }
-
-    if (next)
-    {
-        for (SeatMap::const_iterator seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
-            if ((seatId < 0 || seat->first >= seatId) && !seat->second.passenger && seat->second.seatInfo->IsUsable())
-                return seat->first;
-    }
-    else
-    {
-        for (SeatMap::const_reverse_iterator seat = m_Seats.rbegin(); seat != m_Seats.rend(); ++seat)
-            if ((seatId < 0 || seat->first <= seatId) && !seat->second.passenger && seat->second.seatInfo->IsUsable())
-                return seat->first;
-    }
-
-    return -1;
 }
 
 bool VehicleKit::AddPassenger(Unit *passenger, int8 seatId)

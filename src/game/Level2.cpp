@@ -79,7 +79,8 @@ bool ChatHandler::HandleMuteCommand(char* args)
     // find only player from same account if any
     if (!target)
     {
-        if (WorldSession* session = sWorld.FindSession(account_id))
+        WorldSession* session = sWorld.FindSession(account_id);
+        if (session)
             target = session->GetPlayer();
     }
 
@@ -128,7 +129,8 @@ bool ChatHandler::HandleUnmuteCommand(char* args)
     // find only player from same account if any
     if (!target)
     {
-        if (WorldSession* session = sWorld.FindSession(account_id))
+        WorldSession* session = sWorld.FindSession(account_id);
+        if (session)
             target = session->GetPlayer();
     }
 
@@ -2809,8 +2811,9 @@ bool ChatHandler::HandleTicketCommand(char* args)
 
         ticket->SetResponseText(args);
 
-        if (Player* pl = sObjectMgr.GetPlayer(ticket->GetPlayerGuid()))
-            pl->GetSession()->SendGMResponse(ticket);
+        Player* plr = sObjectMgr.GetPlayer(ticket->GetPlayerGuid());
+        if (plr)
+            plr->GetSession()->SendGMResponse(ticket);
 
         return true;
     }
@@ -2892,10 +2895,11 @@ bool ChatHandler::HandleDelTicketCommand(char *args)
         sTicketMgr.Delete(guid);
 
         //notify player
-        if (Player* pl = sObjectMgr.GetPlayer(guid))
+        Player* plr = sObjectMgr.GetPlayer(guid);
+        if (plr)
         {
-            pl->GetSession()->SendGMTicketGetTicket(0x0A);
-            PSendSysMessage(LANG_COMMAND_TICKETPLAYERDEL, GetNameLink(pl).c_str());
+            plr->GetSession()->SendGMTicketGetTicket(0x0A);
+            PSendSysMessage(LANG_COMMAND_TICKETPLAYERDEL, GetNameLink(plr).c_str());
         }
         else
             PSendSysMessage(LANG_COMMAND_TICKETDEL);

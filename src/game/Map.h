@@ -38,6 +38,7 @@
 #include "Weather.h"
 #include "CreatureLinkingMgr.h"
 #include "ObjectLock.h"
+#include "vmap/DynamicTree.h"
 
 #include <bitset>
 #include <list>
@@ -55,6 +56,7 @@ class BattleGroundPersistentState;
 struct ScriptInfo;
 class BattleGround;
 class GridMap;
+class GameObjectModel;
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
@@ -109,8 +111,10 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // currently unused for normal maps
         bool CanUnload(uint32 diff)
         {
-            if(!m_unloadTimer) return false;
-            if(m_unloadTimer <= diff) return true;
+            if(!m_unloadTimer)
+                return false;
+            if(m_unloadTimer <= diff)
+                return true;
             m_unloadTimer -= diff;
             return false;
         }
@@ -286,6 +290,14 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void SetBroken( bool _value = true ) { m_broken = _value; };
         void ForcedUnload();
 
+        // dynamic VMaps
+        float GetHeight(uint32 phasemask, float x, float y, float z, bool pCheckVMap=true, float maxSearchDist=DEFAULT_HEIGHT_SEARCH) const;
+        bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const;
+        bool GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, uint32 phasemask, float modifyDist) const;
+
+        void InsertGameObjectModel(const GameObjectModel& mdl);
+        void RemoveGameObjectModel(const GameObjectModel& mdl);
+        bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
     private:
         void LoadMapAndVMap(int gx, int gy);
 
@@ -348,7 +360,9 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
         //Shared geodata object with map coord info...
-        TerrainInfo * const m_TerrainData;
+        TerrainInfo* const m_TerrainData;
+        DynamicMapTree m_dyn_tree;
+
         bool m_bLoadedGrids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
         std::bitset<TOTAL_NUMBER_OF_CELLS_PER_MAP*TOTAL_NUMBER_OF_CELLS_PER_MAP> marked_cells;

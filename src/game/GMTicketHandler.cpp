@@ -79,7 +79,8 @@ void WorldSession::HandleGMTicketUpdateTextOpcode( WorldPacket & recv_data )
     std::string ticketText;
     recv_data >> ticketText;
 
-    if(GMTicket* ticket = sTicketMgr.GetGMTicket(GetPlayer()->GetObjectGuid()))
+    GMTicket* ticket = sTicketMgr.GetGMTicket(GetPlayer()->GetObjectGuid());
+    if(ticket)
         ticket->SetText(ticketText.c_str());
     else
         sLog.outError("Ticket update: Player %s (GUID: %u) doesn't have active ticket", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow());

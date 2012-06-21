@@ -465,7 +465,8 @@ void BattleGround::Update(uint32 diff)
 
         for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
         {
-            if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+            Player* plr = sObjectMgr.GetPlayer(itr->first);
+            if (plr)
             {
                 TeamIndex teamIndex = GetTeamIndex(plr->GetTeam());
                 if (!plr->isGameMaster() && plr->GetPositionZ() < deadly_Z)
@@ -524,7 +525,8 @@ void BattleGround::Update(uint32 diff)
                 // remove auras with duration lower than 30s and arena preparation
                 for (BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
                 {
-                    if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
                     {
                         // BG Status packet
                         WorldPacket status;
@@ -552,8 +554,11 @@ void BattleGround::Update(uint32 diff)
                 PlaySoundToAll(SOUND_BG_START);
 
                 for(BattleGroundPlayerMap::const_iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-                    if (Player* plr = sObjectMgr.GetPlayer(itr->first))
+                {
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
                         plr->RemoveAurasDueToSpell(SPELL_PREPARATION);
+                }
                 //Announce BG starting
                 if (sWorld.getConfig(CONFIG_BOOL_BATTLEGROUND_QUEUE_ANNOUNCER_START))
                 {
@@ -624,7 +629,8 @@ void BattleGround::SendPacketToAll(WorldPacket *packet)
         if (itr->second.OfflineRemoveTime)
             continue;
 
-        if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+        Player* plr = sObjectMgr.GetPlayer(itr->first);
+        if (plr)
             plr->GetSession()->SendPacket(packet);
         else
             sLog.outError("BattleGround:SendPacketToAll: %s not found!", itr->first.GetString().c_str());

@@ -89,7 +89,8 @@ void BattleGroundDS::Update(uint32 diff)
             {
                 for (BattleGroundPlayerMap::const_iterator itr = GetPlayers().begin(); itr != GetPlayers().end(); ++itr)
                 {
-                    if (Player *plr = sObjectMgr.GetPlayer(itr->first))
+                    Player* plr = sObjectMgr.GetPlayer(itr->first);
+                    if (plr)
                     {
                         if (plr->GetPositionZ() < 11.0f)
                             continue;

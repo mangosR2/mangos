@@ -1517,11 +1517,12 @@ void Unit::CastSpell(float x, float y, float z, SpellEntry const *spellInfo, boo
 }
 
 // Obsolete func need remove, here only for comotability vs another patches
-uint32 Unit::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage)
+uint32 Unit::SpellNonMeleeDamageLog(Unit* pVictim, uint32 spellID, uint32 damage)
 {
     SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellID);
     DamageInfo damageInfo(this, pVictim, spellInfo);
-    CalculateSpellDamage(&damageInfo, damage, spellInfo);
+    damageInfo.damage = damage;
+    CalculateSpellDamage(&damageInfo);
     damageInfo.target->CalculateAbsorbResistBlock(this, &damageInfo, spellInfo);
     DealDamageMods(damageInfo.target,damageInfo.damage,&damageInfo.absorb);
     SendSpellNonMeleeDamageLog(&damageInfo);
@@ -1529,83 +1530,92 @@ uint32 Unit::SpellNonMeleeDamageLog(Unit *pVictim, uint32 spellID, uint32 damage
     return damageInfo.damage;
 }
 
-void Unit::CalculateSpellDamage(DamageInfo* damageInfo, int32 _damage, SpellEntry const *spellInfo, WeaponAttackType attackType, float DamageMultiplier)
+void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
 {
-    Unit *pVictim = damageInfo->target;
-
-    if (_damage < 0)
+    if (!damageInfo || damageInfo->damage < 0)
         return;
 
-    if(!this || !pVictim)
-        return;
-
-    if(!this->isAlive() || !pVictim->isAlive())
+    if (!damageInfo->target || !isAlive() || !damageInfo->target->isAlive())
         return;
 
     // Check spell crit chance
-    bool crit = IsSpellCrit(pVictim, spellInfo, damageInfo->SchoolMask(), attackType);
-
-    damageInfo->damage = _damage;
+    bool crit = IsSpellCrit(damageInfo->target, damageInfo->m_spellInfo, damageInfo->SchoolMask(), damageInfo->attackType);
 
     // damage bonus (per damage class)
-    switch (spellInfo->DmgClass)
+    switch (damageInfo->m_spellInfo->DmgClass)
     {
         // Melee and Ranged Spells
         case SPELL_DAMAGE_CLASS_RANGED:
         case SPELL_DAMAGE_CLASS_MELEE:
         {
             //Calculate damage bonus
-            damageInfo->damage = MeleeDamageBonusDone(pVictim, damageInfo->damage, attackType, spellInfo, SPELL_DIRECT_DAMAGE);
-            if (DamageMultiplier != 1.0f)
-                damageInfo->damage = int32(damageInfo->damage * DamageMultiplier);
-            damageInfo->damage = pVictim->MeleeDamageBonusTaken(this, damageInfo->damage, attackType, spellInfo, SPELL_DIRECT_DAMAGE);
+            damageInfo->damage = MeleeDamageBonusDone(damageInfo->target, damageInfo->damage, damageInfo->attackType, damageInfo->m_spellInfo, damageInfo->damageType);
+            if (fabs(DamageMultiplier - 1.0f) > M_NULL_F)
+                damageInfo->damage = floor((float)damageInfo->damage * DamageMultiplier);
+
+            damageInfo->damage = damageInfo->target->MeleeDamageBonusTaken(this, damageInfo->damage, damageInfo->attackType, damageInfo->m_spellInfo, damageInfo->damageType);
 
             // if crit add critical bonus
             if (crit)
             {
                 damageInfo->HitInfo |=  SPELL_HIT_TYPE_CRIT;
-                damageInfo->damage = SpellCriticalDamageBonus(spellInfo, damageInfo->damage, pVictim);
+                damageInfo->damage = SpellCriticalDamageBonus(damageInfo->m_spellInfo, damageInfo->damage, damageInfo->target);
 
-                // Resilience - reduce crit damage
-                uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
+                // Resilience - reduce crit damage (full or reduced)
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
+                                                   damageInfo->damage :
+                                                   CalcNotIgnoreDamageReduction(damageInfo);
+                uint32 damageCritReduction = (damageInfo->attackType != RANGED_ATTACK) ?
+                                                damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage) :
+                                                damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
 
-                if (attackType != RANGED_ATTACK)
-                    damageInfo->damage -= pVictim->GetMeleeCritDamageReduction(reduction_affected_damage);
-                else
-                    damageInfo->damage -= pVictim->GetRangedCritDamageReduction(reduction_affected_damage);
+                damageInfo->damage -= damageCritReduction;
             }
+            else
+            {
+                damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
+            }
+            break;
         }
-        break;
         // Magical Attacks
         case SPELL_DAMAGE_CLASS_NONE:
         case SPELL_DAMAGE_CLASS_MAGIC:
         {
             // Calculate damage bonus
-            damageInfo->damage = SpellDamageBonusDone(pVictim, spellInfo, damageInfo->damage, SPELL_DIRECT_DAMAGE);
-            if (DamageMultiplier != 1.0f)
-                damageInfo->damage = int32(damageInfo->damage * DamageMultiplier);
-            damageInfo->damage = pVictim->SpellDamageBonusTaken(this, spellInfo, damageInfo->damage, SPELL_DIRECT_DAMAGE);
+            damageInfo->damage = SpellDamageBonusDone(damageInfo->target, damageInfo->m_spellInfo, damageInfo->damage, damageInfo->damageType);
+            if (fabs(DamageMultiplier - 1.0f) > M_NULL_F)
+                damageInfo->damage = floor((float)damageInfo->damage * DamageMultiplier);
+            damageInfo->damage = damageInfo->target->SpellDamageBonusTaken(this, damageInfo->m_spellInfo, damageInfo->damage, damageInfo->damageType);
 
             // If crit add critical bonus
             if (crit)
             {
-                damageInfo->HitInfo|= SPELL_HIT_TYPE_CRIT;
-                damageInfo->damage = SpellCriticalDamageBonus(spellInfo, damageInfo->damage, pVictim);
+                damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
+                damageInfo->damage = SpellCriticalDamageBonus(damageInfo->m_spellInfo, damageInfo->damage, damageInfo->target);
 
-                // Resilience - reduce crit damage
-                uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-                damageInfo->damage -= pVictim->GetSpellCritDamageReduction(reduction_affected_damage);
+                // Resilience - reduce crit damage (full or reduced)
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
+                                                   damageInfo->damage :
+                                                   CalcNotIgnoreDamageReduction(damageInfo);
+
+                damageInfo->damage -= damageInfo->target->GetSpellCritDamageReduction(reduction_affected_damage);
             }
+            else
+            {
+                damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
+            }
+            break;
         }
-        break;
+        default:
+            sLog.outError("Unit::CalculateSpellDamage unknown damage class by caster: %s, spell %u", GetObjectGuid().GetString().c_str(), damageInfo->m_spellInfo->Id);
+            return;
     }
 
-    // only from players and their pets
-    if (GetTypeId() == TYPEID_PLAYER || GetObjectGuid().IsPet())
-    {
-        uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-        damageInfo->damage -= pVictim->GetSpellDamageReduction(reduction_affected_damage);
-    }
+    // Resilience - reduce regular damage (full or reduced)
+    uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
+                                       damageInfo->damage :
+                                       CalcNotIgnoreDamageReduction(damageInfo);
+    damageInfo->damage -= damageInfo->target->GetSpellDamageReduction(reduction_affected_damage);
 
     // damage mitigation
     if (damageInfo->damage > 0)
@@ -1614,7 +1624,7 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, int32 _damage, SpellEntr
         if (damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL)
         {
             uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-            damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(pVictim, armor_affected_damage);
+            damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
         }
     }
     else
@@ -2657,6 +2667,18 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
 
             pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
 
+            splitdamageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
+            if (splitdamageInfo.absorb)
+                splitdamageInfo.procEx |= PROC_EX_ABSORB;
+
+            if (splitdamageInfo.damage == 0)
+                splitdamageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+                splitdamageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
+
+            caster->ProcDamageAndSpellFor(true,&splitdamageInfo);
+
             pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
             splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
             pCaster->DealDamage(caster, &splitdamageInfo, false);
@@ -2685,6 +2707,18 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
             RemainingDamage -=  int32(splitdamageInfo.damage);
 
             pCaster->DealDamageMods(caster,splitdamageInfo.damage,&splitdamageInfo.absorb);
+
+            splitdamageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
+            if (splitdamageInfo.absorb)
+                splitdamageInfo.procEx |= PROC_EX_ABSORB;
+
+            if (splitdamageInfo.damage == 0)
+                splitdamageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+                splitdamageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
+
+            caster->ProcDamageAndSpellFor(true,&splitdamageInfo);
 
             pCaster->SendSpellNonMeleeDamageLog(caster, (*i)->GetSpellProto()->Id, splitdamageInfo.damage, damageInfo->SchoolMask(), splitdamageInfo.absorb, 0, false, 0, false);
             splitdamageInfo.cleanDamage = splitdamageInfo.damage - splitdamageInfo.absorb;
@@ -2727,12 +2761,27 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
         }
     }
 
+    if (damageInfo->damage > 0 )
+        damageInfo->procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+
     damageInfo->absorb = damageInfo->damage - damageInfo->resist - RemainingDamage - absorb_unaffected_damage;
 
-    if (damageInfo->damage < (damageInfo->absorb + damageInfo->resist))
+    if (damageInfo->absorb)
+        damageInfo->procEx |= PROC_EX_ABSORB;
+
+    if (damageInfo->resist)
+        damageInfo->procEx |= PROC_EX_RESIST;
+
+    if (damageInfo->damage <= (damageInfo->absorb + damageInfo->resist))
+    {
         damageInfo->damage = 0;
+        damageInfo->procEx &= ~PROC_EX_DIRECT_DAMAGE;
+    }
     else
+    {
         damageInfo->damage -= damageInfo->absorb + damageInfo->resist;
+        damageInfo->procEx |= PROC_EX_DIRECT_DAMAGE;
+    }
 }
 
 void Unit::CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, SpellEntry const* spellProto, WeaponAttackType attType)
@@ -2863,7 +2912,7 @@ void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool ex
     // attack can be redirected to another target
     pVictim = SelectMagnetTarget(pVictim);
 
-    DamageInfo damageInfo = DamageInfo(this, pVictim);
+    DamageInfo damageInfo = DamageInfo(this, pVictim, uint32(0),0);
     damageInfo.attackType       = attType;
 
     CalculateMeleeDamage(&damageInfo);
@@ -5576,11 +5625,11 @@ void Unit::HandleArenaPreparation(bool apply)
         // and auras, which have SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA (former SPELL_ATTR_EX5_UNK2 = 0x00000004).
         for (SpellAuraHolderMap::iterator iter = m_spellAuraHolders.begin(); iter != m_spellAuraHolders.end();)
         {
-            if (!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
+            if ((!iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_UNK21) &&
                                                                 // don't remove stances, shadowform, pally/hunter auras
                 !iter->second->IsPassive() &&                   // don't remove passive auras
                 (iter->second->GetAuraMaxDuration() > 0 &&
-                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS) ||
+                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS)) ||
                 iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA))
             {
                 RemoveSpellAuraHolder(iter->second, AURA_REMOVE_BY_CANCEL);
@@ -6055,8 +6104,7 @@ void Unit::SendSpellNonMeleeDamageLog(DamageInfo *log)
 
 void Unit::SendSpellNonMeleeDamageLog(Unit *target, uint32 SpellID, uint32 Damage, SpellSchoolMask damageSchoolMask, uint32 AbsorbedDamage, uint32 Resist, bool PhysicalDamage, uint32 Blocked, bool CriticalHit)
 {
-    DamageInfo log(this, target, SpellID);
-    log.damage = Damage - AbsorbedDamage - Resist - Blocked;
+    DamageInfo log(this, target, SpellID,(Damage - AbsorbedDamage - Resist - Blocked));
     log.absorb = AbsorbedDamage;
     log.resist = Resist;
     log.physicalLog = PhysicalDamage;
@@ -7450,8 +7498,10 @@ uint32 Unit::SpellDamageBonusDone(Unit *pVictim, SpellEntry const *spellProto, u
                 int32 maxPercent = (*i)->GetModifier()->m_amount;
                 // effect 0 m_amount
                 int32 stepPercent = CalculateSpellDamage(this, (*i)->GetSpellProto(), EFFECT_INDEX_0);
+
                 // count affliction effects and calc additional damage in percentage
                 int32 modPercent = 0;
+
                 SpellAuraHolderMap const& victimAuras = pVictim->GetSpellAuraHolderMap();
                 for (SpellAuraHolderMap::const_iterator itr = victimAuras.begin(); itr != victimAuras.end(); ++itr)
                 {
@@ -12656,8 +12706,8 @@ void Unit::EnterVehicle(Unit* vehicleBase, int8 seatId)
 
     if (seatId == -1)
     {
-        if (vehicleBase->GetVehicleKit()->HasEmptySeat(-1))
-            seatId = vehicleBase->GetVehicleKit()->GetNextEmptySeat(0,true);
+        if (vehicleBase->GetVehicleKit()->HasEmptySeat(seatId))
+            seatId = vehicleBase->GetVehicleKit()->GetNextEmptySeatWithFlag(0);
         else
         {
             sLog.outError("Unit::EnterVehicle: unit %s try seat to  vehicle %s but no seats!", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str());
@@ -12765,7 +12815,7 @@ void Unit::ChangeSeat(int8 seatId, bool next)
 
     if (seatId < 0)
     {
-        seatId = m_pVehicle->GetNextEmptySeat(m_movementInfo.GetTransportSeat(), next);
+        seatId = m_pVehicle->GetNextEmptySeatWithFlag(m_movementInfo.GetTransportSeat(), next);
         if (seatId < 0)
             return;
     }
@@ -13605,10 +13655,14 @@ void DamageInfo::Reset(uint32 _damage)
         SpellID = m_spellInfo->Id;
 
     damage        = _damage;
+    baseDamage    = _damage;
     cleanDamage   = 0;
     absorb        = 0;
     resist        = 0;
     blocked       = 0;
+    reduction     = 0;
+    bonusDone     = 0;
+    bonusTaken    = 0;
     unused        = false;
     HitInfo       = HITINFO_NORMALSWING;
     TargetState   = VICTIMSTATE_UNAFFECTED;

@@ -1101,9 +1101,12 @@ void WorldSession::SendLfgUpdateProposal(LFGProposal* pProposal)
     if (!proposalGuids.empty())
     {
         for (LFGQueueSet::const_iterator itr = proposalGuids.begin(); itr != proposalGuids.end(); ++itr)
-            if (Player* player = sObjectMgr.GetPlayer(*itr))
+        {
+            Player* player = sObjectMgr.GetPlayer(*itr);
+            if (player)
                 if (player->IsInWorld())
                     rolesMap.insert(std::make_pair(player->GetObjectGuid(), player->GetLFGState()->GetRoles()));
+        }
     }
 
     uint32 size = rolesMap.size();

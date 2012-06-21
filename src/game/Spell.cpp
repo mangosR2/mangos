@@ -1216,7 +1216,8 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             if (m_damageIndex >= 0 && (m_applyMultiplierMask & (1 << m_damageIndex)))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
 
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            damageInfo.damage = m_damage;
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         unitTarget->CalculateAbsorbResistBlock(caster, &damageInfo, m_spellInfo);
@@ -1231,6 +1232,8 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
 
         if (damageInfo.absorb && damageInfo.damage == 0)
             damageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
+        else if (damageInfo.damage > 0)
+            damageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
 
         // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
         if (m_canTrigger && missInfo != SPELL_MISS_REFLECT)
@@ -1564,6 +1567,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo *target)
 
     // Fill base damage struct (unitTarget - is real spell target)
     DamageInfo damageInfo(caster, unitTarget, m_spellInfo);
+    damageInfo.attackType = m_attackType;
 
     // keep damage amount for reflected spells
     if (missInfo == SPELL_MISS_NONE || (missInfo == SPELL_MISS_REFLECT && target->reflectResult == SPELL_MISS_NONE))
@@ -1587,11 +1591,13 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo *target)
             float dmgMultiplier = 1.0f;
             if (m_damageIndex >= 0 && (m_applyMultiplierMask & (1 << m_damageIndex)))
                 dmgMultiplier = m_damageMultipliers[m_damageIndex];
-            caster->CalculateSpellDamage(&damageInfo, m_damage, m_spellInfo, m_attackType, dmgMultiplier);
+            damageInfo.damage = m_damage;
+            caster->CalculateSpellDamage(&damageInfo, dmgMultiplier);
         }
 
         // Update damage multipliers
         for (int32 effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
+        {
             if (update_mult[effectNumber])
             {
                 // Get multiplier
@@ -1602,6 +1608,7 @@ void Spell::HandleDelayedSpellLaunch(TargetInfo *target)
                         modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_EFFECT_PAST_FIRST, multiplier, this);
                 m_damageMultipliers[effectNumber] *= multiplier;
             }
+        }
     }
 
     target->damage = damageInfo.damage;
@@ -2062,16 +2069,16 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
             MaNGOS::NormalizeMapCoord(fx);
             MaNGOS::NormalizeMapCoord(fy);
-            target->UpdateAllowedPositionZ(fx, fy, fz);
 
-            TerrainInfo const* terrain = target->GetTerrain();
-            if (terrain)
+            Map* pMap = target->GetMap();
+            if (pMap)
             {
-                if (terrain->CheckPathAccurate(ox,oy,oz,fx,fy,fz, sWorld.getConfig(CONFIG_BOOL_CHECK_GO_IN_PATH) ? target : NULL ))
+                if (!pMap->GetHitPosition(ox,oy,oz,fx,fy,fz, target->GetPhaseMask(), -0.1f))
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u forwarded on %f", target->GetObjectGuid().GetCounter(), target->GetDistance(fx,fy,fz));
                 else
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u NOT forwarded on %f, real distance is %f", target->GetObjectGuid().GetCounter(), distance, target->GetDistance(fx,fy,fz));
             }
+            target->UpdateAllowedPositionZ(fx, fy, fz);
             m_targets.setDestination(fx,fy,fz);
 
             break;
@@ -3100,8 +3107,10 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             // if parent spell create dynamic object extract area from it
             if (DynamicObject* dynObj = m_caster->GetDynObject(m_triggeredByAuraSpell ? m_triggeredByAuraSpell->Id : m_spellInfo->Id))
                 m_targets.setDestination(dynObj->GetPositionX(), dynObj->GetPositionY(), dynObj->GetPositionZ());
+            // else use destination of target if no destination set (ie for Mind Sear - 53022)
+            else if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) && m_targets.m_targetMask & TARGET_FLAG_UNIT)
+                m_targets.setDestination(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ);
             break;
-
         case TARGET_DYNAMIC_OBJECT_FRONT:
         case TARGET_DYNAMIC_OBJECT_BEHIND:
         case TARGET_DYNAMIC_OBJECT_LEFT_SIDE:
@@ -5557,7 +5566,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             if (target->IsTaxiFlying())
                 return SPELL_FAILED_BAD_TARGETS;
 
-            if(!m_IsTriggeredSpell && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target, strict))
+            if(!m_IsTriggeredSpell && !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target))
                 return SPELL_FAILED_LINE_OF_SIGHT;
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
@@ -5651,7 +5660,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         //ignore self casts (including area casts when caster selected as target)
         if (non_caster_target)
         {
-            if(!CheckTargetCreatureType(target))
+            if(!sSpellMgr.IsTargetMatchedWithCreatureType(m_spellInfo, target))
             {
                 if (target->GetTypeId() == TYPEID_PLAYER)
                     return SPELL_FAILED_TARGET_IS_PLAYER;
@@ -6708,7 +6717,7 @@ SpellCastResult Spell::CheckCast(bool strict)
     // check LOS for ground targeted spells
     if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && !m_targets.getUnitTarget() && !m_targets.getGOTarget() && !m_targets.getItemTarget())
     {
-        if (m_targets.m_destX && m_targets.m_destY && m_targets.m_destZ && !m_caster->IsWithinLOS(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, strict))
+        if (m_targets.m_destX && m_targets.m_destY && m_targets.m_destZ && !m_caster->IsWithinLOS(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ))
             return SPELL_FAILED_LINE_OF_SIGHT;
     }
 
@@ -6748,7 +6757,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 need = true;
                 if(!target)
                 {
-                    DEBUG_LOG("Charmed creature attempt to cast spell %u, but no required target",m_spellInfo->Id);
+                    DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast spell %u, but no required target",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id);
                     return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
                 }
                 break;
@@ -6765,7 +6774,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
             {
                 if (m_caster->IsHostileTo(_target))
                 {
-                    DEBUG_LOG("Charmed creature attempt to cast positive spell %u, but target (guid %s) is hostile",m_spellInfo->Id, target->GetObjectGuid().GetString().c_str());
+                    DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast positive spell %u, but target %s is hostile",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id, target->GetObjectGuid().GetString().c_str());
                     return SPELL_FAILED_BAD_TARGETS;
                 }
             }
@@ -6773,7 +6782,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
             (!m_IsTriggeredSpell &&
             (!_target->isVisibleForOrDetect(m_caster,m_caster,true) && (m_caster->GetCharmerOrOwner() && !target->isVisibleForOrDetect(m_caster->GetCharmerOrOwner(),m_caster->GetCharmerOrOwner(),true)))))
             {
-                DEBUG_LOG("Charmed creature attempt to cast spell %u, but target (guid %s) is not targetable or not detectable",m_spellInfo->Id,target->GetObjectGuid().GetString().c_str());
+                DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast spell %u, but target %s is not targetable or not detectable",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id,target->GetObjectGuid().GetString().c_str());
                 return SPELL_FAILED_BAD_TARGETS;            // guessed error
             }
             else
@@ -6785,6 +6794,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                     dualEffect |= (m_spellInfo->EffectImplicitTargetA[j] == TARGET_DUELVSPLAYER
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_IN_FRONT_OF_CASTER_30
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_MASTER
+                                   || m_spellInfo->EffectImplicitTargetA[j] == TARGET_SELF2
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_IN_FRONT_OF_CASTER
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_EFFECT_SELECT
                                    || m_spellInfo->EffectImplicitTargetA[j] == TARGET_CASTER_COORDINATES);
@@ -6793,21 +6803,21 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
                 {
                     if (!m_caster->IsHostileTo(_target) && (m_caster->GetCharmerOrOwner() && m_caster->GetCharmerOrOwner()->IsFriendlyTo(_target)))
                     {
-                        DEBUG_LOG("Charmed creature attempt to cast negative spell %u, but target (guid %s) is friendly",m_spellInfo->Id, target->GetObjectGuid().GetString().c_str());
+                        DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast negative spell %u, but target %s is friendly",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id, target->GetObjectGuid().GetString().c_str());
                         return SPELL_FAILED_BAD_TARGETS;
                     }
                 }
                 else if (!m_caster->GetVehicleKit() && m_caster->IsFriendlyTo(_target) && !(!m_caster->GetCharmerOrOwner() || !m_caster->GetCharmerOrOwner()->IsFriendlyTo(_target))
                      && !dualEffect && !IsDispelSpell(m_spellInfo))
                 {
-                    DEBUG_LOG("Charmed creature attempt to cast spell %u, but target (guid %s) is not valid",m_spellInfo->Id,_target->GetObjectGuid().GetString().c_str());
+                    DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast spell %u, but target %s is not valid",m_caster->GetObjectGuid().GetString().c_str(),m_spellInfo->Id,_target->GetObjectGuid().GetString().c_str());
                     return SPELL_FAILED_BAD_TARGETS;
                 }
 
-                if (m_caster->GetObjectGuid() == _target->GetObjectGuid() && dualEffect && !IsPositiveSpell(m_spellInfo->Id))
+                if (m_caster->GetObjectGuid() == _target->GetObjectGuid() && !dualEffect && !IsPositiveSpell(m_spellInfo->Id))
                 {
-                    DEBUG_LOG("Charmed creature %s attempt to cast negative spell %u on self",_target->GetObjectGuid().GetString().c_str(), m_spellInfo->Id);
-//                    return SPELL_FAILED_BAD_TARGETS;
+                    DEBUG_LOG("Spell::CheckPetCast Charmed creature %s attempt to cast negative spell %u on self!",m_caster->GetObjectGuid().GetString().c_str(), m_spellInfo->Id);
+                    return SPELL_FAILED_BAD_TARGETS;
                 }
             }
         }
@@ -7796,37 +7806,6 @@ void Spell::UpdatePointers()
     m_targets.Update(m_caster);
 }
 
-bool Spell::CheckTargetCreatureType(Unit* target) const
-{
-    uint32 spellCreatureTargetMask = m_spellInfo->TargetCreatureType;
-
-    // Curse of Doom: not find another way to fix spell target check :/
-    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && m_spellInfo->Category == 1179)
-    {
-        // not allow cast at player
-        if (target->GetTypeId() == TYPEID_PLAYER)
-            return false;
-
-        spellCreatureTargetMask = 0x7FF;
-    }
-
-    // Dismiss Pet and Taming Lesson skipped
-    if (m_spellInfo->Id == 2641 || m_spellInfo->Id == 23356)
-        spellCreatureTargetMask =  0;
-
-    // skip creature type check for Grounding Totem
-    if (target->GetUInt32Value(UNIT_CREATED_BY_SPELL) == 8177)
-        return true;
-
-    if (spellCreatureTargetMask)
-    {
-        uint32 TargetCreatureType = target->GetCreatureTypeMask();
-
-        return !TargetCreatureType || (spellCreatureTargetMask & TargetCreatureType);
-    }
-    return true;
-}
-
 CurrentSpellTypes Spell::GetCurrentContainer()
 {
     if (IsNextMeleeSwingSpell())
@@ -7863,7 +7842,7 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
     // Check targets for creature type mask and remove not appropriate (skip explicit self target case, maybe need other explicit targets)
     if (m_spellInfo->EffectImplicitTargetA[eff] != TARGET_SELF )
     {
-        if (!CheckTargetCreatureType(target))
+        if (!sSpellMgr.IsTargetMatchedWithCreatureType(m_spellInfo, target))
             return false;
     }
 
@@ -7969,7 +7948,7 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
             if (target != m_caster)
             {
                 if (WorldObject* caster = GetCastingObject())
-                    if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(caster, false))
+                    if (!m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(caster))
                         return false;
             }
             break;

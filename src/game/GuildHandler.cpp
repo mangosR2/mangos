@@ -36,7 +36,8 @@ void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
     uint32 guildId;
     recvPacket >> guildId;
 
-    if (Guild* guild = sGuildMgr.GetGuildById(guildId))
+    Guild* guild = sGuildMgr.GetGuildById(guildId);
+    if (guild)
     {
         guild->Query(this);
         return;
@@ -246,7 +247,8 @@ void WorldSession::HandleGuildRosterOpcode(WorldPacket& /*recvPacket*/)
 {
     DEBUG_LOG("WORLD: Received CMSG_GUILD_ROSTER");
 
-    if (Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId()))
+    Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId());
+    if (guild)
         guild->Roster(this);
 }
 
@@ -773,8 +775,11 @@ void WorldSession::HandleGuildEventLogQueryOpcode(WorldPacket& /* recvPacket */)
     DEBUG_LOG("WORLD: Received (MSG_GUILD_EVENT_LOG_QUERY)");
 
     if(uint32 GuildId = GetPlayer()->GetGuildId())
-        if (Guild* pGuild = sGuildMgr.GetGuildById(GuildId))
+    {
+        Guild* pGuild = sGuildMgr.GetGuildById(GuildId);
+        if (pGuild)
             pGuild->DisplayGuildEventLog(this);
+    }
 }
 
 /******  GUILD BANK  *******/
@@ -784,8 +789,11 @@ void WorldSession::HandleGuildBankMoneyWithdrawn( WorldPacket & /* recv_data */ 
     DEBUG_LOG("WORLD: Received (MSG_GUILD_BANK_MONEY_WITHDRAWN)");
 
     if(uint32 GuildId = GetPlayer()->GetGuildId())
-        if (Guild* pGuild = sGuildMgr.GetGuildById(GuildId))
+    {
+        Guild* pGuild = sGuildMgr.GetGuildById(GuildId);
+        if (pGuild)
             pGuild->SendMoneyInfo(this, GetPlayer()->GetGUIDLow());
+    }
 }
 
 void WorldSession::HandleGuildPermissions( WorldPacket& /* recv_data */ )
@@ -794,7 +802,8 @@ void WorldSession::HandleGuildPermissions( WorldPacket& /* recv_data */ )
 
     if(uint32 GuildId = GetPlayer()->GetGuildId())
     {
-        if (Guild* pGuild = sGuildMgr.GetGuildById(GuildId))
+        Guild* pGuild = sGuildMgr.GetGuildById(GuildId);
+        if (pGuild)
         {
             uint32 rankId = GetPlayer()->GetRank();
 
@@ -830,7 +839,8 @@ void WorldSession::HandleGuildBankerActivate( WorldPacket & recv_data )
 
     if (uint32 GuildId = GetPlayer()->GetGuildId())
     {
-        if (Guild* pGuild = sGuildMgr.GetGuildById(GuildId))
+        Guild* pGuild = sGuildMgr.GetGuildById(GuildId);
+        if (pGuild)
         {
             pGuild->DisplayGuildBankTabsInfo(this);         // this also will load guild bank if not yet
             return;

@@ -428,7 +428,8 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid)
             return &itr->second;
     }
 
-    if (Player* player = sObjectMgr.GetPlayer(guid))
+    Player* player = sObjectMgr.GetPlayer(guid);
+    if (player)
     {
         MakePlayerDataCache(player);
     }

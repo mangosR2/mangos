@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+#include <errno.h>
+
 #include "zutil.h"
 
 #ifdef NO_DEFLATE       /* for compatibility with old definition */

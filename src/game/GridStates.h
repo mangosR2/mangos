@@ -24,6 +24,7 @@
 class MANGOS_DLL_DECL GridState
 {
     public:
+        virtual ~GridState(){}
 
         virtual void Update(Map &, NGridType&, GridInfo &, const uint32 &x, const uint32 &y, const uint32 &t_diff) const = 0;
 };

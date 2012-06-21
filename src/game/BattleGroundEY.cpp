@@ -93,10 +93,13 @@ void BattleGroundEY::Update(uint32 diff)
 
             // areatrigger for Fel Reaver was removed? so:
             if (m_FlagState)
-                if (Player* plr = sObjectMgr.GetPlayer(GetFlagPickerGuid()))
+            {
+                Player* plr = sObjectMgr.GetPlayer(GetFlagPickerGuid());
+                if (plr)
                     if (plr->GetDistance2d(2043.99f, 1729.91f) < 2)
                         if (m_PointState[BG_EY_NODE_FEL_REAVER] == EY_POINT_UNDER_CONTROL && m_PointOwnedByTeam[BG_EY_NODE_FEL_REAVER] == plr->GetTeam())
                             EventPlayerCapturedFlag(plr, BG_EY_NODE_FEL_REAVER);
+            }
         }
     }
 }
@@ -232,7 +235,8 @@ void BattleGroundEY::UpdatePointStatuses()
 
         for (uint8 i = 0; i < m_PlayersNearPoint[point].size(); ++i)
         {
-            if (Player *plr = sObjectMgr.GetPlayer(m_PlayersNearPoint[point][i]))
+            Player* plr = sObjectMgr.GetPlayer(m_PlayersNearPoint[point][i]);
+            if (plr)
             {
                 UpdateWorldStateForPlayer(PROGRESS_BAR_STATUS, m_PointBarStatus[point], plr);
                                                             //if point owner changed we must evoke event!

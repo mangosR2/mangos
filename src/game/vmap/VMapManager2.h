@@ -48,17 +48,17 @@ namespace VMAP
     class ManagedModel
     {
         public:
-            ManagedModel(): iModel(0), iRefCount(0) {}
-            void setModel(WorldModel *model) { iModel = model; }
-            WorldModel *getModel() { return iModel; }
+            ManagedModel() : iModel(0), iRefCount(0) {}
+            void setModel(WorldModel* model) { iModel = model; }
+            WorldModel* getModel() { return iModel; }
             void incRefCount() { ++iRefCount; }
             int decRefCount() { return --iRefCount; }
         protected:
-            WorldModel *iModel;
+            WorldModel* iModel;
             int iRefCount;
     };
 
-    typedef UNORDERED_MAP<uint32 , StaticMapTree *> InstanceTreeMap;
+    typedef UNORDERED_MAP<uint32, StaticMapTree*> InstanceTreeMap;
     typedef UNORDERED_MAP<std::string, ManagedModel> ModelFileMap;
 
     class VMapManager2 : public IVMapManager
@@ -74,7 +74,6 @@ namespace VMAP
         public:
             // public for debug
             G3D::Vector3 convertPositionToInternalRep(float x, float y, float z) const;
-            G3D::Vector3 convertPositionToMangosRep(float x, float y, float z) const;
             static std::string getMapFileName(unsigned int pMapId);
 
             VMapManager2();

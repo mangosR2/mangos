@@ -260,7 +260,8 @@ bool Corpse::isVisibleForInState(Player const* u, WorldObject const* viewPoint, 
 
 bool Corpse::IsHostileTo( Unit const* unit ) const
 {
-    if (Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid()))
+    Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid());
+    if (owner)
         return owner->IsHostileTo(unit);
     else
         return false;
@@ -268,7 +269,8 @@ bool Corpse::IsHostileTo( Unit const* unit ) const
 
 bool Corpse::IsFriendlyTo( Unit const* unit ) const
 {
-    if (Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid()))
+    Player* owner = sObjectMgr.GetPlayer(GetOwnerGuid());
+    if (owner)
         return owner->IsFriendlyTo(unit);
     else
         return true;

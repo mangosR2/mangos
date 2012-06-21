@@ -60,7 +60,8 @@ void WorldPvP::SendUpdateWorldState(uint32 uiField, uint32 uiValue)
 {
     for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
-        if (Player* pPlayer = sObjectMgr.GetPlayer(*itr))
+        Player* pPlayer = sObjectMgr.GetPlayer(*itr);
+        if (pPlayer)
             pPlayer->SendUpdateWorldState(uiField, uiValue);
     }
 }

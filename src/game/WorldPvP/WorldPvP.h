@@ -63,7 +63,7 @@ class WorldPvP : public ZoneScript
 
     public:
         WorldPvP() {}
-        ~WorldPvP() {}
+        virtual ~WorldPvP() {}
 
         // called when the zone is initialized
         virtual void FillInitialWorldStates(WorldPacket& /*data*/, uint32& /*count*/) {}

@@ -425,7 +425,8 @@ void ArenaTeam::SetCaptain(ObjectGuid guid)
     CharacterDatabase.PExecute("UPDATE arena_team SET captainguid = '%u' WHERE arenateamid = '%u'", guid.GetCounter(), m_TeamId);
 
     // enable remove/promote buttons
-    if (Player *newcaptain = sObjectMgr.GetPlayer(guid))
+    Player* newcaptain = sObjectMgr.GetPlayer(guid);
+    if (newcaptain)
         newcaptain->SetArenaTeamInfoField(GetSlot(), ARENA_TEAM_MEMBER, 0);
 }
 
@@ -440,7 +441,8 @@ void ArenaTeam::DelMember(ObjectGuid guid)
         }
     }
 
-    if (Player* player = sObjectMgr.GetPlayer(guid))
+    Player* player = sObjectMgr.GetPlayer(guid);
+    if (player)
     {
         player->GetSession()->SendArenaTeamCommandResult(ERR_ARENA_TEAM_QUIT_S, GetName(), "", 0);
         // delete all info regarding this team
@@ -943,9 +945,10 @@ bool ArenaTeam::IsFighting() const
 {
     for (MemberList::const_iterator itr = m_members.begin(); itr != m_members.end(); ++itr)
     {
-        if (Player *p = sObjectMgr.GetPlayer(itr->guid))
+        Player* plr = sObjectMgr.GetPlayer(itr->guid);
+        if (plr)
         {
-            if (p->GetMap()->IsBattleArena())
+            if (plr->GetMap()->IsBattleArena())
                 return true;
         }
     }

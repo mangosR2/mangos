@@ -67,7 +67,7 @@ class MANGOS_DLL_SPEC ChatHandler
     public:
         explicit ChatHandler(WorldSession* session);
         explicit ChatHandler(Player* player);
-        ~ChatHandler();
+        virtual ~ChatHandler();
 
         static void FillMessageData( WorldPacket *data, WorldSession* session, uint8 type, uint32 language, const char *channelName, ObjectGuid targetGuid, const char *message, Unit *speaker);
 

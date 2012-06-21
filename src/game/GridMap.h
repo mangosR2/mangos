@@ -110,7 +110,8 @@ enum GridMapLiquidStatus
 
 struct GridMapLiquidData
 {
-    uint32 type;
+    uint32 type_flags;
+    uint32 entry;
     float level;
     float depth_level;
 };
@@ -148,7 +149,8 @@ class GridMap
         uint8 m_liquid_width;
         uint8 m_liquid_height;
         float m_liquidLevel;
-        uint8 *m_liquid_type;
+        uint16* m_liquidEntry;
+        uint8* m_liquidFlags;
         float *m_liquid_map;
 
         bool loadAreaData(FILE *in, uint32 offset, uint32 size);
@@ -216,9 +218,7 @@ public:
 
     uint32 GetMapId() const { return m_mapId; }
 
-    //TODO: move all terrain/vmaps data info query functions
-    //from 'Map' class into this class
-    float GetHeight(float x, float y, float z, bool pCheckVMap=true, float maxSearchDist=DEFAULT_HEIGHT_SEARCH) const;
+    float GetHeightStatic(float x, float y, float z, bool pCheckVMap=true, float maxSearchDist=DEFAULT_HEIGHT_SEARCH) const;
     float GetWaterLevel(float x, float y, float z, float* pGround = NULL) const;
     float GetWaterOrGroundLevel(float x, float y, float z, float* pGround = NULL, bool swim = false) const;
     bool IsInWater(float x, float y, float z, GridMapLiquidData *data = 0, float min_depth = 2.0f) const;
@@ -238,8 +238,6 @@ public:
     bool IsOutdoors(float x, float y, float z) const;
 
     bool IsNextZcoordOK(float x, float y, float oldZ, float maxDiff = 5.0f) const;
-    bool CheckPath(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ) const;
-    bool CheckPathAccurate(float srcX, float srcY, float srcZ, float& dstX, float& dstY, float& dstZ, Unit* mover = NULL, bool onlyLOS = false) const;
 
     //this method should be used only by TerrainManager
     //to cleanup unreferenced GridMap objects - they are too heavy
@@ -280,7 +278,7 @@ private:
 //class for managing TerrainData object and all sort of geometry querying operations
 class MANGOS_DLL_DECL TerrainManager : public MaNGOS::Singleton<TerrainManager, MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex> >
 {
-    typedef UNORDERED_MAP<uint32,  TerrainInfo *> TerrainDataMap;
+    typedef UNORDERED_MAP<uint32,  TerrainInfo*> TerrainDataMap;
     friend class MaNGOS::OperatorNew<TerrainManager>;
 
 public:
@@ -292,7 +290,7 @@ public:
 
     uint16 GetAreaFlag(uint32 mapid, float x, float y, float z) const
     {
-        TerrainInfo *pData = const_cast<TerrainManager*>(this)->LoadTerrain(mapid);
+        TerrainInfo* pData = const_cast<TerrainManager*>(this)->LoadTerrain(mapid);
         return pData->GetAreaFlag(x, y, z);
     }
     uint32 GetAreaId(uint32 mapid, float x, float y, float z) const
