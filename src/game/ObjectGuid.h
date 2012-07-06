@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "ByteBuffer.h"
+#include "LockedVector.h"
 
 #include <functional>
 
@@ -201,17 +202,19 @@ class MANGOS_DLL_SPEC ObjectGuid
             }
         }
 
-        bool HasEntry() const { return HasEntry(GetHigh()); }
-
     private:                                                // fields
         uint64 m_guid;
 
     public:
+        bool HasEntry() const { return HasEntry(GetHigh()); }
         // predefined empty object for safe return by reference
         static ObjectGuid const Null;
 };
 
-typedef std::set<ObjectGuid> ObjectGuidSet;
+// Some Shared defines
+typedef std::set<ObjectGuid> GuidSet;
+typedef ACE_Based::LockedVector<ObjectGuid> GuidList;
+typedef ACE_Based::LockedVector<ObjectGuid> GuidVector;
 
 //minimum buffer size for packed guid is 9 bytes
 #define PACKED_GUID_MIN_BUFFER_SIZE 9

@@ -40,7 +40,7 @@ namespace MaNGOS
     {
         Camera& i_camera;
         UpdateData i_data;
-        ObjectGuidSet i_clientGUIDs;
+        GuidSet i_clientGUIDs;
         std::set<WorldObject*> i_visibleNow;
 
         explicit VisibleNotifier(Camera &c) : i_camera(c), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
@@ -1249,6 +1249,36 @@ namespace MaNGOS
 
             // prevent clone this object
             AllCreaturesOfEntryInRangeCheck(AllCreaturesOfEntryInRangeCheck const&);
+    };
+
+    class AllIdenticalObjectsInRangeCheck
+    {
+        public:
+            AllIdenticalObjectsInRangeCheck(const WorldObject* pObject, float fMaxRange) : m_pObject(pObject), m_fRange(fMaxRange) {}
+            WorldObject const& GetFocusObject() const { return *m_pObject; }
+            bool operator() (WorldObject* pObject)
+            {
+                if (pObject->GetObjectGuid() == m_pObject->GetObjectGuid())
+                    return false;
+
+                if (!pObject->GetObjectGuid().HasEntry() || !m_pObject->GetObjectGuid().HasEntry())
+                    return false;
+
+                if (pObject->GetObjectGuid().GetEntry() != m_pObject->GetObjectGuid().GetEntry())
+                    return false;
+
+                if (m_pObject->IsWithinDist(pObject,m_fRange,false))
+                    return true;
+
+                return false;
+            }
+
+        private:
+            const WorldObject* m_pObject;
+            float m_fRange;
+
+            // prevent clone this object
+            AllIdenticalObjectsInRangeCheck(AllIdenticalObjectsInRangeCheck const&);
     };
 
 

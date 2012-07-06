@@ -356,7 +356,7 @@ class Spell
         void EffectKillCreditPersonal(SpellEffectIndex eff_idx);
         void EffectKillCreditGroup(SpellEffectIndex eff_idx);
         void EffectQuestFail(SpellEffectIndex eff_idx);
-        void EffectQuestStart(SpellEffectIndex eff_idx);
+        void EffectQuestOffer(SpellEffectIndex eff_idx);
         void EffectActivateRune(SpellEffectIndex eff_idx);
         void EffectSuspendGravity(SpellEffectIndex eff_idx);
         void EffectUntrainTalents(SpellEffectIndex eff_idx);
@@ -439,7 +439,7 @@ class Spell
         template<typename T> WorldObject* FindCorpseUsing();
 
         bool CheckTarget( Unit* target, SpellEffectIndex eff );
-        bool CheckTargetBeforeLimitation(Unit* target);
+        bool CheckTargetBeforeLimitation(Unit* target, SpellEffectIndex eff);
         SpellCastResult CanAutoCast(Unit* target);
 
         static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result);
@@ -765,30 +765,25 @@ namespace MaNGOS
                     }
                     break;
                 case PUSH_DEST_CENTER:
-                    if (i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION)
-                    {
-                        i_centerX = i_spell.m_targets.m_destX;
-                        i_centerY = i_spell.m_targets.m_destY;
-                        i_centerZ = i_spell.m_targets.m_destZ;
-                    }
-                    else
-                    {
-                        i_centerX = i_spell.m_targets.m_srcX;
-                        i_centerY = i_spell.m_targets.m_srcY;
-                        i_centerZ = i_spell.m_targets.m_srcZ;
-                    }
+                {
+                    i_centerX = i_spell.m_targets.m_destX;
+                    i_centerY = i_spell.m_targets.m_destY;
+                    i_centerZ = i_spell.m_targets.m_destZ;
                     break;
+                }
                 case PUSH_INHERITED_CENTER:
                 {
                     if ((i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || (i_spell.m_targets.m_targetMask & TARGET_FLAG_UNIT))
                     {
                         i_centerX = i_spell.m_targets.m_destX;
                         i_centerY = i_spell.m_targets.m_destY;
+                        i_centerZ = i_spell.m_targets.m_destZ;
                     }
                     else if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
                     {
                         i_centerX = i_spell.m_targets.m_srcX;
                         i_centerY = i_spell.m_targets.m_srcY;
+                        i_centerZ = i_spell.m_targets.m_srcZ;
                     }
                     break;
                 }
@@ -855,7 +850,7 @@ namespace MaNGOS
                                 continue;
                         }
 
-                        if (!itr->getSource()->IsVisibleTargetForAoEDamage(i_originalCaster, i_spell.m_spellInfo))
+                        if (!itr->getSource()->IsVisibleTargetForSpell(i_originalCaster, i_spell.m_spellInfo))
                             continue;
                     }
                     break;

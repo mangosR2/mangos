@@ -125,7 +125,7 @@ void WorldPvPTF::OnGameObjectCreate(GameObject* pGo)
     pGo->SetGoArtKit(GO_ARTKIT_BANNER_NEUTRAL);
 }
 
-void WorldPvPTF::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPTF::HandleObjectiveComplete(GuidSet m_sPlayersSet, uint32 uiEventId)
 {
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
     {
@@ -133,7 +133,7 @@ void WorldPvPTF::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiE
         {
             if (uiEventId == aTerokkarTowerEvents[i][j].uiEventEntry)
             {
-                for (ObjectGuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+                for (GuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
                 {
                     if (!(*itr))
                         continue;

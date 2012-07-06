@@ -238,7 +238,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket & recv_data)
 
     ObjectGuid auctioneerGuid;
     uint32 etime, bid, buyout, itemCount;
-    std::vector<ObjectGuid> guids;
+    GuidVector guids;
     std::vector<uint32> stackSizes;
 
     recv_data >> auctioneerGuid;
@@ -708,9 +708,6 @@ void WorldSession::HandleAuctionListPendingSales(WorldPacket & recv_data)
     AuctionHouseEntry const* auctionHouseEntry = GetCheckedAuctionHouseForAuctioneer(auctioneerGuid);
     if (!auctionHouseEntry)
         return;
-
-    // always return pointer
-    //AuctionHouseObject* auctionHouse = sAuctionMgr.GetAuctionsMap(auctionHouseEntry);
 
     uint32 count = 0;
 

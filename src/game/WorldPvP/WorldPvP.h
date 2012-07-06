@@ -81,7 +81,7 @@ class WorldPvP : public ZoneScript
         virtual void HandlePlayerKillInsideArea(Player* /*pKiller*/, Unit* /*pVictim*/) {}
 
         // handle capture objective complete
-        virtual void HandleObjectiveComplete(ObjectGuidSet /*m_sObjectivePlayers*/, uint32 /*uiEventId*/) {}
+        virtual void HandleObjectiveComplete(GuidSet /*m_sObjectivePlayers*/, uint32 /*uiEventId*/) {}
 
         // init all the outdoor pvp area relates stuff
         virtual bool InitWorldPvPArea() { return false; }
@@ -118,7 +118,7 @@ class WorldPvP : public ZoneScript
         void ResetCapturePoint(uint32 pointEntry, float fValue);
 
         // store the players inside the area depending on the faction
-        ObjectGuidSet m_sZonePlayers;
+        GuidSet m_sZonePlayers;
 
         uint32 m_uiTypeId;
 };

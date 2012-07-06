@@ -56,6 +56,7 @@ class MANGOS_DLL_SPEC MotionMaster
         void MoveJump(float x, float y, float z, float horizontalSpeed, float max_height, uint32 id = 0);
         void MoveToDestination(float x, float y, float z, float o, Unit* target, float horizontalSpeed, float max_height, uint32 id = 0);
         void MoveSkyDiving(float x, float y, float z, float o, float horizontalSpeed, float max_height, bool eject = false);
+        void MoveWithSpeed(float x, float y, float z, float speed, bool generatePath = true, bool forceDestination = false);
         void MoveFall();
 
         MovementGeneratorType GetCurrentMovementGeneratorType() const;

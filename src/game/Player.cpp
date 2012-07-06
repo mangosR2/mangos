@@ -21308,13 +21308,13 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
 }
 
 template<class T>
-inline void UpdateVisibilityOf_helper(ObjectGuidSet& s64, T* target)
+inline void UpdateVisibilityOf_helper(GuidSet& s64, T* target)
 {
     s64.insert(target->GetObjectGuid());
 }
 
 template<>
-inline void UpdateVisibilityOf_helper(ObjectGuidSet& s64, GameObject* target)
+inline void UpdateVisibilityOf_helper(GuidSet& s64, GameObject* target)
 {
     if(!target->IsTransport())
         s64.insert(target->GetObjectGuid());
@@ -21998,7 +21998,7 @@ void Player::UpdateForQuestWorldObjects()
 
     UpdateData udata;
     WorldPacket packet;
-    for(ObjectGuidSet::const_iterator itr=m_clientGUIDs.begin(); itr!=m_clientGUIDs.end(); ++itr)
+    for(GuidSet::const_iterator itr=m_clientGUIDs.begin(); itr!=m_clientGUIDs.end(); ++itr)
     {
         if (itr->IsGameObject())
         {
@@ -22689,7 +22689,7 @@ void Player::UpdateUnderwaterState( Map* m, float x, float y, float z )
                     // check aura for no double cast
                     if (!HasAura(liquid->SpellId))
                     {
-                        if (sSpellMgr.IsTargetMatchedWithCreatureType(pSpellEntry, this))
+                        if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, this))
                         {
                             CastSpell(this, pSpellEntry, true);
                         }
@@ -22698,7 +22698,7 @@ void Player::UpdateUnderwaterState( Map* m, float x, float y, float z )
                     {
                         if (!GetVehicle()->GetBase()->HasAura(liquid->SpellId))
                         {
-                            if (sSpellMgr.IsTargetMatchedWithCreatureType(pSpellEntry, GetVehicle()->GetBase()))
+                            if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, GetVehicle()->GetBase()))
                             {
                                 GetVehicle()->GetBase()->CastSpell(GetVehicle()->GetBase(), pSpellEntry, true);
                             }

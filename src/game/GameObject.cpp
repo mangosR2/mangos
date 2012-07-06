@@ -268,7 +268,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             // remove players who left capture point zone
             for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
             {
-                ObjectGuidSet::iterator itr, next;
+                GuidSet::iterator itr, next;
                 for (itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); itr = next)
                 {
                     next = itr;
@@ -349,7 +349,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
             // on retail this is also sent to newly added players even though they already received a capture tick value
             for (uint8 team = 0; team < PVP_TEAM_COUNT; ++team)
             {
-                for (ObjectGuidSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
+                for (GuidSet::iterator itr = m_capturePlayers[team].begin(); itr != m_capturePlayers[team].end(); ++itr)
                 {
                     Player* pPlayer = sObjectMgr.GetPlayer(*itr);
 
@@ -600,7 +600,7 @@ void GameObject::Update(uint32 update_diff, uint32 diff)
 
                 if (spellId)
                 {
-                    for (GuidsSet::const_iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
+                    for (GuidSet::const_iterator itr = m_UniqueUsers.begin(); itr != m_UniqueUsers.end(); ++itr)
                     {
                         if (Player* owner = GetMap()->GetPlayer(*itr))
                             owner->CastSpell(owner, spellId, false, NULL, NULL, GetObjectGuid());

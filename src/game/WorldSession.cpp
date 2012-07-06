@@ -419,9 +419,9 @@ void WorldSession::LogoutPlayer(bool Save)
 
             // build set of player who attack _player or who have pet attacking of _player
             std::set<Player*> aset;
-            ObjectGuidSet attackers = GetPlayer()->GetMap()->GetAttackersFor(GetPlayer()->GetObjectGuid());
+            GuidSet attackers = GetPlayer()->GetMap()->GetAttackersFor(GetPlayer()->GetObjectGuid());
 
-            for (ObjectGuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
+            for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
             {
                 Unit* attacker = GetPlayer()->GetMap()->GetUnit(*itr++);
                 if (!attacker)
@@ -522,6 +522,26 @@ void WorldSession::LogoutPlayer(bool Save)
         GetPlayer()->RemovePet(PET_SAVE_AS_CURRENT);
 
         GetPlayer()->InterruptNonMeleeSpells(true);
+
+        if (VehicleKit* vehicle = GetPlayer()->GetVehicle())
+        {
+            if (Creature* base = ((Creature*)vehicle->GetBase()))
+            {
+                bool dismiss = true;
+                if (!base->IsTemporarySummon() ||
+                    base->GetVehicleInfo()->GetEntry()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY))
+                    dismiss = false;
+
+                if (!base->RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, GetPlayer()->GetObjectGuid()))
+                    GetPlayer()->ExitVehicle();
+
+                if (base->HasAuraType(SPELL_AURA_CONTROL_VEHICLE))
+                    dismiss = false;
+
+                if (dismiss)
+                    base->ForcedDespawn(1000);
+            }
+        }
 
         ///- empty buyback items and save the player in the database
         // some save parts only correctly work in case player present in map/player_lists (pets, etc)

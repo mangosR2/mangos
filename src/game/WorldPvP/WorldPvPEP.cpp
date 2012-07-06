@@ -165,7 +165,7 @@ void WorldPvPEP::OnGameObjectCreate(GameObject* pGo)
     }
 }
 
-void WorldPvPEP::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPEP::HandleObjectiveComplete(GuidSet m_sPlayersSet, uint32 uiEventId)
 {
     uint32 uiCredit = 0;
 
@@ -192,7 +192,7 @@ void WorldPvPEP::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiE
     if (!uiCredit)
         return;
 
-    for (ObjectGuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+    for (GuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
     {
         if (!(*itr))
             continue;

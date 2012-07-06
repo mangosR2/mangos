@@ -94,7 +94,7 @@ enum LevelRequirementVsMode
 
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
 
-typedef std::map<ObjectGuid,ObjectGuidSet>  AttackersMap;
+typedef std::map<ObjectGuid,GuidSet>  AttackersMap;
 
 class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 {
@@ -275,7 +275,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void AddAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
         void RemoveAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
         void RemoveAllAttackersFor(ObjectGuid targetGuid);
-        ObjectGuidSet GetAttackersFor(ObjectGuid targetGuid);
+        GuidSet GetAttackersFor(ObjectGuid targetGuid);
         void CreateAttackersStorageFor(ObjectGuid targetGuid);
         void RemoveAttackersStorageFor(ObjectGuid targetGuid);
 

@@ -574,11 +574,11 @@ class World
 
         void SendWorldText(int32 string_id, ...);
         void SendWorldTextWithSecurity(AccountTypes security, int32 string_id, ...);
-        void SendGlobalText(const char* text, WorldSession *self);
-        void SendGlobalMessage(WorldPacket *packet, WorldSession *self = 0, uint32 team = 0, AccountTypes security = SEC_PLAYER);
-        void SendZoneMessage(uint32 zone, WorldPacket *packet, WorldSession *self = 0, uint32 team = 0);
-        void SendZoneText(uint32 zone, const char *text, WorldSession *self = 0, uint32 team = 0);
-        void SendServerMessage(ServerMessageType type, const char *text = "", Player* player = NULL);
+        void SendGlobalText(const char* text, WorldSession* self);
+        void SendGlobalMessage(WorldPacket* packet, WorldSession* self = NULL, Team team = TEAM_NONE, AccountTypes security = SEC_PLAYER);
+        void SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self = NULL, Team team = TEAM_NONE);
+        void SendZoneText(uint32 zone, const char* text, WorldSession* self = NULL, Team team = TEAM_NONE);
+        void SendServerMessage(ServerMessageType type, const char* text = "", Player* player = NULL);
 
         /// Are we in the middle of a shutdown?
         bool IsShutdowning() const { return m_ShutdownTimer > 0; }

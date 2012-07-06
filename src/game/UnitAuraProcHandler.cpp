@@ -433,7 +433,28 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit *pVictim, SpellAuraHolderPtr holder,
         uint32 WeaponSpeed = GetAttackTime(attType);
         chance = GetPPMProcChance(WeaponSpeed, spellProcEvent->ppmRate);
     }
-    // Apply chance modifier aura
+
+    // some spells has direct chance modifiers in dummy auras
+    switch(spellProto->SpellFamilyName)
+    {
+        case SPELLFAMILY_SHAMAN:
+        {
+            if (spellProto->SpellFamilyFlags.test<CF_SHAMAN_EARTHLIVING_WEAPON_PASSIVE>())
+            {
+                // only if target has < 35% health
+                if (!pVictim || !pVictim->HasAuraState(AURA_STATE_HEALTHLESS_35_PERCENT))
+                    break;
+
+                // Blessing of the Eternals
+                if (Aura* modAura = GetAuraByEffectMask(SPELL_AURA_DUMMY,SPELLFAMILY_SHAMAN,spellProto->SpellFamilyFlags,GetObjectGuid()))
+                    chance += (float)modAura->GetModifier()->m_amount;
+                break;
+            }
+        }
+        break;
+    }
+
+    // Apply cumulative chance modifier auras
     if (Player* modOwner = GetSpellModOwner())
     {
         modOwner->ApplySpellMod(spellProto->Id,SPELLMOD_CHANCE_OF_SUCCESS,chance);

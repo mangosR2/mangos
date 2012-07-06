@@ -19,6 +19,9 @@
 #include "TemporarySummon.h"
 #include "Log.h"
 #include "CreatureAI.h"
+#include "CellImpl.h"
+#include "GridNotifiersImpl.h"
+#include "GridNotifiers.h"
 
 TemporarySummon::TemporarySummon( ObjectGuid summoner ) :
 Creature(CREATURE_SUBTYPE_TEMPORARY_SUMMON), m_type(TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN), m_timer(0), m_lifetime(0), m_summoner(summoner)
@@ -31,6 +34,15 @@ void TemporarySummon::Update( uint32 update_diff,  uint32 diff )
     {
         case TEMPSUMMON_MANUAL_DESPAWN:
             break;
+        case TEMPSUMMON_LOST_OWNER_DESPAWN:
+        {
+            if (!GetSummoner())
+            {
+                m_type = TEMPSUMMON_TIMED_DESPAWN;
+                m_timer = DEFAULT_DESPAWN_DELAY;
+            }
+            break;
+        }
         case TEMPSUMMON_TIMED_DESPAWN:
         {
             if (m_timer <= update_diff)
@@ -85,12 +97,50 @@ void TemporarySummon::Update( uint32 update_diff,  uint32 diff )
 
             break;
         }
+        case TEMPSUMMON_DEAD_OR_LOST_UNIQUENESS_DESPAWN:
+        {
+            if (!IsDespawned())
+            {
+                std::list<Creature*> tlist;
+                MaNGOS::AllIdenticalObjectsInRangeCheck check(this, GetMap()->GetVisibilityDistance());
+                MaNGOS::CreatureListSearcher<MaNGOS::AllIdenticalObjectsInRangeCheck> searcher(tlist, check);
+                Cell::VisitGridObjects(this, searcher, GetMap()->GetVisibilityDistance(), true);
+
+                for (std::list<Creature*>::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+                {
+                    if ((*itr)->isAlive() && 
+                        (*itr)->IsTemporarySummon() && 
+                        ((TemporarySummon*)*itr)->GetTempSummonType() == GetTempSummonType() &&
+                        ((TemporarySummon*)*itr)->GetSummonerGuid() == GetSummonerGuid())
+                    {
+                        m_type = TEMPSUMMON_MANUAL_DESPAWN;
+                        UnSummon();
+                        return;
+                    }
+                }
+            }
+            // NO break here!
+        }
         case TEMPSUMMON_DEAD_DESPAWN:
         {
             if (IsDespawned())
             {
                 UnSummon();
                 return;
+            }
+            break;
+        }
+        case TEMPSUMMON_DEAD_OR_LOST_OWNER_DESPAWN:
+        {
+            if (IsDespawned())
+            {
+                UnSummon();
+                return;
+            }
+            if (!GetSummoner())
+            {
+                m_type = TEMPSUMMON_TIMED_DESPAWN;
+                m_timer = DEFAULT_DESPAWN_DELAY;
             }
             break;
         }
@@ -112,6 +162,30 @@ void TemporarySummon::Update( uint32 update_diff,  uint32 diff )
                 m_timer -= update_diff;
             break;
         }
+        case TEMPSUMMON_TIMED_OR_DEAD_OR_LOST_UNIQUENESS_DESPAWN:
+        {
+            if (!IsDespawned())
+            {
+                std::list<Creature*> tlist;
+                MaNGOS::AllIdenticalObjectsInRangeCheck check(this, GetMap()->GetVisibilityDistance());
+                MaNGOS::CreatureListSearcher<MaNGOS::AllIdenticalObjectsInRangeCheck> searcher(tlist, check);
+                Cell::VisitGridObjects(this, searcher, GetMap()->GetVisibilityDistance(), true);
+
+                for (std::list<Creature*>::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
+                {
+                    if ((*itr)->isAlive() && 
+                        (*itr)->IsTemporarySummon() && 
+                        ((TemporarySummon*)*itr)->GetTempSummonType() == GetTempSummonType() &&
+                        ((TemporarySummon*)*itr)->GetSummonerGuid() == GetSummonerGuid())
+                    {
+                        m_type = TEMPSUMMON_MANUAL_DESPAWN;
+                        UnSummon();
+                        return;
+                    }
+                }
+            }
+            // NO break here!
+        }
         case TEMPSUMMON_TIMED_OR_DEAD_DESPAWN:
         {
             // if m_deathState is DEAD, CORPSE was skipped
@@ -122,6 +196,23 @@ void TemporarySummon::Update( uint32 update_diff,  uint32 diff )
             }
 
             if (m_timer <= update_diff)
+            {
+                UnSummon();
+                return;
+            }
+            else
+                m_timer -= update_diff;
+            break;
+        }
+        case TEMPSUMMON_TIMED_OR_DEAD_OR_LOST_OWNER_DESPAWN:
+        {
+            if (IsDespawned())
+            {
+                UnSummon();
+                return;
+            }
+
+            if (!GetSummoner() || m_timer <= update_diff)
             {
                 UnSummon();
                 return;

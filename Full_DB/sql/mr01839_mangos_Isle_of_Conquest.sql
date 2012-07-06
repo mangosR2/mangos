@@ -45,15 +45,18 @@ UPDATE creature_template SET vehicle_id = 452, iconName = 'Gunner', faction_A = 
 -- Horde Gunship Cannon
 UPDATE creature_template SET vehicle_id = 453, iconName = 'Gunner', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry = 34935;
 -- Keep Cannon
-UPDATE creature_template SET vehicle_id = 160, iconName = 'Gunner', faction_A = 35, faction_H = 35, unit_flags = unit_flags | 4, ScriptName = 'npc_ic_cannon' WHERE entry IN (34944, 35429);
+UPDATE creature_template SET ScriptName = 'npc_ic_cannon' WHERE entry = 34944;
+UPDATE creature_template SET vehicle_id = 160, iconName = 'Gunner', faction_A = 35, faction_H = 35, unit_flags = unit_flags | 4 WHERE entry IN (34944, 35429);
 
 UPDATE creature_template SET mechanic_immune_mask = mechanic_immune_mask|1|2|8|16|32|64|128|1024|2048|4096|8192|131072|262144|8388608|16777216|67108864 WHERE entry IN (34944, 35429, 34793, 35413, 34775, 35415, 34776, 35431, 35069, 35433, 34802, 35419, 35273, 35421);
 
 -- Alli Glaive Thrower
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '', AIName = 'NullAI' WHERE entry IN (34802, 35419);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry = 34802;
+UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry IN (34802, 35419);
 
 -- Horde Glaive Thrower
-UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '', AIName = 'NullAI' WHERE entry IN (35273, 35421);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry = 35273;
+UPDATE creature_template SET vehicle_id = 447, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry IN (35273, 35421);
 
 -- Catapult
 UPDATE creature_template SET powertype = 3, vehicle_id = 438, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, speed_walk = 2.4, speed_run = 2.8, ScriptName = '' WHERE entry in (34793, 35413);
@@ -62,16 +65,20 @@ UPDATE creature_template SET powertype = 3, vehicle_id = 438, iconName = 'vehich
 UPDATE creature_template SET powertype = 3, vehicle_id = 509, iconName = 'vehichleCursor', faction_A = 35, faction_H = 35, ScriptName = '' WHERE entry IN (34775, 35415);
 
 -- Horde Siege Engine
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '',AIName = 'NullAI' WHERE entry IN (35069, 35433);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry = 35069;
+UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry IN (35069, 35433);
 
 -- Ally Siege Engine
-UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34776, 35431);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry = 34776;
+UPDATE creature_template SET powertype = 3, vehicle_id = 435, iconName = 'vehichleCursor', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry IN (34776, 35431);
 
 -- Ally/horde Siege Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34777, 35436, 36355, 36357);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry IN (34777, 36355);
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 436, ScriptName = '' WHERE entry IN (34777, 35436, 36355, 36357);
 
 -- Horde/Ally Flame Turret
-UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, ScriptName = '',AIName = 'NullAI' WHERE entry IN (34778, 35417, 36356, 36358);
+UPDATE creature_template SET AIName = 'NullAI' WHERE entry IN (34778, 36356);
+UPDATE creature_template SET powertype = 3, iconName = 'Gunner', vehicle_id = 437, ScriptName = '' WHERE entry IN (34778, 35417, 36356, 36358);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (34929, 34935, 34944, 34793, 34775, 34776, 35069, 34802, 35273, 34778, 36356, 34777, 36355);
 INSERT INTO npc_spellclick_spells (npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags) VALUES

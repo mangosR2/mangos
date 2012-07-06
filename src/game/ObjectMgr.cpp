@@ -7973,6 +7973,9 @@ bool PlayerCondition::Meets(Player const * player) const
 
     switch (m_condition)
     {
+        case CONDITION_NOT:
+            // Checked on load
+            return !sConditionStorage.LookupEntry<PlayerCondition>(m_value1)->Meets(player);
         case CONDITION_OR:
             // Checked on load
             return sConditionStorage.LookupEntry<PlayerCondition>(m_value1)->Meets(player) || sConditionStorage.LookupEntry<PlayerCondition>(m_value2)->Meets(player);
@@ -8177,6 +8180,21 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
 {
     switch (condition)
     {
+        case CONDITION_NOT:
+        {
+            if (value1 >= entry)
+            {
+                sLog.outErrorDb("NOT condition (entry %u, type %d) has invalid value1 %u, must be lower than entry, skipped", entry, condition, value1);
+                return false;
+            }
+            const PlayerCondition* condition1 = sConditionStorage.LookupEntry<PlayerCondition>(value1);
+            if (!condition1)
+            {
+                sLog.outErrorDb("NOT condition (entry %u, type %d) has value1 %u without proper condition, skipped", entry, condition, value1);
+                return false;
+            }
+            break;
+        }
         case CONDITION_OR:
         case CONDITION_AND:
         {

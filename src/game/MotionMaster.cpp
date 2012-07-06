@@ -341,6 +341,15 @@ void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horiz
     Mutate(new EffectMovementGenerator(0), UNIT_ACTION_EFFECT);
 }
 
+void MotionMaster::MoveWithSpeed(float x, float y, float z, float speed, bool generatePath, bool forceDestination)
+{
+    Movement::MoveSplineInit init(*m_owner);
+    init.MoveTo(x,y,z, generatePath, forceDestination);
+    init.SetVelocity(speed);
+    init.Launch();
+    Mutate(new EffectMovementGenerator(0), UNIT_ACTION_EFFECT);
+}
+
 void MotionMaster::MoveFall()
 {
     // use larger distance for vmap height search than in most other cases

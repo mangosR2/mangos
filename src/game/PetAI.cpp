@@ -585,7 +585,7 @@ void PetAI::UpdateAI(const uint32 diff)
             }
             else
             {
-                for (ObjectGuidSet::const_iterator tar = m_AllySet.begin(); tar != m_AllySet.end(); ++tar)
+                for (GuidSet::const_iterator tar = m_AllySet.begin(); tar != m_AllySet.end(); ++tar)
                 {
                     Unit* Target = m_creature->GetMap()->GetUnit(*tar);
 

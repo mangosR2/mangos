@@ -76,7 +76,7 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         void MoveToVictim(Unit* unit);
         bool IsInCombat();
 
-        ObjectGuidSet const& GetAllyGuids() { return m_AllySet; };
+        GuidSet const& GetAllyGuids() { return m_AllySet; };
 
     private:
         bool _isVisible(Unit *) const;
@@ -90,7 +90,8 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         TimeTracker i_tracker;
         bool inCombat;
 
-        ObjectGuidSet m_AllySet;
+        GuidSet m_AllySet;
+
         uint32 m_updateAlliesTimer;
 
         PetAIType       m_AIType;

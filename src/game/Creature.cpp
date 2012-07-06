@@ -2224,6 +2224,11 @@ bool Creature::HasSpellCooldown(uint32 spell_id) const
     return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(NULL)) || HasCategoryCooldown(spell_id);
 }
 
+uint8 Creature::getRace() const
+{
+    return GetCreatureModelRace(GetNativeDisplayId());
+}
+
 bool Creature::IsInEvadeMode() const
 {
     return i_motionMaster.GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE;
@@ -2498,7 +2503,7 @@ void Creature::ApplyGameEventSpells(GameEventCreatureData const* eventData, bool
         CastSpell(this, cast_spell, true);
 }
 
-void Creature::FillGuidsListFromThreatList( std::vector<ObjectGuid>& guids, uint32 maxamount /*= 0*/ )
+void Creature::FillGuidsListFromThreatList(GuidVector& guids, uint32 maxamount /*= 0*/)
 {
     if (!CanHaveThreatList())
         return;

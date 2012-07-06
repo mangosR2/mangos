@@ -230,7 +230,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleModSpellDamagePercentFromStat,             //174 SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT  implemented in Unit::SpellBaseDamageBonusDone
     &Aura::HandleModSpellHealingPercentFromStat,            //175 SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT implemented in Unit::SpellBaseHealingBonusDone
     &Aura::HandleSpiritOfRedemption,                        //176 SPELL_AURA_SPIRIT_OF_REDEMPTION   only for Spirit of Redemption spell, die at aura end
-    &Aura::HandleNULL,                                      //177 SPELL_AURA_AOE_CHARM (22 spells)
+    &Aura::HandleAuraAoECharm,                              //177 SPELL_AURA_AOE_CHARM (22 spells)
     &Aura::HandleNoImmediateEffect,                         //178 SPELL_AURA_MOD_DEBUFF_RESISTANCE          implemented in Unit::MagicSpellHitResult
     &Aura::HandleNoImmediateEffect,                         //179 SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE implemented in Unit::SpellCriticalBonus
     &Aura::HandleNoImmediateEffect,                         //180 SPELL_AURA_MOD_FLAT_SPELL_DAMAGE_VERSUS   implemented in Unit::SpellDamageBonusDone
@@ -670,7 +670,7 @@ void Aura::AreaAuraUpdate(uint32 diff)
             if (!owner)
                 owner = caster;
 
-            ObjectGuidSet targets;
+            GuidSet targets;
             Spell::UnitList _targets;
 
             switch(m_areaAuraType)
@@ -806,7 +806,7 @@ void Aura::AreaAuraUpdate(uint32 diff)
                     if (*itr)
                         targets.insert((*itr)->GetObjectGuid());
 
-            for (ObjectGuidSet::const_iterator tIter = targets.begin(); tIter != targets.end(); tIter++)
+            for (GuidSet::const_iterator tIter = targets.begin(); tIter != targets.end(); tIter++)
             {
                 // flag for selection is need apply aura to current iteration target
                 bool apply = true;
@@ -2352,7 +2352,7 @@ void Aura::TriggerSpell()
                 int32 multiplier = GetModifier()->m_miscvalue += 1;
                 int32 bp0 = triggerTarget->GetMap()->GetDifficulty() >= RAID_DIFFICULTY_10MAN_HEROIC ? 4600 : 1610;
                 bp0 = int32(bp0 + (floor(multiplier / 10.0f)) * 1000);
-                triggerTarget->CastCustomSpell(triggerTarget, 71341, &bp0, 0, 0, true, NULL, this, GetCasterGuid(), GetSpellProto());
+                triggerTarget->CastCustomSpell(triggerTarget, 71341, &bp0, 0, 0, true);
                 break;
             }
         }
@@ -2447,21 +2447,23 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     case 28834:                             // Mark of Rivendare
                     case 28835:                             // Mark of Zeliek
                     {
-                        uint32 stacks = GetStackAmount();
                         int32 damage = 0;
-                        switch (stacks)
+
+                        switch (GetStackAmount())
                         {
-                            case 0:
-                            case 1: return;
-                            case 2: damage = 500;   break;
-                            case 3: damage = 1500;  break;
-                            case 4: damage = 4000;  break;
+                            case 1:
+                                return;
+                            case 2: damage =   500; break;
+                            case 3: damage =  1500; break;
+                            case 4: damage =  4000; break;
                             case 5: damage = 12500; break;
-                            default: damage = 20000 + (1000 * (stacks - 6)); break;
+                            default:
+                                damage = 14000 + 1000 * GetStackAmount();
+                                break;
                         }
 
                         if (Unit* caster = GetCaster())
-                            caster->CastCustomSpell(target, 28836, &damage, NULL, NULL, true, NULL, this, caster->GetObjectGuid());
+                            caster->CastCustomSpell(target, 28836, &damage, NULL, NULL, true, NULL, this);
                         return;
                     }
                     case 31606:                             // Stormcrow Amulet
@@ -2482,6 +2484,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         // real time randomness is unclear, using max 30 seconds here
                         // see further down for expire of this aura
                         GetHolder()->SetAuraDuration(urand(1, 30)*IN_MILLISECONDS);
+                        return;
+                    }
+                    case 33326:                             // Stolen Soul Dispel
+                    {
+                        target->RemoveAurasDueToSpell(32346);
                         return;
                     }
                     // Gender spells
@@ -4419,10 +4426,8 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
                 case 65528:                                 // Gossip NPC Appearance - Pirates' Day
                 {
                     // expecting npc's using this spell to have models with race info.
-                    uint32 race = GetCreatureModelRace(target->GetNativeDisplayId());
-
                     // random gender, regardless of current gender
-                    switch(race)
+                    switch (target->getRace())
                     {
                         case RACE_HUMAN:
                             target->SetDisplayId(roll_chance_i(50) ? 25037 : 25048);
@@ -11361,6 +11366,16 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     }
                     break;
                 }
+                case 70877:                                 // Frenzied Bloodthirst (Queen Lana'thel)
+                case 71474:
+                {
+                    if (!apply && m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                    {
+                        cast_at_remove = true;
+                        spellId1 = 70923; // Uncontrollable Frenzy
+                    }
+                    break;
+                }
                 case 73034:                                 // Blighted Spores
                 case 73033:
                 case 71222:
@@ -12553,6 +12568,49 @@ void Aura::HandleAuraFactionChange(bool apply, bool real)
     if (newFaction && newFaction != target->getFaction())
         target->setFaction(newFaction);
 
+}
+
+// FIXME: this is only temp. fix for not allowing charmed player to deal damage/heal
+void Aura::HandleAuraAoECharm(bool apply, bool real)
+{
+    if (!real)
+        return;
+
+    Unit *pTarget = GetTarget();
+
+    if (!pTarget || !pTarget->IsInWorld() || pTarget->GetTypeId() != TYPEID_PLAYER)
+        return;
+
+    Player *pPlayerTarget = (Player*)pTarget;
+
+    switch(GetId())
+    {
+        case 70923:                                     // Uncontrollable Frenzy (Queen Lana'thel)
+        {
+            if (apply)
+                pPlayerTarget->setFaction(16);
+            else
+                pPlayerTarget->setFactionForRace(pPlayerTarget->getRace());
+
+            break;
+        }
+        default:
+        {
+            if (apply)
+            {
+                Unit *pCaster = GetCaster();
+
+                if (pCaster && pCaster != pTarget)
+                    pPlayerTarget->setFaction(pCaster->getFaction());
+                else
+                    pPlayerTarget->setFaction(16);
+            }
+            else
+                pPlayerTarget->setFactionForRace(pPlayerTarget->getRace());
+
+            break;
+        }
+    }
 }
 
 uint32 Aura::CalculateCrowdControlBreakDamage()

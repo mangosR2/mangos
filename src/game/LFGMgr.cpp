@@ -1799,8 +1799,8 @@ void LFGMgr::Teleport(Player* player, bool out, bool fromOpcode /*= false*/)
         error = LFG_TELEPORTERROR_UNK4;
     else if (!player->isAlive())
         error = LFG_TELEPORTERROR_PLAYER_DEAD;
-//    else if (player->IsFalling())
-//        error = LFG_TELEPORTERROR_FALLING;
+    else if (player->IsFalling())
+        error = LFG_TELEPORTERROR_FALLING;
 
     uint32 mapid = 0;
     float x = 0;

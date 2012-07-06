@@ -82,11 +82,11 @@ void WorldPvPNA::HandlePlayerLeaveZone(Player* pPlayer)
     WorldPvP::HandlePlayerLeaveZone(pPlayer);
 }
 
-void WorldPvPNA::HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiEventId)
+void WorldPvPNA::HandleObjectiveComplete(GuidSet m_sPlayersSet, uint32 uiEventId)
 {
     if (uiEventId == EVENT_HALAA_BANNER_WIN_ALLIANCE || uiEventId == EVENT_HALAA_BANNER_WIN_HORDE)
     {
-        for (ObjectGuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
+        for (GuidSet::iterator itr = m_sPlayersSet.begin(); itr != m_sPlayersSet.end(); ++itr)
         {
             if (!(*itr))
                 continue;

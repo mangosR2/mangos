@@ -471,7 +471,7 @@ enum SpellAttributesEx6
     SPELL_ATTR_EX6_UNK6                        = 0x00000040,            // 6
     SPELL_ATTR_EX6_UNK7                        = 0x00000080,            // 7
     SPELL_ATTR_EX6_IGNORE_CCED_TARGETS         = 0x00000100,            // 8
-    SPELL_ATTR_EX6_UNK9                        = 0x00000200,            // 9
+    SPELL_ATTR_EX6_IGNORE_DETECTION            = 0x00000200,            // 9 many spells, ignored unit detections/phasing.
     SPELL_ATTR_EX6_NORMAL_DIFFICULTY           = 0x00000400,            // 10 this spells not have heroic difficulty versions in DBC (may be only one from effects?)
     SPELL_ATTR_EX6_NOT_IN_RAID_INSTANCE        = 0x00000800,            // 11 not usable in raid instance
     SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE         = 0x00001000,            // 12 for auras SPELL_AURA_TRACK_CREATURES, SPELL_AURA_TRACK_RESOURCES and SPELL_AURA_TRACK_STEALTHED select non-stacking tracking spells
@@ -770,7 +770,7 @@ enum SpellEffects
     SPELL_EFFECT_QUEST_FAIL                = 147,
     SPELL_EFFECT_TRIGGER_MISSILE_2         = 148,
     SPELL_EFFECT_CHARGE2                   = 149,
-    SPELL_EFFECT_QUEST_START               = 150,
+    SPELL_EFFECT_QUEST_OFFER               = 150,
     SPELL_EFFECT_TRIGGER_SPELL_2           = 151,
     SPELL_EFFECT_FRIEND_SUMMON             = 152,
     SPELL_EFFECT_CREATE_PET                = 153,

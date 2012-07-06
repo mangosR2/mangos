@@ -58,7 +58,7 @@ void WorldPvP::HandlePlayerLeaveZone(Player* pPlayer)
  */
 void WorldPvP::SendUpdateWorldState(uint32 uiField, uint32 uiValue)
 {
-    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
         Player* pPlayer = sObjectMgr.GetPlayer(*itr);
         if (pPlayer)
@@ -131,7 +131,7 @@ void WorldPvP::ResetCapturePoint(uint32 pointEntry, float fValue)
 // apply a team buff for the specific zone
 void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
 {
-    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
         if (!(*itr))
             continue;
@@ -157,7 +157,7 @@ void WorldPvP::DoProcessTeamBuff(Team uiTeam, uint32 uiSpellId, bool bRemove)
 /// Get the first found Player* (with requested properties) in the zone. Can return NULL.
 Player* WorldPvP::GetPlayerInZone(bool bOnlyAlive /*=false*/, bool bCanBeGamemaster /*=true*/)
 {
-    for (ObjectGuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
+    for (GuidSet::iterator itr = m_sZonePlayers.begin(); itr != m_sZonePlayers.end(); ++itr)
     {
         if (!(*itr))
             continue;

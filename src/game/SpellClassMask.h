@@ -779,6 +779,9 @@ enum ClassFlag
     CF_SHAMAN_MAELSTORM_WEAPON              = 73,   // CM2 00000200
     CF_SHAMAN_STORMSTRIKES                  = 74,   // CM2 00000400
     CF_SHAMAN_COMMAND                       = 75,   // CM2 00000800
+    CF_SHAMAN_UNK76                         = 76,   // CM2 00001000
+    CF_SHAMAN_STATIC_SHOCK                  = 77,   // CM2 00002000
+    CF_SHAMAN_EARTHGRAB                     = 78,   // CM2 00004000
 
     // -- Death Kight (15)
     CF_DEATHKNIGHT_PLAGUE_STRIKE            = 0,    // CM0 00000001

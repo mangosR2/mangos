@@ -22,6 +22,8 @@
 #include "Creature.h"
 #include "ObjectAccessor.h"
 
+#define DEFAULT_DESPAWN_DELAY 5000
+
 class TemporarySummon : public Creature
 {
     public:
@@ -34,6 +36,8 @@ class TemporarySummon : public Creature
         void SaveToDB();
         ObjectGuid const& GetSummonerGuid() const { return m_summoner ; }
         Unit* GetSummoner() const { return ObjectAccessor::GetUnit(*this, m_summoner); }
+        TempSummonType GetTempSummonType() const { return m_type; };
+
     private:
         void SaveToDB(uint32, uint8, uint32)                // overwrited of Creature::SaveToDB     - don't must be called
         {

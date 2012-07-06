@@ -3,7 +3,7 @@ MangosR2 README
 MangosR2 is a free, open source MMORPG Framework based mostly on C++.
 open source, and is community supported. It is derived from MaNGOS, 
 the Massive Network Game Object Server. Currently supported client
-version is 3.3.5a (12340).
+version is 3.3.5a (12340). Official support forum - http://mangosr2.2x2forum.com
 
 MangosR2 is free software. You can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@ Unfortunately, at the beginning of the 2011, those projects left almost all
 experienced developers, and they have practically ceased to grow. 
 I commend the people who still continue to develop original projects repository, 
 but the level of development is clearly inadequate and not always competent, 
-in addition, the code of the original project practically tested in practice and 
-may cause problems while practical use.
+in addition, the code of the original project practically not tested and 
+may cause problems while real usage.
                                                                      /dev/rsa
 
 Copyright (C) 2011-2012 MangosR2       <http://github.com/MangosR2/>

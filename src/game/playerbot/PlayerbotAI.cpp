@@ -6552,7 +6552,7 @@ void PlayerbotAI::HandleCommand(const std::string& text, Player& fromPlayer)
             extractSpellIdList(part, m_spellsToLearn);
             for (std::list<uint32>::iterator it = m_spellsToLearn.begin(); it != m_spellsToLearn.end(); ++it)
             {
-                if (sSpellMgr.IsPrimaryProfessionSpell(*it) && subcommand != "learn")
+                if (SpellMgr::IsPrimaryProfessionSpell(*it) && subcommand != "learn")
                 {
                     SpellLearnSkillNode const* spellLearnSkill = sSpellMgr.GetSpellLearnSkill(*it);
 

@@ -3903,7 +3903,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
         if (target != m_session->GetPlayer())
         {
             DamageInfo damageInfo  = DamageInfo(m_session->GetPlayer(), target, uint32(0), damage);
-            damageInfo.HitInfo     = HITINFO_NORMALSWING2;
+            damageInfo.HitInfo     = HITINFO_AFFECTS_VICTIM;
             damageInfo.TargetState = VICTIMSTATE_NORMAL;
             m_session->GetPlayer()->SendAttackStateUpdate(&damageInfo);
         }
@@ -3933,7 +3933,7 @@ bool ChatHandler::HandleDamageCommand(char* args)
         DamageInfo damageInfo  = DamageInfo(m_session->GetPlayer(), target, spellid, damage);
         damageInfo.absorb      = 0;
         damageInfo.resist      = 0;
-        damageInfo.HitInfo     = HITINFO_NORMALSWING2;
+        damageInfo.HitInfo     = HITINFO_AFFECTS_VICTIM;
         damageInfo.TargetState = VICTIMSTATE_NORMAL;
 
         target->CalculateDamageAbsorbAndResist(m_session->GetPlayer(),&damageInfo, false);
@@ -4709,8 +4709,6 @@ bool ChatHandler::HandleAuctionItemCommand(char* args)
         SetSentErrorMessage(true);
         return false;
     }
-
-    //Player* pl = m_session ? m_session->GetPlayer() : NULL;
 
     do
     {

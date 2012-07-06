@@ -154,7 +154,7 @@ class WorldPvPHP : public WorldPvP
 
         void HandlePlayerEnterZone(Player* pPlayer);
         void HandlePlayerLeaveZone(Player* pPlayer);
-        void HandleObjectiveComplete(ObjectGuidSet m_sPlayersSet, uint32 uiEventId);
+        void HandleObjectiveComplete(GuidSet m_sPlayersSet, uint32 uiEventId);
         void HandlePlayerKillInsideArea(Player* pPlayer, Unit* pVictim);
 
         void FillInitialWorldStates(WorldPacket& data, uint32& count);
