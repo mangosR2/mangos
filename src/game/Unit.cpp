@@ -9353,7 +9353,7 @@ int32 Unit::ModifyPower(Powers power, int32 dVal)
     return gain;
 }
 
-bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, bool detect, bool inVisibleList, bool is3dDistance) const
+bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, bool detect, bool inVisibleList, bool is3dDistance, bool skipLOScheck) const
 {
     if(!u || !IsInMap(u))
         return false;
@@ -9564,6 +9564,9 @@ bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, boo
         if (visibleDistance <= 0 || !IsWithinDist(viewPoint,visibleDistance))
             return false;
     }
+
+    if (skipLOScheck)
+        return true;
 
     // Now check is target visible with LoS
     float ox,oy,oz;
@@ -10985,7 +10988,7 @@ void Unit::CleanupsBeforeDelete()
         DeleteThreatList();
         if (GetTypeId()==TYPEID_PLAYER)
             getHostileRefManager().setOnlineOfflineState(false);
-        else
+        else if (CanHaveThreatList())
             getHostileRefManager().deleteReferences();
         RemoveAllAuras(AURA_REMOVE_BY_DELETE);
         GetUnitStateMgr().InitDefaults(false);
@@ -11758,7 +11761,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, DamageInfo* damageInfo)
 
         SpellProcEventEntry const *spellProcEvent = itr->second;
         bool useCharges = itr->first->GetAuraCharges() > 0;
-        bool procSuccess = true;
+        bool procSuccess = false;
         bool anyAuraProc = false;
 
         // For players set spell cooldown if need
@@ -11811,9 +11814,9 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, DamageInfo* damageInfo)
                 case SPELL_AURA_PROC_CANT_TRIGGER:
                     continue;
                 case SPELL_AURA_PROC_FAILED:
-                    procSuccess = false;
                     break;
                 case SPELL_AURA_PROC_OK:
+                    procSuccess |= true;
                     break;
             }
             anyAuraProc = true;
@@ -11828,6 +11831,11 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, DamageInfo* damageInfo)
         // Remove charge (aura can be removed by triggers)
         if (useCharges && procSuccess && anyAuraProc && !itr->first->IsDeleted())
         {
+            DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST,"Unit::ProcDamageAndSpellFor: %s drop charge from %s, aura %u (current charges count %u)",
+                GetObjectGuid().GetString().c_str(),
+                pTarget->GetObjectGuid().GetString().c_str(),
+                itr->first->GetId(),
+                itr->first->GetAuraCharges());
             // If last charge dropped add spell to remove list
             if (itr->first->DropAuraCharge())
                 removedSpells.insert(itr->first->GetId());
@@ -13452,12 +13460,16 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
             break;
     }
 
-    // spell can hit all targets in two cases:
+    // spell can hit all targets in some cases:
     if (!VMAP::VMapFactory::checkSpellForLoS(spellInfo->Id))
         return true;
 
     if (spellInfo->HasAttribute(SPELL_ATTR_EX6_IGNORE_DETECTION))
         return true;
+
+    // some totem spells must ignore LOS, only visibility/detect checks applied
+    if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTotem())
+        return isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, true, false, true);
 
     // spell can't hit stealth/invisible targets
     if (no_stealth && caster->isType(TYPEMASK_UNIT) && !isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false))

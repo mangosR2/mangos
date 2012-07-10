@@ -492,7 +492,7 @@ void CreatureLinkingHolder::ProcessSlaveGuidList(CreatureLinkingEvent eventType,
         if (!pSlave)
         {
             // Remove old guid first
-            slaveGuidList.erase(slave_itr++);
+            slaveGuidList.erase(slave_itr);
             continue;
         }
 

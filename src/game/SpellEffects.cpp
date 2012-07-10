@@ -741,6 +741,19 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                         }
                         break;
                     }
+                    // Defile (Lich King)
+                    case 72754:
+                    case 73708:
+                    case 73709:
+                    case 73710:
+                    {
+                        damage = damage * m_caster->GetObjectScale();
+
+                        if (!unitTarget->GetDummyAura(m_spellInfo->Id))
+                            m_caster->CastSpell(m_caster, 72756, true);
+
+                        break;
+                    }
                     // Shadow Prison
                     case 72999:
                     {
@@ -10196,6 +10209,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     return;
                 }
                 case 70360:                                 // Eat Ooze (Putricide)
+                case 72527:
                 {
                     if (!unitTarget)
                         return;

@@ -1994,13 +1994,6 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     if (SpellAuraHolderPtr auraHolder = m_caster->GetSpellAuraHolder(66882))
                         radius = 0.5f * (60000 - auraHolder->GetAuraDuration()) * 0.001f;
                     break;
-                case 72754:                                 // Defile. Radius depended from scale.
-                case 73708:                                 // Defile 25
-                case 73709:                                 // Defile 10H
-                case 73710:                                 // Defile 25H
-                    if (Unit* realCaster = GetAffectiveCaster())
-                        radius = realCaster->GetObjectScale() * 6;
-                    break;
                 case 56438:                                 // Arcane Overload
                     if (Unit* realCaster = GetAffectiveCaster())
                         radius = radius * realCaster->GetObjectScale();
@@ -2093,7 +2086,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             Map* pMap = target->GetMap();
             if (pMap)
             {
-                if (!pMap->GetHitPosition(ox,oy,oz,fx,fy,fz, target->GetPhaseMask(), -0.1f))
+                if (!pMap->GetHitPosition(ox,oy,oz,fx,fy,fz, target->GetPhaseMask(), -0.5f))
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u forwarded on %f", target->GetObjectGuid().GetCounter(), target->GetDistance(fx,fy,fz));
                 else
                     DEBUG_LOG("Spell::EffectLeap/Teleport unit %u NOT forwarded on %f, real distance is %f", target->GetObjectGuid().GetCounter(), distance, target->GetDistance(fx,fy,fz));
@@ -9075,6 +9068,14 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         }
         case 69762: // Unchained Magic (Sindragosa)
         {
+            unMaxTargets = 2;
+
+            if (m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
+                m_caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
+            {
+                unMaxTargets = 6;
+            }
+
             UnitList tempTargetUnitMap;
             FillAreaTargets(tempTargetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             for (UnitList::const_iterator iter = tempTargetUnitMap.begin(); iter != tempTargetUnitMap.end(); ++iter)
@@ -9510,6 +9511,30 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 if ((*itr) && !(*itr)->GetObjectGuid().IsVehicle())
                     targetUnitMap.push_back(*itr);
             }
+            break;
+        }
+        case 72754:                                     // Defile (Lich King)
+        case 73708:
+        case 73709:
+        case 73710:
+        {
+            // base radius
+            radius = 10.0f;
+
+            // 10man normal - 10% growth
+            if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72756))
+                radius += holder->GetStackAmount() * 1.0f;
+            // 25man normal - 5% growth
+            else if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(74162))
+                radius += holder->GetStackAmount() * 0.5f;
+            // 10man heroic - 10% growth
+            else if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(74163))
+                radius += holder->GetStackAmount() * 1.0f;
+            // 25man heroic - 5% growth
+            else if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(74164))
+                radius += holder->GetStackAmount() * 0.5f;
+
+            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             break;
         }
         case 73529:                                     // Shadow Trap triggered knockback (Lich King)
