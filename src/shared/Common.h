@@ -285,4 +285,6 @@ inline char * mangos_strdup(const char * source)
 #  define UINT64_MIN     0x0000000000000000
 #endif
 
+#define MAX_CLIENT_STAT_VALUE INT16_MAX
+
 #endif

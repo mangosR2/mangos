@@ -92,6 +92,7 @@ enum eActionType
     ACTION_TYPE_RESTOREABLE    = 1,                   // Action be restored after interrupt (normal type)
     ACTION_TYPE_REPLACEABLE    = 2,                   // Action be restored after interrupt, some attributes 
                                                       // removed only on finalize, not in interrupted state
+    ACTION_TYPE_END,
 };
 
 enum ActionUpdateState
@@ -134,6 +135,7 @@ class UnitAction
     virtual bool IsReachable() const { return true; };
     virtual const char* Name() const { return "<Uninitialized>"; };
     virtual MovementGeneratorType GetMovementGeneratorType() const = 0;
+    virtual void UnitSpeedChanged() {};
 
     /* Returns true to show that state expired and can be finalized. */
     virtual bool Update(Unit &, const uint32& diff) = 0;

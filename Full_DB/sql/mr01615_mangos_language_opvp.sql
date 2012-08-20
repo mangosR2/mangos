@@ -1,4 +1,6 @@
 DELETE FROM `mangos_string` WHERE `entry` BETWEEN 10001 AND 10055;
+
+/* need refill text ID's by commit 12097
 INSERT INTO `mangos_string` (`entry`, `content_default`, `content_loc6`, `content_loc7`, `content_loc8`) VALUES
  
 -- all messages are sent in yellow text in SMSG_DEFENSE_MESSAGE (LocalDefense channel)
@@ -72,3 +74,4 @@ INSERT INTO `mangos_string` (`entry`, `content_default`, `content_loc6`, `conten
 (10048,'The Alliance has taken a Spirit Tower!', '¡La Alianza ha tomado una Torre del Espíritu!', '¡La Alianza ha tomado una Torre del Espíritu!', 'Альянс захватил башню Духов!'),
 (10049,'The Horde lost a Spirit Tower!', '¡La Horda ha perdido una Torre del Espíritu!', '¡La Horda ha perdido una Torre del Espíritu!', 'Орда потеряла башню Духов!'),
 (10050,'The Alliance lost a Spirit Tower!', '¡La Alianza ha perdido una Torre del Espíritu!', '¡La Alianza ha perdido una Torre del Espíritu!', 'Альянс потерял башню Духов!');
+*/

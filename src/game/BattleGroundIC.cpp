@@ -361,24 +361,24 @@ void BattleGroundIC::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
     }
 }
 
-void BattleGroundIC::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void BattleGroundIC::FillInitialWorldStates()
 {
-    FillInitialWorldState(data, count, BG_TEAM_ALLIANCE_REINFORC_SET, BG_TEAM_ALLIANCE_REINFORC_SET);
-    FillInitialWorldState(data, count, BG_TEAM_HORDE_RENFORC_SET,     BG_TEAM_HORDE_RENFORC_SET);
-    FillInitialWorldState(data, count, BG_TEAM_ALLIANCE_REINFORC,     m_TeamScores[TEAM_INDEX_ALLIANCE]);
-    FillInitialWorldState(data, count, BG_TEAM_HORDE_REINFORC,        m_TeamScores[TEAM_INDEX_HORDE]);
+    FillInitialWorldState(BG_TEAM_ALLIANCE_REINFORC_SET, BG_TEAM_ALLIANCE_REINFORC_SET);
+    FillInitialWorldState(BG_TEAM_HORDE_RENFORC_SET,     BG_TEAM_HORDE_RENFORC_SET);
+    FillInitialWorldState(BG_TEAM_ALLIANCE_REINFORC,     m_TeamScores[TEAM_INDEX_ALLIANCE]);
+    FillInitialWorldState(BG_TEAM_HORDE_REINFORC,        m_TeamScores[TEAM_INDEX_HORDE]);
 
     // Gate icons
     for (uint8 z = 0; z < BG_IC_GATE_MAX; ++z)
-        FillInitialWorldState(data, count, BG_IC_GateStatus[z][GateStatus[z] == BG_IC_GO_GATES_DAMAGE ? 1 : 0], 1);
+        FillInitialWorldState(BG_IC_GateStatus[z][GateStatus[z] == BG_IC_GO_GATES_DAMAGE ? 1 : 0], 1);
 
     // Node icons
     for (uint8 node = 0; node < BG_IC_NODES_MAX; ++node)
-        FillInitialWorldState(data, count, BG_IC_OP_NODEICONS[node], m_Nodes[node] == 0);
+        FillInitialWorldState( BG_IC_OP_NODEICONS[node], m_Nodes[node] == 0);
 
     for (uint8 i = 0; i < BG_IC_NODES_MAX; ++i)
         for (uint8 j = 0; j < 4; j++)
-            FillInitialWorldState(data, count, BG_IC_NodeWorldStates[i][j], m_Nodes[i] == (j + 1));
+            FillInitialWorldState(BG_IC_NodeWorldStates[i][j], m_Nodes[i] == (j + 1));
 }
 
 bool BattleGroundIC::SetupBattleGround()

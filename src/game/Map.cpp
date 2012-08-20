@@ -472,6 +472,8 @@ void Map::Update(const uint32 &t_diff)
             MapSessionFilter updater(pSession);
 
             pSession->Update(updater);
+            // sending WorldState updates
+            plr->SendUpdatedWorldStates(false);
         }
     }
 
@@ -569,6 +571,9 @@ void Map::Update(const uint32 &t_diff)
     // Send world objects and item update field changes
     SendObjectUpdates();
 
+    // Calculate and send map-related WorldState updates
+    sWorldStateMgr.MapUpdate(this);
+
     // Don't unload grids if it's battleground, since we may have manually added GOs,creatures, those doesn't load from DB at grid re-load !
     // This isn't really bother us, since as soon as we have instanced BG-s, the whole map unloads as the BG gets ended
     if (!IsBattleGroundOrArena())
@@ -655,7 +660,7 @@ Map::Remove(T *obj, bool remove)
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
     {
-        sLog.outError("Map::Remove: Object (GUID: %u TypeId:%u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::Remove: Object (%s) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
         return;
     }
 
@@ -1035,19 +1040,8 @@ void Map::RemoveAllObjectsInRemoveList()
         switch(obj->GetTypeId())
         {
             case TYPEID_CORPSE:
-            {
-                // ??? WTF
-                ObjectGuid guid = obj->GetObjectGuid();
-                if (guid && guid.IsUnit())
-                {
-                    Corpse* corpse = GetCorpse(guid);
-                    if (!corpse)
-                        sLog.outError("Try delete corpse/bones, but corpse of %s not exists!", guid.GetString().c_str());
-                    else
-                        Remove(corpse,true);
-                }
+                Remove((Corpse*)obj,true);
                 break;
-            }
             case TYPEID_DYNAMICOBJECT:
                 Remove((DynamicObject*)obj,true);
                 break;
@@ -2043,6 +2037,11 @@ bool Map::SetZoneWeather(uint32 zoneId, WeatherType type, float grade)
     weather->SetWeather(type, grade);
 
     return true;
+}
+
+void Map::UpdateWorldState(uint32 state, uint32 value)
+{
+    sWorldStateMgr.SetWorldStateValueFor(this, state, value);
 }
 
 /**

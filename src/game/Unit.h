@@ -205,7 +205,7 @@ enum UnitRename
     UNIT_CAN_BE_ABANDONED   = 0x02,
 };
 
-#define CREATURE_MAX_SPELLS     8
+#define CREATURE_MAX_SPELLS     4
 
 enum Swing
 {
@@ -885,6 +885,12 @@ enum MeleeHitOutcome
     MELEE_HIT_NORMAL    = 8,
 };
 
+enum DamageFlags
+{
+    DAMAGE_FREEACTION   = 0,
+    DAMAGE_SHARED       = 1,
+};
+
 //struct CleanDamage
 //struct CalcDamageInfo
 //struct SpellNonMeleeDamage
@@ -966,9 +972,16 @@ struct DamageInfo
     uint32 procEx;
 
     // Helpers
+    bool   durabilityLoss;
     bool   physicalLog;
     bool   unused;
     bool   IsMeleeDamage() { return !m_spellInfo; };
+
+    uint32         m_flags;
+    uint32 const&  GetFlags();
+    void           AddFlag(DamageFlags flag)       { m_flags |= (1 << flag); };
+    void           RemoveFlag(DamageFlags flag)    { m_flags &= ~(1 << flag); };
+    bool           HasFlag(DamageFlags flag) const { return (m_flags & (1 << flag)); };
 };
 
 
@@ -1172,8 +1185,8 @@ struct MANGOS_DLL_SPEC CharmInfo
         CharmSpellEntry* GetCharmSpell(uint8 index) { return &(m_charmspells[index]); }
 
         GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
-    private:
 
+    private:
         Unit* m_unit;
         UnitActionBarEntry PetActionBar[MAX_UNIT_ACTION_BAR_INDEX];
         CharmSpellEntry m_charmspells[CREATURE_MAX_SPELLS];
@@ -1406,6 +1419,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void DealDamageMods(Unit *pVictim, uint32 &damage, uint32* absorb);
         uint32 DealDamage(Unit *pVictim, uint32 damage, DamageInfo* cleanDamage, DamageEffectType damagetype, SpellSchoolMask damageSchoolMask, SpellEntry const *spellProto, bool durabilityLoss);
         uint32 DealDamage(Unit* pVictim, DamageInfo* damageInfo, bool durabilityLoss);
+        uint32 DealDamage(DamageInfo* damageInfo);
         int32  DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellProto, bool critical = false, uint32 absorb = 0);
 
         void PetOwnerKilledUnit(Unit* pVictim);
@@ -2074,6 +2088,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         MotionMaster* GetMotionMaster() { return &i_motionMaster; }
         UnitStateMgr& GetUnitStateMgr() { return m_stateMgr; }
+        bool IsInUnitState(UnitActionId state) const { return m_stateMgr.GetCurrentState() == state; }
 
         bool IsStopped() const { return !(hasUnitState(UNIT_STAT_MOVING)); }
         void StopMoving();
@@ -2231,6 +2246,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         Unit* _GetTotem(TotemSlot slot) const;              // for templated function without include need
         Pet* _GetPet(ObjectGuid guid) const;                // for templated function without include need
+
+        void JustKilledCreature(Creature* victim);          // Wrapper called by DealDamage when a creature is killed
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;

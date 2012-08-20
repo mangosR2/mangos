@@ -96,7 +96,7 @@ BattleGroundSA::~BattleGroundSA()
 {
 }
 
-void BattleGroundSA::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void BattleGroundSA::FillInitialWorldStates()
 {
     for (uint8 i = 0; i < BG_SA_GRY_MAX; ++i)
     {
@@ -108,22 +108,22 @@ void BattleGroundSA::FillInitialWorldStates(WorldPacket& data, uint32& count)
 
     for (uint8 i = 0; i < BG_SA_MAX_WS; ++i)
     {
-        FillInitialWorldState(data, count, BG_SA_WorldStatusA[i], (GetDefender() == HORDE) ? 1 : 0);
-        FillInitialWorldState(data, count, BG_SA_WorldStatusH[i], (GetDefender() == HORDE) ? 0 : 1);
+        FillInitialWorldState(BG_SA_WorldStatusA[i], (GetDefender() == HORDE) ? 1 : 0);
+        FillInitialWorldState(BG_SA_WorldStatusH[i], (GetDefender() == HORDE) ? 0 : 1);
     }
 
     for (uint32 z = 0; z < BG_SA_GATE_MAX; ++z)
     {
-        FillInitialWorldState(data, count, BG_SA_GateStatus[z], GateStatus[z]);
+        FillInitialWorldState(BG_SA_GateStatus[z], GateStatus[z]);
         if ((z == 0) && (GetDefender() == HORDE))                                               // Ancient gate changes color depending on the defender
-            FillInitialWorldState(data, count, BG_SA_GateStatus[z], (GateStatus[z] + 3));
+            FillInitialWorldState(BG_SA_GateStatus[z], (GateStatus[z] + 3));
     }
 
     //Time will be sent on first update...
-    FillInitialWorldState(data, count, BG_SA_ENABLE_TIMER, TimerEnabled ? uint32(1) : uint32(0));
-    FillInitialWorldState(data, count, BG_SA_TIMER_MINUTES, uint32(0));
-    FillInitialWorldState(data, count, BG_SA_TIMER_10SEC, uint32(0));
-    FillInitialWorldState(data, count, BG_SA_TIMER_SEC, uint32(0));
+    FillInitialWorldState(BG_SA_ENABLE_TIMER, TimerEnabled ? uint32(1) : uint32(0));
+    FillInitialWorldState(BG_SA_TIMER_MINUTES, uint32(0));
+    FillInitialWorldState(BG_SA_TIMER_10SEC, uint32(0));
+    FillInitialWorldState(BG_SA_TIMER_SEC, uint32(0));
 }
 
 void BattleGroundSA::StartShips()

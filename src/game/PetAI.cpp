@@ -321,12 +321,7 @@ void PetAI::MoveToVictim(Unit* u)
     switch (m_AIType)
     {
         case PET_AI_PASSIVE:
-            if (Unit* owner = m_creature->GetCharmerOrOwner())
-                m_creature->GetMotionMaster()->MoveFollow(owner,PET_FOLLOW_DIST, m_creature->IsPet() ? ((Pet*)m_creature)->GetPetFollowAngle() : PET_FOLLOW_ANGLE);
-            break;
         case PET_AI_SLACKER:
-            m_creature->GetMotionMaster()->MoveFleeing(u);
-            break;
         case PET_AI_HEALER:
             if (Unit* owner = m_creature->GetCharmerOrOwner())
                 m_creature->GetMotionMaster()->MoveChase(owner, PET_FOLLOW_DIST, m_creature->IsPet() ? ((Pet*)m_creature)->GetPetFollowAngle() : PET_FOLLOW_ANGLE);

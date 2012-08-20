@@ -151,7 +151,7 @@ void BattleGroundEY::CheckSomeoneJoinedPoint()
                 ++j;
                 continue;
             }
-            if (plr->CanCaptureTowerPoint() &&
+            if (plr->CanUseCapturePoint() &&
                 plr->IsWithinDist3d(BG_EY_NodePositions[i][0], BG_EY_NodePositions[i][1], BG_EY_NodePositions[i][2], BG_EY_POINT_RADIUS))
             {
                 //player joined point!
@@ -190,7 +190,7 @@ void BattleGroundEY::CheckSomeoneLeftPoint()
                 ++j;
                 continue;
             }
-            if (!plr->CanCaptureTowerPoint() ||
+            if (!plr->CanUseCapturePoint() ||
                 !plr->IsWithinDist3d(BG_EY_NodePositions[i][0], BG_EY_NodePositions[i][1], BG_EY_NodePositions[i][2], BG_EY_POINT_RADIUS))
                 //move player out of point (add him to players that are out of points
             {
@@ -676,41 +676,41 @@ void BattleGroundEY::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
     }
 }
 
-void BattleGroundEY::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void BattleGroundEY::FillInitialWorldStates()
 {
-    FillInitialWorldState(data, count, EY_HORDE_BASE,    m_TeamPointsCount[TEAM_INDEX_HORDE]);
-    FillInitialWorldState(data, count, EY_ALLIANCE_BASE, m_TeamPointsCount[TEAM_INDEX_ALLIANCE]);
-    FillInitialWorldState(data, count, 0xab6, 0x0);
-    FillInitialWorldState(data, count, 0xab5, 0x0);
-    FillInitialWorldState(data, count, 0xab4, 0x0);
-    FillInitialWorldState(data, count, 0xab3, 0x0);
-    FillInitialWorldState(data, count, 0xab2, 0x0);
-    FillInitialWorldState(data, count, 0xab1, 0x0);
-    FillInitialWorldState(data, count, 0xab0, 0x0);
-    FillInitialWorldState(data, count, 0xaaf, 0x0);
+    FillInitialWorldState(EY_HORDE_BASE,    m_TeamPointsCount[TEAM_INDEX_HORDE]);
+    FillInitialWorldState(EY_ALLIANCE_BASE, m_TeamPointsCount[TEAM_INDEX_ALLIANCE]);
+    FillInitialWorldState(0xab6, 0x0);
+    FillInitialWorldState(0xab5, 0x0);
+    FillInitialWorldState(0xab4, 0x0);
+    FillInitialWorldState(0xab3, 0x0);
+    FillInitialWorldState(0xab2, 0x0);
+    FillInitialWorldState(0xab1, 0x0);
+    FillInitialWorldState(0xab0, 0x0);
+    FillInitialWorldState(0xaaf, 0x0);
 
-    FillInitialWorldState(data, count, DRAENEI_RUINS_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_DRAENEI_RUINS] == HORDE && m_PointState[BG_EY_NODE_DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, DRAENEI_RUINS_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_DRAENEI_RUINS] == ALLIANCE && m_PointState[BG_EY_NODE_DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, DRAENEI_RUINS_UNCONTROL, m_PointState[BG_EY_NODE_DRAENEI_RUINS] != EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, MAGE_TOWER_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_MAGE_TOWER] == ALLIANCE && m_PointState[BG_EY_NODE_MAGE_TOWER] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, MAGE_TOWER_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_MAGE_TOWER] == HORDE && m_PointState[BG_EY_NODE_MAGE_TOWER] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, MAGE_TOWER_UNCONTROL, m_PointState[BG_EY_NODE_MAGE_TOWER] != EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, FEL_REAVER_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_FEL_REAVER] == HORDE && m_PointState[BG_EY_NODE_FEL_REAVER] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, FEL_REAVER_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_FEL_REAVER] == ALLIANCE && m_PointState[BG_EY_NODE_FEL_REAVER] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, FEL_REAVER_UNCONTROL, m_PointState[BG_EY_NODE_FEL_REAVER] != EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, BLOOD_ELF_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_BLOOD_ELF] == HORDE && m_PointState[BG_EY_NODE_BLOOD_ELF] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, BLOOD_ELF_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_BLOOD_ELF] == ALLIANCE && m_PointState[BG_EY_NODE_BLOOD_ELF] == EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, BLOOD_ELF_UNCONTROL, m_PointState[BG_EY_NODE_BLOOD_ELF] != EY_POINT_UNDER_CONTROL);
-    FillInitialWorldState(data, count, NETHERSTORM_FLAG, m_FlagState == BG_EY_FLAG_STATE_ON_BASE);
-    FillInitialWorldState(data, count, 0xad2, 0x1);
-    FillInitialWorldState(data, count, 0xad1, 0x1);
-    FillInitialWorldState(data, count, 0xabe, GetTeamScore(HORDE));
-    FillInitialWorldState(data, count, 0xabd, GetTeamScore(ALLIANCE));
-    FillInitialWorldState(data, count, 0xa05, 0x8e);
-    FillInitialWorldState(data, count, 0xaa0, 0x0);
-    FillInitialWorldState(data, count, 0xa9f, 0x0);
-    FillInitialWorldState(data, count, 0xa9e, 0x0);
-    FillInitialWorldState(data, count, 0xc0d, 0x17b);
+    FillInitialWorldState(DRAENEI_RUINS_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_DRAENEI_RUINS] == HORDE && m_PointState[BG_EY_NODE_DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(DRAENEI_RUINS_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_DRAENEI_RUINS] == ALLIANCE && m_PointState[BG_EY_NODE_DRAENEI_RUINS] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(DRAENEI_RUINS_UNCONTROL, m_PointState[BG_EY_NODE_DRAENEI_RUINS] != EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(MAGE_TOWER_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_MAGE_TOWER] == ALLIANCE && m_PointState[BG_EY_NODE_MAGE_TOWER] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(MAGE_TOWER_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_MAGE_TOWER] == HORDE && m_PointState[BG_EY_NODE_MAGE_TOWER] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(MAGE_TOWER_UNCONTROL, m_PointState[BG_EY_NODE_MAGE_TOWER] != EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(FEL_REAVER_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_FEL_REAVER] == HORDE && m_PointState[BG_EY_NODE_FEL_REAVER] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(FEL_REAVER_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_FEL_REAVER] == ALLIANCE && m_PointState[BG_EY_NODE_FEL_REAVER] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(FEL_REAVER_UNCONTROL, m_PointState[BG_EY_NODE_FEL_REAVER] != EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(BLOOD_ELF_HORDE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_BLOOD_ELF] == HORDE && m_PointState[BG_EY_NODE_BLOOD_ELF] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(BLOOD_ELF_ALLIANCE_CONTROL, m_PointOwnedByTeam[BG_EY_NODE_BLOOD_ELF] == ALLIANCE && m_PointState[BG_EY_NODE_BLOOD_ELF] == EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(BLOOD_ELF_UNCONTROL, m_PointState[BG_EY_NODE_BLOOD_ELF] != EY_POINT_UNDER_CONTROL);
+    FillInitialWorldState(NETHERSTORM_FLAG, m_FlagState == BG_EY_FLAG_STATE_ON_BASE);
+    FillInitialWorldState(0xad2, 0x1);
+    FillInitialWorldState(0xad1, 0x1);
+    FillInitialWorldState(0xabe, GetTeamScore(HORDE));
+    FillInitialWorldState(0xabd, GetTeamScore(ALLIANCE));
+    FillInitialWorldState(0xa05, 0x8e);
+    FillInitialWorldState(0xaa0, 0x0);
+    FillInitialWorldState(0xa9f, 0x0);
+    FillInitialWorldState(0xa9e, 0x0);
+    FillInitialWorldState(0xc0d, 0x17b);
 }
 
 WorldSafeLocsEntry const *BattleGroundEY::GetClosestGraveYard(Player* player)

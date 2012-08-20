@@ -19,6 +19,7 @@
 #include "InstanceData.h"
 #include "Database/DatabaseEnv.h"
 #include "Map.h"
+#include "MapPersistentStateMgr.h"
 #include "Log.h"
 
 void InstanceData::SaveToDB()
@@ -51,4 +52,22 @@ bool InstanceData::CheckConditionCriteriaMeet(Player const* /*source*/, uint32 m
     sLog.outError("Condition system call InstanceData::CheckConditionCriteriaMeet but instance script for map %u not have implementation for player condition criteria with internal id %u for map %u",
         instance->GetId(), instance_condition_id, map_id);
     return false;
+}
+
+void InstanceData::UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 data1, uint8 data2)
+{
+    DungeonPersistentState* state = ((DungeonMap*)instance)->GetPersistanceState();
+    if (!state)
+        return;
+
+    state->UpdateSpecialEncounterState(command, linkedGuid, data1, data2);
+}
+
+void InstanceData::SendSpecialEncounterState(ObjectGuid linkedGuid)
+{
+    DungeonPersistentState* state = ((DungeonMap*)instance)->GetPersistanceState();
+    if (!state)
+        return;
+
+    state->SendSpecialEncounterState(linkedGuid);
 }

@@ -80,7 +80,7 @@ class AccountMgr
 
         void LockAccount(uint32 acc_id, bool lock);
 
-        PlayerDataCache const* GetPlayerDataCache(ObjectGuid guid);
+        PlayerDataCache const* GetPlayerDataCache(ObjectGuid guid, bool force = true);
         PlayerDataCache const* GetPlayerDataCache(const std::string& name);
         void  ClearPlayerDataCache(ObjectGuid guid);
         void  MakePlayerDataCache(Player* player);

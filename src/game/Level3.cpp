@@ -55,6 +55,7 @@
 #include "CreatureEventAIMgr.h"
 #include "DBCEnums.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
+#include "SQLStorages.h"
 
 static uint32 ahbotQualityIds[MAX_AUCTION_QUALITY] =
 {
@@ -142,7 +143,7 @@ bool ChatHandler::HandleAHBotRebuildCommand(char* args)
     return true;
 }
 
-bool ChatHandler::HandleAHBotReloadCommand(char* args)
+bool ChatHandler::HandleAHBotReloadCommand(char* /*args*/)
 {
     if (sAuctionBot.ReloadAllConfig())
     {
@@ -4072,7 +4073,7 @@ bool ChatHandler::HandleLinkGraveCommand(char* args)
 
     Team g_team;
     if (!teamStr)
-        g_team = TEAM_NONE;
+        g_team = TEAM_BOTH_ALLOWED;
     else if (strncmp(teamStr, "horde", strlen(teamStr))==0)
         g_team = HORDE;
     else if (strncmp(teamStr, "alliance", strlen(teamStr))==0)
@@ -4080,8 +4081,7 @@ bool ChatHandler::HandleLinkGraveCommand(char* args)
     else
         return false;
 
-    WorldSafeLocsEntry const* graveyard =  sWorldSafeLocsStore.LookupEntry(g_id);
-
+    WorldSafeLocsEntry const* graveyard = sWorldSafeLocsStore.LookupEntry(g_id);
     if (!graveyard )
     {
         PSendSysMessage(LANG_COMMAND_GRAVEYARDNOEXIST, g_id);
@@ -4093,10 +4093,10 @@ bool ChatHandler::HandleLinkGraveCommand(char* args)
 
     uint32 zoneId = player->GetZoneId();
 
-    AreaTableEntry const *areaEntry = GetAreaEntryByAreaID(zoneId);
+    AreaTableEntry const* areaEntry = GetAreaEntryByAreaID(zoneId);
     if (!areaEntry || areaEntry->zone !=0)
     {
-        PSendSysMessage(LANG_COMMAND_GRAVEYARDWRONGZONE, g_id,zoneId);
+        PSendSysMessage(LANG_COMMAND_GRAVEYARDWRONGZONE, g_id, zoneId);
         SetSentErrorMessage(true);
         return false;
     }
@@ -4116,7 +4116,7 @@ bool ChatHandler::HandleNearGraveCommand(char* args)
     size_t argslen = strlen(args);
 
     if(!*args)
-        g_team = TEAM_NONE;
+        g_team = TEAM_BOTH_ALLOWED;
     else if (strncmp(args, "horde", argslen) == 0)
         g_team = HORDE;
     else if (strncmp(args, "alliance", argslen) == 0)
@@ -4127,49 +4127,48 @@ bool ChatHandler::HandleNearGraveCommand(char* args)
     Player* player = m_session->GetPlayer();
     uint32 zone_id = player->GetZoneId();
 
-    WorldSafeLocsEntry const* graveyard = sObjectMgr.GetClosestGraveYard(
-        player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), g_team);
+    WorldSafeLocsEntry const* graveyard = sObjectMgr.GetClosestGraveYard(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetMapId(), g_team);
 
-    if(graveyard)
+    if (graveyard)
     {
         uint32 g_id = graveyard->ID;
 
-        GraveYardData const* data = sObjectMgr.FindGraveYardData(g_id,zone_id);
+        GraveYardData const* data = sObjectMgr.FindGraveYardData(g_id, zone_id);
         if (!data)
         {
-            PSendSysMessage(LANG_COMMAND_GRAVEYARDERROR,g_id);
+            PSendSysMessage(LANG_COMMAND_GRAVEYARDERROR, g_id);
             SetSentErrorMessage(true);
             return false;
         }
 
-        g_team = data->team;
+        std::string team_name;
 
-        std::string team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_NOTEAM);
-
-        if(g_team == 0)
+        if (data->team == TEAM_BOTH_ALLOWED)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_ANY);
-        else if(g_team == HORDE)
+        else if (data->team == HORDE)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_HORDE);
-        else if(g_team == ALLIANCE)
+        else if (data->team == ALLIANCE)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_ALLIANCE);
+        else                                                                // Actually, this case cannot happen
+            team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_NOTEAM);
 
-        PSendSysMessage(LANG_COMMAND_GRAVEYARDNEAREST, g_id,team_name.c_str(),zone_id);
+        PSendSysMessage(LANG_COMMAND_GRAVEYARDNEAREST, g_id, team_name.c_str(), zone_id);
     }
     else
     {
         std::string team_name;
 
-        if(g_team == 0)
+        if (g_team == TEAM_BOTH_ALLOWED)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_ANY);
-        else if(g_team == HORDE)
+        else if (g_team == HORDE)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_HORDE);
-        else if(g_team == ALLIANCE)
+        else if (g_team == ALLIANCE)
             team_name = GetMangosString(LANG_COMMAND_GRAVEYARD_ALLIANCE);
 
-        if(g_team == ~uint32(0))
+        if (g_team == TEAM_BOTH_ALLOWED)
             PSendSysMessage(LANG_COMMAND_ZONENOGRAVEYARDS, zone_id);
         else
-            PSendSysMessage(LANG_COMMAND_ZONENOGRAFACTION, zone_id,team_name.c_str());
+            PSendSysMessage(LANG_COMMAND_ZONENOGRAFACTION, zone_id, team_name.c_str());
     }
 
     return true;
@@ -6449,7 +6448,7 @@ ComeToMe command REQUIRED for 3rd party scripting library to have access to Poin
 Without this function 3rd party scripting library will get linking errors (unresolved external)
 when attempting to use the PointMovementGenerator
 */
-bool ChatHandler::HandleComeToMeCommand(char *args)
+bool ChatHandler::HandleComeToMeCommand(char* /*args*/)
 {
     Creature* caster = getSelectedCreature();
 
@@ -6648,8 +6647,10 @@ bool ChatHandler::HandleInstanceSaveDataCommand(char* /*args*/)
 bool ChatHandler::HandleGMListFullCommand(char* /*args*/)
 {
     ///- Get the accounts with GM Level >0
-    QueryResult *result = LoginDatabase.Query( "SELECT username,gmlevel FROM account WHERE gmlevel > 0" );
-    if(result)
+    QueryResult* result = LoginDatabase.PQuery("SELECT ac.username, ac.gmlevel, af.Security FROM account ac LEFT JOIN "
+                                               "account_forcepermission af ON ac.id = af.AccountID WHERE (af.Security > 0 AND realmID = '%u') "
+                                               "OR ac.gmlevel > 0", sConfig.GetIntDefault("RealmID", 0));
+    if (result)
     {
         SendSysMessage(LANG_GMLIST);
         SendSysMessage("========================");
@@ -6659,9 +6660,9 @@ bool ChatHandler::HandleGMListFullCommand(char* /*args*/)
         ///- Circle through them. Display username and GM level
         do
         {
-            Field *fields = result->Fetch();
-            PSendSysMessage("|%15s|%6s|", fields[0].GetString(),fields[1].GetString());
-        }while( result->NextRow() );
+            Field* fields = result->Fetch();
+            PSendSysMessage("|%15s|%6u|", fields[0].GetString(), (fields[1].GetUInt8() > fields[2].GetUInt8()) ? fields[1].GetUInt8() : fields[2].GetUInt8());
+        } while(result->NextRow());
 
         PSendSysMessage("========================");
         delete result;
@@ -7165,6 +7166,7 @@ bool ChatHandler::HandleAccountFriendAddCommand(char* args)
     {
         case AOR_OK:
             SendSysMessage(LANG_COMMAND_FRIEND);
+            PSendSysMessage("Added RAF link from referral account %u (%s) to referred %u (%s)",targetAccountId, account_name.c_str(), friendAccountId, account_friend_name.c_str());
             break;
         default:
             SendSysMessage(LANG_COMMAND_FRIEND_ERROR);
@@ -7197,6 +7199,7 @@ bool ChatHandler::HandleAccountFriendDeleteCommand(char* args)
     {
         case AOR_OK:
             SendSysMessage(LANG_COMMAND_FRIEND);
+            PSendSysMessage("Deleted RAF link from referral account %u (%s) to referred %u (%s)",targetAccountId, account_name.c_str(), friendAccountId, account_friend_name.c_str());
             break;
         default:
             SendSysMessage(LANG_COMMAND_FRIEND_ERROR);
@@ -7210,7 +7213,45 @@ bool ChatHandler::HandleAccountFriendDeleteCommand(char* args)
 // List friends for account
 bool ChatHandler::HandleAccountFriendListCommand(char* args)
 {
-    return false;
+    ///- Get the command line arguments
+    std::string account_name;
+    uint32 targetAccountId = ExtractAccountId(&args, &account_name);
+
+    if (!targetAccountId)
+        return false;
+
+    RafLinkedList const* referredAccounts = sAccountMgr.GetRAFAccounts(targetAccountId, true);
+    RafLinkedList const* referalAccounts  = sAccountMgr.GetRAFAccounts(targetAccountId, false);
+
+    if (!referredAccounts || !referalAccounts)
+    {
+        PSendSysMessage("Account %u (%s) not has RAF links!",targetAccountId, account_name.c_str());
+        return true;
+    }
+
+    if (!referredAccounts->empty())
+    {
+        PSendSysMessage("Account %u (%s) has %u referred accounts:",targetAccountId, account_name.c_str(), referredAccounts->size());
+        for (RafLinkedList::const_iterator itr = referredAccounts->begin(); itr != referredAccounts->end(); ++itr)
+        {
+            uint32 accId = *itr;
+            std::string acc_name;
+            sAccountMgr.GetName(accId, acc_name);
+            PSendSysMessage("        Referred account %u (%s)",accId, acc_name.c_str());
+        }
+    }
+    if (!referalAccounts->empty())
+    {
+        PSendSysMessage("Account %u (%s) has %u referral accounts:",targetAccountId, account_name.c_str(), referalAccounts->size());
+        for (RafLinkedList::const_iterator itr = referalAccounts->begin(); itr != referalAccounts->end(); ++itr)
+        {
+            uint32 accId = *itr;
+            std::string acc_name;
+            sAccountMgr.GetName(accId, acc_name);
+            PSendSysMessage("        Referal account %u (%s)",accId, acc_name.c_str());
+        }
+    }
+    return true;
 }
 
 bool ChatHandler::HandleShowGearScoreCommand(char *args)

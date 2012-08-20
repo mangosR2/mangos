@@ -198,14 +198,14 @@ extern int main(int argc, char **argv)
         "                      SSSSs\n\n");
     sLog.outString("Using configuration file %s.", cfg_file);
 
-    DETAIL_LOG("%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    sLog.outString("Using %s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
     if (SSLeay() < 0x009080bfL )
     {
         DETAIL_LOG("WARNING: Outdated version of OpenSSL lib. Logins to server may not work!");
         DETAIL_LOG("WARNING: Minimal required version [OpenSSL 0.9.8k]");
     }
 
-    DETAIL_LOG("Using ACE: %s", ACE_VERSION);
+    sLog.outString("Using ACE: %s", ACE_VERSION);
 
     ///- Set progress bars show mode
     BarGoLink::SetOutputState(sConfig.GetBoolDefault("ShowProgressBars", true));

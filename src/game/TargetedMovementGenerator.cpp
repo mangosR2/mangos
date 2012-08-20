@@ -115,8 +115,15 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner)
     bool forceDest = (owner.GetTypeId() == TYPEID_UNIT && ((Creature*)&owner)->IsPet()
                         && owner.hasUnitState(UNIT_STAT_FOLLOW));
     i_path->calculate(x, y, z, forceDest);
-    if(i_path->getPathType() & PATHFIND_NOPATH)
-        return;
+
+    if (i_path->getPathType() & PATHFIND_NOPATH)
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"TargetedMovementGeneratorMedium::  unit %s cannot find path to %s (%f, %f, %f),  gained PATHFIND_NOPATH! Owerride used.",
+            owner.GetObjectGuid().GetString().c_str(),
+            i_target.isValid() ? i_target->GetObjectGuid().GetString().c_str() : "<none>",
+            x,y,z);
+        //return;
+    }
 
     D::_addUnitStateMove(owner);
     i_targetReached = false;

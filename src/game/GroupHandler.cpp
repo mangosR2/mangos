@@ -52,7 +52,21 @@ void WorldSession::SendPartyResult(PartyOperation operation, const std::string& 
     SendPacket( &data );
 }
 
-void WorldSession::HandleGroupInviteOpcode( WorldPacket & recv_data )
+void WorldSession::SendGroupInvite(Player* player, bool alreadyInGroup /*= false*/)
+{
+    WorldPacket data(SMSG_GROUP_INVITE, 10);                // guess size
+    data << uint8(alreadyInGroup ? 0 : 1);                  // invited/already in group flag
+    data << GetPlayer()->GetName();                         // max len 48
+    data << uint32(0);                                      // unk
+    data << uint8(0);                                       // count
+    // for(int i = 0; i < count; ++i)
+    //    data << uint32(0);
+    data << uint32(0);                                      // unk
+
+    player->GetSession()->SendPacket(&data);
+}
+
+void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
 {
     std::string membername;
     recv_data >> membername;
@@ -106,25 +120,24 @@ void WorldSession::HandleGroupInviteOpcode( WorldPacket & recv_data )
         return;
     }
 
-    Group *group2 = player->GetGroup();
-    if( group2 && group2->isBGGroup() )
+    // player already invited
+    if (player->GetGroupInvite())
+    {
+        SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S);
+        return;
+    }
+
+    Group* group2 = player->GetGroup();
+    if (group2 && group2->isBGGroup())
         group2 = player->GetOriginalGroup();
-    // player already in another group or invited
-    if( group2 || player->GetGroupInvite() )
+
+    // player already in another group
+    if (group2)
     {
         SendPartyResult(PARTY_OP_INVITE, membername, ERR_ALREADY_IN_GROUP_S);
 
-        if (group2)
-        {
-            // tell the player that they were invited but it failed as they were already in a group
-            WorldPacket data(SMSG_GROUP_INVITE, 10);                // guess size
-            data << uint8(0);                                       // invited/already in group flag
-            data << GetPlayer()->GetName();                         // max len 48
-            data << uint32(0);                                      // unk
-            data << uint8(0);                                       // count
-            data << uint32(0);                                      // unk
-            player->GetSession()->SendPacket(&data);
-        }
+        // tell the player that they were invited but it failed as they were already in a group
+        SendGroupInvite(player, true);
 
         return;
     }
@@ -172,17 +185,7 @@ void WorldSession::HandleGroupInviteOpcode( WorldPacket & recv_data )
         }
     }
 
-    // ok, we do it
-    WorldPacket data(SMSG_GROUP_INVITE, 10);                // guess size
-    data << uint8(1);                                       // invited/already in group flag
-    data << GetPlayer()->GetName();                         // max len 48
-    data << uint32(0);                                      // unk
-    data << uint8(0);                                       // count
-    //for(int i = 0; i < count; ++i)
-    //    data << uint32(0);
-    data << uint32(0);                                      // unk
-    player->GetSession()->SendPacket(&data);
-
+    SendGroupInvite(player);
     SendPartyResult(PARTY_OP_INVITE, membername, ERR_PARTY_RESULT_OK);
 }
 
@@ -372,7 +375,7 @@ void WorldSession::HandleGroupSetLeaderOpcode( WorldPacket & recv_data )
     /********************/
 
     // everything is fine, do it
-    GetPlayer()->GetLFGState()->RemoveRole(ROLE_LEADER);
+    GetPlayer()->GetLFGPlayerState()->RemoveRole(ROLE_LEADER);
     group->ChangeLeader(guid);
 }
 

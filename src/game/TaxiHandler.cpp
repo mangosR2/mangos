@@ -149,7 +149,16 @@ bool WorldSession::SendLearnNewTaxiNode( Creature* unit )
         return false;
 }
 
-void WorldSession::HandleActivateTaxiExpressOpcode ( WorldPacket & recv_data )
+void WorldSession::SendActivateTaxiReply(ActivateTaxiReply reply)
+{
+    WorldPacket data(SMSG_ACTIVATETAXIREPLY, 4);
+    data << uint32(reply);
+    SendPacket(&data);
+
+    DEBUG_LOG("WORLD: Sent SMSG_ACTIVATETAXIREPLY");
+}
+
+void WorldSession::HandleActivateTaxiExpressOpcode(WorldPacket& recv_data)
 {
     DEBUG_LOG( "WORLD: Received CMSG_ACTIVATETAXIEXPRESS" );
 

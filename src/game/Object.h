@@ -74,7 +74,6 @@ class Map;
 class UpdateMask;
 class InstanceData;
 class TerrainInfo;
-class ZoneScript;
 class Transport;
 
 typedef UNORDERED_MAP<Player*, UpdateData> UpdateDataMapType;
@@ -603,9 +602,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         //obtain terrain data for map where this object belong...
         TerrainInfo const* GetTerrain() const;
 
-        void SetZoneScript();
-        ZoneScript * GetZoneScript() const { return m_zoneScript; }
-
         void AddToClientUpdateList();
         void RemoveFromClientUpdateList();
         void BuildUpdateData(UpdateDataMapType &);
@@ -633,11 +629,17 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         bool isActiveObject() const { return m_isActiveObject || m_viewPoint.hasViewers(); }
         void SetActiveObjectState(bool active);
 
+        uint32 GetLastUpdateTime() const { return m_LastUpdateTime; }
+        void SetLastUpdateTime() { m_LastUpdateTime = WorldTimer::getMSTime(); }
+
         ViewPoint& GetViewPoint() { return m_viewPoint; }
 
         // ASSERT print helper
         bool PrintCoordinatesError(float x, float y, float z, char const* descr) const;
 
+        // WorldState operations
+        void UpdateWorldState(uint32 state, uint32 value);
+        uint32 GetWorldState(uint32 state);
 
     protected:
         explicit WorldObject();
@@ -654,8 +656,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
         uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
 
-        ZoneScript *m_zoneScript;
-
         std::string m_name;
 
     private:
@@ -669,6 +669,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         ViewPoint m_viewPoint;
         WorldUpdateCounter m_updateTracker;
         bool m_isActiveObject;
+
+        uint32 m_LastUpdateTime;
 };
 
 #endif

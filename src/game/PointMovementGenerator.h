@@ -76,4 +76,20 @@ class EffectMovementGenerator : public MovementGenerator
         uint32 m_Id;
 };
 
+// Does same es Effect, but cleanup transport flags after finalize.
+class EjectMovementGenerator : public MovementGenerator
+{
+    public:
+        explicit EjectMovementGenerator(uint32 Id) : m_Id(Id) {}
+        void Initialize(Unit &) {}
+        void Finalize(Unit &unit);
+        void Interrupt(Unit &) {}
+        void Reset(Unit &) {}
+        bool Update(Unit &u, const uint32 &);
+        MovementGeneratorType GetMovementGeneratorType() const { return EFFECT_MOTION_TYPE; }
+        const char* Name() const { return "<Eject>"; }
+    private:
+        uint32 m_Id;
+};
+
 #endif

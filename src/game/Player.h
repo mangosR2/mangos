@@ -36,7 +36,6 @@
 #include "AchievementMgr.h"
 #include "ReputationMgr.h"
 #include "BattleGround.h"
-#include "DBCStores.h"
 #include "SharedDefines.h"
 #include "LFG.h"
 #include "AntiCheat.h"
@@ -61,7 +60,7 @@ class DungeonPersistentState;
 class Spell;
 class Item;
 struct AreaTrigger;
-class WorldPvP;
+class OutdoorPvP;
 
 typedef std::deque<Mail*> PlayerMails;
 
@@ -515,23 +514,6 @@ enum PlayerFieldByte2Flags
     PLAYER_FIELD_BYTE2_INVISIBILITY_GLOW = 0x40
 };
 
-enum ActivateTaxiReplies
-{
-    ERR_TAXIOK                      = 0,
-    ERR_TAXIUNSPECIFIEDSERVERERROR  = 1,
-    ERR_TAXINOSUCHPATH              = 2,
-    ERR_TAXINOTENOUGHMONEY          = 3,
-    ERR_TAXITOOFARAWAY              = 4,
-    ERR_TAXINOVENDORNEARBY          = 5,
-    ERR_TAXINOTVISITED              = 6,
-    ERR_TAXIPLAYERBUSY              = 7,
-    ERR_TAXIPLAYERALREADYMOUNTED    = 8,
-    ERR_TAXIPLAYERSHAPESHIFTED      = 9,
-    ERR_TAXIPLAYERMOVING            = 10,
-    ERR_TAXISAMENODE                = 11,
-    ERR_TAXINOTSTANDING             = 12
-};
-
 enum MirrorTimerType
 {
     FATIGUE_TIMER      = 0,
@@ -838,6 +820,16 @@ enum EnviromentalDamage
     DAMAGE_FALL_TO_VOID = 6                                 // custom case for fall without durability loss
 };
 
+enum PlayerChatTag
+{
+    CHAT_TAG_NONE       = 0x00,
+    CHAT_TAG_AFK        = 0x01,
+    CHAT_TAG_DND        = 0x02,
+    CHAT_TAG_GM         = 0x04,
+    CHAT_TAG_COM        = 0x08,                             // Commentator
+    CHAT_TAG_DEV        = 0x10,                             // Developer
+};
+
 enum PlayedTimeIndex
 {
     PLAYED_TIME_TOTAL = 0,
@@ -913,6 +905,13 @@ struct InstancePlayerBind
        that aren't already permanently bound when they are inside when a boss is killed
        or when they enter an instance that the group leader is permanently bound to. */
     InstancePlayerBind() : state(NULL), perm(false), extend(false) {}
+};
+
+enum PlayerRestState
+{
+    REST_STATE_RESTED       = 0x01,
+    REST_STATE_NORMAL       = 0x02,
+    REST_STATE_RAF_LINKED   = 0x04                          // Exact use unknown
 };
 
 class MANGOS_DLL_SPEC PlayerTaxi
@@ -1111,7 +1110,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void ToggleDND();
         bool isAFK() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_AFK); }
         bool isDND() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_DND); }
-        uint8 chatTag() const;
+        uint8 GetChatTag() const;
         std::string autoReplyMsg;
 
         uint32 GetBarberShopCost(uint8 newhairstyle, uint8 newhaircolor, uint8 newfacialhair, uint8 newskintone);
@@ -1682,7 +1681,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         SpellEntry const* GetKnownTalentRankById(int32 talentId) const;
 
         void AddSpellMod(Aura* aura, bool apply);
-        template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T &basevalue, Spell const* spell = NULL);
+        template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T &basevalue);
 
         static uint32 const infinityCooldownDelay = MONTH;  // used for set "infinity cooldowns" for spells and check
         static uint32 const infinityCooldownDelayCheck = MONTH/2;
@@ -1697,9 +1696,9 @@ class MANGOS_DLL_SPEC Player : public Unit
             time_t t = time(NULL);
             return itr != m_spellCooldowns.end() && itr->second.end > t ? itr->second.end - t : 0;
         }
-        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, Spell* spell = NULL, bool infinityCooldown = false );
+        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, bool infinityCooldown = false );
         void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time);
-        void SendCooldownEvent(SpellEntry const *spellInfo, uint32 itemId = 0, Spell* spell = NULL);
+        void SendCooldownEvent(SpellEntry const *spellInfo, uint32 itemId = 0);
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs );
         void RemoveSpellCooldown(uint32 spell_id, bool update = false);
         void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
@@ -2077,8 +2076,13 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void SendInitWorldStates(uint32 zone, uint32 area);
         void SendUpdateWorldState(uint32 Field, uint32 Value);
+        void _SendUpdateWorldState(uint32 Field, uint32 Value);
+        void UpdateWorldState(uint32 state, uint32 value);
+        void SendUpdatedWorldStates(bool force = false);
+        time_t const& GetLastWorldStateUpdateTime() { return m_lastWSUpdateTime; };
+        void SetLastWorldStateUpdateTime(time_t _time)   { m_lastWSUpdateTime = _time; };
+
         void SendDirectMessage(WorldPacket *data);
-        void FillBGWeekendWorldStates(WorldPacket& data, uint32& count);
 
         void SendAurasForTarget(Unit *target);
 
@@ -2194,18 +2198,19 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool GetBGAccessByLevel(BattleGroundTypeId bgTypeId) const;
         bool CanUseBattleGroundObject();
         bool isTotalImmune();
-        bool CanCaptureTowerPoint();
 
         bool GetRandomWinner() { return m_IsBGRandomWinner; }
         void SetRandomWinner(bool isWinner);
 
         /*********************************************************/
-        /***                 WORLD PVP SYSTEM                  ***/
+        /***                 OUTDOOR PVP SYSTEM                ***/
         /*********************************************************/
 
-        WorldPvP* GetWorldPvP() const;
+        bool CanUseCapturePoint();
         // returns true if the player is in active state for outdoor pvp objective capturing
-        bool IsWorldPvPActive();
+        bool CanUseOutdoorCapturePoint();
+
+        bool IsOutdoorPvPActive();
         virtual void HandleObjectiveComplete(Player* /*pPlayer*/) {};
 
         /*********************************************************/
@@ -2368,7 +2373,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq = false);
 
         // LFG
-        LFGPlayerState* GetLFGState() { return m_LFGState;};
+        LFGPlayerState* GetLFGPlayerState() { return m_LFGState;};
         uint8 GetTalentsCount(uint8 tab);
         void  ResetTalentsCount() { m_cachedTC[0] = 0; m_cachedTC[1] = 0; m_cachedTC[2] = 0;};
 
@@ -2643,6 +2648,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         uint32 m_deathTimer;
         time_t m_deathExpireTime;
+
+        time_t m_lastWSUpdateTime;
 
         uint32 m_restTime;
 

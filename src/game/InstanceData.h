@@ -20,6 +20,7 @@
 #define MANGOS_INSTANCE_DATA_H
 
 #include "Common.h"
+#include "SharedDefines.h"
 #include "ObjectGuid.h"
 
 class Map;
@@ -107,5 +108,10 @@ class MANGOS_DLL_SPEC InstanceData
         // Condition criteria additional requirements check
         // This is used for such things are heroic loot
         virtual bool CheckConditionCriteriaMeet(Player const* source, uint32 map_id, uint32 instance_condition_id);
+
+        // Set and send special encounter frame state (currently - from scripts)
+        virtual void UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 data1 = 0, uint8 data2 = 0);
+        virtual void SendSpecialEncounterState(ObjectGuid linkedGuid);
+
 };
 #endif

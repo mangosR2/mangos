@@ -796,3 +796,57 @@ void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
 
     SendPacket(&data);
 }
+
+void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
+{
+    DEBUG_LOG("WORLD: CMSG_UPDATE_MISSILE_TRAJECTORY");
+
+    ObjectGuid guid;
+    uint32 spellId;
+    float elevation, speed;
+    float srcX, srcY, srcZ;
+    float dstX, dstY, dstZ;
+    uint8 moveFlag;
+
+    recv_data >> guid;
+
+//    if (!guid.IsPlayer())
+//        return;
+
+    recv_data >> spellId;
+    recv_data >> elevation;
+    recv_data >> speed;
+    recv_data >> srcX >> srcY >> srcZ;
+    recv_data >> dstX >> dstY >> dstZ;
+    recv_data >> moveFlag;
+
+    Unit* unit = ObjectAccessor::GetUnit(*GetPlayer(), guid);
+    if (!unit)
+        return;
+
+    Spell* spell = unit ? unit->GetCurrentSpell(CURRENT_GENERIC_SPELL) : NULL;
+    if (!spell || spell->m_spellInfo->Id != spellId || !(spell->m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
+    {
+        return;
+    }
+    DEBUG_LOG("WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
+        spellId,
+        spell->m_targets.m_srcX, srcX, spell->m_targets.m_srcY, srcY, spell->m_targets.m_srcZ, srcZ,
+        spell->m_targets.m_destX, dstX, spell->m_targets.m_destY, dstY, spell->m_targets.m_destZ, dstZ,
+        spell->m_targets.GetSpeed(), speed, spell->m_targets.GetElevation(), elevation);
+
+    spell->m_targets.setSource(srcX, srcY, srcZ);
+    spell->m_targets.setDestination(dstX, dstY, dstZ);
+    spell->m_targets.SetElevation(elevation);
+    spell->m_targets.SetSpeed(speed);
+
+    if (moveFlag)
+    {
+        ObjectGuid guid2;                               // unk guid (possible - active mover) - unused
+        MovementInfo movementInfo;                      // MovementInfo
+
+        recv_data >> Unused<uint32>();                  // >> MSG_MOVE_STOP
+        recv_data >> guid.ReadAsPacked();
+        recv_data >> movementInfo;
+    }
+}

@@ -28,6 +28,13 @@ class WorldPacket;
 class WorldSession;
 class Player;
 
+enum ArenaWorldStates
+{
+    ARENA_SEASON_ID          = 3191,
+    ARENA_SEASON_PREVIOUS_ID = 3901,
+};
+
+
 enum ArenaTeamCommandTypes
 {
     ERR_ARENA_TEAM_CREATE_S                 = 0x00,

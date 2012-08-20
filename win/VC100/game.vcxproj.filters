@@ -37,7 +37,7 @@
     <Filter Include="Movement">
       <UniqueIdentifier>{0ac140f9-89c1-4830-b673-514c5e8b4d37}</UniqueIdentifier>
     </Filter>
-    <Filter Include="WorldPvP">
+    <Filter Include="OutdoorPvP">
       <UniqueIdentifier>{c25f76ed-c7d6-495a-a647-1f97b1261fa7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -279,32 +279,32 @@
     <ClCompile Include="..\..\src\game\World.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvP.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvP.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPEP.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPEP.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPGH.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPGH.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPHP.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPHP.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPMgr.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPMgr.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPNA.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPNA.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPSI.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPSI.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPTF.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPTF.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\WorldPvP\WorldPvPZM.cpp">
-      <Filter>WorldPvP</Filter>
+    <ClCompile Include="..\..\src\game\OutdoorPvP\OutdoorPvPZM.cpp">
+      <Filter>OutdoorPvP</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\ConfusedMovementGenerator.cpp">
       <Filter>Motion generators</Filter>
@@ -456,6 +456,9 @@
     <ClCompile Include="..\..\src\game\DBCStores.cpp">
       <Filter>Server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\game\DBCStructure.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\game\Opcodes.cpp">
       <Filter>Server</Filter>
     </ClCompile>
@@ -469,6 +472,9 @@
       <Filter>Server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\WorldSocketMgr.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldStateMgr.cpp">
       <Filter>Server</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\debugcmds.cpp">
@@ -798,36 +804,39 @@
     <ClInclude Include="..\..\src\game\World.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvP.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvP.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPEP.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPEP.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPGH.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPGH.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPHP.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPHP.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPMgr.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPMgr.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPNA.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPNA.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPSI.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPSI.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPTF.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPTF.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\WorldPvP\WorldPvPZM.h">
-      <Filter>WorldPvP</Filter>
+    <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPZM.h">
+      <Filter>OutdoorPvP</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="..\..\src\game\ZoneScript.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
+=======
+>>>>>>> 269d295... [12097] Add Outdoor PvP placeholders and string texts
     <ClInclude Include="..\..\src\game\ConfusedMovementGenerator.h">
       <Filter>Motion generators</Filter>
     </ClInclude>
@@ -1018,6 +1027,9 @@
       <Filter>Server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\WorldSocketMgr.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldStateMgr.h">
       <Filter>Server</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\Language.h">

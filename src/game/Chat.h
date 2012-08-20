@@ -218,7 +218,6 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleDebugSpellCheckCommand(char* args);
         bool HandleDebugSpellCoefsCommand(char* args);
         bool HandleDebugSpellModsCommand(char* args);
-        bool HandleDebugUpdateWorldStateCommand(char* args);
         bool HandleDebugEnterVehicleCommand(char* args);
         bool HandleDebugSendCalendarResultCommand(char* args);
 
@@ -622,6 +621,14 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleMmapStatsCommand(char* args);
         bool HandleMmap(char* args);
         bool HandleMmapTestArea(char* args);
+
+        // WorldState operations
+        bool HandleWorldStateCommand(char* args);
+        bool HandleWorldStateListCommand(char* args);
+        bool HandleWorldStateListAllCommand(char* args);
+        bool HandleWorldStateAddCommand(char* args);
+        bool HandleWorldStateUpdateCommand(char* args);
+        bool HandleWorldStateReloadCommand(char* args);
 
         //! Development Commands
         bool HandleSaveAllCommand(char* args);

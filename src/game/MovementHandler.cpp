@@ -209,6 +209,9 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     //lets process all delayed operations on successful teleport
     GetPlayer()->ProcessDelayedOperations();
+
+    // Set last WS update time to 0 - grant sending ALL WS updates from new map.
+    GetPlayer()->SetLastWorldStateUpdateTime(time_t(0));
 }
 
 void WorldSession::HandleMoveTeleportAckOpcode(WorldPacket& recv_data)

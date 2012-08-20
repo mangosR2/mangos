@@ -226,7 +226,7 @@ class MANGOS_DLL_SPEC Group
             std::string name;
             uint8       group;
             GroupFlagMask  flags;
-            uint8       roles;
+            LFGRoleMask roles;
             uint32      lastMap;
         };
         typedef std::list<MemberSlot> MemberSlotList;
@@ -246,7 +246,7 @@ class MANGOS_DLL_SPEC Group
         // group manipulation methods
         bool   Create(ObjectGuid guid, const char * name);
         bool   LoadGroupFromDB(Field *fields);
-        bool   LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, uint8 roles);
+        bool   LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, LFGRoleMask roles);
         bool   AddInvite(Player *player);
         uint32 RemoveInvite(Player *player);
         void   RemoveAllInvites();
@@ -375,13 +375,13 @@ class MANGOS_DLL_SPEC Group
         BoundInstancesMap& GetBoundInstances(Difficulty difficulty) { return m_boundInstances[difficulty]; }
 
         // LFG
-        LFGGroupState* GetLFGState() { return m_LFGState; };
+        LFGGroupState* GetLFGGroupState() { return m_LFGState; };
         bool ConvertToLFG(LFGType type);
         bool isLFDGroup()  const { return m_groupType & GROUPTYPE_LFD; }
         bool isLFGGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && !(m_groupType & GROUPTYPE_RAID)) ; }
         bool isLFRGroup()  const { return ((m_groupType & GROUPTYPE_LFD) && (m_groupType & GROUPTYPE_RAID)) ; }
-        void SetGroupRoles(ObjectGuid guid, uint8 roles);
-        uint8 GetGroupRoles(ObjectGuid guid);
+        void SetGroupRoles(ObjectGuid guid, LFGRoleMask roles);
+        LFGRoleMask GetGroupRoles(ObjectGuid guid);
 
         // Frozen Mod
         void BroadcastGroupUpdate(void);
@@ -389,7 +389,7 @@ class MANGOS_DLL_SPEC Group
 
     protected:
         bool _addMember(ObjectGuid guid, const char* name);
-        bool _addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags = GROUP_MEMBER, uint8 roles = 0);
+        bool _addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags = GROUP_MEMBER, LFGRoleMask roles = LFG_ROLE_MASK_NONE);
         bool _removeMember(ObjectGuid guid);                // returns true if leader has changed
         void _setLeader(ObjectGuid guid);
 

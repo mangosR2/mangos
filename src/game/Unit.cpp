@@ -42,7 +42,7 @@
 #include "Vehicle.h"
 #include "BattleGround.h"
 #include "InstanceData.h"
-#include "WorldPvP/WorldPvP.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 #include "MapPersistentStateMgr.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
@@ -715,9 +715,28 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, DamageInfo* damageInfo, Da
     }
 }
 
-uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLoss)
+uint32 Unit::DealDamage(Unit* pVictim, DamageInfo* damageInfo, bool durabilityLoss)
 {
+    if (!damageInfo)
+        return 0;
 
+    if (!damageInfo->target || damageInfo->target != pVictim)
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage wrong target definition in DealDamage of %s, try override!",
+            GetObjectGuid().GetString().c_str());
+        damageInfo->target = pVictim;
+    }
+    damageInfo->durabilityLoss = durabilityLoss;
+
+    return DealDamage(damageInfo);
+}
+
+uint32 Unit::DealDamage(DamageInfo* damageInfo)
+{
+    if (!damageInfo || !damageInfo->target)
+        return 0;
+
+    Unit* pVictim = damageInfo->target;
     SpellEntry const* spellProto = damageInfo->m_spellInfo;
 
     // Divine Storm heal hack
@@ -745,11 +764,17 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
     // Blessed Life talent of Paladin
     if ( pVictim->GetTypeId() == TYPEID_PLAYER )
     {
-        Unit::AuraList const& BlessedLife = pVictim->GetAurasByType(SPELL_AURA_PROC_TRIGGER_SPELL);
-        for(Unit::AuraList::const_iterator i = BlessedLife.begin(); i != BlessedLife.end(); ++i)
-            if((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_PALADIN && (*i)->GetSpellProto()->SpellIconID == 2137)
-                if ( urand(0,100) < (*i)->GetSpellProto()->procChance )
-                    damageInfo->damage *= 0.5;
+        AuraList const& BlessedLife = pVictim->GetAurasByType(SPELL_AURA_PROC_TRIGGER_SPELL);
+        for (AuraList::const_iterator i = BlessedLife.begin(); i != BlessedLife.end(); ++i)
+        {
+            Aura* aura = *i;
+            if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                continue;
+
+            if (aura->GetSpellProto()->SpellFamilyName == SPELLFAMILY_PALADIN && aura->GetSpellProto()->SpellIconID == 2137)
+                if ( urand(0,100) < aura->GetSpellProto()->procChance )
+                    damageInfo->damage *= 0.5f;
+        }
     }
 
     if(!damageInfo->damage)
@@ -775,45 +800,54 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         // If (this) is TYPEID_PLAYER, (this) will enter combat w/victim, but after some time, automatically leave combat.
         // It is unclear how it should work for other cases.
 
-        ((Creature*)pVictim)->SetLootRecipient(this);
+        DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "Unit::DealDamage critter, critter %s dies", pVictim->GetObjectGuid().GetString().c_str());
 
         pVictim->SetDeathState(JUST_DIED);
         pVictim->SetHealth(0);
 
-        // allow loot only if has loot_id in creature_template
-        ((Creature*)pVictim)->PrepareBodyLootState();
-        ((Creature*)pVictim)->AllLootRemovedFromCorpse();
+        ((Creature*)pVictim)->SetLootRecipient(this);
 
-        // some critters required for quests (need normal entry instead possible heroic in any cases)
-        if (GetTypeId() == TYPEID_PLAYER)
-        {
-            if (CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(pVictim->GetEntry()))
-                ((Player*)this)->KilledMonster(normalInfo, pVictim->GetObjectGuid());
-        }
-
-        if (InstanceData* mapInstance = pVictim->GetInstanceData())
-            mapInstance->OnCreatureDeath(((Creature*)pVictim));
-
-        DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "DealDamage critter, critter dies");
+        JustKilledCreature((Creature*)pVictim);
 
         return damageInfo->damage;
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"DealDamageStart");
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage DealDamageStart, value %u",damageInfo->damage);
 
-    // share damage by auras
-    AuraList const& vShareDamageAuras = pVictim->GetAurasByType(SPELL_AURA_SHARE_DAMAGE_PCT);
-    for (AuraList::const_iterator itr = vShareDamageAuras.begin(); itr != vShareDamageAuras.end(); ++itr)
+    if (!damageInfo->HasFlag(DAMAGE_SHARED))
     {
-        if (Unit* shareTarget = (*itr)->GetCaster())
+        std::vector<DamageInfo> linkedDamageList;
         {
-            if (shareTarget != pVictim && ((*itr)->GetMiscValue() & damageInfo->SchoolMask()))
+            MAPLOCK_READ(pVictim,MAP_LOCK_TYPE_AURAS);
+            // share damage by auras
+            AuraList const& vShareDamageAuras = pVictim->GetAurasByType(SPELL_AURA_SHARE_DAMAGE_PCT);
+            for (AuraList::const_iterator itr = vShareDamageAuras.begin(); itr != vShareDamageAuras.end(); ++itr)
             {
-                SpellEntry const * shareSpell = (*itr)->GetSpellProto();
-                uint32 shareDamage = uint32(damageInfo->damage * (*itr)->GetModifier()->m_amount / 100.0f);
-                DealDamageMods(shareTarget, shareDamage, NULL);
-                DealDamage(shareTarget, shareDamage, 0, damageInfo->damageType, GetSpellSchoolMask(shareSpell), spellProto, false);
+                Aura* aura = *itr;
+                if (!aura || !aura->GetHolder() || aura->GetHolder()->IsDeleted())
+                    continue;
+
+                if (Unit* shareTarget = aura->GetCaster())
+                {
+                    if (shareTarget != pVictim && (aura->GetMiscValue() & damageInfo->SchoolMask()))
+                    {
+                        SpellEntry const* shareSpell = aura->GetSpellProto();
+                        uint32 shareDamage = uint32(damageInfo->damage * aura->GetModifier()->m_amount / 100.0f);
+                        DealDamageMods(shareTarget, shareDamage, NULL);
+                        linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto));
+                        DamageInfo* sharedDamageInfo   = &linkedDamageList.back();
+                        sharedDamageInfo->cleanDamage  = shareDamage;
+                        sharedDamageInfo->damageType   = damageInfo->damageType;
+                        sharedDamageInfo->AddFlag(DAMAGE_SHARED);
+                    }
+                }
             }
+        }
+
+        while (!linkedDamageList.empty())
+        {
+            DealDamage(&linkedDamageList.back());
+            linkedDamageList.pop_back();
         }
     }
 
@@ -915,9 +949,6 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         Player *player_tap = GetCharmerOrOwnerPlayerOrPlayerItself();
         Group *group_tap = NULL;
 
-        // find owner of pVictim, used for creature cases, AI calls
-        Unit* pOwner = pVictim->GetCharmerOrOwner();
-
         // in creature kill case group/player tap stored for creature
         if (pVictim->GetTypeId() == TYPEID_UNIT)
         {
@@ -1015,10 +1046,6 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         if (GetTypeId() == TYPEID_UNIT && ((Creature*)this)->AI())
             ((Creature*)this)->AI()->KilledUnit(pVictim);
 
-        // Call World pvp scripts for player kill
-        if (pVictim->GetTypeId() == TYPEID_PLAYER && GetTypeId() == TYPEID_PLAYER)
-            sWorldPvPMgr.HandlePlayerKill((Player*)this, pVictim);
-
         // Call AI OwnerKilledUnit (for any current summoned minipet/guardian/protector)
         PetOwnerKilledUnit(pVictim);
 
@@ -1036,7 +1063,7 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         if (pVictim->GetTypeId() == TYPEID_PLAYER)
         {
             // only if not player and not controlled by player pet. And not at BG
-            if (durabilityLoss && !player_tap && !((Player*)pVictim)->InBattleGround())
+            if (damageInfo->durabilityLoss && !player_tap && !((Player*)pVictim)->InBattleGround())
             {
                 DEBUG_LOG("We are dead, loosing 10 percents durability");
                 ((Player*)pVictim)->DurabilityLossAll(0.10f,false);
@@ -1047,82 +1074,8 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         }
         else                                                // creature died
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"DealDamageNotPlayer");
-            Creature *cVictim = (Creature*)pVictim;
-
-            if(!cVictim->IsPet())
-            {
-                cVictim->DeleteThreatList();
-                // only lootable if it has loot or can drop gold
-                cVictim->PrepareBodyLootState();
-                // may have no loot, so update death timer if allowed
-                cVictim->AllLootRemovedFromCorpse();
-            }
-
-            // if vehicle and has passengers - remove his
-            if (cVictim->GetObjectGuid().IsVehicle())
-            {
-                if (cVictim->GetVehicleKit())
-                    cVictim->GetVehicleKit()->RemoveAllPassengers();
-            }
-
-            // Call creature just died function
-            if (cVictim->AI())
-                cVictim->AI()->JustDied(this);
-
-            if (cVictim->IsTemporarySummon())
-            {
-                TemporarySummon* pSummon = (TemporarySummon*)cVictim;
-                if (pSummon->GetSummonerGuid().IsCreatureOrVehicle())
-                    if(Creature* pSummoner = cVictim->GetMap()->GetCreature(pSummon->GetSummonerGuid()))
-                        if (pSummoner->AI())
-                            pSummoner->AI()->SummonedCreatureJustDied(cVictim);
-            }
-            else if (pOwner && pOwner->GetTypeId() == TYPEID_UNIT)
-            {
-                if (((Creature*)pOwner)->AI())
-                    ((Creature*)pOwner)->AI()->SummonedCreatureJustDied(cVictim);
-            }
-
-            if (InstanceData* mapInstance = cVictim->GetInstanceData())
-                mapInstance->OnCreatureDeath(cVictim);
-
-            m_zoneScript = sWorldPvPMgr.GetZoneScript(GetZoneId());
-            if (m_zoneScript)
-                m_zoneScript->OnCreatureDeath(((Creature*)cVictim));
-
-            if (cVictim->IsLinkingEventTrigger())
-                cVictim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, cVictim);
-
-            // Dungeon specific stuff, only applies to players killing creatures
-            if (cVictim->GetInstanceId())
-            {
-                Map *m = cVictim->GetMap();
-                Player* creditedPlayer = GetCharmerOrOwnerPlayerOrPlayerItself();
-                // TODO: do instance binding anyway if the charmer/owner is offline
-
-                if (m->IsDungeon() && creditedPlayer)
-                {
-                    if (m->IsRaidOrHeroicDungeon())
-                    {
-                        if (cVictim->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND)
-                            ((DungeonMap *)m)->PermBindAllPlayers(creditedPlayer);
-                    }
-                    else
-                    {
-                        DungeonPersistentState* save = ((DungeonMap*)m)->GetPersistanceState();
-                        // the reset time is set but not added to the scheduler
-                        // until the players leave the instance
-                        time_t resettime = cVictim->GetRespawnTimeEx() + 2 * HOUR;
-                        if (save->GetResetTime() < resettime)
-                            save->SetResetTime(resettime);
-                    }
-
-                    // update encounter state if needed
-                    if (DungeonPersistentState* state = ((DungeonMap*)m)->GetPersistanceState())
-                        state->UpdateEncounterState(ENCOUNTER_CREDIT_KILL_CREATURE, ((Creature*)cVictim)->GetEntry());
-                }
-            }
+            DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage Killed NPC %s", pVictim->GetObjectGuid().GetString().c_str());
+            JustKilledCreature((Creature*)pVictim);
         }
 
         // Reward player, his pets, and group/raid members
@@ -1149,10 +1102,10 @@ uint32 Unit::DealDamage(Unit *pVictim, DamageInfo* damageInfo, bool durabilityLo
         }
 
         // handle player kill in outdoor pvp
-        if (player_tap && this != pVictim)
+        if (player_tap && pVictim != this)
         {
-            if (WorldPvP* pWorldBg = player_tap->GetWorldPvP())
-                pWorldBg->HandlePlayerKillInsideArea(player_tap, pVictim);
+            if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player_tap->GetCachedZoneId()))
+                outdoorPvP->HandlePlayerKill(player_tap, pVictim);
         }
 
         // battleground things (do this at the end, so the death state flag will be properly set to handle in the bg->handlekill)
@@ -1315,6 +1268,112 @@ struct PetOwnerKilledUnitHelper
     Unit* m_victim;
 };
 
+void Unit::JustKilledCreature(Creature* victim)
+{
+    if (!victim)
+        return;
+
+    if (victim->CanHaveThreatList())
+        victim->DeleteThreatList();
+
+    if (!victim->IsPet())                                   // Prepare loot if can
+    {
+        // only lootable if it has loot or can drop gold
+        victim->PrepareBodyLootState();
+        // may have no loot, so update death timer if allowed
+        victim->AllLootRemovedFromCorpse();
+    }
+
+    // some critters required for quests (need normal entry instead possible heroic in any cases)
+    if (victim->GetCreatureType() == CREATURE_TYPE_CRITTER && GetTypeId() == TYPEID_PLAYER)
+    {
+        if (CreatureInfo const* normalInfo = ObjectMgr::GetCreatureTemplate(victim->GetEntry()))
+            ((Player*)this)->KilledMonster(normalInfo, victim->GetObjectGuid());
+    }
+
+    // if victim is vehicle and has passengers - remove his
+    if (victim->GetObjectGuid().IsVehicle())
+    {
+        if (victim->GetVehicleKit())
+            victim->GetVehicleKit()->RemoveAllPassengers();
+    }
+
+    // Interrupt channeling spell when a Possessed Summoned is killed
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(victim->GetUInt32Value(UNIT_CREATED_BY_SPELL));
+    if (spellInfo && spellInfo->HasAttribute(SPELL_ATTR_EX_FARSIGHT) && spellInfo->HasAttribute(SPELL_ATTR_EX_CHANNELED_1))
+    {
+        Unit* creator = GetMap()->GetUnit(victim->GetCreatorGuid());
+        if (creator && creator->GetCharmGuid() == victim->GetObjectGuid())
+        {
+            Spell* channeledSpell = creator->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+            if (channeledSpell && channeledSpell->m_spellInfo->Id == spellInfo->Id)
+                creator->InterruptNonMeleeSpells(false);
+        }
+    }
+
+    /* ******************************* Inform various hooks ************************************ */
+    // Inform victim's AI
+    if (victim->AI())
+        victim->AI()->JustDied(this);
+
+    // Inform Owner
+    Unit* pOwner = victim->GetCharmerOrOwner();
+    if (victim->IsTemporarySummon())
+    {
+        TemporarySummon* pSummon = (TemporarySummon*)victim;
+        if (pSummon->GetSummonerGuid().IsCreatureOrVehicle())
+            if(Creature* pSummoner = victim->GetMap()->GetCreature(pSummon->GetSummonerGuid()))
+                if (pSummoner->AI())
+                    pSummoner->AI()->SummonedCreatureJustDied(victim);
+    }
+    else if (pOwner && pOwner->GetTypeId() == TYPEID_UNIT)
+    {
+        if (((Creature*)pOwner)->AI())
+            ((Creature*)pOwner)->AI()->SummonedCreatureJustDied(victim);
+    }
+
+    // Inform Instance Data and Linking
+    if (InstanceData* mapInstance = victim->GetInstanceData())
+        mapInstance->OnCreatureDeath(victim);
+
+    // Notify the outdoor pvp script
+    if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+        outdoorPvP->HandleCreatureDeath(victim);
+
+    if (victim->IsLinkingEventTrigger())
+        victim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, victim);
+
+    // Dungeon specific stuff
+    if (victim->GetInstanceId())
+    {
+        Map* m = victim->GetMap();
+        Player* creditedPlayer = GetCharmerOrOwnerPlayerOrPlayerItself();
+        // TODO: do instance binding anyway if the charmer/owner is offline
+
+        if (m->IsDungeon() && creditedPlayer)
+        {
+            if (m->IsRaidOrHeroicDungeon())
+            {
+                if (victim->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND)
+                    ((DungeonMap*)m)->PermBindAllPlayers(creditedPlayer);
+            }
+            else
+            {
+                DungeonPersistentState* save = ((DungeonMap*)m)->GetPersistanceState();
+                // the reset time is set but not added to the scheduler
+                // until the players leave the instance
+                time_t resettime = victim->GetRespawnTimeEx() + 2 * HOUR;
+                if (save->GetResetTime() < resettime)
+                    save->SetResetTime(resettime);
+            }
+
+            // update encounter state if needed
+            if (DungeonPersistentState* state = ((DungeonMap*)m)->GetPersistanceState())
+                state->UpdateEncounterState(ENCOUNTER_CREDIT_KILL_CREATURE, victim->GetEntry());
+        }
+    }
+}
+
 void Unit::PetOwnerKilledUnit(Unit* pVictim)
 {
     // for minipet and guardians (including protector)
@@ -1385,6 +1444,13 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, 
 
     SpellCastTargets targets;
     targets.setUnitTarget( Victim );
+
+    if (spellInfo->Targets & TARGET_FLAG_DEST_LOCATION)
+        targets.setDestination(Victim->GetPositionX(), Victim->GetPositionY(), Victim->GetPositionZ());
+    if (spellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
+        if (WorldObject* caster = spell->GetCastingObject())
+            targets.setSource(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ());
+
     spell->m_CastItem = castItem;
     spell->prepare(&targets, triggeredByAura);
 
@@ -1462,6 +1528,13 @@ void Unit::CastCustomSpell(Unit* Victim, SpellEntry const *spellInfo, int32 cons
     SpellCastTargets targets;
     targets.setUnitTarget( Victim );
     spell->m_CastItem = castItem;
+
+    if (spellInfo->Targets & TARGET_FLAG_DEST_LOCATION)
+        targets.setDestination(Victim->GetPositionX(), Victim->GetPositionY(), Victim->GetPositionZ());
+    if (spellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
+        if (WorldObject* caster = spell->GetCastingObject())
+            targets.setSource(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ());
+
     spell->prepare(&targets, triggeredByAura);
 }
 
@@ -1511,7 +1584,16 @@ void Unit::CastSpell(float x, float y, float z, SpellEntry const *spellInfo, boo
     Spell *spell = new Spell(this, spellInfo, triggered, originalCaster, triggeredBy);
 
     SpellCastTargets targets;
-    targets.setDestination(x, y, z);
+
+    if (spellInfo->Targets & TARGET_FLAG_DEST_LOCATION)
+        targets.setDestination(x, y, z);
+    if (spellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION)
+        targets.setSource(x, y, z);
+
+    // Spell cast with x,y,z but without dbc target-mask, set only destination!
+    if (!(targets.m_targetMask & (TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_SOURCE_LOCATION)))
+        targets.setDestination(x, y, z);
+
     spell->m_CastItem = castItem;
     spell->prepare(&targets, triggeredByAura);
 }
@@ -4066,7 +4148,6 @@ void Unit::FinishSpell(CurrentSpellTypes spellType, bool ok /*= true*/)
     spell->finish(ok);
 }
 
-
 bool Unit::IsNonMeleeSpellCasted(bool withDelayed, bool skipChanneled, bool skipAutorepeat) const
 {
     if (!IsInWorld())
@@ -5901,12 +5982,12 @@ void Unit::RemoveDynObject(uint32 spellid)
         DynamicObject* dynObj = GetMap()->GetDynamicObject(*i);
         if(!dynObj)
         {
-            m_dynObjGUIDs.erase(i);
+            i = m_dynObjGUIDs.erase(i);
         }
         else if (spellid == 0 || dynObj->GetSpellId() == spellid)
         {
             dynObj->Delete();
-            m_dynObjGUIDs.erase(i);
+            i = m_dynObjGUIDs.erase(i);
         }
         else
             ++i;
@@ -5930,7 +6011,7 @@ DynamicObject * Unit::GetDynObject(uint32 spellId, SpellEffectIndex effIndex)
         DynamicObject* dynObj = GetMap()->GetDynamicObject(*i);
         if(!dynObj)
         {
-            m_dynObjGUIDs.erase(i);
+            i = m_dynObjGUIDs.erase(i);
             continue;
         }
 
@@ -5948,7 +6029,7 @@ DynamicObject * Unit::GetDynObject(uint32 spellId)
         DynamicObject* dynObj = GetMap()->GetDynamicObject(*i);
         if(!dynObj)
         {
-            m_dynObjGUIDs.erase(i);
+            i = m_dynObjGUIDs.erase(i);
             continue;
         }
 
@@ -5984,7 +6065,7 @@ void Unit::AddGameObject(GameObject* gameObj)
         // Need disable spell use for owner
         if (createBySpell && createBySpell->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
             // note: item based cooldowns and cooldown spell mods with charges ignored (unknown existing cases)
-            ((Player*)this)->AddSpellAndCategoryCooldowns(createBySpell, 0, NULL, true);
+            ((Player*)this)->AddSpellAndCategoryCooldowns(createBySpell, 0, true);
     }
 }
 
@@ -9992,11 +10073,12 @@ void Unit::AddThreat(Unit* pVictim, float threat /*= 0.0f*/, bool crit /*= false
 
 void Unit::DeleteThreatList()
 {
-    if (CanHaveThreatList() && !m_ThreatManager.isThreatListEmpty())
-        SendThreatClear();
-
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-    m_ThreatManager.clearReferences();
+    if (CanHaveThreatList())
+    {
+        if (!m_ThreatManager.isThreatListEmpty())
+            SendThreatClear();
+        m_ThreatManager.clearReferences();
+    }
 }
 
 //======================================================================
@@ -12906,6 +12988,7 @@ void Unit::_ExitVehicle()
     GetVehicle()->RemovePassenger(this, true);
 
     m_pVehicle = NULL;
+    clearUnitState(UNIT_STAT_ON_VEHICLE);
 
     SendHeartBeat();
 
@@ -13687,6 +13770,8 @@ void DamageInfo::Reset(uint32 _damage)
     bonusDone     = 0;
     bonusTaken    = 0;
     rage          = 0;
+    m_flags       = 0;
+    durabilityLoss= true;
     unused        = false;
     HitInfo       = HITINFO_NORMALSWING;
     TargetState   = VICTIMSTATE_UNAFFECTED;

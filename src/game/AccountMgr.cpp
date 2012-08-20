@@ -290,11 +290,11 @@ AccountOpResult AccountMgr::AddRAFLink(uint32 accid, uint32 friendid)
 
     RafLinkedList* referred = GetRAFAccounts(accid, true);
     if (referred)
-        referred->push_back(accid);
+        referred->push_back(friendid);
 
     RafLinkedList* referal = GetRAFAccounts(friendid, false);
     if (referal)
-        referal->push_back(friendid);
+        referal->push_back(accid);
 
     return AOR_OK;
 }
@@ -392,10 +392,25 @@ void AccountMgr::ClearPlayerDataCache(ObjectGuid guid)
     if (!guid || !guid.IsPlayer())
         return;
 
-    WriteGuard Guard(GetLock());
-    PlayerDataCacheMap::iterator itr = mPlayerDataCacheMap.find(guid);
-    if (itr != mPlayerDataCacheMap.end())
-        mPlayerDataCacheMap.erase(itr);
+    PlayerDataCache const* cache = GetPlayerDataCache(guid, false);
+
+    if (cache)
+    {
+        uint32 accId = cache->account;
+
+        WriteGuard Guard(GetLock());
+        PlayerDataCacheMap::iterator itr = mPlayerDataCacheMap.find(guid);
+        if (itr != mPlayerDataCacheMap.end())
+            mPlayerDataCacheMap.erase(itr);
+
+        RafLinkedMap::iterator itr1 = mRAFLinkedMap.find(std::pair<uint32,bool>(accId, true));
+        if (itr1 != mRAFLinkedMap.end())
+            mRAFLinkedMap.erase(itr1);
+        itr1 = mRAFLinkedMap.find(std::pair<uint32,bool>(accId, false));
+        if (itr1 != mRAFLinkedMap.end())
+            mRAFLinkedMap.erase(itr1);
+    }
+
 }
 
 void AccountMgr::MakePlayerDataCache(Player* player)
@@ -404,8 +419,6 @@ void AccountMgr::MakePlayerDataCache(Player* player)
         return;
 
     ObjectGuid guid = player->GetObjectGuid();
-
-    ClearPlayerDataCache(guid);
 
     WriteGuard Guard(GetLock());
 
@@ -418,7 +431,7 @@ void AccountMgr::MakePlayerDataCache(Player* player)
     mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
 }
 
-PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid)
+PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid, bool force)
 {
     PlayerDataCacheMap::const_iterator itr;
     {
@@ -427,6 +440,8 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid)
         if (itr != mPlayerDataCacheMap.end()) 
             return &itr->second;
     }
+    if (!force)
+        return NULL;
 
     Player* player = sObjectMgr.GetPlayer(guid);
     if (player)

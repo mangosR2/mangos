@@ -186,6 +186,9 @@ class SpellCastTargets
         float GetElevation() const { return m_elevation; }
         float GetSpeed()     const { return m_speed; }
 
+        void  SetElevation(float elevation) { m_elevation = elevation; }
+        void  SetSpeed(float speed)         { m_speed = speed; }
+
         uint32 m_targetMask;
 
     private:
@@ -510,6 +513,9 @@ class Spell
         // m_originalCasterGUID can store GO guid, and in this case this is visual caster
         WorldObject* GetCastingObject() const;
 
+        // Unstead of GetAffectiveCaster() not return NULL if original caster is GameObject.
+        Unit* GetAffectiveUnitCaster() const { return (m_originalCaster ? m_originalCaster : m_caster); }
+
         int32 GetPowerCost() const { return m_powerCost; }
 
         void UpdatePointers();                              // must be used at call Spell code after time delay (non triggered spell cast/update spell call/etc)
@@ -766,9 +772,20 @@ namespace MaNGOS
                     break;
                 case PUSH_DEST_CENTER:
                 {
-                    i_centerX = i_spell.m_targets.m_destX;
-                    i_centerY = i_spell.m_targets.m_destY;
-                    i_centerZ = i_spell.m_targets.m_destZ;
+                    // This hack from Schmoo - need revert in original state after rework spellsystem on separate
+                    // per-effect targeting
+                    if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
+                    {
+                        i_centerX = i_spell.m_targets.m_srcX;
+                        i_centerY = i_spell.m_targets.m_srcY;
+                        i_centerZ = i_spell.m_targets.m_srcZ;
+                    }
+                    else
+                    {
+                        i_centerX = i_spell.m_targets.m_destX;
+                        i_centerY = i_spell.m_targets.m_destY;
+                        i_centerZ = i_spell.m_targets.m_destZ;
+                    }
                     break;
                 }
                 case PUSH_INHERITED_CENTER:
@@ -784,6 +801,12 @@ namespace MaNGOS
                         i_centerX = i_spell.m_targets.m_srcX;
                         i_centerY = i_spell.m_targets.m_srcY;
                         i_centerZ = i_spell.m_targets.m_srcZ;
+                    }
+                    else
+                    {
+                        i_centerX = i_spell.m_targets.m_destX;
+                        i_centerY = i_spell.m_targets.m_destY;
+                        i_centerZ = i_spell.m_targets.m_destZ;
                     }
                     break;
                 }

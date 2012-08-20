@@ -49,6 +49,26 @@ struct MapCellObjectGuids
     CellGuidSet gameobjects;
 };
 
+struct SpecialEncounterState
+{
+    SpecialEncounterState(ObjectGuid _guid, EncounterFrameCommand _command,  uint8 _data1, uint8 _data2)
+        : guid(_guid), lastCommand(_command), data1(_data1), data2(_data2)
+    {
+        //lastCommand = ENCOUNTER_FRAME_ENGAGE;
+        active = true;
+    };
+
+    void SetCommand(EncounterFrameCommand _command) { lastCommand = _command;};
+
+    ObjectGuid guid;                       // Creature/GO(?), which linked with this state
+    EncounterFrameCommand lastCommand;     // Last command sended to this state
+    uint8 data1;
+    uint8 data2;
+    bool active;
+};
+
+typedef std::map<ObjectGuid, SpecialEncounterState> SpecialEncountersMap;
+
 typedef UNORDERED_MAP<uint32/*cell_id*/,MapCellObjectGuids> MapCellObjectGuidsMap;
 
 class MapPersistentStateManager;
@@ -237,6 +257,10 @@ class DungeonPersistentState : public MapPersistentState
 
         bool IsCompleted();
 
+        // Special (linked) encounter frame state set/send
+        void UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 data1 = 0, uint8 data2 = 0);
+        void SendSpecialEncounterState(ObjectGuid linkedGuid);
+
         /* Saved when the instance is generated for the first time */
         void SaveToDB();
         /* When the instance is being reset (permanently deleted) */
@@ -265,6 +289,8 @@ class DungeonPersistentState : public MapPersistentState
         SpawnedPoolData m_spawnedPoolData;                  // Pools spawns state for map copy
 
         uint32 m_completedEncountersMask;                   // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
+
+        SpecialEncountersMap m_specialEncountersMap;        // special (framed) encounters states
 };
 
 class BattleGroundPersistentState : public MapPersistentState

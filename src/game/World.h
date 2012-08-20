@@ -81,7 +81,8 @@ enum WorldTimers
     WUPDATE_DELETECHARS = 5,
     WUPDATE_AHBOT       = 6,
     WUPDATE_AUTOBROADCAST = 7,
-    WUPDATE_COUNT       = 8
+    WUPDATE_WORLDSTATE  = 8,
+    WUPDATE_COUNT       = 9
 };
 
 /// Configuration elements
@@ -92,6 +93,8 @@ enum eConfigUInt32Values
     CONFIG_UINT32_INTERVAL_GRIDCLEAN,
     CONFIG_UINT32_INTERVAL_MAPUPDATE,
     CONFIG_UINT32_INTERVAL_CHANGEWEATHER,
+    CONFIG_UINT32_MAPUPDATE_MAXVISITORS,
+    CONFIG_UINT32_MAPUPDATE_MAXVISITS,
     CONFIG_UINT32_PORT_WORLD,
     CONFIG_UINT32_GAME_TYPE,
     CONFIG_UINT32_REALM_ZONE,
@@ -132,6 +135,7 @@ enum eConfigUInt32Values
     CONFIG_UINT32_GM_LEVEL_IN_GM_LIST,
     CONFIG_UINT32_GM_LEVEL_IN_WHO_LIST,
     CONFIG_UINT32_START_GM_LEVEL,
+    CONFIG_UINT32_GM_INVISIBLE_AURA,
     CONFIG_UINT32_GROUP_VISIBILITY,
     CONFIG_UINT32_MAIL_DELIVERY_DELAY,
     CONFIG_UINT32_MASS_MAILER_SEND_PER_TICK,
@@ -173,8 +177,6 @@ enum eConfigUInt32Values
     CONFIG_UINT32_ARENA_MAX_RATING_DIFFERENCE,
     CONFIG_UINT32_ARENA_RATING_DISCARD_TIMER,
     CONFIG_UINT32_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS,
-    CONFIG_UINT32_ARENA_SEASON_ID,
-    CONFIG_UINT32_ARENA_SEASON_PREVIOUS_ID,
     CONFIG_UINT32_CLIENTCACHE_VERSION,
     CONFIG_UINT32_GUILD_EVENT_LOG_COUNT,
     CONFIG_UINT32_GUILD_BANK_EVENT_LOG_COUNT,
@@ -212,6 +214,7 @@ enum eConfigUInt32Values
     CONFIG_UINT32_VMSS_FREEZECHECKPERIOD,
     CONFIG_UINT32_VMSS_FREEZEDETECTTIME,
     CONFIG_UINT32_VMSS_FORCEUNLOADDELAY,
+    CONFIG_UINT32_WORLD_STATE_EXPIRETIME,
     CONFIG_UINT32_VALUE_COUNT
 };
 
@@ -360,6 +363,14 @@ enum eConfigBoolValues
     CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_JOIN,
     CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_EXIT,
     CONFIG_BOOL_ARENA_QUEUE_ANNOUNCER_START,
+    CONFIG_BOOL_OUTDOORPVP_SI_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_EP_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_HP_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_ZM_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_TF_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_NA_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_GH_ENABLED,
+    CONFIG_BOOL_OUTDOORPVP_WG_ENABLED,
     CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET,
     CONFIG_BOOL_STATS_SAVE_ONLY_ON_LOGOUT,
     CONFIG_BOOL_CLEAN_CHARACTER_DB,
@@ -574,11 +585,12 @@ class World
 
         void SendWorldText(int32 string_id, ...);
         void SendWorldTextWithSecurity(AccountTypes security, int32 string_id, ...);
-        void SendGlobalText(const char* text, WorldSession* self);
         void SendGlobalMessage(WorldPacket* packet, WorldSession* self = NULL, Team team = TEAM_NONE, AccountTypes security = SEC_PLAYER);
         void SendZoneMessage(uint32 zone, WorldPacket* packet, WorldSession* self = NULL, Team team = TEAM_NONE);
         void SendZoneText(uint32 zone, const char* text, WorldSession* self = NULL, Team team = TEAM_NONE);
         void SendServerMessage(ServerMessageType type, const char* text = "", Player* player = NULL);
+        void SendZoneUnderAttackMessage(uint32 zoneId, Team team);
+        void SendDefenseMessage(uint32 zoneId, int32 textId);
 
         /// Are we in the middle of a shutdown?
         bool IsShutdowning() const { return m_ShutdownTimer > 0; }
@@ -751,7 +763,7 @@ class World
         std::string m_CreatureEventAIVersion;
 
         // World locking for global (not-in-map) objects.
-        ObjectLockType   i_lock[MAP_LOCK_TYPE_MAX];
+        mutable ObjectLockType   i_lock[MAP_LOCK_TYPE_MAX];
 
         // reset duel system
         std::set<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system

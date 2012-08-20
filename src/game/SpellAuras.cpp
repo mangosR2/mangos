@@ -38,7 +38,7 @@
 #include "Creature.h"
 #include "Formulas.h"
 #include "BattleGround.h"
-#include "WorldPvP/WorldPvPMgr.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 #include "CreatureAI.h"
 #include "ScriptMgr.h"
 #include "Util.h"
@@ -48,6 +48,7 @@
 #include "CellImpl.h"
 #include "InstanceData.h"
 #include "Language.h"
+#include "MapManager.h"
 
 #define NULL_AURA_SLOT 0xFF
 
@@ -1521,10 +1522,23 @@ void Aura::TriggerSpell()
                     }
 //                    // Pain Spike
 //                    case 25572: break;
-//                    // Rotate 360
-//                    case 26009: break;
-//                    // Rotate -360
-//                    case 26136: break;
+                    case 26009:                             // Rotate 360
+                    case 26136:                             // Rotate -360
+                    {
+                        float newAngle = target->GetOrientation();
+
+                        if (auraId == 26009)
+                            newAngle += M_PI_F/40;
+                        else
+                            newAngle -= M_PI_F/40;
+
+                        MapManager::NormalizeOrientation(newAngle);
+
+                        target->SetFacingTo(newAngle);
+
+                        target->CastSpell(target, 26029, true);
+                        return;
+                    }
 //                    // Consume
 //                    case 26196: break;
 //                    // Berserk
@@ -1886,6 +1900,16 @@ void Aura::TriggerSpell()
 //                    case 46981: break;
 //                    // Dragonblight Ram
 //                    case 47015: break;
+                    case 51121:                             // Time Bomb
+                    case 59376:
+                    {
+                        if (target)
+                        {
+                            int32 healthMissing = target->GetMaxHealth() - target->GetHealth();
+                            target->CastCustomSpell(target, 51132, &healthMissing, NULL, NULL, true);
+                        }
+                        return;
+                    }
 //                    // Party G.R.E.N.A.D.E.
 //                    case 51510: break;
 //                    // Horseman Abilities
@@ -5868,14 +5892,13 @@ void Aura::HandleAuraModEffectImmunity(bool apply, bool /*Real*/)
     if ( !apply && target->GetTypeId() == TYPEID_PLAYER
         && (GetSpellProto()->AuraInterruptFlags & AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION) )
     {
-        if ( BattleGround *bg = ((Player*)target)->GetBattleGround() )
-            bg->EventPlayerDroppedFlag(((Player*)target));
-        else
-        {
-            sWorldPvPMgr.HandleDropFlag((Player*)target, GetSpellProto()->Id);
-            if (InstanceData* mapInstance = ((Player*)target)->GetInstanceData())
-                mapInstance->OnPlayerDroppedFlag((Player*)target, GetSpellProto()->Id);
-        }
+        Player* player = (Player*)target;
+        if (BattleGround* bg = player->GetBattleGround())
+            bg->EventPlayerDroppedFlag(player);
+        else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player->GetCachedZoneId()))
+            outdoorPvP->HandleDropFlag(player, GetSpellProto()->Id);
+        else if (InstanceData* mapInstance = player->GetInstanceData())
+            mapInstance->OnPlayerDroppedFlag(player, GetId());
     }
 
     target->ApplySpellImmune(GetId(), IMMUNITY_EFFECT, m_modifier.m_miscvalue, apply);
@@ -7201,19 +7224,6 @@ void Aura::HandleAuraModIncreaseEnergy(bool apply, bool Real)
 
     UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + powerType);
 
-    // Special case with temporary increase max/current power (percent)
-    if (GetId()==64904)                                     // Hymn of Hope
-    {
-        if (Real)
-        {
-            uint32 val = target->GetPower(powerType);
-            target->HandleStatModifier(unitMod, TOTAL_PCT, float(m_modifier.m_amount), apply);
-            target->SetPower(powerType, apply ? val*(100+m_modifier.m_amount)/100 : val*100/(100+m_modifier.m_amount));
-        }
-        return;
-    }
-
-    // generic flat case
     target->HandleStatModifier(unitMod, TOTAL_VALUE, float(m_modifier.m_amount), apply);
 }
 
@@ -9704,8 +9714,8 @@ void Aura::PeriodicDummyTick()
                 {
                     // Sweep around
                     float newAngle = target->GetOrientation() + (spell->Id == 68875 ? 0.09f : 2*M_PI_F - 0.09f);
-                    if (newAngle > 2*M_PI_F)
-                        newAngle -= 2*M_PI_F;
+
+                    MapManager::NormalizeOrientation(newAngle);
 
                     target->SetFacingTo(newAngle);
 
@@ -10630,7 +10640,7 @@ void SpellAuraHolder::_AddSpellAuraHolder()
         if (m_spellProto->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
         {
             Item* castItem = m_castItemGuid ? ((Player*)caster)->GetItemByGuid(m_castItemGuid) : NULL;
-            ((Player*)caster)->AddSpellAndCategoryCooldowns(m_spellProto,castItem ? castItem->GetEntry() : 0, NULL,true);
+            ((Player*)caster)->AddSpellAndCategoryCooldowns(m_spellProto,castItem ? castItem->GetEntry() : 0,true);
         }
     }
 
@@ -12371,7 +12381,7 @@ void SpellAuraHolder::Update(uint32 diff)
             float max_range = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellProto->rangeIndex));
 
             if(Player* modOwner = caster->GetSpellModOwner())
-                modOwner->ApplySpellMod(GetId(), SPELLMOD_RANGE, max_range, NULL);
+                modOwner->ApplySpellMod(GetId(), SPELLMOD_RANGE, max_range);
 
             if(!caster->IsWithinDistInMap(m_target, max_range))
             {

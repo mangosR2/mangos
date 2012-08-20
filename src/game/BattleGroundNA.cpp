@@ -131,11 +131,11 @@ void BattleGroundNA::HandleAreaTrigger(Player *Source, uint32 Trigger)
     //    HandleTriggerBuff(buff_guid,Source);
 }
 
-void BattleGroundNA::FillInitialWorldStates(WorldPacket &data, uint32& count)
+void BattleGroundNA::FillInitialWorldStates()
 {
-    FillInitialWorldState(data, count, 0xa0f, GetAlivePlayersCountByTeam(ALLIANCE));
-    FillInitialWorldState(data, count, 0xa10, GetAlivePlayersCountByTeam(HORDE));
-    FillInitialWorldState(data, count, 0xa11, 1);
+    FillInitialWorldState(0xa0f, GetAlivePlayersCountByTeam(ALLIANCE));
+    FillInitialWorldState(0xa10, GetAlivePlayersCountByTeam(HORDE));
+    FillInitialWorldState(0xa11, 1);
 }
 
 void BattleGroundNA::Reset()

@@ -211,20 +211,6 @@ bool ChatHandler::HandleDebugSendOpcodeCommand(char* /*args*/)
     return true;
 }
 
-bool ChatHandler::HandleDebugUpdateWorldStateCommand(char* args)
-{
-    uint32 world;
-    if (!ExtractUInt32(&args, world))
-        return false;
-
-    uint32 state;
-    if (!ExtractUInt32(&args, state))
-        return false;
-
-    m_session->GetPlayer()->SendUpdateWorldState(world, state);
-    return true;
-}
-
 bool ChatHandler::HandleDebugPlayCinematicCommand(char* args)
 {
     // USAGE: .debug play cinematic #cinematicid

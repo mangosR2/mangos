@@ -41,7 +41,7 @@
 #include "GridNotifiersImpl.h"
 #include "ObjectPosSelector.h"
 #include "TemporarySummon.h"
-#include "WorldPvP/WorldPvPMgr.h"
+#include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "movement/packet_builder.h"
 
 #define TERRAIN_LOS_STEP_DISTANCE   3.0f        // sample distance for terrain LoS
@@ -1018,7 +1018,7 @@ void Object::MarkForClientUpdate()
 
 WorldObject::WorldObject()
     : m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0),
-    m_isActiveObject(false), m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_phaseMask(PHASEMASK_NORMAL), m_zoneScript(NULL)
+    m_isActiveObject(false), m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_phaseMask(PHASEMASK_NORMAL)
 {
 }
 
@@ -1662,15 +1662,6 @@ void WorldObject::AddObjectToRemoveList()
     GetMap()->AddObjectToRemoveList(this);
 }
 
-void WorldObject::SetZoneScript()
-{
-    if (Map *map = GetMap())
-    {
-        if (!map->IsBattleGroundOrArena() && !map->IsDungeon())
-            m_zoneScript = sWorldPvPMgr.GetZoneScript(GetZoneId());
-    }
-}
-
 Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, float ang,TempSummonType spwtype,uint32 despwtime, bool asActiveObject)
 {
     CreatureInfo const *cinfo = ObjectMgr::GetCreatureTemplate(id);
@@ -2210,4 +2201,15 @@ void WorldObject::SetActiveObjectState(bool active)
             GetMap()->AddToActive(this);
     }
     m_isActiveObject = active;
+}
+
+void WorldObject::UpdateWorldState(uint32 state, uint32 value)
+{
+    if (GetMap())
+        sWorldStateMgr.SetWorldStateValueFor(GetMap(), state, value);
+}
+
+uint32 WorldObject::GetWorldState(uint32 stateId)
+{
+    return sWorldStateMgr.GetWorldStateValueFor(this, stateId);
 }

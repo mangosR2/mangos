@@ -41,10 +41,10 @@ class VehicleInfo
 
 struct VehicleSeat
 {
-    VehicleSeat(VehicleSeatEntry const *pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(NULL) {}
+    VehicleSeat(VehicleSeatEntry const *pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(ObjectGuid()) {}
 
     VehicleSeatEntry const* seatInfo;
-    Unit* passenger;
+    ObjectGuid              passenger;
     bool IsProtectPassenger() const;
 };
 

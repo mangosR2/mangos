@@ -36,6 +36,7 @@
 #include "InstanceData.h"
 #include "ProgressBar.h"
 #include "LFGMgr.h"
+#include "WorldStateMgr.h"
 
 INSTANTIATE_SINGLETON_1( MapPersistentStateManager );
 
@@ -306,7 +307,7 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
     {
         DungeonEncounterEntry const* dbcEntry = itr->second->dbcEntry;
 
-        if (itr->second->creditType == type && dbcEntry->Difficulty == GetDifficulty() && dbcEntry->mapId == GetMapId())
+        if (itr->second->creditType == type && Difficulty(dbcEntry->Difficulty) == GetDifficulty() && dbcEntry->mapId == GetMapId())
         {
             uint32 oldMask = m_completedEncountersMask;
             m_completedEncountersMask |= 1 << dbcEntry->encounterIndex;
@@ -341,6 +342,72 @@ void DungeonPersistentState::UpdateEncounterState(EncounterCreditType type, uint
             return;
         }
     }
+}
+
+void DungeonPersistentState::UpdateSpecialEncounterState(EncounterFrameCommand command, ObjectGuid linkedGuid, uint8 param1 /*= 0*/, uint8 param2 /*= 0*/)
+{
+    if (linkedGuid.IsEmpty())
+        return;
+
+    SpecialEncountersMap::iterator itr = m_specialEncountersMap.find(linkedGuid);
+
+    if (itr == m_specialEncountersMap.end())
+        m_specialEncountersMap.insert(SpecialEncountersMap::value_type(linkedGuid,SpecialEncounterState(linkedGuid, command, param1, param2)));
+    else
+    {
+        itr->second.SetCommand(command);
+        itr->second.data1 = param1;
+        itr->second.data2 = param2;
+    }
+
+    SendSpecialEncounterState(linkedGuid);
+}
+
+void DungeonPersistentState::SendSpecialEncounterState(ObjectGuid guid)
+{
+    // Possible need move this method to DungeonMap class
+    DungeonMap* dungeon = (DungeonMap*)GetMap();
+    if (!dungeon || guid.IsEmpty())
+        return;
+
+    SpecialEncountersMap::iterator itr = m_specialEncountersMap.find(guid);
+
+    if (itr == m_specialEncountersMap.end())
+        return;
+
+    SpecialEncounterState* state = &itr->second;
+
+    if (!state || state->lastCommand >= ENCOUNTER_FRAME_MAX)
+        return;
+
+    // size of this packet is at most 15 (usually less)
+    WorldPacket data(SMSG_INSTANCE_ENCOUNTER, 15);
+
+    data << uint32(state->lastCommand);
+
+    switch (state->lastCommand)
+    {
+        case ENCOUNTER_FRAME_ENGAGE:
+        case ENCOUNTER_FRAME_DISENGAGE:
+        case ENCOUNTER_FRAME_UPDATE_PRIORITY:
+            data << state->guid.WriteAsPacked();
+            data << uint8(state->data1);
+            break;
+        case ENCOUNTER_FRAME_ADD_TIMER:
+        case ENCOUNTER_FRAME_ENABLE_OBJECTIVE:
+        case ENCOUNTER_FRAME_DISABLE_OBJECTIVE:
+            data << uint8(state->data1);
+            break;
+        case ENCOUNTER_FRAME_UPDATE_OBJECTIVE:
+            data << uint8(state->data1);
+            data << uint8(state->data2);
+            break;
+        case ENCOUNTER_FRAME_UNK7:
+        default:
+            break;
+    }
+
+    dungeon->SendToPlayers(&data);
 }
 
 time_t DungeonPersistentState::GetResetTimeForDB() const
@@ -559,8 +626,8 @@ void DungeonResetScheduler::LoadResetTimes()
 
         // schedule the global reset/warning
         ResetEventType type = RESET_EVENT_INFORM_1;
-        for(; type < RESET_EVENT_INFORM_LAST; type = ResetEventType(type+1))
-            if(t - resetEventTypeDelay[type] > now)
+        for (; type < RESET_EVENT_INFORM_LAST; type = ResetEventType(type + 1))
+            if (t > time_t(now + resetEventTypeDelay[type]))
                 break;
 
         ScheduleReset(true, t - resetEventTypeDelay[type], DungeonResetEvent(type, mapid, difficulty, 0));
@@ -641,8 +708,8 @@ void DungeonResetScheduler::Update()
                 SetResetTimeFor(event.mapid, event.difficulty, next_reset);
 
                 ResetEventType type = RESET_EVENT_INFORM_1;
-                for (; type < RESET_EVENT_INFORM_LAST; type = ResetEventType(type+1))
-                    if (next_reset - resetEventTypeDelay[type] > now)
+                for (; type < RESET_EVENT_INFORM_LAST; type = ResetEventType(type + 1))
+                    if (next_reset > time_t(now + resetEventTypeDelay[type]))
                         break;
 
                 // add new scheduler event to the queue
@@ -697,7 +764,7 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
         }
     }
 
-    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = %ld, canReset = %u", mapEntry->MapID, instanceId, resetTime, canReset ? 1 : 0);
+    DEBUG_LOG("MapPersistentStateManager::AddPersistentState: mapid = %d, instanceid = %d, reset time = '" UI64FMTD "', canRset = %u", mapEntry->MapID, instanceId, uint64(resetTime), canReset ? 1 : 0);
 
     MapPersistentState *state;
     if (mapEntry->IsDungeon() && instanceId)
@@ -725,6 +792,9 @@ MapPersistentState* MapPersistentStateManager::AddPersistentState(MapEntry const
 
     if (state && initPools)
         state->InitPools();
+
+    if (state)
+        sWorldStateMgr.CreateInstanceState(mapEntry->MapID, instanceId);
 
     return state;
 }
@@ -762,6 +832,7 @@ void MapPersistentStateManager::RemovePersistentState(uint32 mapId, uint32 insta
     if (lock_instLists)
         return;
 
+    sWorldStateMgr.DeleteInstanceState(mapId, instanceId);
     if (instanceId)
     {
         PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.find(instanceId);
@@ -776,6 +847,7 @@ void MapPersistentStateManager::RemovePersistentState(uint32 mapId, uint32 insta
                 }
 
             _ResetSave(m_instanceSaveByInstanceId, itr);
+            sWorldStateMgr.DeleteInstanceState(mapId, instanceId);
         }
     }
     else

@@ -379,7 +379,7 @@ struct GameObjectInfo
             uint32 empty10;                                 //20
             uint32 empty11;                                 //21
             uint32 damageEvent;                             //22
-            uint32 empty12;                                 //23
+            uint32 linkedWorldState;                        //23 Custom value - set linked WorldState for this object
         } destructibleBuilding;
         //34 GAMEOBJECT_TYPE_GUILDBANK - empty
         //35 GAMEOBJECT_TYPE_TRAPDOOR
@@ -598,20 +598,24 @@ enum LootState
 enum CapturePointState
 {
     CAPTURE_STATE_NEUTRAL = 0,
-    CAPTURE_STATE_PROGRESS,
-    CAPTURE_STATE_CONTEST,
-    CAPTURE_STATE_WIN
+    CAPTURE_STATE_PROGRESS_ALLIANCE,
+    CAPTURE_STATE_PROGRESS_HORDE,
+    CAPTURE_STATE_CONTEST_ALLIANCE,
+    CAPTURE_STATE_CONTEST_HORDE,
+    CAPTURE_STATE_WIN_ALLIANCE,
+    CAPTURE_STATE_WIN_HORDE
 };
 
-// slider values meaning
-// 0   = full horde
-// 100 = full alliance
-// 50  = middle
 enum CapturePointSlider
 {
-    CAPTURE_SLIDER_ALLIANCE = 100,
-    CAPTURE_SLIDER_HORDE    = 0,
-    CAPTURE_SLIDER_NEUTRAL  = 50
+    CAPTURE_SLIDER_ALLIANCE         = 100,                  // full alliance
+    CAPTURE_SLIDER_HORDE            = 0,                    // full horde
+    CAPTURE_SLIDER_NEUTRAL          = 50,                   // middle
+
+    CAPTURE_SLIDER_ALLIANCE_LOCKED  = -1,                   // used to store additional information
+    CAPTURE_SLIDER_HORDE_LOCKED     = -2,
+
+    CAPTURE_SLIDER_GET_VALUE        = INT8_MAX,             // used for get value from linked WorldState (or still intact)
 };
 
 class Unit;
@@ -688,6 +692,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         {
             m_respawnTime = respawn > 0 ? time(NULL) + respawn : 0;
             m_respawnDelayTime = respawn > 0 ? uint32(respawn) : 0;
+            EnableCollision(CalculateCurrentCollisionState());
         }
         void Respawn();
         bool isSpawned() const
@@ -697,6 +702,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
                 (m_respawnTime == 0 && m_spawnedByDefault);
         }
         bool isSpawnedByDefault() const { return m_spawnedByDefault; }
+        void SetSpawnedByDefault(bool SpawnedByDefault) { m_spawnedByDefault = SpawnedByDefault; } // set summoned object spawning/despawning after delay
         void SetRespawnDelay(uint32 delay) { m_respawnDelayTime = delay; };
         uint32 GetRespawnDelay() const { return m_respawnDelayTime; }
         void Refresh();
@@ -718,6 +724,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void SetDisplayId(uint32 modelId);
         void SetPhaseMask(uint32 newPhaseMask, bool update);
         void EnableCollision(bool enable);
+        bool CalculateCurrentCollisionState() const;
 
         float GetObjectBoundingRadius() const;              // overwrite WorldObject version
 
@@ -778,6 +785,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         GameObject* LookupFishingHoleAround(float range);
 
+        void SetCapturePointSlider(int8 value);
+
         GridReference<GameObject> &GetGridRef() { return m_gridRef; }
 
         bool IsInRange(float x, float y, float z, float radius) const;
@@ -788,14 +797,16 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32 GetMaxHealth() const { return m_goInfo->destructibleBuilding.intactNumHits + m_goInfo->destructibleBuilding.damagedNumHits; }
 
         float GetDeterminativeSize(bool b_priorityZ = false) const;
+        uint32 GetLinkedWorldState(bool stateId = false);
+        void SetLinkedWorldState(uint32 value);
+        Team GetTeam() const;
+        bool SetTeam(Team team);
 
         GameObjectModel* m_model;
 
     protected:
         uint32      m_captureTime;
         float       m_captureTicks;
-        CapturePointState m_captureState;
-        uint32      m_ownerFaction;                         // faction which has conquered the capture point
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),
         uint32      m_respawnDelayTime;                     // (secs) if 0 then current GO state no dependent from timer
@@ -805,9 +816,9 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         uint32      m_health;
                                                             // For traps/goober this: spell casting cooldown, for doors/buttons: reset time.
 
-        typedef std::set<Player*> PlayersSet;
-
-        GuidSet m_capturePlayers[PVP_TEAM_COUNT];           // player sets for each faction
+        uint32      m_captureTimer;                         // (msecs) timer used for capture points
+        float       m_captureSlider;
+        CapturePointState m_captureState;
 
         GuidSet m_SkillupSet;                               // players that already have skill-up at GO use
 
@@ -832,6 +843,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);
         void UpdateModel();                                 // updates model in case displayId were changed
+        void TickCapturePoint();
 
         GridReference<GameObject> m_gridRef;
 };

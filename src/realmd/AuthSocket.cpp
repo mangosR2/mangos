@@ -24,6 +24,7 @@
 #include "Database/DatabaseEnv.h"
 #include "Config/Config.h"
 #include "Log.h"
+#include "Util.h"
 #include "RealmList.h"
 #include "AuthSocket.h"
 #include "AuthCodes.h"
@@ -372,41 +373,43 @@ bool AuthSocket::_HandleLogonChallenge()
     _safelogin = _login;
     LoginDatabase.escape_string(_safelogin);
 
-    pkt << (uint8) CMD_AUTH_LOGON_CHALLENGE;
-    pkt << (uint8) 0x00;
+    // Starting CMD_AUTH_LOGON_CHALLENGE
+    AuthResult result = WOW_FAIL_UNKNOWN0;
 
     ///- Verify that this IP is not in the ip_banned table
     // No SQL injection possible (paste the IP address as passed by the socket)
     std::string address = get_remote_address();
     LoginDatabase.escape_string(address);
-    QueryResult *result = LoginDatabase.PQuery("SELECT unbandate FROM ip_banned WHERE "
+    QueryResult* qresult = LoginDatabase.PQuery("SELECT unbandate FROM ip_banned WHERE "
     //    permanent                    still banned
         "(unbandate = bandate OR unbandate > UNIX_TIMESTAMP()) AND ip = '%s'", address.c_str());
-    if (result)
+
+    if (qresult)
     {
-        pkt << (uint8)WOW_FAIL_BANNED;
+        result = WOW_FAIL_BANNED;
         BASIC_LOG("[AuthChallenge] Banned ip %s tries to login!", get_remote_address().c_str());
-        delete result;
+        delete qresult;
     }
     else
     {
         ///- Get the account details from the account table
         // No SQL injection (escaped user name)
 
-        result = LoginDatabase.PQuery("SELECT sha_pass_hash,id,locked,last_ip,gmlevel,v,s FROM account WHERE username = '%s'",_safelogin.c_str());
-        if (result)
+        qresult = LoginDatabase.PQuery("SELECT sha_pass_hash,id,locked,last_ip,gmlevel,v,s FROM account WHERE username = '%s'",_safelogin.c_str());
+
+        if (qresult)
         {
             ///- If the IP is 'locked', check that the player comes indeed from the correct IP address
             bool locked = false;
-            if ((*result)[2].GetUInt8() == 1)                // if ip is locked
+            if ((*qresult)[2].GetUInt8() == 1)                // if ip is locked
             {
-                DEBUG_LOG("[AuthChallenge] Account '%s' is locked to IP - '%s'", _login.c_str(), (*result)[3].GetString());
+                DEBUG_LOG("[AuthChallenge] Account '%s' is locked to IP - '%s'", _login.c_str(), (*qresult)[3].GetString());
                 DEBUG_LOG("[AuthChallenge] Player address is '%s'", get_remote_address().c_str());
-                if ( strcmp((*result)[3].GetString(),get_remote_address().c_str()) )
+                if ( strcmp((*qresult)[3].GetString(),get_remote_address().c_str()) )
                 {
                     DEBUG_LOG("[AuthChallenge] Account IP differs");
-                    pkt << (uint8) WOW_FAIL_SUSPENDED;
-                    locked=true;
+                    result = WOW_FAIL_SUSPENDED;
+                    locked = true;
                 }
                 else
                 {
@@ -420,7 +423,7 @@ bool AuthSocket::_HandleLogonChallenge()
 
             if (!locked)
             {
-                uint32 accId = (*result)[1].GetUInt32();
+                uint32 accId = (*qresult)[1].GetUInt32();
                 ///- If the account is banned, reject the logon attempt
                 QueryResult* banresult = LoginDatabase.PQuery("SELECT bandate,unbandate FROM account_banned WHERE "
                     "id = %u AND active = 1 AND (unbandate > UNIX_TIMESTAMP() OR unbandate = bandate)", accId);
@@ -428,12 +431,12 @@ bool AuthSocket::_HandleLogonChallenge()
                 {
                     if ((*banresult)[0].GetUInt64() == (*banresult)[1].GetUInt64())
                     {
-                        pkt << (uint8) WOW_FAIL_BANNED;
+                        result = WOW_FAIL_BANNED;
                         BASIC_LOG("[AuthChallenge] Banned account %s (Id: %u) tries to login!", _login.c_str(), accId);
                     }
                     else
                     {
-                        pkt << (uint8) WOW_FAIL_SUSPENDED;
+                        result = WOW_FAIL_SUSPENDED;
                         BASIC_LOG("[AuthChallenge] Temporarily banned account %s (Id: %u) tries to login!",_login.c_str(), accId);
                     }
 
@@ -442,11 +445,11 @@ bool AuthSocket::_HandleLogonChallenge()
                 else
                 {
                     ///- Get the password from the account table, upper it, and make the SRP6 calculation
-                    std::string rI = (*result)[0].GetCppString();
+                    std::string rI = (*qresult)[0].GetCppString();
 
                     ///- Don't calculate (v, s) if there are already some in the database
-                    std::string databaseV = (*result)[5].GetCppString();
-                    std::string databaseS = (*result)[6].GetCppString();
+                    std::string databaseV = (*qresult)[5].GetCppString();
+                    std::string databaseS = (*qresult)[6].GetCppString();
 
                     DEBUG_LOG("database authentication values: v='%s' s='%s'", databaseV.c_str(), databaseS.c_str());
 
@@ -459,50 +462,9 @@ bool AuthSocket::_HandleLogonChallenge()
                         v.SetHexStr(databaseV.c_str());
                     }
 
-                    b.SetRand(19 * 8);
-                    BigNumber gmod = g.ModExp(b, N);
-                    B = ((v * 3) + gmod) % N;
+                    result = WOW_SUCCESS;
 
-                    MANGOS_ASSERT(gmod.GetNumBytes() <= 32);
-
-                    BigNumber unk3;
-                    unk3.SetRand(16 * 8);
-
-                    ///- Fill the response packet with the result
-                    pkt << uint8(WOW_SUCCESS);
-
-                    // B may be calculated < 32B so we force minimal length to 32B
-                    pkt.append(B.AsByteArray(32), 32);      // 32 bytes
-                    pkt << uint8(1);
-                    pkt.append(g.AsByteArray(), 1);
-                    pkt << uint8(32);
-                    pkt.append(N.AsByteArray(32), 32);
-                    pkt.append(s.AsByteArray(), s.GetNumBytes());// 32 bytes
-                    pkt.append(unk3.AsByteArray(16), 16);
-                    uint8 securityFlags = 0;
-                    pkt << uint8(securityFlags);            // security flags (0x0...0x04)
-
-                    if (securityFlags & 0x01)               // PIN input
-                    {
-                        pkt << uint32(0);
-                        pkt << uint64(0) << uint64(0);      // 16 bytes hash?
-                    }
-
-                    if (securityFlags & 0x02)               // Matrix input
-                    {
-                        pkt << uint8(0);
-                        pkt << uint8(0);
-                        pkt << uint8(0);
-                        pkt << uint8(0);
-                        pkt << uint64(0);
-                    }
-
-                    if (securityFlags & 0x04)               // Security token input
-                    {
-                        pkt << uint8(1);
-                    }
-
-                    uint8 secLevel = (*result)[4].GetUInt8();
+                    uint8 secLevel = (*qresult)[4].GetUInt8();
                     _accountSecurityLevel = secLevel <= SEC_ADMINISTRATOR ? AccountTypes(secLevel) : SEC_ADMINISTRATOR;
 
                     _localizationName.resize(4);
@@ -512,13 +474,139 @@ bool AuthSocket::_HandleLogonChallenge()
                     BASIC_LOG("[AuthChallenge] account %s (Id: %u) is using '%c%c%c%c' locale (%u)", _login.c_str (), accId, ch->country[3], ch->country[2], ch->country[1], ch->country[0], GetLocaleByName(_localizationName));
                 }
             }
-            delete result;
+            delete qresult;
         }
-        else                                                // no account
+        else if (sConfig.GetBoolDefault("AutoRegistration", false))
         {
-            pkt<< (uint8) WOW_FAIL_UNKNOWN_ACCOUNT;
+            if (_safelogin.find_first_of("\t\v\b\f\a\n\r\\\"\'\? <>[](){}_=+-|/!@#$%^&*~`.,\0") == _safelogin.npos && _safelogin.length() > 3)
+            {
+                QueryResult* checkIPresult = LoginDatabase.PQuery("SELECT COUNT(last_ip) FROM account WHERE last_ip = '%s'",get_remote_address().c_str());
+
+                uint32 regCount = checkIPresult ? (*checkIPresult)[0].GetUInt32() : 0;
+
+                if (regCount >= sConfig.GetIntDefault("AutoRegistration.Amount", 1))
+                {
+                    BASIC_LOG("[AuthChallenge] Impossible auto-register account %s, number of auto-registered accouts is %u, but allowed only %u",
+                         _safelogin.c_str(),regCount, sConfig.GetIntDefault("AutoRegistration.Amount", 1));
+//                    result = WOW_FAIL_DB_BUSY;
+                    result = WOW_FAIL_DISCONNECTED;
+                }
+                else
+                {
+                    std::transform(_safelogin.begin(), _safelogin.end(), _safelogin.begin(), std::towupper); 
+
+                    Sha1Hash sha;
+                    sha.Initialize();
+                    sha.UpdateData(_safelogin);
+                    sha.UpdateData(":");
+                    sha.UpdateData(_safelogin);
+                    sha.Finalize();
+
+                    std::string encoded;
+                    hexEncodeByteArray(sha.GetDigest(), sha.GetLength(), encoded);
+
+                    LoginDatabase.PExecute("INSERT INTO account(username,sha_pass_hash,joindate) VALUES('%s','%s',NOW())", _safelogin.c_str(), encoded.c_str());
+
+                    _SetVSFields(encoded);
+
+                    BASIC_LOG("[AuthChallenge] account %s auto-registered (count %u)!",_safelogin.c_str(), ++regCount);
+
+                    result = WOW_SUCCESS;
+                    _accountSecurityLevel = SEC_PLAYER;
+
+                    _localizationName.resize(4);
+                    for (int i = 0; i < 4; ++i)
+                        _localizationName[i] = ch->country[4-i-1];
+                }
+
+                if (checkIPresult)
+                    delete checkIPresult;
+            }
         }
+        else
+            result = WOW_FAIL_UNKNOWN_ACCOUNT;
     }
+
+    pkt << uint8(CMD_AUTH_LOGON_CHALLENGE);
+    pkt << uint8(0x00);
+    pkt << uint8(result);
+
+    switch (result)
+    {
+        case WOW_SUCCESS:
+        {
+            b.SetRand(19 * 8);
+            BigNumber gmod = g.ModExp(b, N);
+            B = ((v * 3) + gmod) % N;
+
+            MANGOS_ASSERT(gmod.GetNumBytes() <= 32);
+
+            BigNumber unk3;
+            unk3.SetRand(16 * 8);
+
+            // B may be calculated < 32B so we force minimal length to 32B
+            pkt.append(B.AsByteArray(32), 32);      // 32 bytes
+            pkt << uint8(1);
+            pkt.append(g.AsByteArray(), 1);
+            pkt << uint8(32);
+            pkt.append(N.AsByteArray(32), 32);
+            pkt.append(s.AsByteArray(), s.GetNumBytes());// 32 bytes
+            pkt.append(unk3.AsByteArray(16), 16);
+            uint8 securityFlags = 0;
+            pkt << uint8(securityFlags);            // security flags (0x0...0x04)
+
+            if (securityFlags & 0x01)               // PIN input
+            {
+                pkt << uint32(0);
+                pkt << uint64(0) << uint64(0);      // 16 bytes hash?
+            }
+
+            if (securityFlags & 0x02)               // Matrix input
+            {
+                pkt << uint8(0);
+                pkt << uint8(0);
+                pkt << uint8(0);
+                pkt << uint8(0);
+                pkt << uint64(0);
+            }
+
+            if (securityFlags & 0x04)               // Security token input
+            {
+                pkt << uint8(1);
+            }
+
+            break;
+        }
+        case WOW_FAIL_UNKNOWN0:
+        case WOW_FAIL_UNKNOWN1:
+        case WOW_FAIL_SUSPENDED:
+        case WOW_FAIL_BANNED:
+        case WOW_FAIL_UNKNOWN_ACCOUNT:
+        case WOW_FAIL_INCORRECT_PASSWORD:
+        case WOW_FAIL_ALREADY_ONLINE:
+        case WOW_FAIL_NO_TIME:
+        case WOW_FAIL_DB_BUSY:
+        case WOW_FAIL_VERSION_INVALID:
+        case WOW_FAIL_VERSION_UPDATE:
+        case WOW_FAIL_INVALID_SERVER:
+        case WOW_FAIL_FAIL_NOACCESS:
+        case WOW_SUCCESS_SURVEY:
+        case WOW_FAIL_PARENTCONTROL:
+        case WOW_FAIL_LOCKED_ENFORCED:
+        case WOW_FAIL_TRIAL_ENDED:
+        case WOW_FAIL_USE_BATTLENET:
+        case WOW_FAIL_TOO_FAST:
+        case WOW_FAIL_CHARGEBACK:
+        case WOW_FAIL_GAME_ACCOUNT_LOCKED:
+        case WOW_FAIL_INTERNET_GAME_ROOM_WITHOUT_BNET:
+        case WOW_FAIL_UNLOCKABLE_LOCK:
+        case WOW_FAIL_DISCONNECTED:
+            break;
+        default:
+            BASIC_LOG("[AuthChallenge] unknown CMD_AUTH_LOGON_CHALLENGE execution result %u!", result);
+            break;
+    }
+
     send((char const*)pkt.contents(), pkt.size());
     return true;
 }

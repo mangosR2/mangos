@@ -271,6 +271,9 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void SetMapWeather(WeatherState state, float grade);
         bool SetZoneWeather(uint32 zoneId, WeatherType type, float grade);
 
+        // WorldState operations
+        void UpdateWorldState(uint32 state, uint32 value);
+
         // Attacker per-map storage operations
         void AddAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
         void RemoveAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
@@ -391,7 +394,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // Holder for information about linked mobs
         CreatureLinkingHolder m_creatureLinkingHolder;
 
-        ObjectLockType      i_lock[MAP_LOCK_TYPE_MAX];
+        mutable ObjectLockType  i_lock[MAP_LOCK_TYPE_MAX];
         AttackersMap        m_attackersMap;
         bool                m_broken;
 

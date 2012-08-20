@@ -321,7 +321,7 @@ class BattleGroundAV : public BattleGround
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
         // world states
-        virtual void FillInitialWorldStates(WorldPacket& data, uint32& count);
+        virtual void FillInitialWorldStates();
 
         void RemovePlayer(Player *plr, ObjectGuid guid);
         void HandleAreaTrigger(Player *Source, uint32 Trigger);
@@ -359,9 +359,9 @@ class BattleGroundAV : public BattleGround
 
         void PopulateNode(BG_AV_Nodes node);
 
-        uint32 GetNodeName(BG_AV_Nodes node);
-        const bool IsTower(BG_AV_Nodes node) { return (node == BG_AV_NODES_ERROR)? false : m_Nodes[node].Tower; }
-        const bool IsGrave(BG_AV_Nodes node) { return (node == BG_AV_NODES_ERROR)? false : !m_Nodes[node].Tower; }
+        uint32 GetNodeName(BG_AV_Nodes node) const;
+        bool IsTower(BG_AV_Nodes node) const { return (node == BG_AV_NODES_ERROR) ? false : m_Nodes[node].Tower; }
+        bool IsGrave(BG_AV_Nodes node) const { return (node == BG_AV_NODES_ERROR) ? false : !m_Nodes[node].Tower; }
 
         /*mine*/
         void ChangeMineOwner(uint8 mine, TeamIndex teamIdx);

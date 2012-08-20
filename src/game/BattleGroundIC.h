@@ -308,7 +308,7 @@ class BattleGroundIC : public BattleGround
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
         virtual void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy = 0);
-        virtual void FillInitialWorldStates(WorldPacket& data, uint32& count);
+        virtual void FillInitialWorldStates();
         virtual void HandleKillUnit(Creature *unit, Player *killer);
         virtual void HandleKillPlayer(Player* player, Player* killer);
         virtual void Reset();

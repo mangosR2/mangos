@@ -27,6 +27,7 @@
 #include "Util.h"
 #include "WorldPacket.h"
 #include "MapManager.h"
+#include "DBCStores.h"                                      // TODO REMOVE this when graveyard handling for pvp is updated
 
 BattleGroundAB::BattleGroundAB()
 {
@@ -261,18 +262,18 @@ int32 BattleGroundAB::_GetNodeNameId(uint8 node)
     return 0;
 }
 
-void BattleGroundAB::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void BattleGroundAB::FillInitialWorldStates()
 {
     const uint8 plusArray[] = {0, 2, 3, 0, 1};
 
     // Node icons
     for (uint8 node = 0; node < BG_AB_NODES_MAX; ++node)
-        FillInitialWorldState(data, count, BG_AB_OP_NODEICONS[node], m_Nodes[node]==0);
+        FillInitialWorldState(BG_AB_OP_NODEICONS[node], m_Nodes[node]==0);
 
     // Node occupied states
     for (uint8 node = 0; node < BG_AB_NODES_MAX; ++node)
         for (uint8 i = 1; i < BG_AB_NODES_MAX; ++i)
-            FillInitialWorldState(data, count, BG_AB_OP_NODESTATES[node] + plusArray[i], m_Nodes[node]==i);
+            FillInitialWorldState(BG_AB_OP_NODESTATES[node] + plusArray[i], m_Nodes[node]==i);
 
     // How many bases each team owns
     uint8 ally = 0, horde = 0;
@@ -282,17 +283,17 @@ void BattleGroundAB::FillInitialWorldStates(WorldPacket& data, uint32& count)
         else if (m_Nodes[node] == BG_AB_NODE_STATUS_HORDE_OCCUPIED)
             ++horde;
 
-    FillInitialWorldState(data, count, BG_AB_OP_OCCUPIED_BASES_ALLY, ally);
-    FillInitialWorldState(data, count, BG_AB_OP_OCCUPIED_BASES_HORDE, horde);
+    FillInitialWorldState(BG_AB_OP_OCCUPIED_BASES_ALLY, ally);
+    FillInitialWorldState(BG_AB_OP_OCCUPIED_BASES_HORDE, horde);
 
     // Team scores
-    FillInitialWorldState(data, count, BG_AB_OP_RESOURCES_MAX,      BG_AB_MAX_TEAM_SCORE);
-    FillInitialWorldState(data, count, BG_AB_OP_RESOURCES_WARNING,  BG_AB_WARNING_NEAR_VICTORY_SCORE);
-    FillInitialWorldState(data, count, BG_AB_OP_RESOURCES_ALLY,     m_TeamScores[TEAM_INDEX_ALLIANCE]);
-    FillInitialWorldState(data, count, BG_AB_OP_RESOURCES_HORDE,    m_TeamScores[TEAM_INDEX_HORDE]);
+    FillInitialWorldState(BG_AB_OP_RESOURCES_MAX,      BG_AB_MAX_TEAM_SCORE);
+    FillInitialWorldState(BG_AB_OP_RESOURCES_WARNING,  BG_AB_WARNING_NEAR_VICTORY_SCORE);
+    FillInitialWorldState(BG_AB_OP_RESOURCES_ALLY,     m_TeamScores[TEAM_INDEX_ALLIANCE]);
+    FillInitialWorldState(BG_AB_OP_RESOURCES_HORDE,    m_TeamScores[TEAM_INDEX_HORDE]);
 
     // other unknown
-    FillInitialWorldState(data, count, 0x745, 0x2);         // 37 1861 unk
+    FillInitialWorldState(0x745, 0x2);         // 37 1861 unk
 }
 
 void BattleGroundAB::_SendNodeUpdate(uint8 node)

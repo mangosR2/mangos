@@ -1931,6 +1931,48 @@ private:
     };
 };
 
+struct SpellEntry;
+
+struct SpellEffectEntry
+{
+    SpellEffectEntry(SpellEntry const* spellEntry, SpellEffectIndex i);
+
+    //uint32        Id;                                         // 0        m_ID
+    uint32        Effect;                                       // 73-75    m_effect
+    float         EffectMultipleValue;                          // 106-108  m_effectAmplitude
+    uint32        EffectApplyAuraName;                          // 100-102  m_effectAura
+    uint32        EffectAmplitude;                              // 103-105  m_effectAuraPeriod
+    int32         EffectBasePoints;                             // 82-84    m_effectBasePoints (don't must be used in spell/auras explicitly, must be used cached Spell::m_currentBasePoints)
+    //float         unk_320_4;                                  // 169-171  3.2.0
+    float         DmgMultiplier;                                // 156-158  m_effectChainAmplitude
+    uint32        EffectChainTarget;                            // 109-111  m_effectChainTargets
+    int32         EffectDieSides;                               // 76-78    m_effectDieSides
+    uint32        EffectItemType;                               // 112-114  m_effectItemType
+    uint32        EffectMechanic;                               // 85-87    m_effectMechanic
+    int32         EffectMiscValue;                              // 115-117  m_effectMiscValue
+    int32         EffectMiscValueB;                             // 118-120  m_effectMiscValueB
+    float         EffectPointsPerComboPoint;                    // 124-126  m_effectPointsPerCombo
+    uint32        EffectRadiusIndex;                            // 94-96    m_effectRadiusIndex - spellradius.dbc
+    //uint32        EffectRadiusMaxIndex;                       // 97-99    4.0.0
+    float         EffectRealPointsPerLevel;                     // 79-81    m_effectRealPointsPerLevel
+    ClassFamilyMask EffectSpellClassMask;                       // 127-129  m_effectSpellClassMask
+    uint32        EffectTriggerSpell;                           // 121-123  m_effectTriggerSpell
+    uint32        EffectImplicitTargetA;                        // 88-90    m_implicitTargetA
+    uint32        EffectImplicitTargetB;                        // 91-93    m_implicitTargetB
+    uint32        EffectSpellId;                                // new 4.0.0
+    uint32        EffectIndex;                                  // new 4.0.0
+    //uint32        unk;                                        // 24 - 4.2.0
+    // helpers
+
+    int32 CalculateSimpleValue() const { return EffectBasePoints; };
+
+    void Initialize(const SpellEntry* spellEntry, SpellEffectIndex i);
+
+    private:
+        SpellEffectEntry() {};
+        SpellEffectEntry(SpellEffectEntry const&) {};
+};
+
 #define MAX_SPELL_REAGENTS 8
 #define MAX_SPELL_TOTEMS 2
 #define MAX_SPELL_TOTEM_CATEGORIES 2
@@ -2144,6 +2186,18 @@ struct SpellEntry
     inline bool HasAttribute(SpellAttributesEx6 attribute) const { return AttributesEx6 & attribute; }
     inline bool HasAttribute(SpellAttributesEx7 attribute) const { return AttributesEx7 & attribute; }
 
+    inline uint32 GetMechanic() const { return Mechanic; };
+    inline uint32 GetManaCost() const { return manaCost; };
+    inline uint32 GetSpellFamilyName() const { return SpellFamilyName; };
+    inline uint32 GetAuraInterruptFlags() const { return AuraInterruptFlags; };
+    inline uint32 GetStackAmount() const { return StackAmount; };
+    inline uint32 GetEffectImplicitTargetAByIndex(SpellEffectIndex j) const { return EffectImplicitTargetA[j];};
+    inline uint32 GetEffectImplicitTargetBByIndex(SpellEffectIndex j) const { return EffectImplicitTargetB[j];};
+    inline uint32 GetEffectApplyAuraNameByIndex(SpellEffectIndex j) const   { return EffectApplyAuraName[j];};
+    inline uint32 GetEffectMiscValue(SpellEffectIndex j) const              { return EffectMiscValue[j];};
+
+    SpellEffectEntry const* GetSpellEffect(SpellEffectIndex j) const;
+
     private:
         // prevent creating custom entries (copy data from original in fact)
         SpellEntry(SpellEntry const&);                      // DON'T must have implementation
@@ -2152,6 +2206,12 @@ struct SpellEntry
         template<typename T>
         bool IsFitToFamilyMask(SpellFamily family, T t) const;
 };
+
+
+// A few fields which are required for automated convertion
+// NOTE that these fields are count by _skipping_ the fields that are unused!
+#define LOADED_SPELLDBC_FIELD_POS_EQUIPPED_ITEM_CLASS  65   // Must be converted to -1
+#define LOADED_SPELLDBC_FIELD_POS_SPELLNAME_0          132  // Links to "MaNGOS server-side spell"
 
 struct SpellCastTimesEntry
 {
@@ -2531,7 +2591,7 @@ struct WorldStateEntry
     uint32    m_zone;                                       // 2        WorldState bind zone (0 - on battlegrounds)
     uint32    m_flags;                                      // 3
 //    char*     m_uiIcon;                                   // 4
-//    char*     m_uiMessage1[16]                            // 5-20
+    char*     m_uiMessage1[16];                             // 5-20
 //    uint32    m_flags1;                                   // 21       string flags
 //    char*     m_uiMessage2[16]                            // 22-37
 //    uint32    m_flags2;                                   // 38       string flags
@@ -2540,9 +2600,9 @@ struct WorldStateEntry
 //    char*     m_uiIcon2;                                  // 41
 //    char*     m_uiMessage3[16]                            // 42-57
 //    uint32    m_flags3;                                   // 58       string flags
-//    char*     m_uiType;                                   // 59       only CAPTUREPOINT type, or NULL
-//    uint32    m_unk60;                                    // 60
-//    uint32    m_unk61;                                    // 61
+    char*     m_uiType;                                     // 59       only CAPTUREPOINT type, or NULL
+    uint32    m_linked1;                                    // 60
+    uint32    m_linked2;                                    // 61
 //    uint32    m_unk62;                                    // 62       only 0
 };
 
@@ -2578,6 +2638,25 @@ struct TalentSpellPos
 };
 
 typedef std::map<uint32,TalentSpellPos> TalentSpellPosMap;
+
+struct SpellEffect
+{
+    SpellEffectEntry const* effects[MAX_EFFECT_INDEX];
+
+    SpellEffect()
+    {
+        for (uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
+            effects[SpellEffectIndex(i)] = NULL;
+    }
+
+    ~SpellEffect()
+    {
+        for (uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
+            delete effects[SpellEffectIndex(i)];
+    }
+};
+
+typedef std::map<uint32, SpellEffect> SpellEffectMap;
 
 struct TaxiPathBySourceAndDestination
 {

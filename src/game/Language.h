@@ -951,6 +951,9 @@ enum MangosStrings
     LANG_DOT_DAMAGE                     = 1206,
     // Room for more debug                1207-1299 not used
 
+    // Broadcaster
+    LANG_AUTO_BROADCAST                 = 1300,
+
     // Reserved for old client release branches specific strings
     // Room for old clients 2.x           1300-1399 not used
     // Room for old clients 1.x           1400-1499 not used
@@ -965,71 +968,66 @@ enum MangosStrings
     LANG_NPC_EVENTAI_PHASE              = 1506,
     LANG_NPC_EVENTAI_MOVE               = 1507,
     LANG_NPC_EVENTAI_COMBAT             = 1508,
-    // Room for more Level 2              1509-1599 not used
+    // Room for more Level 2              1509-1549 not used
 
-    // FREE IDS                           1600-9999
+    // Level 2 (worldstate operations)
+    LANG_WORLDSTATE_LIST                = 1550,
+    LANG_WORLDSTATE_LIST_FULL           = 1551,
+    LANG_WORLDSTATE_SET                 = 1552,
+    LANG_WORLDSTATE_UPDATE              = 1553,
+    LANG_WORLDSTATE_UPDATE_FULL         = 1554,
+    LANG_WORLDSTATE_RELOAD              = 1555,
+    LANG_WORLDSTATE_ERROR               = 1556,
+    LANG_WORLDSTATE_SETTINGS            = 1557,
+    // Room for more Level 2              1559-1599 not used
 
-    // Broadcaster
-    LANG_AUTO_BROADCAST                 = 1300,
+    // Outdoor PvP
+    LANG_OPVP_EP_CAPTURE_NPT_H          = 1600,
+    LANG_OPVP_EP_CAPTURE_NPT_A          = 1601,
+    LANG_OPVP_EP_CAPTURE_CGT_H          = 1602,
+    LANG_OPVP_EP_CAPTURE_CGT_A          = 1603,
+    LANG_OPVP_EP_CAPTURE_EWT_H          = 1604,
+    LANG_OPVP_EP_CAPTURE_EWT_A          = 1605,
+    LANG_OPVP_EP_CAPTURE_PWT_H          = 1606,
+    LANG_OPVP_EP_CAPTURE_PWT_A          = 1607,
 
-    // Use for not-in-offcial-sources patches
-    //                                    10000-10999
+    LANG_OPVP_HP_CAPTURE_OVERLOOK_H     = 1608,
+    LANG_OPVP_HP_CAPTURE_OVERLOOK_A     = 1609,
+    LANG_OPVP_HP_CAPTURE_STADIUM_H      = 1610,
+    LANG_OPVP_HP_CAPTURE_STADIUM_A      = 1611,
+    LANG_OPVP_HP_CAPTURE_BROKENHILL_H   = 1612,
+    LANG_OPVP_HP_CAPTURE_BROKENHILL_A   = 1613,
 
-    LANG_OPVP_SI_CAPTURE_H              = 10001,
-    LANG_OPVP_SI_CAPTURE_A              = 10002,
+    LANG_OPVP_ZM_CAPTURE_EAST_BEACON_H  = 1614,
+    LANG_OPVP_ZM_CAPTURE_EAST_BEACON_A  = 1615,
+    LANG_OPVP_ZM_CAPTURE_WEST_BEACON_H  = 1616,
+    LANG_OPVP_ZM_CAPTURE_WEST_BEACON_A  = 1617,
+    LANG_OPVP_ZM_CAPTURE_BOTH_BEACONS_H = 1618,
+    LANG_OPVP_ZM_CAPTURE_BOTH_BEACONS_A = 1619,
+    LANG_OPVP_ZM_SPAWN_FIELD_SCOUT_H    = 1620,
+    LANG_OPVP_ZM_SPAWN_FIELD_SCOUT_A    = 1621,
+    LANG_OPVP_ZM_CAPTURE_GRAVEYARD_H    = 1622,
+    LANG_OPVP_ZM_CAPTURE_GRAVEYARD_A    = 1623,
 
-    LANG_OPVP_EP_CAPTURE_NPT_H          = 10003,
-    LANG_OPVP_EP_CAPTURE_NPT_A          = 10004,
-    LANG_OPVP_EP_CAPTURE_EWT_H          = 10005,
-    LANG_OPVP_EP_CAPTURE_EWT_A          = 10006,
-    LANG_OPVP_EP_CAPTURE_CGT_H          = 10007,
-    LANG_OPVP_EP_CAPTURE_CGT_A          = 10008,
-    LANG_OPVP_EP_CAPTURE_PWT_H          = 10009,
-    LANG_OPVP_EP_CAPTURE_PWT_A          = 10010,
-    LANG_OPVP_EP_LOOSE_NPT_H            = 10011,
-    LANG_OPVP_EP_LOOSE_NPT_A            = 10012,
-    LANG_OPVP_EP_LOOSE_EWT_H            = 10013,
-    LANG_OPVP_EP_LOOSE_EWT_A            = 10014,
-    LANG_OPVP_EP_LOOSE_CGT_H            = 10015,
-    LANG_OPVP_EP_LOOSE_CGT_A            = 10016,
-    LANG_OPVP_EP_LOOSE_PWT_H            = 10017,
-    LANG_OPVP_EP_LOOSE_PWT_A            = 10018,
+    LANG_OPVP_TF_CAPTURE_TOWER_H        = 1624,
+    LANG_OPVP_TF_CAPTURE_TOWER_A        = 1625,
+    LANG_OPVP_TF_LOSE_TOWER_H           = 1626,
+    LANG_OPVP_TF_LOSE_TOWER_A           = 1627,
+    LANG_OPVP_TF_CAPTURE_ALL_TOWERS_H   = 1628,
+    LANG_OPVP_TF_CAPTURE_ALL_TOWERS_A   = 1629,
 
-    LANG_OPVP_HP_CAPTURE_OVERLOOK_H     = 10019,
-    LANG_OPVP_HP_CAPTURE_OVERLOOK_A     = 10020,
-    LANG_OPVP_HP_CAPTURE_STADIUM_H      = 10021,
-    LANG_OPVP_HP_CAPTURE_STADIUM_A      = 10022,
-    LANG_OPVP_HP_CAPTURE_BROKENHILL_H   = 10023,
-    LANG_OPVP_HP_CAPTURE_BROKENHILL_A   = 10024,
-    LANG_OPVP_HP_LOOSE_OVERLOOK_H       = 10025,
-    LANG_OPVP_HP_LOOSE_OVERLOOK_A       = 10026,
-    LANG_OPVP_HP_LOOSE_STADIUM_H        = 10027,
-    LANG_OPVP_HP_LOOSE_STADIUM_A        = 10028,
-    LANG_OPVP_HP_LOOSE_BROKENHILL_H     = 10029,
-    LANG_OPVP_HP_LOOSE_BROKENHILL_A     = 10030,
+    LANG_OPVP_NA_PROGRESS_H             = 1630,
+    LANG_OPVP_NA_PROGRESS_A             = 1631,
+    LANG_OPVP_NA_CAPTURE_H              = 1632,
+    LANG_OPVP_NA_CAPTURE_A              = 1633,
+    LANG_OPVP_NA_DEFENSELESS            = 1634,
 
-    LANG_OPVP_ZM_CAPTURE_WEST_H         = 10031,
-    LANG_OPVP_ZM_CAPTURE_WEST_A         = 10032,
-    LANG_OPVP_ZM_CAPTURE_EAST_H         = 10033,
-    LANG_OPVP_ZM_CAPTURE_EAST_A         = 10034,
-    LANG_OPVP_ZM_CAPTURE_GY_H           = 10035,
-    LANG_OPVP_ZM_CAPTURE_GY_A           = 10036,
-    LANG_OPVP_ZM_LOOSE_WEST_H           = 10037,
-    LANG_OPVP_ZM_LOOSE_WEST_A           = 10038,
-    LANG_OPVP_ZM_LOOSE_EAST_H           = 10039,
-    LANG_OPVP_ZM_LOOSE_EAST_A           = 10040,
-    LANG_OPVP_ZM_LOOSE_GY_H             = 10041,
-    LANG_OPVP_ZM_LOOSE_GY_A             = 10042,
+    LANG_OPVP_SI_CAPTURE_H              = 1635,
+    LANG_OPVP_SI_CAPTURE_A              = 1636,
 
-    LANG_OPVP_TF_CAPTURE_H              = 10047,
-    LANG_OPVP_TF_CAPTURE_A              = 10048,
-    LANG_OPVP_TF_LOOSE_H                = 10049,
-    LANG_OPVP_TF_LOOSE_A                = 10050,
+    // FREE IDS                           1700-9999
 
-    LANG_OPVP_NA_CAPTURE_H              = 10043,
-    LANG_OPVP_NA_CAPTURE_A              = 10044,
-    LANG_OPVP_NA_LOOSE_H                = 10045,
-    LANG_OPVP_NA_LOOSE_A                = 10046,
+    // Use for not-in-official-sources patches
 
     // Use for custom patches             11000-11999
     LANG_COMMAND_FRIEND                 = 11133,

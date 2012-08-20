@@ -73,7 +73,7 @@ namespace MaNGOS
                 data << ObjectGuid(targetGuid);
                 data << uint32(strlen(text)+1);
                 data << text;
-                data << uint8(i_source ? i_source->chatTag() : uint8(0));
+                data << uint8(i_source ? i_source->GetChatTag() : CHAT_TAG_NONE);
             }
 
             ChatMsg i_msgtype;
@@ -197,7 +197,7 @@ namespace MaNGOS
                 data << ObjectGuid(targetGuid);
                 data << uint32(strlen(str)+1);
                 data << str;
-                data << uint8(i_source ? i_source->chatTag() : uint8(0));
+                data << uint8(i_source ? i_source->GetChatTag() : CHAT_TAG_NONE);
             }
         private:
 
@@ -2119,4 +2119,9 @@ uint32 BattleGround::GetPlayerScore(Player *Source, uint32 type)
             sLog.outError("BattleGround: Unknown player score type %u", type);
             return 0;
     }
+}
+
+void BattleGround::FillInitialWorldState(uint32 stateId, uint32 value)
+{
+    sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_BATTLEGROUND);
 }

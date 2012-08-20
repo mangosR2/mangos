@@ -21,7 +21,7 @@
 #define _STATEMGR_H
 
 #include "ObjectHandler.h"
-#include "LockedVector.h"
+#include "LockedMap.h"
 #include "Common.h"
 #include "MotionMaster.h"
 #include "StateMgrImpl.h"
@@ -34,21 +34,22 @@
 class Unit;
 class UnitStateMgr;
 
-struct ActionInfo
+class ActionInfo
 {
+public:
     ActionInfo(UnitActionId _Id, UnitActionPtr _action, UnitActionPriority _priority, bool _restoreable)
         : Id(_Id), action(_action), priority(_priority), restoreable(_restoreable), m_flags(0)
-    {
-    }
+    {}
+
     ~ActionInfo() {};
 
-    bool operator < (const ActionInfo& val) const;
     bool operator == (ActionInfo& val);
     bool operator == (UnitActionPtr _action);
     bool operator != (ActionInfo& val);
     bool operator != (UnitActionPtr _action);
 
     void Delete();
+    void Reset(UnitStateMgr* mgr);
     void Initialize(UnitStateMgr* mgr);
     void Finalize(UnitStateMgr* mgr);
     void Interrupt(UnitStateMgr* mgr);
@@ -56,6 +57,9 @@ struct ActionInfo
     UnitActionPtr Action() { return action; };
 
     const char* TypeName() const;
+
+    UnitActionId GetId() const             { return Id; };
+    UnitActionPriority GetPriority() const { return priority; };
 
     uint32 const&  GetFlags();
     void           SetFlags(uint32 flags);
@@ -68,10 +72,14 @@ struct ActionInfo
     UnitActionPriority priority;
     uint32             m_flags;
     bool               restoreable;
+
+    private:
+    // Don't must be created uninitialized
+    ActionInfo() {};
+//    ActionInfo(ActionInfo const& _action) {};
 };
 
-//typedef std::map<UnitActionPriority, ActionInfo> UnitActionStorage;
-typedef ACE_Based::LockedVector<ActionInfo> UnitActionStorage;
+typedef ACE_Based::LockedMap<UnitActionPriority, ActionInfo> UnitActionStorage;
 
 class UnitStateMgr
 {
@@ -105,11 +113,13 @@ public:
     ActionInfo* GetAction(UnitActionPriority priority);
     ActionInfo* GetAction(UnitActionPtr _action);
 
+    UnitActionStorage const& GetActions() { return m_actions; };
+
     UnitActionPtr CurrentAction();
     ActionInfo*   CurrentState();
 
-    UnitActionId  GetCurrentState() { return CurrentState() ? CurrentState()->Id : UNIT_ACTION_IDLE; };
-    Unit*         GetOwner() const  { return m_owner; };
+    UnitActionId  GetCurrentState()  const { return m_actions.empty() ? UNIT_ACTION_IDLE : m_actions.rbegin()->second.GetId(); };
+    Unit*         GetOwner()         const { return m_owner; };
 
     std::string const GetOwnerStr();
 

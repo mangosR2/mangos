@@ -217,7 +217,7 @@ bool Group::LoadGroupFromDB(Field* fields)
     return true;
 }
 
-bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, uint8 roles)
+bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags, LFGRoleMask roles)
 {
     MemberSlot member;
     member.guid      = ObjectGuid(HIGHGUID_PLAYER, guidLow);
@@ -237,7 +237,7 @@ bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags
     if (player)
     {
         if (player->IsInWorld())
-            player->GetLFGState()->SetRoles(roles);
+            player->GetLFGPlayerState()->SetRoles(roles);
     }
 
     return true;
@@ -1088,8 +1088,8 @@ void Group::SendUpdate()
         data << (isLFGGroup() ? uint8(citr->roles) : uint8(0)); // roles mask
         if(isLFGGroup())
         {
-            uint32 dungeonID = GetLFGState()->GetDungeon() ? GetLFGState()->GetDungeon()->ID : 0;
-            data << uint8(GetLFGState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
+            uint32 dungeonID = GetLFGGroupState()->GetDungeon() ? GetLFGGroupState()->GetDungeon()->ID : 0;
+            data << uint8(GetLFGGroupState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
             data << uint32(dungeonID);
         }
         data << GetObjectGuid();                            // group guid
@@ -1186,10 +1186,10 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
     // get first not-full group
     uint8 groupid = 0;
     GroupFlagMask flags   = GROUP_MEMBER;
-    uint8 roles   = 0;
+    LFGRoleMask roles = LFG_ROLE_MASK_NONE;
 
     if (isLFGGroup() && sObjectMgr.GetPlayer(guid))
-        roles = sObjectMgr.GetPlayer(guid)->GetLFGState()->GetRoles();
+        roles = sObjectMgr.GetPlayer(guid)->GetLFGPlayerState()->GetRoles();
 
     if (m_subGroupsCounts)
     {
@@ -1210,7 +1210,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
     return _addMember(guid, name, groupid, flags, roles);
 }
 
-bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags, uint8 roles)
+bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlagMask flags, LFGRoleMask roles)
 {
     if (IsFull())
         return false;
@@ -2135,7 +2135,7 @@ bool Group::ConvertToLFG(LFGType type)
     return true;
 }
 
-void Group::SetGroupRoles(ObjectGuid guid, uint8 roles)
+void Group::SetGroupRoles(ObjectGuid guid, LFGRoleMask roles)
 {
     for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
     {
@@ -2151,12 +2151,12 @@ void Group::SetGroupRoles(ObjectGuid guid, uint8 roles)
     }
 }
 
-uint8 Group::GetGroupRoles(ObjectGuid guid)
+LFGRoleMask Group::GetGroupRoles(ObjectGuid guid)
 {
     for (member_witerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
     {
         if (itr->guid == guid)
             return itr->roles;
     }
-    return 0;
+    return LFG_ROLE_MASK_NONE;
 }

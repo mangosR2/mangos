@@ -432,7 +432,7 @@ struct CreatureCreatePos
     public:
         Map* GetMap() const { return m_map; }
         uint32 GetPhaseMask() const { return m_phaseMask; }
-        void SelectFinalPoint(Creature* cr);
+        void SelectFinalPoint(Creature* cr, bool checkLOS = false);
         bool Relocate(Creature* cr) const;
 
         // read only after SelectFinalPoint
@@ -495,7 +495,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         bool IsTemporarySummon() const { return m_subtype == CREATURE_SUBTYPE_TEMPORARY_SUMMON; }
 
         bool IsCorpse() const { return getDeathState() ==  CORPSE; }
-        bool IsDespawned() const { return getDeathState() ==  DEAD; }
+        virtual bool IsDespawned() const { return getDeathState() ==  DEAD; }
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
         bool IsRacialLeader() const { return GetCreatureInfo()->RacialLeader; }
         bool IsCivilian() const { return GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN; }

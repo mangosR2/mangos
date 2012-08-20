@@ -41,7 +41,7 @@
 #include "InstanceData.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGroundMgr.h"
-#include "WorldPvP/WorldPvPMgr.h"
+#include "OutdoorPvP/OutdoorPvP.h"
 #include "Spell.h"
 #include "Util.h"
 #include "GridNotifiers.h"
@@ -130,7 +130,7 @@ bool ForcedDespawnDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
-void CreatureCreatePos::SelectFinalPoint(Creature* cr)
+void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
 {
     // if object provided then selected point at specific dist/angle from object forward look
     if (m_closeObject)
@@ -140,6 +140,14 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr)
             m_pos.x = m_closeObject->GetPositionX();
             m_pos.y = m_closeObject->GetPositionY();
             m_pos.z = m_closeObject->GetPositionZ();
+        }
+        else if (checkLOS)
+        {
+            m_closeObject->GetClosePoint(m_pos.x, m_pos.y, m_pos.z, 0.0f, m_dist + m_closeObject->GetObjectBoundingRadius(), m_angle);
+            float ox, oy, oz;
+            m_closeObject->GetPosition(ox, oy, oz);
+            m_map->GetHitPosition(ox, oy, oz, m_pos.x, m_pos.y, m_pos.z, GetPhaseMask(), -0.5f);
+            m_closeObject->UpdateAllowedPositionZ(m_pos.x, m_pos.y, m_pos.z);
         }
         else
             m_closeObject->GetClosePoint(m_pos.x, m_pos.y, m_pos.z, cr->GetObjectBoundingRadius(), m_dist, m_angle);
@@ -456,7 +464,7 @@ uint32 Creature::ChooseDisplayId(const CreatureInfo *cinfo, const CreatureData *
         // Where it's expected to select one of two, model must have a alternative model defined (alternative model is normally the same as defined in ModelId1).
         // Same pattern is used in the above model selection, but the result may be ModelId3 and not ModelId2 as here.
         uint32 modelid_tmp = sObjectMgr.GetCreatureModelAlternativeModel(cinfo->ModelId[1]);
-        display_id = modelid_tmp ? modelid_tmp : cinfo->ModelId[1];
+        display_id = modelid_tmp ? cinfo->ModelId[urand(0, 1)] : cinfo->ModelId[1];
     }
     else if (cinfo->ModelId[0])
     {
@@ -529,8 +537,8 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 if (AI())
                     AI()->JustRespawned();
 
-                if (m_zoneScript)
-                    m_zoneScript->OnCreatureRespawn(this);
+                if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+                    outdoorPvP->HandleCreatureRespawn(this);
 
                 if (m_isCreatureLinkingTrigger)
                     GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, this);
@@ -814,10 +822,9 @@ bool Creature::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo cons
     if (InstanceData* iData = GetMap()->GetInstanceData())
         iData->OnCreatureCreate(this);
 
-    // Init and notify outdoor pvp script
-    SetZoneScript();
-    if (m_zoneScript)
-        m_zoneScript->OnCreatureCreate(this);
+    // Notify the outdoor pvp script
+    if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+        outdoorPvP->HandleCreatureCreate(this);
 
     switch (GetCreatureInfo()->rank)
     {
@@ -2035,14 +2042,10 @@ bool Creature::LoadCreatureAddon(bool reload)
     return true;
 }
 
-/// Send a message to LocalDefense channel for players opposition team in the zone
+/// Sends a message to LocalDefense and WorldDefense channels for players of the other team
 void Creature::SendZoneUnderAttackMessage(Player* attacker)
 {
-    Team enemy_team = attacker->GetTeam();
-
-    WorldPacket data(SMSG_ZONE_UNDER_ATTACK, 4);
-    data << uint32(GetZoneId());
-    sWorld.SendGlobalMessage(&data, NULL, (enemy_team == ALLIANCE ? HORDE : ALLIANCE));
+    sWorld.SendZoneUnderAttackMessage(GetZoneId(), attacker->GetTeam() == ALLIANCE ? HORDE : ALLIANCE);
 }
 
 void Creature::SetInCombatWithZone()
@@ -2231,7 +2234,7 @@ uint8 Creature::getRace() const
 
 bool Creature::IsInEvadeMode() const
 {
-    return i_motionMaster.GetCurrentMovementGeneratorType() == HOME_MOTION_TYPE;
+    return IsInUnitState(UNIT_ACTION_HOME);
 }
 
 bool Creature::HasSpell(uint32 spellID)

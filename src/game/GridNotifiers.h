@@ -29,10 +29,6 @@
 #include "GameObject.h"
 #include "Player.h"
 #include "Unit.h"
-#include "CreatureAI.h"
-
-class Player;
-//class Map;
 
 namespace MaNGOS
 {
@@ -43,9 +39,9 @@ namespace MaNGOS
         GuidSet i_clientGUIDs;
         std::set<WorldObject*> i_visibleNow;
 
-        explicit VisibleNotifier(Camera &c) : i_camera(c), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
-        template<class T> void Visit(GridRefManager<T> &m);
-        void Visit(CameraMapType &m) {}
+        explicit VisibleNotifier(Camera& c) : i_camera(c), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
+        template<class T> void Visit(GridRefManager<T>& m);
+        void Visit(CameraMapType& /*m*/) {}
         void Notify(void);
     };
 
@@ -993,25 +989,7 @@ namespace MaNGOS
             CallOfHelpCreatureInRangeDo(Unit* funit, Unit* enemy, float range)
                 : i_funit(funit), i_enemy(enemy), i_range(range)
             {}
-            void operator()(Creature* u)
-            {
-                if (u == i_funit)
-                    return;
-
-                if (!u->CanAssistTo(i_funit, i_enemy, false))
-                    return;
-
-                // too far
-                if (!i_funit->IsWithinDistInMap(u, i_range))
-                    return;
-
-                // only if see assisted creature
-                if (!i_funit->IsWithinLOSInMap(u))
-                    return;
-
-                if (u->AI())
-                    u->AI()->AttackStart(i_enemy);
-            }
+            void operator()(Creature* u);
 
         private:
             Unit* const i_funit;
@@ -1065,24 +1043,8 @@ namespace MaNGOS
             {
             }
             WorldObject const& GetFocusObject() const { return *i_funit; }
-            bool operator()(Creature* u)
-            {
-                if(u == i_funit)
-                    return false;
+            bool operator()(Creature* u);
 
-                if ( !u->CanAssistTo(i_funit, i_enemy) )
-                    return false;
-
-                // too far
-                if( !i_funit->IsWithinDistInMap(u, i_range) )
-                    return false;
-
-                // only if see assisted creature
-                if( !i_funit->IsWithinLOSInMap(u) )
-                    return false;
-
-                return true;
-            }
         private:
             Unit* const i_funit;
             Unit* const i_enemy;
@@ -1317,6 +1279,22 @@ namespace MaNGOS
             WorldObject const* i_obj;
             float i_range;
             uint32 i_spellId;
+    };
+
+    class AnyPlayerInObjectRangeWithOutdoorPvPCheck
+    {
+        public:
+            AnyPlayerInObjectRangeWithOutdoorPvPCheck(WorldObject const* obj, float range)
+                : i_obj(obj), i_range(range) {}
+            WorldObject const& GetFocusObject() const { return *i_obj; }
+            bool operator()(Player* u)
+            {
+                return u->CanUseOutdoorCapturePoint() &&
+                    i_obj->IsWithinDistInMap(u, i_range);
+            }
+        private:
+            WorldObject const* i_obj;
+            float i_range;
     };
 
     // Prepare using Builder localized packets with caching and send to player

@@ -18,7 +18,6 @@
 
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
-#include "Database/SQLStorageImpl.h"
 #include "Policies/SingletonImp.h"
 
 #include "SQLStorages.h"
@@ -227,11 +226,6 @@ ArenaTeam* ObjectMgr::GetArenaTeamByCaptain(ObjectGuid guid) const
             return itr->second;
 
     return NULL;
-}
-
-CreatureInfo const* ObjectMgr::GetCreatureTemplate(uint32 id)
-{
-    return sCreatureStorage.LookupEntry<CreatureInfo>(id);
 }
 
 void ObjectMgr::LoadCreatureLocales()
@@ -843,11 +837,6 @@ void ObjectMgr::LoadCreatureAddons()
                 sLog.outErrorDb("Creature (GUID: %u) does not exist but has a record in `creature_addon`",addon->guidOrEntry);
 }
 
-EquipmentInfo const* ObjectMgr::GetEquipmentInfo(uint32 entry)
-{
-    return sEquipmentStorage.LookupEntry<EquipmentInfo>(entry);
-}
-
 void ObjectMgr::LoadEquipmentTemplates()
 {
     sEquipmentStorage.Load();
@@ -893,31 +882,26 @@ void ObjectMgr::LoadEquipmentTemplates()
     sLog.outString();
 }
 
-CreatureModelInfo const* ObjectMgr::GetCreatureModelInfo(uint32 modelid)
-{
-    return sCreatureModelStorage.LookupEntry<CreatureModelInfo>(modelid);
-}
-
 // generally models that does not have a gender(2), or has alternative model for same gender
-uint32 ObjectMgr::GetCreatureModelAlternativeModel(uint32 modelId)
+uint32 ObjectMgr::GetCreatureModelAlternativeModel(uint32 modelId) const
 {
-    if (const CreatureModelInfo *modelInfo = GetCreatureModelInfo(modelId))
+    if (const CreatureModelInfo* modelInfo = GetCreatureModelInfo(modelId))
         return modelInfo->modelid_alternative;
 
     return 0;
 }
 
-CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_id)
+CreatureModelInfo const* ObjectMgr::GetCreatureModelRandomGender(uint32 display_id) const
 {
-    CreatureModelInfo const *minfo = GetCreatureModelInfo(display_id);
-    if(!minfo)
+    CreatureModelInfo const* minfo = GetCreatureModelInfo(display_id);
+    if (!minfo)
         return NULL;
 
     // If a model for another gender exists, 50% chance to use it
-    if(minfo->modelid_other_gender != 0 && urand(0,1) == 0)
+    if (minfo->modelid_other_gender != 0 && urand(0, 1) == 0)
     {
-        CreatureModelInfo const *minfo_tmp = GetCreatureModelInfo(minfo->modelid_other_gender);
-        if(!minfo_tmp)
+        CreatureModelInfo const* minfo_tmp = GetCreatureModelInfo(minfo->modelid_other_gender);
+        if (!minfo_tmp)
         {
             sLog.outErrorDb("Model (Entry: %u) has modelid_other_gender %u not found in table `creature_model_info`. ", minfo->modelid, minfo->modelid_other_gender);
             return minfo;                                   // not fatal, just use the previous one
@@ -2014,10 +1998,16 @@ void ObjectMgr::LoadItemPrototypes()
         for (int j = 0; j < MAX_ITEM_PROTO_STATS; ++j)
         {
             // for ItemStatValue != 0
-            if(proto->ItemStat[j].ItemStatValue && proto->ItemStat[j].ItemStatType >= MAX_ITEM_MOD)
+            if (proto->ItemStat[j].ItemStatValue && proto->ItemStat[j].ItemStatType >= MAX_ITEM_MOD)
             {
                 sLog.outErrorDb("Item (Entry: %u) has wrong stat_type%d (%u)",i,j+1,proto->ItemStat[j].ItemStatType);
                 const_cast<ItemPrototype*>(proto)->ItemStat[j].ItemStatType = 0;
+            }
+
+            if (abs(proto->ItemStat[j].ItemStatValue) >= MAX_CLIENT_STAT_VALUE)
+            {
+                sLog.outErrorDb("Item (Entry: %u) has wrong stat_value%d (%u)",i,j+1,proto->ItemStat[j].ItemStatValue);
+                const_cast<ItemPrototype*>(proto)->ItemStat[j].ItemStatValue = 0;
             }
 
             switch(proto->ItemStat[j].ItemStatType)
@@ -2037,6 +2027,20 @@ void ObjectMgr::LoadItemPrototypes()
             {
                 sLog.outErrorDb("Item (Entry: %u) has wrong dmg_type%d (%u)",i,j+1,proto->Damage[j].DamageType);
                 const_cast<ItemPrototype*>(proto)->Damage[j].DamageType = 0;
+            }
+
+            if (proto->Damage[j].DamageMax >= (float)MAX_CLIENT_STAT_VALUE ||
+                proto->Damage[j].DamageMax < 0.0f ||
+                proto->Damage[j].DamageMax < proto->Damage[j].DamageMin)
+            {
+                sLog.outErrorDb("Item (Entry: %u) has wrong dmg_max%d (%f)",i,j+1,proto->Damage[j].DamageMax);
+                const_cast<ItemPrototype*>(proto)->Damage[j].DamageMax = 0;
+            }
+
+            if (proto->Damage[j].DamageMin < 0.0f || proto->Damage[j].DamageMin > proto->Damage[j].DamageMax)
+            {
+                sLog.outErrorDb("Item (Entry: %u) has wrong dmg_min%d (%f)",i,j+1,proto->Damage[j].DamageMin);
+                const_cast<ItemPrototype*>(proto)->Damage[j].DamageMin = 0;
             }
         }
 
@@ -3678,6 +3682,24 @@ void ObjectMgr::BuildPlayerLevelInfo(uint8 race, uint8 _class, uint8 level, Play
     }
 }
 
+/* ********************************************************************************************* */
+/* *                                Static Wrappers                                              */
+/* ********************************************************************************************* */
+GameObjectInfo const* ObjectMgr::GetGameObjectInfo(uint32 id) { return sGOStorage.LookupEntry<GameObjectInfo>(id); }
+Player* ObjectMgr::GetPlayer(const char* name) { return ObjectAccessor::FindPlayerByName(name); }
+Player* ObjectMgr::GetPlayer(ObjectGuid guid, bool inWorld /*=true*/) { return ObjectAccessor::FindPlayer(guid, inWorld); }
+CreatureInfo const* ObjectMgr::GetCreatureTemplate(uint32 id) { return sCreatureStorage.LookupEntry<CreatureInfo>(id); }
+CreatureModelInfo const* ObjectMgr::GetCreatureModelInfo(uint32 modelid) { return sCreatureModelStorage.LookupEntry<CreatureModelInfo>(modelid); }
+EquipmentInfo const* ObjectMgr::GetEquipmentInfo(uint32 entry) { return sEquipmentStorage.LookupEntry<EquipmentInfo>(entry); }
+CreatureDataAddon const* ObjectMgr::GetCreatureAddon(uint32 lowguid) { return sCreatureDataAddonStorage.LookupEntry<CreatureDataAddon>(lowguid); }
+CreatureDataAddon const* ObjectMgr::GetCreatureTemplateAddon(uint32 entry) { return sCreatureInfoAddonStorage.LookupEntry<CreatureDataAddon>(entry); }
+ItemPrototype const* ObjectMgr::GetItemPrototype(uint32 id) { return sItemStorage.LookupEntry<ItemPrototype>(id); }
+InstanceTemplate const* ObjectMgr::GetInstanceTemplate(uint32 map) { return sInstanceTemplate.LookupEntry<InstanceTemplate>(map); }
+WorldTemplate const* ObjectMgr::GetWorldTemplate(uint32 map) { return sWorldTemplate.LookupEntry<WorldTemplate>(map); }
+
+/* ********************************************************************************************* */
+/* *                                Loading Functions                                            */
+/* ********************************************************************************************* */
 void ObjectMgr::LoadArenaTeams()
 {
     uint32 count = 0;
@@ -3810,7 +3832,7 @@ void ObjectMgr::LoadGroups()
                 }
             }
 
-            if (!group->LoadMemberFromDB(memberGuidlow, subgroup, GroupFlagMask(flags), roles))
+            if (!group->LoadMemberFromDB(memberGuidlow, subgroup, GroupFlagMask(flags), LFGRoleMask(roles)))
             {
                 sLog.outErrorDb("Incorrect entry in group_member table : member %s cannot be added to group (Id: %u)!",
                     memberGuid.GetString().c_str(), groupId);
@@ -5559,7 +5581,7 @@ void ObjectMgr::LoadGraveyardZones()
             continue;
         }
 
-        if (team != TEAM_NONE && team != HORDE && team != ALLIANCE)
+        if (team != TEAM_BOTH_ALLOWED && team != HORDE && team != ALLIANCE)
         {
             sLog.outErrorDb("Table `game_graveyard_zone` has record for non player faction (%u), skipped.", team);
             continue;
@@ -5578,7 +5600,7 @@ void ObjectMgr::LoadGraveyardZones()
 WorldSafeLocsEntry const *ObjectMgr::GetClosestGraveYard(float x, float y, float z, uint32 MapId, Team team)
 {
     // search for zone associated closest graveyard
-    uint32 zoneId = sTerrainMgr.GetZoneId(MapId,x,y,z);
+    uint32 zoneId = sTerrainMgr.GetZoneId(MapId, x, y, z);
 
     // Simulate std. algorithm:
     //   found some graveyard associated to (ghost_zone,ghost_map)
@@ -5614,16 +5636,13 @@ WorldSafeLocsEntry const *ObjectMgr::GetClosestGraveYard(float x, float y, float
     {
         GraveYardData const& data = itr->second;
 
+        // Checked on load
         WorldSafeLocsEntry const* entry = sWorldSafeLocsStore.LookupEntry(data.safeLocId);
-        if(!entry)
-        {
-            sLog.outErrorDb("Table `game_graveyard_zone` has record for not existing graveyard (WorldSafeLocs.dbc id) %u, skipped.",data.safeLocId);
-            continue;
-        }
 
         // skip enemy faction graveyard
-        // team == 0 case can be at call from .neargrave
-        if (data.team != TEAM_NONE && team != TEAM_NONE && data.team != team)
+        // team == TEAM_BOTH_ALLOWED case can be at call from .neargrave
+        // TEAM_INVALID != team for all teams
+        if (data.team != TEAM_BOTH_ALLOWED && data.team != team && team != TEAM_BOTH_ALLOWED)
             continue;
 
         // find now nearest graveyard at other (continent) map
@@ -5703,7 +5722,7 @@ GraveYardData const* ObjectMgr::FindGraveYardData(uint32 id, uint32 zoneId) cons
 
 bool ObjectMgr::AddGraveYardLink(uint32 id, uint32 zoneId, Team team, bool inDB)
 {
-    if(FindGraveYardData(id,zoneId))
+    if (FindGraveYardData(id, zoneId))                      // This ensures that (safeLoc)Id,  zoneId is unique in mGraveYardMap
         return false;
 
     // add link to loaded data
@@ -5711,16 +5730,37 @@ bool ObjectMgr::AddGraveYardLink(uint32 id, uint32 zoneId, Team team, bool inDB)
     data.safeLocId = id;
     data.team = team;
 
-    mGraveYardMap.insert(GraveYardMap::value_type(zoneId,data));
+    mGraveYardMap.insert(GraveYardMap::value_type(zoneId, data));
 
     // add link to DB
-    if(inDB)
-    {
-        WorldDatabase.PExecuteLog("INSERT INTO game_graveyard_zone ( id,ghost_zone,faction) "
-            "VALUES ('%u', '%u','%u')", id, zoneId, uint32(team));
-    }
+    if (inDB)
+        WorldDatabase.PExecuteLog("INSERT INTO game_graveyard_zone ( id,ghost_zone,faction) VALUES ('%u', '%u','%u')", id, zoneId, uint32(team));
 
     return true;
+}
+
+void ObjectMgr::SetGraveYardLinkTeam(uint32 id, uint32 zoneId, Team team)
+{
+    std::pair<GraveYardMap::iterator, GraveYardMap::iterator> bounds = mGraveYardMap.equal_range(zoneId);
+
+    for (GraveYardMap::iterator itr = bounds.first; itr != bounds.second; ++itr)
+    {
+        GraveYardData& data = itr->second;
+
+        // skip not matching safezone id
+        if (data.safeLocId != id)
+            continue;
+
+        data.team = team;                                   // Validate link
+        return;
+    }
+
+    if (team == TEAM_INVALID)
+        return;
+
+    // Link expected but not exist.
+    sLog.outErrorDb("ObjectMgr::SetGraveYardLinkTeam called for safeLoc %u, zoneId %u, but no graveyard link for this found in database.", id, zoneId);
+    AddGraveYardLink(id, zoneId, team);                     // Add to prevent further error message and correct mechanismn
 }
 
 void ObjectMgr::RemoveGraveYardLink(uint32 id, uint32 zoneId, Team team, bool inDB)
@@ -6300,6 +6340,18 @@ inline void CheckGOConsumable(GameObjectInfo const* goInfo,uint32 dataN,uint32 N
         goInfo->id,goInfo->type,N,dataN);
 }
 
+inline void CheckAndFixGOCaptureMinTime(GameObjectInfo const* goInfo, uint32 const& dataN, uint32 N)
+{
+    if (dataN > 0)
+        return;
+
+    sLog.outErrorDb("Gameobject (Entry: %u GoType: %u) has data%d=%u but minTime field value must be > 0.",
+        goInfo->id, goInfo->type, N, dataN);
+
+    // prevent division through 0 exception
+    const_cast<uint32&>(dataN) = 1;
+}
+
 void ObjectMgr::LoadGameobjectInfo()
 {
     SQLGameObjectLoader loader;
@@ -6460,6 +6512,11 @@ void ObjectMgr::LoadGameobjectInfo()
                 if (goInfo->flagdrop.lockId)
                     CheckGOLockId(goInfo,goInfo->flagdrop.lockId,0);
                 CheckGONoDamageImmuneId(goInfo,goInfo->flagdrop.noDamageImmune,3);
+                break;
+            }
+            case GAMEOBJECT_TYPE_CAPTURE_POINT:             //29
+            {
+                CheckAndFixGOCaptureMinTime(goInfo, goInfo->capturePoint.minTime, 16);
                 break;
             }
             case GAMEOBJECT_TYPE_BARBER_CHAIR:              //32
@@ -7142,7 +7199,7 @@ struct SQLSpellLoader : public SQLStorageLoaderBase<SQLSpellLoader>
     template<class S, class D>
     void default_fill(uint32 field_pos, S src, D &dst)
     {
-        if (field_pos == 65)                                // EquippedItemClass
+        if (field_pos == LOADED_SPELLDBC_FIELD_POS_EQUIPPED_ITEM_CLASS)
             dst = D(-1);
         else
             dst = D(src);
@@ -7150,7 +7207,7 @@ struct SQLSpellLoader : public SQLStorageLoaderBase<SQLSpellLoader>
 
     void default_fill_to_str(uint32 field_pos, char const* /*src*/, char * & dst)
     {
-        if (field_pos == 132)                               // SpellName[0]
+        if (field_pos == LOADED_SPELLDBC_FIELD_POS_SPELLNAME_0)
         {
             dst = SERVER_SIDE_SPELL;
         }
@@ -7180,7 +7237,12 @@ void ObjectMgr::LoadSpellTemplate()
         // insert serverside spell data
         if (sSpellStore.GetNumRows() <= i)
         {
-            sLog.outErrorDb("Loading Spell Template for spell %u, index out of bounds (max = %)", i, sSpellStore.GetNumRows());
+            sLog.outErrorDb("Loading Spell Template for spell %u, index out of bounds (max = %u)", i, sSpellStore.GetNumRows());
+            continue;
+        }
+        else if (SpellEntry const* spellEntry = sSpellStore.LookupEntry(i))
+        {
+            sLog.outErrorDb("Loading Spell Template for spell %u failed, index already handled (possible in spell_dbc)", i);
             continue;
         }
         else
@@ -7940,6 +8002,18 @@ uint16 ObjectMgr::GetConditionId( ConditionType condition, uint32 value1, uint32
     }
 
     return mConditions.size() - 1;
+}
+
+// Check if a player meets condition conditionId
+bool ObjectMgr::IsPlayerMeetToNEWCondition(Player const* pPlayer, uint16 conditionId) const
+{
+    if (!pPlayer)
+        return false;                               // player not present, return false
+
+    if (const PlayerCondition* condition = sConditionStorage.LookupEntry<PlayerCondition>(conditionId))
+        return condition->Meets(pPlayer);
+
+    return false;
 }
 
 bool ObjectMgr::CheckDeclinedNames( std::wstring w_ownname, DeclinedName const& names )

@@ -41,6 +41,7 @@
 #include "AccountMgr.h"
 #include "GMTicketMgr.h"
 #include "WaypointManager.h"
+#include "WorldStateMgr.h"
 #include "Config/Config.h"
 #include "Util.h"
 #include <cctype>
@@ -4844,7 +4845,7 @@ bool ChatHandler::HandleLookupPoolCommand(char * args)
     return true;
 }
 
-bool ChatHandler::HandlePoolListCommand(char* args)
+bool ChatHandler::HandlePoolListCommand(char* /*args*/)
 {
     Player* player = m_session->GetPlayer();
 
@@ -5632,5 +5633,96 @@ bool ChatHandler::HandleMmapStatsCommand(char* /*args*/)
     PSendSysMessage(" %u triangles (%u vertices)", triCount, triVertCount);
     PSendSysMessage(" %.2f MB of data (not including pointers)", ((float)dataSize / sizeof(unsigned char)) / 1048576);
 
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateUpdateCommand(char* args)
+{
+    uint32 Id;
+    if (!ExtractUInt32(&args, Id))
+        return false;
+
+    uint32 value;
+    if (!ExtractUInt32(&args, value))
+        return false;
+
+    WorldState const* state = sWorldStateMgr.GetWorldState(Id, m_session->GetPlayer()->GetInstanceId());
+
+    if (state)
+        PSendSysMessage(LANG_WORLDSTATE_UPDATE,Id, m_session->GetPlayer()->GetInstanceId(), state->GetValue(), value);
+    else
+        PSendSysMessage(LANG_WORLDSTATE_SET,Id, m_session->GetPlayer()->GetInstanceId(), value);
+
+    m_session->GetPlayer()->UpdateWorldState(Id, value);
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateCommand(char* args)
+{
+    uint32 Id;
+    if (!ExtractUInt32(&args, Id))
+    {
+        // All WS settings here
+        PSendSysMessage(LANG_WORLDSTATE_SETTINGS," This place for your ads!");
+        return true;
+    }
+
+    WorldState const* state = sWorldStateMgr.GetWorldState(Id, m_session->GetPlayer()->GetInstanceId());
+
+    if (state)
+        PSendSysMessage(LANG_WORLDSTATE_UPDATE,Id, m_session->GetPlayer()->GetInstanceId(), state->GetValue(), state->GetValue());
+    else
+        PSendSysMessage(LANG_WORLDSTATE_ERROR);
+
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateListCommand(char* args)
+{
+    WorldStateSet wsSet = sWorldStateMgr.GetWorldStatesFor(m_session->GetPlayer());
+
+    if (wsSet.empty())
+        return false;
+
+    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    {
+        PSendSysMessage(LANG_WORLDSTATE_LIST,(*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+    }
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateListAllCommand(char* args)
+{
+    WorldStateSet wsSet = sWorldStateMgr.GetWorldStates(UINT32_MAX);
+    if (wsSet.empty())
+        return false;
+
+    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    {
+        PSendSysMessage(LANG_WORLDSTATE_LIST_FULL, (*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+    }
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateAddCommand(char* args)
+{
+    uint32 Id;
+    if (!ExtractUInt32(&args, Id))
+        return false;
+
+    WorldState const* state = sWorldStateMgr.GetWorldState(Id, m_session->GetPlayer()->GetInstanceId());
+
+    if (state)
+        PSendSysMessage(LANG_WORLDSTATE_UPDATE,Id, m_session->GetPlayer()->GetInstanceId(), state->GetValue(), state->GetValue());
+    else
+        PSendSysMessage(LANG_WORLDSTATE_UPDATE_FULL,Id, m_session->GetPlayer()->GetInstanceId());
+
+    return true;
+}
+
+bool ChatHandler::HandleWorldStateReloadCommand(char* args)
+{
+    sWorldStateMgr.Initialize();
+    PSendSysMessage(LANG_WORLDSTATE_RELOAD,sWorldStateMgr.GetWorldStatesCount(),sWorldStateMgr.GetWorldStateTemplatesCount());
     return true;
 }

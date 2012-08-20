@@ -46,7 +46,7 @@ class MANGOS_DLL_SPEC MovementGenerator : public UnitAction
 
         virtual MovementGeneratorType GetMovementGeneratorType() const = 0;
 
-        virtual void unitSpeedChanged() { }
+        virtual void UnitSpeedChanged() { }
 
         virtual void UpdateFinalDistance(float /*fDistance*/) { }
 

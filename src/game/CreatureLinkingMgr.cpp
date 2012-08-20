@@ -472,6 +472,8 @@ void CreatureLinkingHolder::DoCreatureLinkingEvent(CreatureLinkingEvent eventTyp
                         if (pMaster->isAlive())
                             SetFollowing(pSource, pMaster);
                         break;
+                    case LINKING_EVENT_DIE:                 // Nothing linked for this case
+                        break;
                     default:
                         break;
                 }
@@ -486,25 +488,26 @@ void CreatureLinkingHolder::ProcessSlaveGuidList(CreatureLinkingEvent eventType,
     if (!flag)
         return;
 
-    for (GuidList::iterator slave_itr = slaveGuidList.begin(); slave_itr != slaveGuidList.end();)
+    GuidList::iterator slave_itr = slaveGuidList.begin();
+    while (slave_itr != slaveGuidList.end())
     {
-        Creature* pSlave = pSource->GetMap()->GetCreature(*slave_itr);
-        if (!pSlave)
+        if (Creature* pSlave = pSource->GetMap()->GetCreature(*slave_itr))
         {
-            // Remove old guid first
-            slaveGuidList.erase(slave_itr);
-            continue;
+            ++slave_itr;
+            // Ignore Pets
+            if (pSlave->IsPet())
+                continue;
+
+            // Handle single slave
+            if (IsSlaveInRangeOfBoss(pSlave, pSource, searchRange))
+                ProcessSlave(eventType, pSource, flag, pSlave, pEnemy);
+
         }
-
-        ++slave_itr;
-
-        // Ignore Pets
-        if (pSlave->IsPet())
-            continue;
-
-        // Handle single slave
-        if (IsSlaveInRangeOfBoss(pSlave, pSource, searchRange))
-            ProcessSlave(eventType, pSource, flag, pSlave, pEnemy);
+        else
+        {
+            // Remove old guid
+            slave_itr = slaveGuidList.erase(slave_itr);
+        }
     }
 }
 

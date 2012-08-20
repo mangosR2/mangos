@@ -41,27 +41,27 @@ enum LFGRoleMask
     LFG_ROLE_MASK_DAMAGE  = (1 << ROLE_DAMAGE),
 
     // unions
-    LFG_ROLE_MASK_THD     = ( LFG_ROLE_MASK_TANK   |
-                               LFG_ROLE_MASK_HEALER |
-                               LFG_ROLE_MASK_DAMAGE ),
+    LFG_ROLE_MASK_TANK_HEALER_DAMAGE = ( LFG_ROLE_MASK_TANK   |
+                                         LFG_ROLE_MASK_HEALER |
+                                         LFG_ROLE_MASK_DAMAGE ),
 
-    LFG_ROLE_MASK_TH      = ( LFG_ROLE_MASK_TANK |
-                               LFG_ROLE_MASK_HEALER ),
+    LFG_ROLE_MASK_TANK_HEALER   = ( LFG_ROLE_MASK_TANK |
+                                    LFG_ROLE_MASK_HEALER ),
 
-    LFG_ROLE_MASK_TD      = ( LFG_ROLE_MASK_TANK |
-                               LFG_ROLE_MASK_DAMAGE ),
+    LFG_ROLE_MASK_TANK_DAMAGE   = ( LFG_ROLE_MASK_TANK |
+                                    LFG_ROLE_MASK_DAMAGE ),
 
-    LFG_ROLE_MASK_HD      = ( LFG_ROLE_MASK_DAMAGE |
-                               LFG_ROLE_MASK_HEALER ),
+    LFG_ROLE_MASK_HEALER_DAMAGE = ( LFG_ROLE_MASK_DAMAGE |
+                                    LFG_ROLE_MASK_HEALER ),
 
-    LFG_ROLE_MASK_LTHD     = ( LFG_ROLE_MASK_THD |
-                               LFG_ROLE_MASK_LEADER ),
-    LFG_ROLE_MASK_LTH      = ( LFG_ROLE_MASK_TH |
-                               LFG_ROLE_MASK_LEADER ),
-    LFG_ROLE_MASK_LTD      = ( LFG_ROLE_MASK_TD |
-                               LFG_ROLE_MASK_LEADER ),
-    LFG_ROLE_MASK_LHD      = ( LFG_ROLE_MASK_HD |
-                               LFG_ROLE_MASK_LEADER ),
+    LFG_ROLE_MASK_LEADER_TANK_HEALER_DAMAGE = ( LFG_ROLE_MASK_TANK_HEALER_DAMAGE |
+                                                LFG_ROLE_MASK_LEADER ),
+    LFG_ROLE_MASK_LEADER_TANK_HEALER        = ( LFG_ROLE_MASK_TANK_HEALER |
+                                                LFG_ROLE_MASK_LEADER ),
+    LFG_ROLE_MASK_LEADER_TANK_DAMAGE        = ( LFG_ROLE_MASK_TANK_DAMAGE |
+                                                LFG_ROLE_MASK_LEADER ),
+    LFG_ROLE_MASK_LEADER_HEALER_DAMAGE      = ( LFG_ROLE_MASK_HEALER_DAMAGE |
+                                                LFG_ROLE_MASK_LEADER ),
 };
 
 enum LFGMemberFlags
@@ -209,7 +209,47 @@ enum LFGDungeonStatus
 typedef std::set<LFGDungeonEntry const*> LFGDungeonSet;
 typedef std::map<LFGDungeonEntry const*, LFGLockStatusType> LFGLockStatusMap;
 
-struct LFGProposal;
+/// Stores group data related to proposal to join
+struct LFGProposal
+{
+    LFGProposal(LFGDungeonEntry const* _dungeon);
+    public:
+    uint32 m_uiID;                                               // Proposal id
+
+    // helpers
+    Group* GetGroup();
+    void SetGroup(Group* group);
+    void AddMember(ObjectGuid guid);
+    void RemoveMember(ObjectGuid guid);
+    bool IsMember(ObjectGuid guid);
+    GuidSet const GetMembers();
+
+    void RemoveDecliner(ObjectGuid guid);
+    bool IsDecliner(ObjectGuid guid);
+
+    LFGProposalState GetState() {return m_state;};
+    void SetState(LFGProposalState _state ) { m_state = _state;};
+
+    LFGDungeonEntry const* GetDungeon() { return m_dungeon;};
+    LFGType GetType();
+
+    void Start();
+
+    void SetDeleted() { m_bDeleted = true; };
+    bool const IsDeleted() const { return m_bDeleted; };
+
+    bool IsExpired() { return ( m_cancelTime > 0 && m_cancelTime < time_t(time(NULL)));};
+
+    private:
+    LFGDungeonEntry const* m_dungeon;                    // Dungeon
+    LFGProposalState m_state;                            // State of the proposal
+    ObjectGuid m_groupGuid;                              // Proposal group (empty if not created)
+    time_t m_cancelTime;                                 // Time when we will cancel this proposal
+    GuidSet playerGuids;                                 // Players in this proposal
+    GuidSet declinerGuids;                               // Decliners in this proposal
+    bool m_bDeleted;                                     // avoid double-deleting proposal
+};
+
 
 struct LFGStateStructure
 {
@@ -217,31 +257,31 @@ public:
     virtual ~LFGStateStructure() {};
     virtual void Clear() {};
 
-    void Update(bool _update = true) { update = _update; };
+    void Update(bool update = true) { m_bUpdate = update; };
     LFGDungeonSet const* GetDungeons() const  { return &m_DungeonsList; };
-    void SetDungeons(LFGDungeonSet* dungeons);
+    void SetDungeons(LFGDungeonSet dungeons);
     void RemoveDungeon(LFGDungeonEntry const* dungeon);
     void AddDungeon(LFGDungeonEntry const* dungeon);
 
+    void SetType(LFGType type) { m_type = type; };
+    LFGType GetType() { return m_type;};
 
-    LFGType const& GetType() const { return m_type;};
-
-    void SetState(LFGState _state) { m_state = _state; };
+    void SetState(LFGState state) { m_state = state; };
     LFGState GetState() { return m_state; };
 
     LFGProposal*   GetProposal()   { return m_proposal; };
     void           SetProposal(LFGProposal* proposal)   { m_proposal = proposal; };
 
-    uint32         GetFlags()                { return m_flags;};
-    void           AddFlags(uint32 flags)    { m_flags = m_flags | flags;};
-    void           RemoveFlags(uint32 flags) { m_flags = m_flags & ~flags;};
+    uint32         GetFlags()                { return m_uiFlags;};
+    void           AddFlags(uint32 flags)    { m_uiFlags = m_uiFlags | flags;};
+    void           RemoveFlags(uint32 flags) { m_uiFlags = m_uiFlags & ~flags;};
 
 protected:
     LFGStateStructure()
-        : m_type(LFG_TYPE_NONE), m_flags(0), update(false), m_state(LFG_STATE_NONE), m_proposal(NULL) {};
+        : m_type(LFG_TYPE_NONE), m_uiFlags(0), m_bUpdate(false), m_state(LFG_STATE_NONE), m_proposal(NULL) {};
     LFGType          m_type;
-    uint32           m_flags;
-    bool             update;
+    uint32           m_uiFlags;
+    bool             m_bUpdate;
     LFGState         m_state;
     LFGDungeonSet    m_DungeonsList;                   // Dungeons the player have applied for
     LFGLockStatusMap m_LockMap;                        // Dungeons lock map
@@ -253,7 +293,7 @@ protected:
 struct LFGPlayerState : public LFGStateStructure
 {
 public:
-    explicit LFGPlayerState(Player* player) : m_player(player)
+    explicit LFGPlayerState(Player* player) : m_pPlayer(player)
     {
         Clear();
     };
@@ -265,28 +305,29 @@ public:
     void           SetComment(std::string comment);
 
     LFGRoleMask    GetRoles();
-    void           SetRoles(uint8 roles);
-    void           AddRole(LFGRoles role) { rolesMask = LFGRoleMask( rolesMask | (1 << role)); };
-    void           RemoveRole(LFGRoles role) { rolesMask = LFGRoleMask( rolesMask & ~(1 << role)); };
+    void           SetRoles(LFGRoleMask roles);
+    void           AddRole(LFGRoles role) { m_rolesMask = LFGRoleMask( m_rolesMask | (1 << role)); };
+    void           RemoveRole(LFGRoles role) { m_rolesMask = LFGRoleMask( m_rolesMask & ~(1 << role)); };
     bool           IsSingleRole();
+    bool           HasRole(LFGRoles role) { return (1 << role) & m_rolesMask; };
 
     void           SetJoined();
     time_t         GetJoinTime() { return m_jointime;};
 
-    void           SetTeleported() {m_teleported = true;};
-    bool           IsTeleported() { return m_teleported;};
+    void           SetTeleported() {m_bTeleported = true;};
+    bool           IsTeleported() { return m_bTeleported;};
 
-    void           SetAnswer(LFGAnswer _accept) { accept = _accept;};
-    LFGAnswer      GetAnswer() { return accept;};
+    void           SetAnswer(LFGAnswer _accept) { m_answer = _accept;};
+    LFGAnswer      GetAnswer() { return m_answer;};
 
 
 private:
-    LFGRoleMask    rolesMask;
-    bool           m_teleported;
-    Player*        m_player;
+    LFGRoleMask    m_rolesMask;
+    bool           m_bTeleported;
+    Player*        m_pPlayer;
     time_t         m_jointime;
     std::string    m_comment;
-    LFGAnswer      accept;                           ///< Accept status (-1 not answer | 0 Not agree | 1 agree)
+    LFGAnswer      m_answer;                           ///< Accept status (-1 not answer | 0 Not agree | 1 agree)
 };
 
 typedef std::map<ObjectGuid, LFGAnswer> LFGAnswerMap;
@@ -295,7 +336,7 @@ struct LFGGroupState : public LFGStateStructure
 {
 
 public:
-    explicit LFGGroupState(Group* group) : m_group(group)
+    explicit LFGGroupState(Group* group) : m_pGroup(group)
     {
         Clear();
     };
@@ -303,18 +344,18 @@ public:
 
     void Clear();
     LFGDungeonEntry const* GetDungeon()   { return m_realdungeon; };
-    void SetDungeon(LFGDungeonEntry const* _dungeon)   { m_realdungeon = _dungeon; };
+    void SetDungeon(LFGDungeonEntry const* dungeon)   { m_realdungeon = dungeon; };
 
     // Current state operations
-    void          SaveState() { m_savedstate = m_state; };
-    void          RestoreState() { m_state = m_savedstate; };
+    void SaveState() { m_savedstate = m_state; };
+    void RestoreState() { m_state = m_savedstate; };
 
     // Group status
-    void                  SetStatus(LFGDungeonStatus _status) { m_status = _status; };
-    LFGDungeonStatus      GetStatus() { return m_status; };
+    void SetStatus(LFGDungeonStatus status) { m_status = status; };
+    LFGDungeonStatus GetStatus() { return m_status; };
 
     // Boot system
-    LFGAnswerMap*  GetBootMap() { return &m_bootVotes; };
+    LFGAnswerMap* GetBootMap() { return &m_bootVotes;};
     void  StartBoot(ObjectGuid kicker, ObjectGuid victim, std::string reason);
     void  StopBoot();
     ObjectGuid GetBootVictim() { return m_bootVictim; };
@@ -335,12 +376,12 @@ public:
     bool QueryRoleCheckTime() {return (time_t(time(NULL)) < m_roleCheckCancelTime);};
     bool IsRoleCheckActive();
 
-    uint8 GetRandomPlayersCount() const { return m_randomPlayersCount; };
-    void  SetRandomPlayersCount(uint8 _count) { m_randomPlayersCount = _count; };
+    uint8 GetRandomPlayersCount() const { return m_uiRandomPlayersCount; };
+    void  SetRandomPlayersCount(uint8 _count) { m_uiRandomPlayersCount = _count; };
 
 private:
-    bool           queued;
-    Group*         m_group;
+    bool           m_bQueued;
+    Group*         m_pGroup;
     LFGState       m_savedstate;
     LFGDungeonStatus     m_status;
     LFGDungeonEntry const* m_realdungeon;                       // real dungeon entry (if random or list)
@@ -349,9 +390,9 @@ private:
     LFGRoleCheckState m_roleCheckState;                         // State of the rolecheck
     // Boot
     time_t         m_bootCancelTime;                            // Time left to vote
-    uint8          m_votesNeeded;                               // Votes need to kick success
-    uint8          m_kicksLeft;                                 // Number of kicks left
-    uint8          m_randomPlayersCount;                        // Count of random players in this group
+    uint8          m_uiVotesNeeded;                             // Votes need to kick success
+    uint8          m_uiKicksLeft;                               // Number of kicks left
+    uint8          m_uiRandomPlayersCount;                      // Count of random players in this group
     LFGAnswerMap   m_bootVotes;                                 // Player votes (-1 not answer | 0 Not agree | 1 agree)
     ObjectGuid     m_bootVictim;                                // Player guid to be kicked (can't vote)
     std::string    m_bootReason;                                // kick reason

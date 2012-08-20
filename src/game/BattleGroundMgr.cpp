@@ -1589,6 +1589,9 @@ BattleGround * BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeI
     // reset the new bg (set status to status_wait_queue from status_none)
     bg->Reset();
 
+    // Set initial BG WorldStates (mostly setted in DB, but may be setted in script)
+    bg->FillInitialWorldStates();
+
     // start the joining of the bg
     bg->SetStatus(STATUS_WAIT_JOIN);
     bg->SetArenaType(arenaType);

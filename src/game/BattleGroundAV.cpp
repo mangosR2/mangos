@@ -24,6 +24,7 @@
 #include "GameObject.h"
 #include "Language.h"
 #include "WorldPacket.h"
+#include "DBCStores.h"                                      // TODO REMOVE this when graveyard handling for pvp is updated
 
 BattleGroundAV::BattleGroundAV()
 {
@@ -620,7 +621,7 @@ void BattleGroundAV::EventPlayerAssaultsPoint(Player* player, BG_AV_Nodes node)
     PlaySoundToAll((teamIdx == TEAM_INDEX_ALLIANCE) ? BG_AV_SOUND_ALLIANCE_ASSAULTS : BG_AV_SOUND_HORDE_ASSAULTS);
 }
 
-void BattleGroundAV::FillInitialWorldStates(WorldPacket& data, uint32& count)
+void BattleGroundAV::FillInitialWorldStates()
 {
     bool stateok;
     for (uint32 i = BG_AV_NODES_FIRSTAID_STATION; i < BG_AV_NODES_MAX; ++i)
@@ -628,36 +629,26 @@ void BattleGroundAV::FillInitialWorldStates(WorldPacket& data, uint32& count)
         for (uint8 j = 0; j < BG_AV_MAX_STATES; j++)
         {
             stateok = (m_Nodes[i].State == j);
-            FillInitialWorldState(data, count, BG_AV_NodeWorldStates[i][GetWorldStateType(j, TEAM_INDEX_ALLIANCE)],
+            FillInitialWorldState(BG_AV_NodeWorldStates[i][GetWorldStateType(j, TEAM_INDEX_ALLIANCE)],
                 m_Nodes[i].Owner == TEAM_INDEX_ALLIANCE && stateok);
-            FillInitialWorldState(data, count, BG_AV_NodeWorldStates[i][GetWorldStateType(j, TEAM_INDEX_HORDE)],
+            FillInitialWorldState(BG_AV_NodeWorldStates[i][GetWorldStateType(j, TEAM_INDEX_HORDE)],
                 m_Nodes[i].Owner == TEAM_INDEX_HORDE && stateok);
         }
     }
 
     if( m_Nodes[BG_AV_NODES_SNOWFALL_GRAVE].Owner == TEAM_INDEX_NEUTRAL )   // cause neutral teams aren't handled generic
-        FillInitialWorldState(data, count, AV_SNOWFALL_N, 1);
+        FillInitialWorldState(AV_SNOWFALL_N, 1);
 
-    FillInitialWorldState(data, count, BG_AV_Alliance_Score, m_TeamScores[TEAM_INDEX_ALLIANCE]);
-    FillInitialWorldState(data, count, BG_AV_Horde_Score,    m_TeamScores[TEAM_INDEX_HORDE]);
-    if( GetStatus() == STATUS_IN_PROGRESS )                 // only if game is running the teamscores are displayed
-    {
-        FillInitialWorldState(data, count, BG_AV_SHOW_A_SCORE, 1);
-        FillInitialWorldState(data, count, BG_AV_SHOW_H_SCORE, 1);
-    }
-    else
-    {
-        FillInitialWorldState(data, count, BG_AV_SHOW_A_SCORE, 0);
-        FillInitialWorldState(data, count, BG_AV_SHOW_H_SCORE, 0);
-    }
+    FillInitialWorldState(BG_AV_Alliance_Score, m_TeamScores[TEAM_INDEX_ALLIANCE]);
+    FillInitialWorldState(BG_AV_Horde_Score,    m_TeamScores[TEAM_INDEX_HORDE]);
+    FillInitialWorldState(BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_Owner[BG_AV_NORTH_MINE]], 1);
 
-    FillInitialWorldState(data, count, BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_Owner[BG_AV_NORTH_MINE]], 1);
     if (m_Mine_Owner[BG_AV_NORTH_MINE] != m_Mine_PrevOwner[BG_AV_NORTH_MINE])
-        FillInitialWorldState(data, count, BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_PrevOwner[BG_AV_NORTH_MINE]], 0);
+        FillInitialWorldState(BG_AV_MineWorldStates[BG_AV_NORTH_MINE][m_Mine_PrevOwner[BG_AV_NORTH_MINE]], 0);
 
-    FillInitialWorldState(data, count, BG_AV_MineWorldStates[BG_AV_SOUTH_MINE][m_Mine_Owner[BG_AV_SOUTH_MINE]], 1);
+    FillInitialWorldState( BG_AV_MineWorldStates[BG_AV_SOUTH_MINE][m_Mine_Owner[BG_AV_SOUTH_MINE]], 1);
     if (m_Mine_Owner[BG_AV_SOUTH_MINE] != m_Mine_PrevOwner[BG_AV_SOUTH_MINE])
-        FillInitialWorldState(data, count, BG_AV_MineWorldStates[BG_AV_SOUTH_MINE][m_Mine_PrevOwner[BG_AV_SOUTH_MINE]], 0);
+        FillInitialWorldState(BG_AV_MineWorldStates[BG_AV_SOUTH_MINE][m_Mine_PrevOwner[BG_AV_SOUTH_MINE]], 0);
 }
 
 void BattleGroundAV::UpdateNodeWorldState(BG_AV_Nodes node)
@@ -710,7 +701,7 @@ WorldSafeLocsEntry const* BattleGroundAV::GetClosestGraveYard(Player *plr)
     return good_entry;
 }
 
-uint32 BattleGroundAV::GetNodeName(BG_AV_Nodes node)
+uint32 BattleGroundAV::GetNodeName(BG_AV_Nodes node) const
 {
     switch(node)
     {

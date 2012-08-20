@@ -100,10 +100,10 @@ namespace ACE_Based
                 m_storage.erase(m_storage.begin() + pos);
             }
 
-            void erase(iterator itr)
+            iterator erase(iterator itr)
             {
                 WriteGuard Guard(GetLock());
-                m_storage.erase(itr);
+                return m_storage.erase(itr);
             }
 
             void remove(const T& item)

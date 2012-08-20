@@ -158,6 +158,8 @@ DBCStorage <SpellEntry> sSpellStore(SpellEntryfmt);
 SpellCategoryStore sSpellCategoryStore;
 PetFamilySpellsStore sPetFamilySpellsStore;
 
+SpellEffectMap sSpellEffectMap;
+
 DBCStorage <SpellCastTimesEntry> sSpellCastTimesStore(SpellCastTimefmt);
 DBCStorage <SpellDifficultyEntry> sSpellDifficultyStore(SpellDifficultyfmt);
 DBCStorage <SpellDurationEntry> sSpellDurationStore(SpellDurationfmt);
@@ -538,6 +540,11 @@ void LoadDBCStores(const std::string& dataPath)
         #if MANGOS_ENDIAN == MANGOS_BIGENDIAN
         std::swap(*((uint32*)(&spell->SpellFamilyFlags)),*(((uint32*)(&spell->SpellFamilyFlags))+1));
         #endif
+
+        for (uint8 j = 0; i < MAX_EFFECT_INDEX; ++i)
+        {
+            sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = new SpellEffectEntry(spell, SpellEffectIndex(i));
+        }
     }
 
     for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
@@ -769,6 +776,16 @@ TalentSpellPos const* GetTalentSpellPos(uint32 spellId)
 
     return &itr->second;
 }
+
+SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, SpellEffectIndex effect)
+{
+    SpellEffectMap::const_iterator itr = sSpellEffectMap.find(spellId);
+    if(itr == sSpellEffectMap.end())
+        return NULL;
+
+    return itr->second.effects[effect];
+}
+
 
 uint32 GetTalentSpellCost(TalentSpellPos const* pos)
 {
