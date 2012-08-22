@@ -757,7 +757,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     // Shadow Prison
                     case 72999:
                     {
-                        if (Aura *aur = unitTarget->GetDummyAura(m_spellInfo->Id))
+                        if (Aura const* aur = unitTarget->GetDummyAura(m_spellInfo->Id))
                             damage += (aur->GetStackAmount() - 1) * aur->GetModifier()->m_amount;
 
                         break;
@@ -931,13 +931,13 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                         // Immolate
                         if ((*i)->GetSpellProto()->SpellFamilyFlags.test<CF_WARLOCK_IMMOLATE>())
                         {
-                            aura = *i;                      // it selected always if exist
+                            aura = (*i)();                      // it selected always if exist
                             break;
                         }
 
                         // Shadowflame
                         if ((*i)->GetSpellProto()->SpellFamilyFlags.test<CF_WARLOCK_SHADOWFLAME2>())
-                            aura = *i;                      // remember but wait possible Immolate as primary priority
+                            aura = (*i)();                      // remember but wait possible Immolate as primary priority
                     }
 
                     // found Immolate or Shadowflame
@@ -1032,7 +1032,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     // consume from stack dozes not more that have combo-points
                     if (uint32 combo = m_caster->GetComboPoints())
                     {
-                        Aura *poison = 0;
+                        Aura const* poison = NULL;
                         // Lookup for Deadly poison (only attacker applied)
                         Unit::AuraList const& auras = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_DAMAGE);
                         for(Unit::AuraList::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
@@ -1041,7 +1041,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                                 (*itr)->GetSpellProto()->SpellFamilyFlags.test<CF_ROGUE_DEADLY_POISON>() &&
                                 (*itr)->GetCasterGuid() == m_caster->GetObjectGuid())
                             {
-                                poison = *itr;
+                                poison = (*itr)();
                                 break;
                             }
                         }
@@ -3323,7 +3323,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
                         return;
 
-                    if (VehicleKit* vehicleKit = unitTarget->GetVehicleKit())
+                    if (VehicleKitPtr vehicleKit = unitTarget->GetVehicleKit())
                     {
                         vehicleKit->SetDestination(m_targets.m_destX, m_targets.m_destY, m_targets.m_destZ, unitTarget->GetOrientation(),  m_targets.GetSpeed(), m_targets.GetElevation());
                     }
@@ -3717,7 +3717,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 // Glyph of Execution bonus
                 uint32 rage_modified = rage;
 
-                if (Aura *aura = m_caster->GetDummyAura(58367))
+                if (Aura const* aura = m_caster->GetDummyAura(58367))
                     rage_modified +=  aura->GetModifier()->m_amount*10;
 
                 int32 basePoints0 = damage+int32(rage_modified * m_spellInfo->DmgMultiplier[eff_idx] +
@@ -4228,7 +4228,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                                 damage += (*i)->GetModifier()->m_amount * damage / 100;
 
                         // Glyph of Healing Stream Totem
-                        if (Aura *dummy = owner->GetDummyAura(55456))
+                        if (Aura const* dummy = owner->GetDummyAura(55456))
                             damage += dummy->GetModifier()->m_amount * damage / 100;
                     }
                     m_caster->CastCustomSpell(unitTarget, 52042, &damage, NULL, NULL, true, 0, 0, m_originalCasterGUID);
@@ -4268,8 +4268,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                 // Glyph of Mana Tide
                 if (Unit *owner = m_caster->GetOwner())
-                    if (Aura *dummy = owner->GetDummyAura(55441))
-                        damage+=dummy->GetModifier()->m_amount;
+                    if (Aura const* dummy = owner->GetDummyAura(55441))
+                        damage += dummy->GetModifier()->m_amount;
                 // Regenerate 6% of Total Mana Every 3 secs
                 int32 EffectBasePoints0 = unitTarget->GetMaxPower(POWER_MANA)  * damage / 100;
                 m_caster->CastCustomSpell(unitTarget, 39609, &EffectBasePoints0, NULL, NULL, true, NULL, NULL, m_originalCasterGUID);
@@ -5364,7 +5364,7 @@ void Spell::EffectHeal(SpellEffectIndex eff_idx)
         {
             Unit::AuraList const& RejorRegr = unitTarget->GetAurasByType(SPELL_AURA_PERIODIC_HEAL);
             // find most short by duration
-            Aura *targetAura = NULL;
+            Aura const* targetAura = NULL;
             for(Unit::AuraList::const_iterator i = RejorRegr.begin(); i != RejorRegr.end(); ++i)
             {
                 if ((*i)->GetSpellProto()->SpellFamilyName == SPELLFAMILY_DRUID &&
@@ -5372,7 +5372,7 @@ void Spell::EffectHeal(SpellEffectIndex eff_idx)
                     (*i)->GetSpellProto()->SpellFamilyFlags.test<CF_DRUID_REGROWTH, CF_DRUID_REJUVENATION>())
                 {
                     if (!targetAura || (*i)->GetAuraDuration() < targetAura->GetAuraDuration())
-                        targetAura = *i;
+                        targetAura = (*i)();
                 }
             }
 
@@ -7571,7 +7571,7 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
                     // Stormstrike AP Buff
                     if ( (*citr)->GetModifier()->m_miscvalue == 5634 )
                     {
-                        m_caster->CastSpell(m_caster, 38430, true, NULL, *citr);
+                        m_caster->CastSpell(m_caster, 38430, true, NULL, (*citr)());
                         break;
                     }
                 }
@@ -7604,7 +7604,7 @@ void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
                         // Blood Strike and Obliterate store bonus*2
                         if (m_spellInfo->SpellFamilyFlags.test<CF_DEATHKNIGHT_BLOOD_STRIKE, CF_DEATHKNIGHT_OBLITERATE>())
                             bonus /= 2.0f;
-                           if (Aura* dummy = m_caster->GetDummyAura(64736)) // Item - Death Knight T8 Melee 4P Bonus
+                           if (Aura const* dummy = m_caster->GetDummyAura(64736)) // Item - Death Knight T8 Melee 4P Bonus
                                bonus *= ((float)dummy->GetModifier()->m_amount+100.0f)/100.0f;
                     }
                     else // Blood-Caked Blade damage info taken from http://www.wowhead.com/forums&topic=54152.2 and Dr.Damage addon.
@@ -10685,7 +10685,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         {
                             if (roll_chance_i((*i)->GetModifier()->m_amount))
                             {
-                                unitTarget->CastSpell(unitTarget, 53398, true, NULL, (*i), m_caster->GetObjectGuid());
+                                unitTarget->CastSpell(unitTarget, 53398, true, NULL, (*i)(), m_caster->GetObjectGuid());
                                 break;
                             }
                         }
@@ -12538,7 +12538,7 @@ void Spell::EffectRedirectThreat(SpellEffectIndex eff_idx)
         return;
 
     if (m_spellInfo->Id == 59665)                           // Vigilance
-        if (Aura *glyph = unitTarget->GetDummyAura(63326))  // Glyph of Vigilance
+        if (Aura const* glyph = unitTarget->GetDummyAura(63326))  // Glyph of Vigilance
             damage += glyph->GetModifier()->m_amount;
 
     m_caster->getHostileRefManager().SetThreatRedirection(unitTarget->GetObjectGuid(), uint32(damage));

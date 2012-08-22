@@ -178,7 +178,7 @@ void Player::UpdateArmor()
     AuraList const& mResbyIntellect = GetAurasByType(SPELL_AURA_MOD_RESISTANCE_OF_STAT_PERCENT);
     for(AuraList::const_iterator i = mResbyIntellect.begin();i != mResbyIntellect.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         if(mod->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL)
             value += int32(GetStat(Stats((*i)->GetMiscBValue())) * mod->m_amount / 100.0f);
     }
@@ -788,7 +788,7 @@ void Player::UpdateManaRegen()
     AuraList const& regenAura = GetAurasByType(SPELL_AURA_MOD_MANA_REGEN_FROM_STAT);
     for(AuraList::const_iterator i = regenAura.begin();i != regenAura.end(); ++i)
     {
-        Modifier* mod = (*i)->GetModifier();
+        Modifier const* mod = (*i)->GetModifier();
         power_regen_mp5 += GetStat(Stats(mod->m_miscvalue)) * mod->m_amount / 500.0f;
     }
 

@@ -381,7 +381,7 @@ class Spell
         Spell(Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid originalCasterGUID = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
         ~Spell();
 
-        void prepare(SpellCastTargets const* targets, Aura* triggeredByAura = NULL);
+        void prepare(SpellCastTargets const* targets, Aura const* triggeredByAura = NULL);
 
         void cancel(bool force = false);
 

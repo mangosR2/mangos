@@ -378,7 +378,7 @@ static AuraType const frozenAuraTypes[] = { SPELL_AURA_MOD_ROOT, SPELL_AURA_MOD_
 Aura::Aura(AuraClassType type, SpellEntry const* spellproto, SpellEffectIndex eff, int32 *currentBasePoints, SpellAuraHolderPtr holder, Unit *target, Unit *caster, Item* castItem) :
 m_classType(type),m_periodicTimer(0), m_periodicTick(0), m_removeMode(AURA_REMOVE_BY_DEFAULT),
 m_effIndex(eff), m_positive(false), m_isPeriodic(false), m_isAreaAura(false), m_deleted(false),
-m_isPersistent(false), m_in_use(0), m_spellAuraHolder(holder)
+m_isPersistent(false), m_spellAuraHolder(holder)
 {
     MANGOS_ASSERT(target);
     MANGOS_ASSERT(spellproto && spellproto == sSpellStore.LookupEntry( spellproto->Id ) && "`info` must be pointer to sSpellStore element");
@@ -610,7 +610,6 @@ void Aura::SetModifier(AuraType t, int32 a, uint32 pt, int32 miscValue)
 
 void Aura::UpdateAura(uint32 diff)
 {
-    SetInUse(true);
     switch(GetAuraClassType())
     {
         case AURA_CLASS_AREA_AURA:
@@ -627,7 +626,6 @@ void Aura::UpdateAura(uint32 diff)
             Update(diff);
             break;
     }
-    SetInUse(false);
 }
 
 void Aura::Update(uint32 diff)
@@ -888,19 +886,19 @@ void Aura::AreaAuraUpdate(uint32 diff)
                         Aura* aura = holder->GetAuraByEffectIndex(m_effIndex);
                         if (aura)
                         {
-                            holder->SetInUse(true);
+                            //holder->SetInUse(true);
                             aura->ApplyModifier(false,true);
                             aura->GetModifier()->m_amount = actualBasePoints;
                             aura->ApplyModifier(true,true);
-                            holder->SetInUse(false);
+                            //holder->SetInUse(false);
                         }
                         else
                         {
                             Aura* aura = holder->CreateAura(AURA_CLASS_AREA_AURA, m_effIndex, &actualBasePoints, holder, i_target, GetAffectiveCaster(), NULL);
                             i_target->AddAuraToModList(aura);
-                            holder->SetInUse(true);
+                            //holder->SetInUse(true);
                             aura->ApplyModifier(true,true);
-                            holder->SetInUse(false);
+                            //holder->SetInUse(false);
                         }
                     }
                 }
@@ -1007,10 +1005,8 @@ void Aura::ApplyModifier(bool apply, bool Real)
     AuraType aura = m_modifier.m_auraname;
 
     GetHolder()->SetInUse(true);
-    SetInUse(true);
     if (aura < TOTAL_AURAS)
         (*this.*AuraHandler [aura])(apply, Real);
-    SetInUse(false);
     GetHolder()->SetInUse(false);
 }
 
@@ -2871,10 +2867,10 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                             switch ((*itr)->GetSpellProto()->Id)
                             {
                                 case 46859:                 // Unrelenting Assault, rank 1
-                                    target->CastSpell(target,64849,true,NULL,(*itr));
+                                    target->CastSpell(target,64849,true,NULL,(*itr)());
                                     break;
                                 case 46860:                 // Unrelenting Assault, rank 2
-                                    target->CastSpell(target,64850,true,NULL,(*itr));
+                                    target->CastSpell(target,64850,true,NULL,(*itr)());
                                     break;
                                 default:
                                     break;
@@ -4063,11 +4059,10 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
             Unit::AuraList const& slowingAuras = target->GetAurasByType(SPELL_AURA_MOD_DECREASE_SPEED);
             for (Unit::AuraList::const_iterator iter = slowingAuras.begin(); iter != slowingAuras.end(); ++iter)
             {
-                Aura* aura = *iter;
-                if (!aura)
+                if (iter->IsEmpty())
                     continue;
 
-                SpellAuraHolderPtr holder = aura->GetHolder();
+                SpellAuraHolderPtr holder = iter->GetHolder();
                 if (!holder || holder->IsDeleted())
                     continue;
 
@@ -4229,17 +4224,20 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
         target->SetShapeshiftForm(FORM_NONE);
 
         // re-apply transform display with preference negative cases
-        Unit::AuraList const& otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
+        Unit::AuraList& otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
         if (!otherTransforms.empty())
         {
             // look for other transform auras
-            Aura* handledAura = *otherTransforms.begin();
-            for (Unit::AuraList::const_iterator i = otherTransforms.begin(); i != otherTransforms.end(); ++i)
+            Aura* handledAura = (*otherTransforms.begin())();
+            for (Unit::AuraList::iterator itr = otherTransforms.begin(); itr != otherTransforms.end(); ++itr)
             {
+                if (itr->IsEmpty())
+                    continue;
+
                 // negative auras are preferred
-                if (!IsPositiveSpell((*i)->GetSpellProto()->Id))
+                if (!IsPositiveSpell((*itr)->GetId()))
                 {
-                    handledAura = *i;
+                    handledAura = (*itr)();
                     break;
                 }
             }
@@ -4252,12 +4250,12 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
             case FORM_BEAR:
             case FORM_DIREBEAR:
             case FORM_CAT:
-                if (Aura* dummy = target->GetDummyAura(37315))
+                if (Aura const* dummy = target->GetDummyAura(37315))
                     target->CastSpell(target, 37316, true, NULL, dummy);
                 break;
             // Nordrassil Regalia - bonus
             case FORM_MOONKIN:
-                if (Aura* dummy = target->GetDummyAura(37324))
+                if (Aura const* dummy = target->GetDummyAura(37324))
                     target->CastSpell(target, 37325, true, NULL, dummy);
                 break;
             // Shadow Dance - remove stealth mode stand flag
@@ -4574,17 +4572,17 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
             ((Creature*)target)->LoadEquipment(((Creature*)target)->GetCreatureInfo()->equipmentId, true);
 
         // re-apply some from still active with preference negative cases
-        Unit::AuraList const& otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
+        Unit::AuraList& otherTransforms = target->GetAurasByType(SPELL_AURA_TRANSFORM);
         if (!otherTransforms.empty())
         {
             // look for other transform auras
-            Aura* handledAura = *otherTransforms.begin();
-            for(Unit::AuraList::const_iterator i = otherTransforms.begin();i != otherTransforms.end(); ++i)
+            Aura* handledAura = (*otherTransforms.begin())();
+            for(Unit::AuraList::iterator i = otherTransforms.begin();i != otherTransforms.end(); ++i)
             {
                 // negative auras are preferred
                 if (!IsPositiveSpell((*i)->GetSpellProto()->Id))
                 {
-                    handledAura = *i;
+                    handledAura = (*i)();
                     break;
                 }
             }
@@ -5908,17 +5906,17 @@ void Aura::HandleAuraModStateImmunity(bool apply, bool Real)
 {
     if (apply && Real && GetSpellProto()->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY))
     {
+        Unit::SpellIdSet toRemoveSpellList;
         Unit::AuraList const& auraList = GetTarget()->GetAurasByType(AuraType(m_modifier.m_miscvalue));
-        for(Unit::AuraList::const_iterator itr = auraList.begin(); itr != auraList.end();)
+        for (Unit::AuraList::const_iterator itr = auraList.begin(); itr != auraList.end(); ++itr)
         {
-            if (auraList.front() != this)                   // skip itself aura (it already added)
-            {
-                GetTarget()->RemoveAurasDueToSpell(auraList.front()->GetId());
-                itr = auraList.begin();
-            }
-            else
-                ++itr;
+            if (itr->IsEmpty() || (*itr)() == this)                   // skip itself aura (it already added)
+                continue;
+            toRemoveSpellList.insert(auraList.front()->GetId());
         }
+
+        for (Unit::SpellIdSet::const_iterator i = toRemoveSpellList.begin(); i != toRemoveSpellList.end(); ++i)
+            GetTarget()->RemoveAurasDueToSpell(*i);
     }
 
     GetTarget()->ApplySpellImmune(GetId(), IMMUNITY_STATE, m_modifier.m_miscvalue, apply);
@@ -8894,8 +8892,9 @@ void Aura::PeriodicTick()
 
             int32 gain = target->ModifyHealth(damageInfo.damage);
             damageInfo.cleanDamage = damageInfo.damage;
-            damageInfo.damage = damageInfo.cleanDamage - uint32(gain);
-            SpellPeriodicAuraLogInfo pInfo(this, damageInfo.cleanDamage, damageInfo.damage, damageInfo.absorb, 0, 0.0f, isCrit);
+            damageInfo.damage = uint32(gain);
+            uint32 overDamage = damageInfo.cleanDamage - damageInfo.damage;
+            SpellPeriodicAuraLogInfo pInfo(this, damageInfo.cleanDamage, overDamage, damageInfo.absorb, 0, 0.0f, isCrit);
             target->SendPeriodicAuraLog(&pInfo);
 
             // Set trigger flag
@@ -10756,11 +10755,8 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
     if (slot >= MAX_AURAS)                                   // slot not set
         return;
 
-    {
-        MAPLOCK_READ(m_target,MAP_LOCK_TYPE_AURAS);
-        if (m_target->GetVisibleAura(slot) == 0)
-            return;
-    }
+    if (m_target->GetVisibleAura(slot) == 0)
+        return;
 
     // unregister aura diminishing (and store last time)
     if (getDiminishGroup() != DIMINISHING_NONE )

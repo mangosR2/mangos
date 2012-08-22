@@ -928,9 +928,6 @@ void CreatureEventAI::EnterEvadeMode()
     m_creature->DeleteThreatList();
     m_creature->CombatStop(true);
 
-    if (m_creature->isAlive())
-        m_creature->GetMotionMaster()->MoveTargetedHome();
-
     m_creature->SetLootRecipient(NULL);
 
     if (m_bEmptyList)
@@ -1286,7 +1283,7 @@ inline Unit* CreatureEventAI::GetTargetByType(uint32 Target, Unit* pActionInvoke
 
         case TARGET_T_CURRENT_VEHICLE:
         {
-            if (VehicleKit* vehicle = m_creature->GetVehicle())
+            if (VehicleKitPtr vehicle = m_creature->GetVehicle())
                 if (Unit* base = vehicle->GetBase())
                     return base;
             break;

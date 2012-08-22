@@ -6091,16 +6091,19 @@ void Player::SetSkill(uint16 id, uint16 currVal, uint16 maxVal, uint16 step /*=0
                 SetUInt32Value(PLAYER_SKILL_BONUS_INDEX(i), 0);
 
                 // temporary bonuses
-                AuraList const& mModSkill = GetAurasByType(SPELL_AURA_MOD_SKILL);
-                for(AuraList::const_iterator j = mModSkill.begin(); j != mModSkill.end(); ++j)
-                    if ((*j)->GetModifier()->m_miscvalue == int32(id))
-                        (*j)->ApplyModifier(true);
+                {
+                    MAPLOCK_READ(const_cast<Player*>(this), MAP_LOCK_TYPE_AURAS);
+                    AuraList& mModSkill = GetAurasByType(SPELL_AURA_MOD_SKILL);
+                    for(AuraList::iterator j = mModSkill.begin(); j != mModSkill.end(); ++j)
+                        if ((*j)->GetModifier()->m_miscvalue == int32(id))
+                            (*j)->ApplyModifier(true);
 
-                // permanent bonuses
-                AuraList const& mModSkillTalent = GetAurasByType(SPELL_AURA_MOD_SKILL_TALENT);
-                for(AuraList::const_iterator j = mModSkillTalent.begin(); j != mModSkillTalent.end(); ++j)
-                    if ((*j)->GetModifier()->m_miscvalue == int32(id))
-                        (*j)->ApplyModifier(true);
+                    // permanent bonuses
+                    AuraList& mModSkillTalent = GetAurasByType(SPELL_AURA_MOD_SKILL_TALENT);
+                    for(AuraList::iterator j = mModSkillTalent.begin(); j != mModSkillTalent.end(); ++j)
+                        if ((*j)->GetModifier()->m_miscvalue == int32(id))
+                            (*j)->ApplyModifier(true);
+                }
 
                 // Learn all spells for skill
                 learnSkillRewardedSpells(id, currVal);
@@ -7757,17 +7760,17 @@ void Player::_ApplyWeaponDependentAuraMods(Item *item,WeaponAttackType attackTyp
 {
     MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
 
-    AuraList const& auraCritList = GetAurasByType(SPELL_AURA_MOD_CRIT_PERCENT);
-    for(AuraList::const_iterator itr = auraCritList.begin(); itr!=auraCritList.end();++itr)
-        _ApplyWeaponDependentAuraCritMod(item,attackType,*itr,apply);
+    AuraList& auraCritList = GetAurasByType(SPELL_AURA_MOD_CRIT_PERCENT);
+    for(AuraList::iterator itr = auraCritList.begin(); itr!=auraCritList.end();++itr)
+        _ApplyWeaponDependentAuraCritMod(item,attackType,(*itr)(),apply);
 
-    AuraList const& auraDamageFlatList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE);
-    for(AuraList::const_iterator itr = auraDamageFlatList.begin(); itr!=auraDamageFlatList.end();++itr)
-        _ApplyWeaponDependentAuraDamageMod(item,attackType,*itr,apply);
+    AuraList& auraDamageFlatList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE);
+    for(AuraList::iterator itr = auraDamageFlatList.begin(); itr!=auraDamageFlatList.end();++itr)
+        _ApplyWeaponDependentAuraDamageMod(item,attackType,(*itr)(),apply);
 
-    AuraList const& auraDamagePCTList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
-    for(AuraList::const_iterator itr = auraDamagePCTList.begin(); itr!=auraDamagePCTList.end();++itr)
-        _ApplyWeaponDependentAuraDamageMod(item,attackType,*itr,apply);
+    AuraList& auraDamagePCTList = GetAurasByType(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE);
+    for(AuraList::iterator itr = auraDamagePCTList.begin(); itr!=auraDamagePCTList.end();++itr)
+        _ApplyWeaponDependentAuraDamageMod(item,attackType,(*itr)(),apply);
 }
 
 void Player::_ApplyWeaponDependentAuraCritMod(Item *item, WeaponAttackType attackType, Aura* aura, bool apply)
@@ -19353,6 +19356,9 @@ void Player::AddSpellMod(Aura* aura, bool apply)
             int32 val = 0;
             for (AuraList::const_iterator itr = m_spellMods[mod->m_miscvalue].begin(); itr != m_spellMods[mod->m_miscvalue].end(); ++itr)
             {
+                if (itr->IsEmpty())
+                    continue;
+
                 if ((*itr)->GetModifier()->m_auraname == mod->m_auraname && ((*itr)->GetAuraSpellClassMask().test(eff)))
                     val += (*itr)->GetModifier()->m_amount;
             }
@@ -19379,13 +19385,14 @@ template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T &bas
 
     int32 totalpct = 0;
     int32 totalflat = 0;
-    for (AuraList::iterator itr = m_spellMods[op].begin(); itr != m_spellMods[op].end(); ++itr)
+    for (AuraList::const_iterator itr = m_spellMods[op].begin(); itr != m_spellMods[op].end(); ++itr)
     {
-        Aura *aura = *itr;
+        if (itr->IsEmpty())
+            continue;
 
-        Modifier const* mod = aura->GetModifier();
+        Modifier const* mod = (*itr)->GetModifier();
 
-        if (!aura->isAffectedOnSpell(spellInfo))
+        if (!(*itr)->isAffectedOnSpell(spellInfo))
             continue;
 
         if (mod->m_auraname == SPELL_AURA_ADD_FLAT_MODIFIER)
@@ -20962,7 +20969,7 @@ void Player::SendInitialPacketsAfterAddToMap()
     };
     for(AuraType const* itr = &auratypes[0]; itr && itr[0] != SPELL_AURA_NONE; ++itr)
     {
-        Unit::AuraList const& auraList = GetAurasByType(*itr);
+        Unit::AuraList& auraList = GetAurasByType(*itr);
         if(!auraList.empty())
             auraList.front()->ApplyModifier(true,true);
     }
@@ -21228,7 +21235,6 @@ void Player::SendAurasForTarget(Unit *target)
     WorldPacket data(SMSG_AURA_UPDATE_ALL);
     data << target->GetPackGUID();
 
-    MAPLOCK_READ(target,MAP_LOCK_TYPE_AURAS);
     Unit::VisibleAuraMap const& visibleAuras = target->GetVisibleAuras();
     for (Unit::VisibleAuraMap::const_iterator itr = visibleAuras.begin(); itr != visibleAuras.end(); ++itr)
     {

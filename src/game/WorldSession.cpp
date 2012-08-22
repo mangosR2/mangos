@@ -523,7 +523,7 @@ void WorldSession::LogoutPlayer(bool Save)
 
         GetPlayer()->InterruptNonMeleeSpells(true);
 
-        if (VehicleKit* vehicle = GetPlayer()->GetVehicle())
+        if (VehicleKitPtr vehicle = GetPlayer()->GetVehicle())
         {
             if (Creature* base = ((Creature*)vehicle->GetBase()))
             {

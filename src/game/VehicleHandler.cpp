@@ -102,7 +102,7 @@ void WorldSession::HandleRequestVehicleSwitchSeat(WorldPacket &recv_data)
     int8 seatId;
     recv_data >> seatId;
 
-    VehicleKit* pVehicle = GetPlayer()->GetVehicle();
+    VehicleKitPtr pVehicle = GetPlayer()->GetVehicle();
 
     if (!pVehicle)
         return;
@@ -115,7 +115,7 @@ void WorldSession::HandleRequestVehicleSwitchSeat(WorldPacket &recv_data)
 
     else if (Unit *Vehicle2 = GetPlayer()->GetMap()->GetUnit(guid))
     {
-        if (VehicleKit *pVehicle2 = Vehicle2->GetVehicleKit())
+        if (VehicleKitPtr pVehicle2 = Vehicle2->GetVehicleKit())
             if (pVehicle2->HasEmptySeat(seatId))
             {
                 GetPlayer()->ExitVehicle();
@@ -146,7 +146,7 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket &recv_data)
     if (player->GetTransport())
         return;
 
-    if (VehicleKit* pVehicle = player->GetVehicleKit())
+    if (VehicleKitPtr pVehicle = player->GetVehicleKit())
     {
         if (pVehicle->HasEmptySeat(-1))
             GetPlayer()->EnterVehicle(pVehicle, -1);
@@ -169,7 +169,7 @@ void WorldSession::HandleEjectPassenger(WorldPacket &recv_data)
     if (!passenger)
         return;
 
-    VehicleKit* pVehicle = passenger->GetVehicle();
+    VehicleKitPtr pVehicle = passenger->GetVehicle();
 
     if (!pVehicle ||
        ((pVehicle != GetPlayer()->GetVehicleKit()) &&
@@ -211,7 +211,7 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket &recv_data)
     int8 seatId;
     recv_data >> seatId;
 
-    VehicleKit* pVehicle = GetPlayer()->GetVehicle();
+    VehicleKitPtr pVehicle = GetPlayer()->GetVehicle();
 
     if (!pVehicle)
         return;

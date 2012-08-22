@@ -287,6 +287,8 @@ class MANGOS_DLL_SPEC Pet : public Creature
         uint32 GetCreateSpellID() { return m_createSpellID; }
         bool IsInWorld() const { return ( !m_loading && !m_removed && Object::IsInWorld()); }
 
+        bool IsInEvadeMode() const;
+
         // overwrite Creature function for name localization back to WorldObject version without localization
         const char* GetNameForLocaleIdx(int32 locale_idx) const { return WorldObject::GetNameForLocaleIdx(locale_idx); }
 

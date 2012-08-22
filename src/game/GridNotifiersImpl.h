@@ -221,9 +221,9 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
         {
             Aura* Aur = holder->CreateAura(AURA_CLASS_PERSISTENT_AREA_AURA, eff_index, NULL, holder, target, i_dynobject.GetCaster(), NULL);
             target->AddAuraToModList(Aur);
-            holder->SetInUse(true);
+            //holder->SetInUse(true);
             Aur->ApplyModifier(true,true);
-            holder->SetInUse(false);
+            //holder->SetInUse(false);
         }
         else if (holder->GetAuraDuration() >= 0 && uint32(holder->GetAuraDuration()) < i_dynobject.GetDuration())
         {

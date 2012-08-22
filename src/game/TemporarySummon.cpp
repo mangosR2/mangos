@@ -270,7 +270,7 @@ void TemporarySummon::UnSummon(uint32 delay)
 {
     if (delay > 0)
     {
-        m_type = TEMPSUMMON_TIMED_DESPAWN;
+        m_type = TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
         m_timer = delay;
         return;
     }
@@ -284,7 +284,7 @@ void TemporarySummon::UnSummon(uint32 delay)
             if (sum->AI())
                 sum->AI()->SummonedCreatureDespawn(this);
 
-    KillAllEvents(true);
+    KillAllEvents(false);
 
     AddObjectToRemoveList();
 

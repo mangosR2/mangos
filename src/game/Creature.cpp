@@ -615,9 +615,9 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 if (AI())
                 {
                     // do not allow the AI to be changed during update
-                    m_AI_locked = true;
+                    LockAI(true);
                     AI()->UpdateAI(diff);   // AI not react good at real update delays (while freeze in non-active part of map)
-                    m_AI_locked = false;
+                    LockAI(false);
                 }
             }
 
@@ -788,7 +788,7 @@ void Creature::DoFleeToGetAssistance()
 bool Creature::AIM_Initialize()
 {
     // make sure nothing can change the AI during AI update
-    if (m_AI_locked)
+    if (IsAILocked())
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "AIM_Initialize: failed to init, locked.");
         return false;
@@ -2765,4 +2765,62 @@ Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
     }
 
     return target;
+}
+
+bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    if (m_owner.IsInEvadeMode())
+        return true;
+
+    if (m_owner.SelectHostileTarget(false))
+        return true;
+
+    switch (m_owner.GetObjectGuid().GetHigh())
+    {
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        {
+            if (((Creature*)&m_owner)->IsAILocked())
+                return false;
+
+            if (((Creature*)&m_owner)->IsDespawned())
+                return true;
+
+            if (m_owner.isAlive())
+                m_owner.GetMotionMaster()->MoveTargetedHome();
+
+            if (((Creature*)&m_owner)->AI())
+                ((Creature*)&m_owner)->AI()->EnterEvadeMode();
+
+            if (InstanceData* mapInstance = m_owner.GetInstanceData())
+                mapInstance->OnCreatureEvade((Creature*)&m_owner);
+            break;
+        }
+        case HIGHGUID_PET:
+        {
+            if (((Creature*)&m_owner)->IsAILocked())
+                return false;
+
+            if (((Creature*)&m_owner)->IsDespawned())
+                return true;
+
+            if (m_owner.isAlive())
+                m_owner.GetMotionMaster()->MoveTargetedHome();
+
+            if (((Pet*)&m_owner)->AI())
+                ((Pet*)&m_owner)->AI()->EnterEvadeMode();
+
+            if (((Pet*)&m_owner)->GetOwner() && ((Pet*)&m_owner)->GetOwner()->GetTypeId() == TYPEID_UNIT)
+            {
+                if (InstanceData* mapInstance = m_owner.GetInstanceData())
+                    mapInstance->OnCreatureEvade((Creature*)&m_owner);
+            }
+            break;
+        }
+        case HIGHGUID_PLAYER:
+        default:
+            sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
+        break;
+    }
+    return true;
 }

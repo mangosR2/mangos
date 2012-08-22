@@ -48,10 +48,10 @@ enum AuraClassType
 struct Modifier
 {
     AuraType m_auraname;
-    int32 m_amount;
-    int32 m_miscvalue;
-    uint32 periodictime;
-    int32 m_baseamount;
+    mutable int32    m_amount;
+    int32    m_miscvalue;
+    uint32   periodictime;
+    int32    m_baseamount;
 };
 
 class Unit;
@@ -451,7 +451,7 @@ class MANGOS_DLL_SPEC Aura
             return maxDuration > 0 && m_modifier.periodictime > 0 ? maxDuration / m_modifier.periodictime : 0;
         }
 
-        void SetAuraPeriodicTimer(int32 timer) { SetInUse(true); m_modifier.periodictime = timer; SetInUse(false);}
+        void SetAuraPeriodicTimer(int32 timer) { m_modifier.periodictime = timer;}
 
         uint32 GetStackAmount() const { return GetHolder()->GetStackAmount(); }
         void SetLoadedState(int32 damage, uint32 periodicTime)
@@ -467,19 +467,8 @@ class MANGOS_DLL_SPEC Aura
         bool IsPersistent() const { return m_isPersistent; }
         bool IsAreaAura() const { return m_isAreaAura; }
         bool IsPeriodic() const { return m_isPeriodic; }
-        bool IsInUse() const { return (m_in_use > 0); }
         bool IsStacking() const { return m_stacking;}
 
-        void SetInUse(bool state)
-        {
-            if (state)
-                ++m_in_use;
-            else
-            {
-                if (m_in_use > 0)
-                    --m_in_use;
-            }
-        }
         void ApplyModifier(bool apply, bool Real = false);
 
         void UpdateAura(uint32 diff);
@@ -550,8 +539,6 @@ class MANGOS_DLL_SPEC Aura
         bool m_isPersistent:1;
         bool m_stacking:1;                                  // Aura is not overwritten, but effects are not cumulative with similar effects
 
-        int32 m_in_use;                                     // > 0 while in Aura::ApplyModifier call/Aura::Update/etc
-
         bool IsEffectStacking();
 
         SpellAuraHolderPtr const m_spellAuraHolder;
@@ -566,4 +553,54 @@ class MANGOS_DLL_SPEC Aura
 };
 
 MANGOS_DLL_SPEC SpellAuraHolderPtr CreateSpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem = NULL);
+
+class MANGOS_DLL_SPEC AuraPair
+{
+    public:
+        AuraPair() : m_holder(SpellAuraHolderPtr()), m_index(MAX_EFFECT_INDEX) {};
+        AuraPair(SpellAuraHolderPtr holder, SpellEffectIndex idx) : m_holder(holder), m_index(idx) {};
+        AuraPair(Aura const* aura) : m_holder(aura->GetHolder()), m_index(aura->GetEffIndex()) {};
+
+        AuraPair& operator= (AuraPair const& pair)
+        {
+            m_holder = pair.m_holder;
+            m_index  = pair.m_index;
+            return *this;
+        }
+
+        Aura* operator () () { return m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const* operator () () const { return m_holder->GetAura(m_index); };
+
+        Aura* operator -> () { return m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const* operator -> () const { return m_holder->GetAura(m_index); };
+
+        Aura operator * () { return *m_holder->GetAuraByEffectIndex(m_index); };
+        Aura const operator * () const { return *m_holder->GetAura(m_index); };
+
+        bool operator == (AuraPair const& pair) const { return (m_index == pair.m_index && m_holder == pair.m_holder); };
+        bool operator == (Aura const* aura)     const { return IsEmpty() ? (aura == NULL) : (aura == GetHolder()->GetAura(m_index)); };
+        bool operator !  ()                     const { return IsEmpty(); };
+        bool operator != (Aura const* aura)     const { return IsEmpty() ? (aura != NULL) : (aura != GetHolder()->GetAura(m_index)); };
+
+        SpellAuraHolderPtr GetHolder()         { return m_holder; };
+        SpellAuraHolderPtr GetHolder()   const { return m_holder; };
+        SpellEffectIndex   GetEffIndex() const { return m_index; };
+
+        bool IsEmpty(bool withDeleted = true) const
+        {
+            return
+                !m_holder ||
+                !m_holder->GetAura(m_index) ||
+                (m_index == MAX_EFFECT_INDEX) ||
+                m_holder->IsEmptyHolder() ||
+                (withDeleted && m_holder->IsDeleted())
+                ;
+        }
+
+    private:
+        SpellAuraHolderPtr m_holder;
+        SpellEffectIndex   m_index;
+};
+
+
 #endif

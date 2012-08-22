@@ -633,6 +633,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\game\vmap\GameObjectModel.cpp">
       <Filter>vmaps</Filter>
+    <ClCompile Include="..\..\src\game\TransportSystem.cpp">
+      <Filter>Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -831,12 +833,6 @@
     <ClInclude Include="..\..\src\game\OutdoorPvP\OutdoorPvPZM.h">
       <Filter>OutdoorPvP</Filter>
     </ClInclude>
-<<<<<<< HEAD
-    <ClInclude Include="..\..\src\game\ZoneScript.h">
-      <Filter>World/Handlers</Filter>
-    </ClInclude>
-=======
->>>>>>> 269d295... [12097] Add Outdoor PvP placeholders and string texts
     <ClInclude Include="..\..\src\game\ConfusedMovementGenerator.h">
       <Filter>Motion generators</Filter>
     </ClInclude>
@@ -1224,6 +1220,8 @@
     </ClInclude>
     <ClInclude Include="..\..\src\game\vmap\RegularGrid.h">
       <Filter>vmaps</Filter>
+    <ClInclude Include="..\..\src\game\TransportSystem.h">
+      <Filter>Object</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

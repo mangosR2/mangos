@@ -403,7 +403,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
 
     bool triggered = false;
     SpellEntry const* triggeredBy = NULL;
-    Aura* triggeredByAura = mover->GetTriggeredByClientAura(spellId);
+    Aura const* triggeredByAura = mover->GetTriggeredByClientAura(spellId);
     if (triggeredByAura)
     {
         triggered = true;
@@ -829,7 +829,7 @@ void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
     {
         return;
     }
-    DEBUG_LOG("WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
+    DEBUG_LOG("WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: src %f/%f %f/%f %f/%f dst %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
         spellId,
         spell->m_targets.m_srcX, srcX, spell->m_targets.m_srcY, srcY, spell->m_targets.m_srcZ, srcZ,
         spell->m_targets.m_destX, dstX, spell->m_targets.m_destY, dstY, spell->m_targets.m_destZ, dstZ,

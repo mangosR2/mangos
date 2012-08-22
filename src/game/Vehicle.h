@@ -22,6 +22,7 @@
 
 #include "Common.h"
 #include "ObjectGuid.h"
+#include "ObjectHandler.h"
 #include "Creature.h"
 #include "Unit.h"
 #include "SharedDefines.h"

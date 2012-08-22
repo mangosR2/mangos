@@ -713,7 +713,8 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         void SendAreaSpiritHealerQueryOpcode(Player *pl);
 
-        void LockAI(bool lock) { m_AI_locked = lock; }
+        void LockAI(bool lock) { m_AI_locked = lock; };
+        bool IsAILocked() const { return m_AI_locked; };
 
         void SetVirtualItem(VirtualItemSlot slot, uint32 item_id) { SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + slot, item_id); }
 
@@ -803,6 +804,17 @@ class AttackResumeEvent : public BasicEvent
         bool Execute(uint64 e_time, uint32 p_time);
     private:
         AttackResumeEvent();
+        Unit&   m_owner;
+        bool    b_force;
+};
+
+class EvadeDelayEvent : public BasicEvent
+{
+    public:
+        EvadeDelayEvent(Unit& owner, bool force = false) : m_owner(owner), b_force(force) {};
+        bool Execute(uint64 e_time, uint32 p_time);
+    private:
+        EvadeDelayEvent();
         Unit&   m_owner;
         bool    b_force;
 };
