@@ -36,6 +36,7 @@
 #include "CreatureAI.h"
 #include "CreatureAISelector.h"
 #include "CreatureEventAI.h"
+#include "PetAI.h"
 #include "Formulas.h"
 #include "WaypointMovementGenerator.h"
 #include "InstanceData.h"
@@ -2631,6 +2632,7 @@ void Creature::SetLevitate(bool enable)
         m_movementInfo.AddMovementFlag(MOVEFLAG_LEVITATING);
     else
         m_movementInfo.RemoveMovementFlag(MOVEFLAG_LEVITATING);
+
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
     data << GetPackGUID();
     SendMessageToSet(&data, true);
@@ -2780,40 +2782,59 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         case HIGHGUID_UNIT:
         case HIGHGUID_VEHICLE:
         {
-            if (((Creature*)&m_owner)->IsAILocked())
-                return false;
-
-            if (((Creature*)&m_owner)->IsDespawned())
+            Creature* c_owner = (Creature*)(&m_owner);
+            if (!c_owner)
                 return true;
 
-            if (m_owner.isAlive())
-                m_owner.GetMotionMaster()->MoveTargetedHome();
+            if (c_owner->IsAILocked())
+                return false;
 
-            if (((Creature*)&m_owner)->AI())
-                ((Creature*)&m_owner)->AI()->EnterEvadeMode();
+            if (c_owner->IsDespawned())
+                return true;
 
-            if (InstanceData* mapInstance = m_owner.GetInstanceData())
-                mapInstance->OnCreatureEvade((Creature*)&m_owner);
+            if (c_owner->isAlive())
+                c_owner->GetMotionMaster()->MoveTargetedHome();
+
+            CreatureAI* ai = c_owner->AI();
+            if (ai)
+                ai->EnterEvadeMode();
+
+            if (InstanceData* mapInstance = c_owner->GetInstanceData())
+                mapInstance->OnCreatureEvade(c_owner);
             break;
         }
         case HIGHGUID_PET:
         {
-            if (((Creature*)&m_owner)->IsAILocked())
-                return false;
-
-            if (((Creature*)&m_owner)->IsDespawned())
+            Creature* c_owner = (Creature*)(&m_owner);
+            if (!c_owner)
                 return true;
 
-            if (m_owner.isAlive())
-                m_owner.GetMotionMaster()->MoveTargetedHome();
+            if (c_owner->IsAILocked())
+                return false;
 
-            if (((Pet*)&m_owner)->AI())
-                ((Pet*)&m_owner)->AI()->EnterEvadeMode();
+            if (c_owner->IsDespawned())
+                return true;
 
-            if (((Pet*)&m_owner)->GetOwner() && ((Pet*)&m_owner)->GetOwner()->GetTypeId() == TYPEID_UNIT)
+            if (c_owner->isAlive())
+                c_owner->GetMotionMaster()->MoveTargetedHome();
+
+            Pet* p_owner = (Pet*)(&m_owner);
+            if (!p_owner)
+                return true;
+
+            CreatureAI* ai = p_owner->AI();
+            if (ai)
             {
-                if (InstanceData* mapInstance = m_owner.GetInstanceData())
-                    mapInstance->OnCreatureEvade((Creature*)&m_owner);
+                if (PetAI* pai = (PetAI*)ai)
+                    pai->EnterEvadeMode();
+                else
+                    ai->EnterEvadeMode();
+            }
+
+            if (p_owner->GetOwner() && p_owner->GetOwner()->GetTypeId() == TYPEID_UNIT)
+            {
+                if (InstanceData* mapInstance = p_owner->GetInstanceData())
+                    mapInstance->OnCreatureEvade(c_owner);
             }
             break;
         }
@@ -2823,4 +2844,28 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         break;
     }
     return true;
+}
+
+void Creature::SetRoot(bool enable)
+{
+    if (enable)
+        m_movementInfo.AddMovementFlag(MOVEFLAG_ROOT);
+    else
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
+
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_ROOT : SMSG_SPLINE_MOVE_UNROOT, 9);
+    data << GetPackGUID();
+    SendMessageToSet(&data, true);
+}
+
+void Creature::SetWaterWalk(bool enable)
+{
+    if (enable)
+        m_movementInfo.AddMovementFlag(MOVEFLAG_WATERWALKING);
+    else
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_WATERWALKING);
+
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_WATER_WALK : SMSG_SPLINE_MOVE_LAND_WALK, 9);
+    data << GetPackGUID();
+    SendMessageToSet(&data, true);
 }

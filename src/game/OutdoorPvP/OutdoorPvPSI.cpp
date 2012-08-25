@@ -30,6 +30,8 @@ OutdoorPvPSI::OutdoorPvPSI() : OutdoorPvP(),
     m_resourcesHorde(0),
     m_zoneOwner(TEAM_NONE)
 {
+    uint32 zoneId = sOutdoorPvPMgr.GetZoneOfAffectedScript(this);
+    FillInitialWorldStates(zoneId);
 }
 
 // Send initial world states

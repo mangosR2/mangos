@@ -323,6 +323,7 @@ BattleGround::BattleGround()
     m_StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_BG_WS_START_ONE_MINUTE;
     m_StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_BG_WS_START_HALF_MINUTE;
     m_StartMessageIds[BG_STARTING_EVENT_FOURTH] = LANG_BG_WS_HAS_BEGUN;
+    FillInitialWorldStates();
 }
 
 BattleGround::~BattleGround()
@@ -800,18 +801,14 @@ void BattleGround::RewardXpToTeam(uint32 Xp, float percentOfLevel, Team team)
     }
 }
 
-void BattleGround::UpdateWorldState(uint32 Field, uint32 Value)
+void BattleGround::UpdateWorldState(uint32 stateId, uint32 value)
 {
-    WorldPacket data;
-    sBattleGroundMgr.BuildUpdateWorldStatePacket(&data, Field, Value);
-    SendPacketToAll(&data);
+    sWorldStateMgr.SetWorldStateValueFor(GetBgMap(), stateId, value);
 }
 
-void BattleGround::UpdateWorldStateForPlayer(uint32 Field, uint32 Value, Player *Source)
+void BattleGround::UpdateWorldStateForPlayer(uint32 stateId, uint32 value, Player* pPlayer)
 {
-    WorldPacket data;
-    sBattleGroundMgr.BuildUpdateWorldStatePacket(&data, Field, Value);
-    Source->GetSession()->SendPacket(&data);
+    sWorldStateMgr.SetWorldStateValueFor(pPlayer, stateId, value);
 }
 
 void BattleGround::EndBattleGround(Team winner)
@@ -2123,5 +2120,5 @@ uint32 BattleGround::GetPlayerScore(Player *Source, uint32 type)
 
 void BattleGround::FillInitialWorldState(uint32 stateId, uint32 value)
 {
-    sWorldStateMgr.FillInitialWorldState(stateId, value, WORLD_STATE_TYPE_BATTLEGROUND);
+    sWorldStateMgr.SetWorldStateValueFor(GetBgMap(), stateId, value);
 }

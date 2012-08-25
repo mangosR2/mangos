@@ -34,6 +34,9 @@ OutdoorPvPHP::OutdoorPvPHP() : OutdoorPvP(),
 
     for (uint8 i = 0; i < MAX_HP_TOWERS; ++i)
         m_towerOwner[i] = TEAM_NONE;
+
+    uint32 zoneId = sOutdoorPvPMgr.GetZoneOfAffectedScript(this);
+    FillInitialWorldStates(zoneId);
 }
 
 void OutdoorPvPHP::FillInitialWorldStates(uint32 zoneId)
@@ -91,14 +94,17 @@ void OutdoorPvPHP::HandleGameObjectCreate(GameObject* go)
             break;
         case GO_HELLFIRE_BANNER_OVERLOOK:
             m_towers[0] = go->GetObjectGuid();
+            m_towerOwner[0] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[0]));
             break;
         case GO_HELLFIRE_BANNER_STADIUM:
             m_towers[1] = go->GetObjectGuid();
+            m_towerOwner[1] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[1]));
             break;
         case GO_HELLFIRE_BANNER_BROKEN_HILL:
             m_towers[2] = go->GetObjectGuid();
+            m_towerOwner[2] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[2]));
             break;
     }

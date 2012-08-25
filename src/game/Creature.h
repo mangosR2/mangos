@@ -545,6 +545,8 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         void SetWalk(bool enable);
         void SetLevitate(bool enable);
+        void SetRoot(bool enable) override;
+        void SetWaterWalk(bool enable) override;
 
         uint32 GetShieldBlockValue() const                  // dunno mob block value
         {
@@ -799,7 +801,7 @@ class ForcedDespawnDelayEvent : public BasicEvent
 class AttackResumeEvent : public BasicEvent
 {
     public:
-        AttackResumeEvent(Unit& owner) : m_owner(owner), b_force(false) {};
+        AttackResumeEvent(Unit& owner) : BasicEvent(), m_owner(owner), b_force(false) {};
         AttackResumeEvent(Unit& owner, bool force) : m_owner(owner), b_force(force) {};
         bool Execute(uint64 e_time, uint32 p_time);
     private:
@@ -811,7 +813,7 @@ class AttackResumeEvent : public BasicEvent
 class EvadeDelayEvent : public BasicEvent
 {
     public:
-        EvadeDelayEvent(Unit& owner, bool force = false) : m_owner(owner), b_force(force) {};
+        EvadeDelayEvent(Unit& owner, bool force = false) : BasicEvent(), m_owner(owner), b_force(force) {};
         bool Execute(uint64 e_time, uint32 p_time);
     private:
         EvadeDelayEvent();

@@ -90,7 +90,7 @@ class OutdoorPvP
         void HandlePlayerKill(Player* killer, Unit* victim);
 
         // Wrapper for initial (per-script) WorldState filling, once per zone
-        void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32& value);
+        void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value);
 
         // Damage GO - for WG mostly
         virtual void EventPlayerDamageGO(Player* /*player*/, GameObject* /*target_obj*/, uint32 /*eventId*/, uint32 /*bySpellId*/) {}

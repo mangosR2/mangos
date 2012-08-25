@@ -57,6 +57,7 @@ struct Modifier
 class Unit;
 struct SpellEntry;
 struct ProcTriggerSpell;
+struct DamageInfo;
 
 // forward decl
 class Aura;
@@ -517,7 +518,7 @@ class MANGOS_DLL_SPEC Aura
         void PeriodicDummyTick();
         void PeriodicCheck();
 
-        bool IsCritFromAbilityAura(Unit* caster, uint32& damage);
+        bool IsCritFromAbilityAura(Unit* caster, DamageInfo* damage);
         void ReapplyAffectedPassiveAuras();
 
         Modifier m_modifier;

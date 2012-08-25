@@ -476,6 +476,10 @@ void ThreatManager::addThreat(Unit* pVictim, float pThreat, bool crit, SpellScho
 
 void ThreatManager::addThreatDirectly(Unit* pVictim, float threat)
 {
+    // not to self
+    if (pVictim == getOwner())
+        return;
+
     HostileReference* ref = iThreatContainer.addThreat(pVictim, threat);
     // Ref is online
     if (ref)
@@ -597,7 +601,7 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                if (getOwner() && getOwner()->IsInWorld())
+                if (getOwner() && getOwner()->IsInWorld() && getOwner()->GetMap())
                     if (Unit* target = ObjectAccessor::GetUnit(*getOwner(), hostileReference->getUnitGuid()))
                         if (getOwner()->IsInMap(target))
                             getOwner()->SendThreatRemove(hostileReference);

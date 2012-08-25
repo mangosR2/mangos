@@ -56,8 +56,6 @@ m_declinedname(NULL)
 
 Pet::~Pet()
 {
-    CleanupsBeforeDelete();
-
     delete m_declinedname;
 
     if (m_PetScalingData)

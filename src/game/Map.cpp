@@ -672,10 +672,10 @@ Map::Remove(T *obj, bool remove)
     NGridType *grid = getNGrid(cell.GridX(), cell.GridY());
     MANGOS_ASSERT( grid != NULL );
 
-    if(obj->isActiveObject())
+    if (obj->isActiveObject())
         RemoveFromActive(obj);
 
-    if(remove)
+    if (remove)
         obj->CleanupsBeforeDelete();
     else
         obj->RemoveFromWorld();
@@ -686,12 +686,14 @@ Map::Remove(T *obj, bool remove)
     if (obj->GetTypeId() == TYPEID_UNIT)
         RemoveAttackersStorageFor(obj->GetObjectGuid());
 
-    if( remove )
+    if (remove)
     {
         // if option set then object already saved at this moment
         if(!sWorld.getConfig(CONFIG_BOOL_SAVE_RESPAWN_TIME_IMMEDIATELY))
             obj->SaveRespawnTime();
 
+        ((Object*)obj)->RemoveFromWorld();
+        obj->ResetMap();
         // Note: In case resurrectable corpse and pet its removed from global lists in own destructor
         delete obj;
     }

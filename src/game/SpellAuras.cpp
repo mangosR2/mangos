@@ -4512,7 +4512,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
                     break;
             }
         }
-        else
+        else                                                // m_modifier.m_miscvalue != 0
         {
             uint32 model_id;
 
@@ -4533,9 +4533,9 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
 
             target->SetDisplayId(model_id);
 
-            // creature case, need to update equipment
+            // creature case, need to update equipment if additional provided
             if (ci && target->GetTypeId() == TYPEID_UNIT)
-                ((Creature*)target)->LoadEquipment(ci->equipmentId, true);
+                ((Creature*)target)->LoadEquipment(ci->equipmentId, false);
 
             // Dragonmaw Illusion (set mount model also)
             if (GetId()==42016 && target->GetMountID() && !target->GetAurasByType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED).empty())
@@ -4561,7 +4561,7 @@ void Aura::HandleAuraTransform(bool apply, bool Real)
                 target->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED, GetHolder());
         }
     }
-    else
+    else                                                    // !apply
     {
         // ApplyModifier(true) will reapply it if need
         target->setTransForm(0);
@@ -6687,15 +6687,19 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
 
         if (m_modifier.m_auraname == SPELL_AURA_PERIODIC_DAMAGE)
         {
+            DamageInfo damageInfo =  DamageInfo(caster, target, GetSpellProto(), m_modifier.m_amount);
+            damageInfo.damageType = DOT;
             // SpellDamageBonusDone for magic spells
             if (spellProto->DmgClass == SPELL_DAMAGE_CLASS_NONE || spellProto->DmgClass == SPELL_DAMAGE_CLASS_MAGIC)
-                m_modifier.m_amount = caster->SpellDamageBonusDone(target, GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
+            {
+                caster->SpellDamageBonusDone(&damageInfo, GetStackAmount());
+            }
             // MeleeDamagebonusDone for weapon based spells
             else
             {
-                WeaponAttackType attackType = GetWeaponAttackType(GetSpellProto());
-                m_modifier.m_amount = caster->MeleeDamageBonusDone(target, m_modifier.m_amount, attackType, GetSpellProto(), DOT, GetStackAmount());
+                caster->MeleeDamageBonusDone(&damageInfo, GetStackAmount());
             }
+            m_modifier.m_amount = damageInfo.damage;
         }
     }
     // remove time effects
@@ -6783,7 +6787,10 @@ void Aura::HandlePeriodicLeech(bool apply, bool /*Real*/)
         if (!caster)
             return;
 
-        m_modifier.m_amount = caster->SpellDamageBonusDone(GetTarget(), GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
+        DamageInfo damageInfo =  DamageInfo(caster, GetTarget(), GetSpellProto(), m_modifier.m_amount);
+        damageInfo.damageType = DOT;
+        caster->SpellDamageBonusDone(&damageInfo, GetStackAmount());
+        m_modifier.m_amount = damageInfo.damage;
     }
 }
 
@@ -6805,11 +6812,13 @@ void Aura::HandlePeriodicHealthFunnel(bool apply, bool /*Real*/)
         if (loading)
             return;
 
-        Unit *caster = GetCaster();
+        Unit* caster = GetCaster();
         if (!caster)
             return;
-
-        m_modifier.m_amount = caster->SpellDamageBonusDone(GetTarget(), GetSpellProto(), m_modifier.m_amount, DOT, GetStackAmount());
+        DamageInfo damageInfo =  DamageInfo(caster, GetTarget(), GetSpellProto(), m_modifier.m_amount);
+        damageInfo.damageType = DOT;
+        caster->SpellDamageBonusDone(&damageInfo, GetStackAmount());
+        m_modifier.m_amount = damageInfo.damage;
     }
 }
 
@@ -8649,12 +8658,12 @@ void Aura::PeriodicTick()
 
             // SpellDamageBonus for magic spells
             if (spellProto->DmgClass == SPELL_DAMAGE_CLASS_NONE || spellProto->DmgClass == SPELL_DAMAGE_CLASS_MAGIC)
-                damageInfo.damage = target->SpellDamageBonusTaken(pCaster, spellProto, damageInfo.damage, DOT, GetStackAmount());
+                target->SpellDamageBonusTaken(&damageInfo,GetStackAmount());
             // MeleeDamagebonus for weapon based spells
             else
             {
                 damageInfo.attackType = GetWeaponAttackType(spellProto);
-                damageInfo.damage = target->MeleeDamageBonusTaken(pCaster, damageInfo.damage, damageInfo.attackType, spellProto, DOT, GetStackAmount());
+                target->MeleeDamageBonusTaken(&damageInfo, GetStackAmount());
             }
 
             // Calculate armor mitigation if it is a physical spell
@@ -8680,7 +8689,7 @@ void Aura::PeriodicTick()
             }
 
             // This method can modify pdamage
-            bool isCrit = IsCritFromAbilityAura(pCaster, damageInfo.damage);
+            bool isCrit = IsCritFromAbilityAura(pCaster, &damageInfo);
 
             // send critical in hit info for threat calculation
             if (isCrit)
@@ -8703,7 +8712,7 @@ void Aura::PeriodicTick()
             DETAIL_FILTER_LOG(LOG_FILTER_PERIODIC_AFFECTS, "PeriodicTick: %s attacked %s for %u dmg inflicted by %u abs is %u",
                 GetAffectiveCasterGuid().GetString().c_str(), target->GetGuidStr().c_str(), damageInfo.damage, GetId(), damageInfo.absorb);
 
-            pCaster->DealDamageMods(target, damageInfo.damage, &damageInfo.absorb);
+            pCaster->DealDamageMods(&damageInfo);
 
             // Set trigger flag
             damageInfo.procAttacker = PROC_FLAG_ON_DO_PERIODIC; //  | PROC_FLAG_SUCCESSFUL_HARMFUL_SPELL_HIT;
@@ -8778,9 +8787,9 @@ void Aura::PeriodicTick()
                 damageInfo.damage = pdamageReductedArmor;
             }
 
-            damageInfo.damage = target->SpellDamageBonusTaken(pCaster, spellProto, damageInfo.damage, DOT, GetStackAmount());
+            target->SpellDamageBonusTaken(&damageInfo, GetStackAmount());
 
-            bool isCrit = IsCritFromAbilityAura(pCaster, damageInfo.damage);
+            bool isCrit = IsCritFromAbilityAura(pCaster, &damageInfo);
 
             // send critical in hit info for threat calculation
             if (isCrit)
@@ -8800,7 +8809,7 @@ void Aura::PeriodicTick()
             DETAIL_FILTER_LOG(LOG_FILTER_PERIODIC_AFFECTS, "PeriodicTick: %s health leech of %s for %u dmg inflicted by %u abs is %u",
                 GetAffectiveCasterGuid().GetString().c_str(), target->GetGuidStr().c_str(), damageInfo.damage, GetId(),damageInfo.absorb);
 
-            pCaster->DealDamageMods(target, damageInfo.damage, &damageInfo.absorb);
+            pCaster->DealDamageMods(&damageInfo);
 
             pCaster->SendSpellNonMeleeDamageLog(target, GetId(), damageInfo.damage, damageInfo.SchoolMask(), damageInfo.absorb, damageInfo.resist, false, 0, isCrit);
 
@@ -8852,7 +8861,6 @@ void Aura::PeriodicTick()
                 return;
 
             DamageInfo damageInfo = DamageInfo(pCaster, target, spellProto);
-            damageInfo.CleanDamage(0, 0, BASE_ATTACK, MELEE_HIT_NORMAL );
             damageInfo.damageType = NODAMAGE;
 
             // ignore non positive values (can be result apply spellmods to aura damage
@@ -8878,11 +8886,12 @@ void Aura::PeriodicTick()
                     damageInfo.damage = damageInfo.damage + addition;
                 }
             }
+            damageInfo.CleanDamage(-damageInfo.damage, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
 
             damageInfo.damage = target->SpellHealingBonusTaken(pCaster, spellProto, damageInfo.damage, DOT, GetStackAmount());
 
             // This method can modify pdamage
-            bool isCrit = IsCritFromAbilityAura(pCaster, damageInfo.damage);
+            bool isCrit = IsCritFromAbilityAura(pCaster, &damageInfo);
 
             pCaster->CalculateHealAbsorb(damageInfo.damage, &damageInfo.absorb);
             damageInfo.damage -= damageInfo.absorb;
@@ -8927,7 +8936,7 @@ void Aura::PeriodicTick()
                 {
                     damageInfo.damage = gain;
                     damageInfo.absorb = 0;
-                    pCaster->DealDamageMods(pCaster, damageInfo.damage, &damageInfo.absorb);
+                    pCaster->DealDamageMods(&damageInfo);
                     pCaster->SendSpellNonMeleeDamageLog(pCaster, GetId(), damageInfo.damage, GetSpellSchoolMask(spellProto), damageInfo.absorb, 0, false, 0, false);
                     pCaster->DealDamage(pCaster, &damageInfo, true);
                 }
@@ -9183,7 +9192,7 @@ void Aura::PeriodicTick()
 
             damageInfo.target->CalculateAbsorbResistBlock(pCaster, &damageInfo, spellProto);
 
-            pCaster->DealDamageMods(damageInfo.target, damageInfo.damage, &damageInfo.absorb);
+            pCaster->DealDamageMods(&damageInfo);
 
             pCaster->SendSpellNonMeleeDamageLog(&damageInfo);
 
@@ -10401,7 +10410,7 @@ void Aura::HandleAuraSafeFall( bool Apply, bool Real )
         ((Player*)GetTarget())->ActivateTaxiPathTo(506, GetId());
 }
 
-bool Aura::IsCritFromAbilityAura(Unit* caster, uint32& damage)
+bool Aura::IsCritFromAbilityAura(Unit* caster, DamageInfo* damageInfo)
 {
     if (!GetSpellProto()->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_RUPTURE>() && // Rupture
         !GetSpellProto()->IsFitToFamily<SPELLFAMILY_ROGUE, CF_ROGUE_DEADLY_POISON>() &&
@@ -10410,7 +10419,7 @@ bool Aura::IsCritFromAbilityAura(Unit* caster, uint32& damage)
 
     if (caster->IsSpellCrit(GetTarget(), GetSpellProto(), GetSpellSchoolMask(GetSpellProto())))
     {
-        damage = caster->SpellCriticalDamageBonus(GetSpellProto(), damage, GetTarget());
+        damageInfo->damage = caster->SpellCriticalDamageBonus(GetSpellProto(), damageInfo->damage, GetTarget());
         return true;
     }
 
@@ -11928,11 +11937,11 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                         // convert player to ghoul
                         m_player->SetDeathState(GHOULED);
                         m_player->SetHealth(1);
-                        m_player->SetMovement(MOVE_ROOT);
+                        m_player->SetRoot(true);
                     }
                     else
                     {
-                        m_player->SetMovement(MOVE_UNROOT);
+                        m_player->SetRoot(false);
                         m_player->SetHealth(0);
                         m_player->SetDeathState(JUST_DIED);
                     }

@@ -377,6 +377,7 @@ class Spell
 
         void EffectFriendSummon(SpellEffectIndex eff_idx);
         void EffectServerSide(SpellEffectIndex eff_idx);
+        void EffectKnockBackFromPosition(SpellEffectIndex eff_idx);
 
         Spell(Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid originalCasterGUID = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
         ~Spell();

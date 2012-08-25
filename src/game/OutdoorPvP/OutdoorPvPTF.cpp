@@ -41,6 +41,9 @@ OutdoorPvPTF::OutdoorPvPTF() : OutdoorPvP(),
 
     for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
         m_towerOwner[i] = TEAM_NONE;
+
+    uint32 zoneId = sOutdoorPvPMgr.GetZoneOfAffectedScript(this);
+    FillInitialWorldStates(zoneId);
 }
 
 void OutdoorPvPTF::FillInitialWorldStates(uint32 zoneId)
@@ -56,10 +59,6 @@ void OutdoorPvPTF::FillInitialWorldStates(uint32 zoneId)
 
 void OutdoorPvPTF::SendRemoveWorldStates(Player* player)
 {
-    player->SendUpdateWorldState(m_zoneWorldState, WORLD_STATE_REMOVE);
-
-    for (uint8 i = 0; i < MAX_TF_TOWERS; ++i)
-        player->SendUpdateWorldState(m_towerWorldState[i], WORLD_STATE_REMOVE);
 }
 
 void OutdoorPvPTF::HandlePlayerEnterZone(Player* player, bool isMainZone)
@@ -88,22 +87,27 @@ void OutdoorPvPTF::HandleGameObjectCreate(GameObject* go)
     {
         case GO_TOWER_BANNER_WEST:
             m_towerBanners[0] = go->GetObjectGuid();
+            m_towerOwner[0] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[0]));
             break;
         case GO_TOWER_BANNER_NORTH:
             m_towerBanners[1] = go->GetObjectGuid();
+            m_towerOwner[1] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[1]));
             break;
         case GO_TOWER_BANNER_EAST:
             m_towerBanners[2] = go->GetObjectGuid();
+            m_towerOwner[2] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[2]));
             break;
         case GO_TOWER_BANNER_SOUTH_EAST:
             m_towerBanners[3] = go->GetObjectGuid();
+            m_towerOwner[3] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[3]));
             break;
         case GO_TOWER_BANNER_SOUTH:
             m_towerBanners[4] = go->GetObjectGuid();
+            m_towerOwner[4] = go->GetTeam();
             go->SetGoArtKit(GetBannerArtKit(m_towerOwner[4]));
             break;
     }

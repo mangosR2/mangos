@@ -40,6 +40,9 @@ OutdoorPvPEP::OutdoorPvPEP() : OutdoorPvP(),
 
     // initially set graveyard owner to neither faction
     sObjectMgr.SetGraveYardLinkTeam(GRAVEYARD_ID_EASTERN_PLAGUE, GRAVEYARD_ZONE_EASTERN_PLAGUE, TEAM_INVALID);
+
+    uint32 zoneId = sOutdoorPvPMgr.GetZoneOfAffectedScript(this);
+    FillInitialWorldStates(zoneId);
 }
 
 void OutdoorPvPEP::FillInitialWorldStates(uint32 zoneId)
@@ -333,6 +336,7 @@ bool OutdoorPvPEP::HandleGameObjectUse(Player* /*player*/, GameObject* go)
 void OutdoorPvPEP::InitBanner(GameObject* go, uint32 towerId)
 {
     m_towerBanners[towerId].push_back(go->GetObjectGuid());
+    m_towerOwner[towerId] = go->GetTeam();
     go->SetGoArtKit(GetBannerArtKit(m_towerOwner[towerId]));
 }
 

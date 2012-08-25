@@ -1931,7 +1931,7 @@ private:
     };
 };
 
-struct SpellEntry;
+struct MANGOS_DLL_SPEC SpellEntry;
 
 struct SpellEffectEntry
 {

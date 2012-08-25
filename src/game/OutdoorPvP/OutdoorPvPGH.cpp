@@ -66,7 +66,10 @@ void OutdoorPvPGH::HandleGameObjectCreate(GameObject* go)
     if (go->GetEntry() == GO_VENTURE_BAY_LIGHTHOUSE)
     {
         m_capturePoint = go->GetObjectGuid();
+        m_zoneOwner    = go->GetTeam();
         go->SetGoArtKit(GetBannerArtKit(m_zoneOwner));
+        LockLighthouse(go);
+        DespawnVendors(go);
     }
 }
 
@@ -136,7 +139,7 @@ void OutdoorPvPGH::DespawnVendors(const WorldObject* objRef)
 void OutdoorPvPGH::LockLighthouse(const WorldObject* objRef)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(m_capturePoint))
-        go->SetLootState(GO_JUST_DEACTIVATED);
+        go->SetCapturePointSlider(m_zoneOwner == ALLIANCE ? CAPTURE_SLIDER_ALLIANCE_LOCKED : CAPTURE_SLIDER_HORDE_LOCKED);
 
     sOutdoorPvPMgr.SetCapturePointSlider(m_capturePoint, m_zoneOwner == ALLIANCE ? CAPTURE_SLIDER_ALLIANCE_LOCKED : CAPTURE_SLIDER_HORDE_LOCKED);
 }
@@ -145,7 +148,7 @@ void OutdoorPvPGH::LockLighthouse(const WorldObject* objRef)
 void OutdoorPvPGH::UnlockLighthouse(const WorldObject* objRef)
 {
     if (GameObject* go = objRef->GetMap()->GetGameObject(m_capturePoint))
-        go->SetCapturePointSlider(m_zoneOwner == ALLIANCE ? CAPTURE_SLIDER_ALLIANCE : CAPTURE_SLIDER_HORDE);
+        go->SetCapturePointSlider(CAPTURE_SLIDER_GET_VALUE);
         // no banner visual update needed because it already has the correct one
     else
         // if grid is unloaded, resetting the slider value is enough
