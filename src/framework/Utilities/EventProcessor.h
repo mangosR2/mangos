@@ -68,6 +68,7 @@ class EventProcessor
 
         void Update(uint32 p_time, bool force = false);
         void KillAllEvents(bool force);
+        void CleanupEventList();
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
         uint64 CalculateTime(uint64 t_offset);
         void RenewEvents();

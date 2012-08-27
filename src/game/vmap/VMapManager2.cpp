@@ -91,7 +91,7 @@ namespace VMAP
     //=========================================================
     // load one tile (internal use only)
 
-    bool VMapManager2::_loadMap(unsigned int pMapId, const std::string &basePath, uint32 tileX, uint32 tileY)
+    bool VMapManager2::_loadMap(unsigned int pMapId, const std::string& basePath, uint32 tileX, uint32 tileY)
     {
         InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree == iInstanceMapTrees.end())
@@ -160,12 +160,12 @@ namespace VMAP
     get the hit position and return true if we hit something
     otherwise the result pos will be the dest pos
     */
-    bool VMapManager2::getObjectHitPos(unsigned int pMapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float &ry, float& rz, float pModifyDist)
+    bool VMapManager2::getObjectHitPos(unsigned int pMapId, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz, float pModifyDist)
     {
         bool result = false;
-        rx=x2;
-        ry=y2;
-        rz=z2;
+        rx = x2;
+        ry = y2;
+        rz = z2;
         if (isLineOfSightCalcEnabled())
         {
             InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
@@ -191,7 +191,7 @@ namespace VMAP
 
     float VMapManager2::getHeight(unsigned int pMapId, float x, float y, float z, float maxSearchDist)
     {
-        float height = VMAP_INVALID_HEIGHT_VALUE;           //no height
+        float height = VMAP_INVALID_HEIGHT_VALUE;           // no height
         if (isHeightCalcEnabled())
         {
             InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
@@ -201,7 +201,7 @@ namespace VMAP
                 height = instanceTree->second->getHeight(pos, maxSearchDist);
                 if (!(height < G3D::inf()))
                 {
-                    height = VMAP_INVALID_HEIGHT_VALUE;         //no height
+                    height = VMAP_INVALID_HEIGHT_VALUE;     // no height
                 }
             }
         }
@@ -210,9 +210,9 @@ namespace VMAP
 
     //=========================================================
 
-    bool VMapManager2::getAreaInfo(unsigned int pMapId, float x, float y, float &z, uint32 &flags, int32 &adtId, int32 &rootId, int32 &groupId) const
+    bool VMapManager2::getAreaInfo(unsigned int pMapId, float x, float y, float& z, uint32& flags, int32& adtId, int32& rootId, int32& groupId) const
     {
-        bool result=false;
+        bool result = false;
         InstanceTreeMap::const_iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree != iInstanceMapTrees.end())
         {
@@ -224,7 +224,7 @@ namespace VMAP
         return result;
     }
 
-    bool VMapManager2::GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 ReqLiquidType, float &level, float &floor, uint32 &type) const
+    bool VMapManager2::GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 ReqLiquidType, float& level, float& floor, uint32& type) const
     {
         InstanceTreeMap::const_iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree != iInstanceMapTrees.end())
@@ -234,7 +234,7 @@ namespace VMAP
             if (instanceTree->second->GetLocationInfo(pos, info))
             {
                 floor = info.ground_Z;
-                type = info.hitModel->GetLiquidType();  // entry from LiquidType.dbc
+                type = info.hitModel->GetLiquidType();
                 if (ReqLiquidType && !(type & ReqLiquidType))
                     return false;
                 if (info.hitInstance->GetLiquidLevel(pos, info, level))
@@ -246,7 +246,7 @@ namespace VMAP
 
     //=========================================================
 
-    WorldModel* VMapManager2::acquireModelInstance(const std::string &basepath, const std::string &filename)
+    WorldModel* VMapManager2::acquireModelInstance(const std::string& basepath, const std::string& filename)
     {
         ModelFileMap::iterator model = iLoadedModelFiles.find(filename);
         if (model == iLoadedModelFiles.end())
@@ -266,7 +266,7 @@ namespace VMAP
         return model->second.getModel();
     }
 
-    void VMapManager2::releaseModelInstance(const std::string &filename)
+    void VMapManager2::releaseModelInstance(const std::string& filename)
     {
         ModelFileMap::iterator model = iLoadedModelFiles.find(filename);
         if (model == iLoadedModelFiles.end())
@@ -274,7 +274,7 @@ namespace VMAP
             ERROR_LOG("VMapManager2: trying to unload non-loaded file '%s'!", filename.c_str());
             return;
         }
-        if( model->second.decRefCount() == 0)
+        if (model->second.decRefCount() == 0)
         {
             DEBUG_LOG("VMapManager2: unloading file '%s'", filename.c_str());
             delete model->second.getModel();

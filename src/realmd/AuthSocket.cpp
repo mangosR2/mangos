@@ -300,6 +300,9 @@ void AuthSocket::SendProof(Sha1Hash sha)
         case 11403:                                         // 3.3.2
         case 11723:                                         // 3.3.3a
         case 12340:                                         // 3.3.5a
+        case 13623:                                         // 4.0.6a
+        case 15050:                                         // 4.3.0
+        case 15595:                                         // 4.3.4
         default:                                            // or later
         {
             sAuthLogonProof_S proof;
@@ -482,7 +485,7 @@ bool AuthSocket::_HandleLogonChallenge()
             {
                 QueryResult* checkIPresult = LoginDatabase.PQuery("SELECT COUNT(last_ip) FROM account WHERE last_ip = '%s'",get_remote_address().c_str());
 
-                uint32 regCount = checkIPresult ? (*checkIPresult)[0].GetUInt32() : 0;
+                int32 regCount = checkIPresult ? (*checkIPresult)[0].GetUInt32() : 0;
 
                 if (regCount >= sConfig.GetIntDefault("AutoRegistration.Amount", 1))
                 {
@@ -1051,6 +1054,9 @@ void AuthSocket::LoadRealmlist(ByteBuffer &pkt, uint32 acctid)
         case 11403:                                         // 3.3.2
         case 11723:                                         // 3.3.3a
         case 12340:                                         // 3.3.5a
+        case 13623:                                         // 4.0.6a
+        case 15050:                                         // 4.3.0
+        case 15595:                                         // 4.3.4
         default:                                            // and later
         {
             pkt << uint32(0);                               // unused value

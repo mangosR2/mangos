@@ -28,7 +28,7 @@ namespace Movement
     {
         if (moveFlags & MOVEFLAG_FLYING)
         {
-            if ( moveFlags & MOVEFLAG_BACKWARD /*&& speed_obj.flight >= speed_obj.flight_back*/ )
+            if (moveFlags & MOVEFLAG_BACKWARD /*&& speed_obj.flight >= speed_obj.flight_back*/)
                 return MOVE_FLIGHT_BACK;
             else
                 return MOVE_FLIGHT;
@@ -42,7 +42,7 @@ namespace Movement
         }
         else if (moveFlags & MOVEFLAG_WALK_MODE)
         {
-            //if ( speed_obj.run > speed_obj.walk )
+            // if ( speed_obj.run > speed_obj.walk )
             return MOVE_WALK;
         }
         else if (moveFlags & MOVEFLAG_BACKWARD /*&& speed_obj.run >= speed_obj.run_back*/)
@@ -83,7 +83,7 @@ namespace Movement
         else
             moveFlags &= ~MOVEFLAG_WALK_MODE;
 
-        moveFlags |= (MOVEFLAG_SPLINE_ENABLED|MOVEFLAG_FORWARD);
+        moveFlags |= (MOVEFLAG_SPLINE_ENABLED | MOVEFLAG_FORWARD);
 
         if (fabs(args.velocity) < M_NULL_F)
             args.velocity = unit.GetSpeed(SelectSpeedType(moveFlags));
@@ -105,7 +105,7 @@ namespace Movement
         }
 
         PacketBuilder::WriteMonsterMove(move_spline, data);
-        unit.SendMessageToSet(&data,true);
+        unit.SendMessageToSet(&data, true);
 
         return move_spline.Duration();
     }
@@ -114,10 +114,10 @@ namespace Movement
     {
         // mix existing state into new
         args.flags.walkmode = unit.m_movementInfo.HasMovementFlag(MOVEFLAG_WALK_MODE);
-        args.flags.flying = unit.m_movementInfo.HasMovementFlag((MovementFlags)(MOVEFLAG_FLYING|MOVEFLAG_LEVITATING));
+        args.flags.flying = unit.m_movementInfo.HasMovementFlag((MovementFlags)(MOVEFLAG_FLYING | MOVEFLAG_LEVITATING));
     }
 
-    void MoveSplineInit::SetFacing(const Unit * target)
+    void MoveSplineInit::SetFacing(const Unit* target)
     {
         args.flags.EnableFacingTarget();
         args.facing.target = target->GetObjectGuid().GetRawValue();

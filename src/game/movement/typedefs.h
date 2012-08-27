@@ -47,23 +47,23 @@ namespace Movement
     template<class T, T limit>
     class counter
     {
-    public:
-        counter() { init();}
+        public:
+            counter() { init();}
 
-        void Increase()
-        {
-            if (m_counter == limit)
-                init();
-            else
-                ++m_counter;
-        }
+            void Increase()
+            {
+                if (m_counter == limit)
+                    init();
+                else
+                    ++m_counter;
+            }
 
-        T NewId() { Increase(); return m_counter;}
-        T getCurrent() const { return m_counter;}
+            T NewId() { Increase(); return m_counter;}
+            T getCurrent() const { return m_counter;}
 
-    private:
-        void init() { m_counter = 0; }
-        T m_counter;
+        private:
+            void init() { m_counter = 0; }
+            T m_counter;
     };
 
     typedef counter<uint32, 0xFFFFFFFF> UInt32Counter;

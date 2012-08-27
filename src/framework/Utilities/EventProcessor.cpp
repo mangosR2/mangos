@@ -113,3 +113,9 @@ uint64 EventProcessor::CalculateTime(uint64 t_offset)
 {
     return m_time + t_offset;
 }
+
+void EventProcessor::CleanupEventList()
+{
+    KillAllEvents(true);
+    m_aborting = false;
+}

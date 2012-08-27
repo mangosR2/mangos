@@ -85,14 +85,15 @@
 #include <algorithm>
 
 #include "Errors.h"
-#include "LockedQueue.h"
 #include "Threading.h"
 
 #include <ace/Basic_Types.h>
 #include <ace/Guard_T.h>
 #include <ace/RW_Thread_Mutex.h>
 #include <ace/Thread_Mutex.h>
+#include <ace/Null_Mutex.h>
 #include <ace/OS_NS_arpa_inet.h>
+#include <ace/Refcounted_Auto_Ptr.h>
 
 // Old ACE versions (pre-ACE-5.5.4) not have this type (add for allow use at Unix side external old ACE versions)
 #if PLATFORM != PLATFORM_WINDOWS
@@ -258,12 +259,22 @@ inline char * mangos_strdup(const char * source)
 #define countof(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
-#if defined WIN32
-#     define NOTSAFE_SEMAPHORE_OVERHANDLING "Win32"
+#if defined WIN64
+#     define  NOTSAFE_SEMAPHORE_OVERHANDLING "Win64"
+#     define  WINDOWS_MUTEX_MODEL "Win64"
+#elif defined WIN32
+#     define  NOTSAFE_SEMAPHORE_OVERHANDLING "Win32"
+#     define  WINDOWS_MUTEX_MODEL "Win32"
 #elif defined  (__FreeBSD__)
-#    define NOTSAFE_SEMAPHORE_OVERHANDLING "FreeBSD"
+#     define  NOTSAFE_SEMAPHORE_OVERHANDLING "FreeBSD"
+#     undef   WINDOWS_MUTEX_MODEL
 #elif defined(__APPLE__)
-#    define NOTSAFE_SEMAPHORE_OVERHANDLING "MacOS"
+#     define  NOTSAFE_SEMAPHORE_OVERHANDLING "MacOS"
+#     undef   WINDOWS_MUTEX_MODEL
+// All other possibility - linux, android  and some other, has all needed methods
+#else
+#     undef   NOTSAFE_SEMAPHORE_OVERHANDLING
+#     undef   WINDOWS_MUTEX_MODEL
 #endif
 
 #include <stdint.h>

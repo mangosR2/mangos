@@ -22,11 +22,10 @@
 #ifndef LOCKEDVECTOR_H
 #define LOCKEDVECTOR_H
 
-#include <ace/RW_Thread_Mutex.h>
+#include "Common.h"
 #include <vector>
 #include <list>
 #include <assert.h>
-#include "Errors.h"
 
 namespace ACE_Based
 {
@@ -35,7 +34,11 @@ namespace ACE_Based
     {
         public:
 
+#if defined  WINDOWS_MUTEX_MODEL
+        typedef   ACE_Null_Mutex               LockType;
+#else
         typedef   ACE_RW_Thread_Mutex          LockType;
+#endif
         typedef   ACE_Read_Guard<LockType>     ReadGuard;
         typedef   ACE_Write_Guard<LockType>    WriteGuard;
 

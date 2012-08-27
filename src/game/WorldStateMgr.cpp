@@ -24,7 +24,7 @@
 #include "GameObject.h"
 #include "GridNotifiers.h"
 #include "SQLStorages.h"
-#include "BattleGroundMgr.h"
+#include "BattleGround/BattleGroundMgr.h"
 #include "GridNotifiers.h"
 #include "CellImpl.h"
 

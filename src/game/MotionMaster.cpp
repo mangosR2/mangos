@@ -45,6 +45,8 @@ void MotionMaster::Initialize()
     if (!m_owner->IsStopped())
         m_owner->StopMoving();
 
+    Clear(true,true);
+
     // set new default movement generator
     if (m_owner->GetTypeId() == TYPEID_UNIT /*&& !m_owner->hasUnitState(UNIT_STAT_CONTROLLED)*/)
     {

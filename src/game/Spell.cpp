@@ -41,7 +41,7 @@
 #include "SharedDefines.h"
 #include "LootMgr.h"
 #include "VMapFactory.h"
-#include "BattleGround.h"
+#include "BattleGround/BattleGround.h"
 #include "Util.h"
 #include "Vehicle.h"
 #include "Chat.h"
@@ -4532,7 +4532,7 @@ void Spell::SendLogExecute()
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell::SendLogExecute() sended spelllog to %s (spell %u, effects count %u)", m_caster->GetObjectGuid().GetString().c_str(), m_spellInfo->Id, count1);
 
-    for (int i = 0; i < count1; ++i)
+    for (uint32 i = 0; i < count1; ++i)
     {
         if (m_effectExecuteData[i].empty())
             continue;
@@ -6944,7 +6944,7 @@ SpellCastResult Spell::CheckPower()
     // health as power used - need check health amount
     if (m_spellInfo->powerType == POWER_HEALTH)
     {
-        if (m_caster->GetHealth() <= m_powerCost)
+        if (m_caster->GetHealth() <= abs(m_powerCost))
             return SPELL_FAILED_CASTER_AURASTATE;
         return SPELL_CAST_OK;
     }

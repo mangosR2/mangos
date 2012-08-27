@@ -25,13 +25,13 @@
 #include "World.h"
 #include "MapPersistentStateMgr.h"
 
-void WorldSession::HandleCalendarGetCalendar(WorldPacket &/*recv_data*/)
+void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recv_data*/)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_GET_CALENDAR");         // empty
 
     time_t cur_time = time(NULL);
 
-    WorldPacket data(SMSG_CALENDAR_SEND_CALENDAR, 4+4*0+4+4*0+4+4);
+    WorldPacket data(SMSG_CALENDAR_SEND_CALENDAR, 4 + 4 * 0 + 4 + 4 * 0 + 4 + 4);
 
     // TODO: calendar invite event output
     data << (uint32) 0;                                     // invite node count
@@ -45,13 +45,13 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket &/*recv_data*/)
     size_t p_counter = data.wpos();
     data << uint32(counter);                                // instance state count
 
-    for(int i = 0; i < MAX_DIFFICULTY; ++i)
+    for (int i = 0; i < MAX_DIFFICULTY; ++i)
     {
         for (Player::BoundInstancesMap::const_iterator itr = _player->m_boundInstances[i].begin(); itr != _player->m_boundInstances[i].end(); ++itr)
         {
-            if(itr->second.perm)
+            if (itr->second.perm)
             {
-                DungeonPersistentState *state = itr->second.state;
+                DungeonPersistentState* state = itr->second.state;
                 data << uint32(state->GetMapId());
                 data << uint32(state->GetDifficulty());
                 data << uint32(state->GetResetTime() - cur_time);
@@ -115,14 +115,14 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket &/*recv_data*/)
     SendPacket(&data);
 }
 
-void WorldSession::HandleCalendarGetEvent(WorldPacket &recv_data)
+void WorldSession::HandleCalendarGetEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_GET_EVENT");
     recv_data.hexlike();
     recv_data.read_skip<uint64>();                          // unk
 }
 
-void WorldSession::HandleCalendarGuildFilter(WorldPacket &recv_data)
+void WorldSession::HandleCalendarGuildFilter(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_GUILD_FILTER");
     recv_data.hexlike();
@@ -131,40 +131,40 @@ void WorldSession::HandleCalendarGuildFilter(WorldPacket &recv_data)
     recv_data.read_skip<uint32>();                          // unk3
 }
 
-void WorldSession::HandleCalendarArenaTeam(WorldPacket &recv_data)
+void WorldSession::HandleCalendarArenaTeam(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_ARENA_TEAM");
     recv_data.hexlike();
     recv_data.read_skip<uint32>();                          // unk
 }
 
-void WorldSession::HandleCalendarAddEvent(WorldPacket &recv_data)
+void WorldSession::HandleCalendarAddEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_ADD_EVENT");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //std::string unk1, unk2;
-    //recv_data >> (std::string)unk1;
-    //recv_data >> (std::string)unk2;
+    // std::string unk1, unk2;
+    // recv_data >> (std::string)unk1;
+    // recv_data >> (std::string)unk2;
 
-    //uint8   unk3, unk4;
-    //uint32  unk5, unk6, unk7, unk8, unk9, count = 0;
-    //recv_data >> (uint8)unk3;
-    //recv_data >> (uint8)unk4;
-    //recv_data >> (uint32)unk5;
-    //recv_data >> (uint32)unk6;
-    //recv_data >> (uint32)unk7;
-    //recv_data >> (uint32)unk8;
-    //recv_data >> (uint32)unk9;
-    //if (!((unk9 >> 6) & 1))
+    // uint8   unk3, unk4;
+    // uint32  unk5, unk6, unk7, unk8, unk9, count = 0;
+    // recv_data >> (uint8)unk3;
+    // recv_data >> (uint8)unk4;
+    // recv_data >> (uint32)unk5;
+    // recv_data >> (uint32)unk6;
+    // recv_data >> (uint32)unk7;
+    // recv_data >> (uint32)unk8;
+    // recv_data >> (uint32)unk9;
+    // if (!((unk9 >> 6) & 1))
     //{
     //    recv_data >> (uint32)count;
     //    if (count)
     //    {
     //        uint8 unk12,unk13;
     //        ObjectGuid guid;
-    //        for (int i=0;i<count;i++)
+    //        for (int i = 0; i < count; ++i)
     //        {
     //            recv_data >> guid.ReadAsPacked();
     //            recv_data >> (uint8)unk12;
@@ -174,124 +174,124 @@ void WorldSession::HandleCalendarAddEvent(WorldPacket &recv_data)
     //}
 }
 
-void WorldSession::HandleCalendarUpdateEvent(WorldPacket &recv_data)
+void WorldSession::HandleCalendarUpdateEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_UPDATE_EVENT");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> std::string
-    //recv_data >> std::string
-    //recv_data >> uint8
-    //recv_data >> uint8
-    //recv_data >> uint32
-    //recv_data >> uint32
-    //recv_data >> uint32
-    //recv_data >> uint32
-    //recv_data >> uint32
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> std::string
+    // recv_data >> std::string
+    // recv_data >> uint8
+    // recv_data >> uint8
+    // recv_data >> uint32
+    // recv_data >> uint32
+    // recv_data >> uint32
+    // recv_data >> uint32
+    // recv_data >> uint32
 }
 
-void WorldSession::HandleCalendarRemoveEvent(WorldPacket &recv_data)
+void WorldSession::HandleCalendarRemoveEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_REMOVE_EVENT");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint32
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint32
 
 }
 
-void WorldSession::HandleCalendarCopyEvent(WorldPacket &recv_data)
+void WorldSession::HandleCalendarCopyEvent(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_COPY_EVENT");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint32
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint32
 
 }
 
-void WorldSession::HandleCalendarEventInvite(WorldPacket &recv_data)
+void WorldSession::HandleCalendarEventInvite(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_EVENT_INVITE");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> std::string
-    //recv_data >> uint8
-    //recv_data >> uint8
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> std::string
+    // recv_data >> uint8
+    // recv_data >> uint8
 
 }
 
-void WorldSession::HandleCalendarEventRsvp(WorldPacket &recv_data)
+void WorldSession::HandleCalendarEventRsvp(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_EVENT_RSVP");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint32
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint32
 }
 
-void WorldSession::HandleCalendarEventRemoveInvite(WorldPacket &recv_data)
+void WorldSession::HandleCalendarEventRemoveInvite(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_EVENT_REMOVE_INVITE");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data.readPackGUID(guid)
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint64
+    // recv_data.readPackGUID(guid)
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint64
 }
 
-void WorldSession::HandleCalendarEventStatus(WorldPacket &recv_data)
+void WorldSession::HandleCalendarEventStatus(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_EVENT_STATUS");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data.readPackGUID(guid)
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint32
+    // recv_data.readPackGUID(guid)
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint32
 }
 
-void WorldSession::HandleCalendarEventModeratorStatus(WorldPacket &recv_data)
+void WorldSession::HandleCalendarEventModeratorStatus(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_EVENT_MODERATOR_STATUS");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data.readPackGUID(guid)
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint32
+    // recv_data.readPackGUID(guid)
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint32
 }
 
-void WorldSession::HandleCalendarComplain(WorldPacket &recv_data)
+void WorldSession::HandleCalendarComplain(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_COMPLAIN");
     recv_data.hexlike();
     recv_data.rpos(recv_data.wpos());                       // set to end to avoid warnings spam
 
-    //recv_data >> uint64
-    //recv_data >> uint64
-    //recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint64
+    // recv_data >> uint64
 }
 
-void WorldSession::HandleCalendarGetNumPending(WorldPacket & /*recv_data*/)
+void WorldSession::HandleCalendarGetNumPending(WorldPacket& /*recv_data*/)
 {
     DEBUG_LOG("WORLD: CMSG_CALENDAR_GET_NUM_PENDING");      // empty
 

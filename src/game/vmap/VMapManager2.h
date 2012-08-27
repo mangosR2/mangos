@@ -48,7 +48,7 @@ namespace VMAP
     class ManagedModel
     {
         public:
-            ManagedModel() : iModel(0), iRefCount(0) {}
+            ManagedModel(): iModel(0), iRefCount(0) {}
             void setModel(WorldModel* model) { iModel = model; }
             WorldModel* getModel() { return iModel; }
             void incRefCount() { ++iRefCount; }
@@ -58,7 +58,7 @@ namespace VMAP
             int iRefCount;
     };
 
-    typedef UNORDERED_MAP<uint32, StaticMapTree*> InstanceTreeMap;
+    typedef UNORDERED_MAP<uint32 , StaticMapTree*> InstanceTreeMap;
     typedef UNORDERED_MAP<std::string, ManagedModel> ModelFileMap;
 
     class VMapManager2 : public IVMapManager
@@ -68,7 +68,7 @@ namespace VMAP
             ModelFileMap iLoadedModelFiles;
             InstanceTreeMap iInstanceMapTrees;
 
-            bool _loadMap(uint32 pMapId, const std::string &basePath, uint32 tileX, uint32 tileY);
+            bool _loadMap(uint32 pMapId, const std::string& basePath, uint32 tileX, uint32 tileY);
             /* void _unloadMap(uint32 pMapId, uint32 x, uint32 y); */
 
         public:

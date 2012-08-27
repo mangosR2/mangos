@@ -92,7 +92,11 @@ class AccountMgr
         static bool normalizeString(std::string& utf8str);
 
         // multithread locking
+#if defined  WINDOWS_MUTEX_MODEL
+        typedef   ACE_Null_Mutex               LockType;
+#else
         typedef   ACE_RW_Thread_Mutex          LockType;
+#endif
         typedef   ACE_Read_Guard<LockType>     ReadGuard;
         typedef   ACE_Write_Guard<LockType>    WriteGuard;
         LockType& GetLock() { return i_lock; }

@@ -24,6 +24,7 @@
 #define __WORLDSESSION_H
 
 #include "Common.h"
+#include "LockedQueue.h"
 #include "SharedDefines.h"
 #include "ObjectGuid.h"
 #include "LFG.h"

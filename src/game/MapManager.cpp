@@ -444,7 +444,7 @@ void MapManager::UpdateLoadBalancer(bool b_start)
     float loadValue = float((m_workTimeStorage)/m_tickCount)/float((m_workTimeStorage + m_sleepTimeStorage)/ m_tickCount);
 
     if (loadValue >= sWorld.getConfig(CONFIG_FLOAT_LOADBALANCE_HIGHVALUE))
-        m_threadsCountPreferred = (m_threadsCountPreferred < sWorld.getConfig(CONFIG_UINT32_NUMTHREADS)) ? (m_threadsCountPreferred + 1) : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
+        m_threadsCountPreferred = (m_threadsCountPreferred < (int32)sWorld.getConfig(CONFIG_UINT32_NUMTHREADS)) ? (m_threadsCountPreferred + 1) : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
     else if (loadValue <= sWorld.getConfig(CONFIG_FLOAT_LOADBALANCE_LOWVALUE))
         m_threadsCountPreferred = (m_threadsCountPreferred > 1) ? (m_threadsCountPreferred - 1) : 1;
     else

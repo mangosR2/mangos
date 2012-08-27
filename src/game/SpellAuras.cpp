@@ -37,7 +37,7 @@
 #include "Totem.h"
 #include "Creature.h"
 #include "Formulas.h"
-#include "BattleGround.h"
+#include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "CreatureAI.h"
 #include "ScriptMgr.h"
@@ -2000,7 +2000,7 @@ void Aura::TriggerSpell()
                         if (damage >= 0)
                             return;
 
-                        if (triggerTarget->GetPower(POWER_MANA) < -damage)
+                        if (triggerTarget->GetPower(POWER_MANA) < abs(damage))
                         {
                             damage = -int32(triggerTarget->GetPower(POWER_MANA));
                             triggerTarget->RemoveAurasDueToSpell(auraId);
@@ -8886,7 +8886,7 @@ void Aura::PeriodicTick()
                     damageInfo.damage = damageInfo.damage + addition;
                 }
             }
-            damageInfo.CleanDamage(-damageInfo.damage, 0, BASE_ATTACK, MELEE_HIT_NORMAL);
+            damageInfo.CleanDamage(-int32(damageInfo.damage), 0, BASE_ATTACK, MELEE_HIT_NORMAL);
 
             damageInfo.damage = target->SpellHealingBonusTaken(pCaster, spellProto, damageInfo.damage, DOT, GetStackAmount());
 
@@ -9183,7 +9183,7 @@ void Aura::PeriodicTick()
             if (powerType == POWER_MANA)
                 damageInfo.damage -= target->GetSpellCritDamageReduction(damageInfo.damage);
 
-            damageInfo.cleanDamage = uint32(-target->ModifyPower(powerType, -damageInfo.damage));
+            damageInfo.cleanDamage = abs(target->ModifyPower(powerType, -damageInfo.damage));
 
             damageInfo.damage = uint32(damageInfo.cleanDamage * spellProto->EffectMultipleValue[GetEffIndex()]);
 
@@ -12677,7 +12677,7 @@ bool Aura::IsAffectedByCrowdControlEffect(uint32 damage)
     if (!IsCrowdControlAura(m_modifier.m_auraname))
         return false;
 
-    if (damage > m_modifier.m_baseamount)
+    if (damage > abs(m_modifier.m_baseamount))
     {
         m_modifier.m_baseamount = 0;
         return false;
