@@ -29,15 +29,12 @@
 class BasicEvent
 {
     public:
-
-        BasicEvent()
-            : to_Abort(false)
-        {
-        }
+        BasicEvent(uint32 type)
+            : to_Abort(false), m_type(type)
+        {};
 
         virtual ~BasicEvent()                               // override destructor to perform some actions on event removal
-        {
-        };
+        {};
 
         // this method executes when the event is triggered
         // return false if event does not want to be deleted
@@ -49,17 +46,20 @@ class BasicEvent
         virtual void Abort(uint64 /*e_time*/) {}            // this method executes when the event is aborted
 
         bool to_Abort;                                      // set by externals when the event is aborted, aborted events don't execute
-        // and get Abort call when deleted
+                                                            // and get Abort call when deleted
+
+        uint32 const& GetType()          { return m_type;}
 
         // these can be used for time offset control
         uint64 m_addTime;                                   // time when the event was added to queue, filled by event handler
         uint64 m_execTime;                                  // planned time of next execution, filled by event handler
+        uint32 const m_type;                                // Event type (for use in some calculation)
 };
 
 typedef std::multimap<uint64, BasicEvent*> EventList;
 typedef std::queue<std::pair<uint64, BasicEvent*> > EventNewQueue;
 
-class EventProcessor
+class MANGOS_DLL_SPEC EventProcessor
 {
     public:
 

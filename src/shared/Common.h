@@ -289,7 +289,7 @@ inline char * mangos_strdup(const char * source)
 #   define UINT8_MIN    0x00
 #endif
 #if !defined (UINT8_MAX)
-#   define UINT8_MIN    0xFF
+#   define UINT8_MAX    0xFF
 #endif
 #if !defined (INT16_MAX)
 #   define INT16_MAX    0x7fff

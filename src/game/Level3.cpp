@@ -88,7 +88,7 @@ bool ChatHandler::HandleAHBotItemsAmountQualityCommand(char* args)
         return false;
     sAuctionBot.SetItemsAmountForQuality(AuctionQuality(Q), qVal);
     PSendSysMessage(LANG_AHBOT_ITEMS_AMOUNT, GetMangosString(ahbotQualityIds[Q]),
-        sAuctionBotConfig.getConfigItemQualityAmount(AuctionQuality(Q)));
+                    sAuctionBotConfig.getConfigItemQualityAmount(AuctionQuality(Q)));
     return true;
 }
 
@@ -183,12 +183,12 @@ bool ChatHandler::HandleAHBotStatusCommand(char* args)
     uint32 fmtId = m_session ? LANG_AHBOT_STATUS_FORMAT_CHAT : LANG_AHBOT_STATUS_FORMAT_CONSOLE;
 
     PSendSysMessage(fmtId, GetMangosString(LANG_AHBOT_STATUS_ITEM_COUNT),
-        statusInfo[AUCTION_HOUSE_ALLIANCE].ItemsCount,
-        statusInfo[AUCTION_HOUSE_HORDE].ItemsCount,
-        statusInfo[AUCTION_HOUSE_NEUTRAL].ItemsCount,
-        statusInfo[AUCTION_HOUSE_ALLIANCE].ItemsCount +
-        statusInfo[AUCTION_HOUSE_HORDE].ItemsCount +
-        statusInfo[AUCTION_HOUSE_NEUTRAL].ItemsCount);
+                    statusInfo[AUCTION_HOUSE_ALLIANCE].ItemsCount,
+                    statusInfo[AUCTION_HOUSE_HORDE].ItemsCount,
+                    statusInfo[AUCTION_HOUSE_NEUTRAL].ItemsCount,
+                    statusInfo[AUCTION_HOUSE_ALLIANCE].ItemsCount +
+                    statusInfo[AUCTION_HOUSE_HORDE].ItemsCount +
+                    statusInfo[AUCTION_HOUSE_NEUTRAL].ItemsCount);
 
     if (all)
     {

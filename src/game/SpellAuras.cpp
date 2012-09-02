@@ -10764,7 +10764,7 @@ void SpellAuraHolder::_RemoveSpellAuraHolder()
     if (slot >= MAX_AURAS)                                   // slot not set
         return;
 
-    if (m_target->GetVisibleAura(slot) == 0)
+    if (!m_target->GetVisibleAura(slot))
         return;
 
     // unregister aura diminishing (and store last time)
@@ -12495,7 +12495,20 @@ void SpellAuraHolder::UnregisterSingleCastHolder()
 
 void SpellAuraHolder::SetVisibleAura(bool remove)
 {
-    m_target->SetVisibleAura(m_auraSlot, remove ? 0 : GetId());
+    SpellAuraHolderPtr currentHolder = SpellAuraHolderPtr();
+    if (!remove)
+    {
+        for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+        {
+            if (Aura const* aura = GetAura(SpellEffectIndex(i)))
+            {
+                currentHolder = aura->GetHolder();
+                break;
+            }
+        }
+        //MANGOS_ASSERT(currentHolder);
+    }
+    m_target->SetVisibleAura(m_auraSlot, currentHolder);
 }
 
 void Aura::HandleAuraModReflectSpells(bool Apply, bool Real)

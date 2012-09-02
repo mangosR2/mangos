@@ -21,7 +21,6 @@
 
 #include "Common.h"
 #include "Policies/Singleton.h"
-#include "Utilities/EventProcessor.h"
 #include "SharedDefines.h"
 #include "DBCEnums.h"
 #include "BattleGround.h"
@@ -135,53 +134,6 @@ class BattleGroundQueue
         uint32 m_WaitTimes[PVP_TEAM_COUNT][MAX_BATTLEGROUND_BRACKETS][COUNT_OF_PLAYERS_TO_AVERAGE_WAIT_TIME];
         uint32 m_WaitTimeLastPlayer[PVP_TEAM_COUNT][MAX_BATTLEGROUND_BRACKETS];
         uint32 m_SumOfWaitTimes[PVP_TEAM_COUNT][MAX_BATTLEGROUND_BRACKETS];
-};
-
-/*
-    This class is used to invite player to BG again, when minute lasts from his first invitation
-    it is capable to solve all possibilities
-*/
-class BGQueueInviteEvent : public BasicEvent
-{
-    public:
-        BGQueueInviteEvent(ObjectGuid pl_guid, uint32 BgInstanceGUID, BattleGroundTypeId BgTypeId, ArenaType arenaType, uint32 removeTime) :
-          m_PlayerGuid(pl_guid), m_BgInstanceGUID(BgInstanceGUID), m_BgTypeId(BgTypeId), m_ArenaType(arenaType), m_RemoveTime(removeTime)
-          {
-          };
-        virtual ~BGQueueInviteEvent() {};
-
-        virtual bool Execute(uint64 e_time, uint32 p_time);
-        virtual void Abort(uint64 e_time);
-    private:
-        ObjectGuid m_PlayerGuid;
-        uint32 m_BgInstanceGUID;
-        BattleGroundTypeId m_BgTypeId;
-        ArenaType m_ArenaType;
-        uint32 m_RemoveTime;
-};
-
-/*
-    This class is used to remove player from BG queue after 1 minute 20 seconds from first invitation
-    We must store removeInvite time in case player left queue and joined and is invited again
-    We must store bgQueueTypeId, because battleground can be deleted already, when player entered it
-*/
-class BGQueueRemoveEvent : public BasicEvent
-{
-    public:
-        BGQueueRemoveEvent(ObjectGuid plGuid, uint32 bgInstanceGUID, BattleGroundTypeId BgTypeId, BattleGroundQueueTypeId bgQueueTypeId, uint32 removeTime)
-            : m_PlayerGuid(plGuid), m_BgInstanceGUID(bgInstanceGUID), m_RemoveTime(removeTime), m_BgTypeId(BgTypeId), m_BgQueueTypeId(bgQueueTypeId)
-        {}
-
-        virtual ~BGQueueRemoveEvent() {}
-
-        virtual bool Execute(uint64 e_time, uint32 p_time);
-        virtual void Abort(uint64 e_time);
-    private:
-        ObjectGuid m_PlayerGuid;
-        uint32 m_BgInstanceGUID;
-        uint32 m_RemoveTime;
-        BattleGroundTypeId m_BgTypeId;
-        BattleGroundQueueTypeId m_BgQueueTypeId;
 };
 
 class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassLevelLockable<BattleGroundMgr, ACE_Thread_Mutex> >

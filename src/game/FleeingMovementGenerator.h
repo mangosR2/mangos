@@ -24,30 +24,30 @@
 
 template<class T>
 class MANGOS_DLL_SPEC FleeingMovementGenerator
-: public MovementGeneratorMedium< T, FleeingMovementGenerator<T> >
+    : public MovementGeneratorMedium< T, FleeingMovementGenerator<T> >
 {
     public:
         FleeingMovementGenerator(ObjectGuid fright) : i_frightGuid(fright), i_nextCheckTime(0) {}
 
-        void Initialize(T &);
-        void Finalize(T &);
-        void Interrupt(T &);
-        void Reset(T &);
-        bool Update(T &, const uint32 &);
+        void Initialize(T&);
+        void Finalize(T&);
+        void Interrupt(T&);
+        void Reset(T&);
+        bool Update(T&, const uint32&);
 
         MovementGeneratorType GetMovementGeneratorType() const { return FLEEING_MOTION_TYPE; }
         const char* Name() const { return "<Fleeing>"; }
 
     private:
-        void _setTargetLocation(T &owner);
-        bool _getPoint(T &owner, float &x, float &y, float &z);
+        void _setTargetLocation(T& owner);
+        bool _getPoint(T& owner, float& x, float& y, float& z);
 
         ObjectGuid i_frightGuid;
         TimeTracker i_nextCheckTime;
 };
 
 class MANGOS_DLL_SPEC TimedFleeingMovementGenerator
-: public FleeingMovementGenerator<Creature>
+    : public FleeingMovementGenerator<Creature>
 {
     public:
         TimedFleeingMovementGenerator(ObjectGuid fright, uint32 time) :
@@ -55,8 +55,8 @@ class MANGOS_DLL_SPEC TimedFleeingMovementGenerator
             i_totalFleeTime(time) {}
 
         MovementGeneratorType GetMovementGeneratorType() const { return TIMED_FLEEING_MOTION_TYPE; }
-        bool Update(Unit &, const uint32 &);
-        void Finalize(Unit &);
+        bool Update(Unit&, const uint32&);
+        void Finalize(Unit&);
         const char* Name() const { return "<TimedFleeing>"; }
 
     private:

@@ -33,12 +33,12 @@ using std::pair;
 
 template<> struct BoundsTrait<VMAP::ModelSpawn*>
 {
-    static void getBounds(const VMAP::ModelSpawn* const &obj, G3D::AABox& out) { out = obj->getBounds(); }
+    static void getBounds(const VMAP::ModelSpawn* const& obj, G3D::AABox& out) { out = obj->getBounds(); }
 };
 
 namespace VMAP
 {
-    bool readChunk(FILE *rf, char *dest, const char *compare, uint32 len)
+    bool readChunk(FILE* rf, char* dest, const char* compare, uint32 len)
     {
         if (fread(dest, sizeof(char), len, rf) != len) return false;
         return memcmp(dest, compare, len) == 0;
@@ -59,13 +59,13 @@ namespace VMAP
         iFilterMethod = NULL;
         iSrcDir = pSrcDirName;
         iDestDir = pDestDirName;
-        //mkdir(iDestDir);
-        //init();
+        // mkdir(iDestDir);
+        // init();
     }
 
     TileAssembler::~TileAssembler()
     {
-        //delete iCoordModelMapping;
+        // delete iCoordModelMapping;
     }
 
     bool TileAssembler::convertWorld2()
@@ -92,8 +92,8 @@ namespace VMAP
                 else if (entry->second.flags & MOD_WORLDSPAWN) // WMO maps and terrain maps use different origin, so we need to adapt :/
                 {
                     // TODO: remove extractor hack and uncomment below line:
-                    //entry->second.iPos += Vector3(533.33333f*32, 533.33333f*32, 0.f);
-                    entry->second.iBound = entry->second.iBound + Vector3(533.33333f*32, 533.33333f*32, 0.f);
+                    // entry->second.iPos += Vector3(533.33333f*32, 533.33333f*32, 0.f);
+                    entry->second.iBound = entry->second.iBound + Vector3(533.33333f * 32, 533.33333f * 32, 0.f);
                 }
                 mapSpawns.push_back(&(entry->second));
                 spawnedModelFiles.insert(entry->second.name);
@@ -105,13 +105,13 @@ namespace VMAP
 
             // ===> possibly move this code to StaticMapTree class
             std::map<uint32, uint32> modelNodeIdx;
-            for (uint32 i=0; i<mapSpawns.size(); ++i)
+            for (uint32 i = 0; i < mapSpawns.size(); ++i)
                 modelNodeIdx.insert(pair<uint32, uint32>(mapSpawns[i]->ID, i));
 
             // write map tree file
             std::stringstream mapfilename;
             mapfilename << iDestDir << "/" << std::setfill('0') << std::setw(3) << map_iter->first << ".vmtree";
-            FILE *mapfile = fopen(mapfilename.str().c_str(), "wb");
+            FILE* mapfile = fopen(mapfilename.str().c_str(), "wb");
             if (!mapfile)
             {
                 success = false;
@@ -119,7 +119,7 @@ namespace VMAP
                 break;
             }
 
-            //general info
+            // general info
             if (success && fwrite(VMAP_MAGIC, 1, 8, mapfile) != 8) success = false;
             uint32 globalTileID = StaticMapTree::packTileID(65, 65);
             pair<TileMap::iterator, TileMap::iterator> globalRange = map_iter->second->TileEntries.equal_range(globalTileID);
@@ -131,7 +131,7 @@ namespace VMAP
             // global map spawns (WDT), if any (most instances)
             if (success && fwrite("GOBJ", 4, 1, mapfile) != 1) success = false;
 
-            for (TileMap::iterator glob=globalRange.first; glob != globalRange.second && success; ++glob)
+            for (TileMap::iterator glob = globalRange.first; glob != globalRange.second && success; ++glob)
             {
                 success = ModelSpawn::writeToFile(mapfile, map_iter->second->UniqueEntries[glob->second]);
             }
@@ -141,12 +141,12 @@ namespace VMAP
             // <====
 
             // write map tile files, similar to ADT files, only with extra BSP tree node info
-            TileMap &tileEntries = map_iter->second->TileEntries;
+            TileMap& tileEntries = map_iter->second->TileEntries;
             TileMap::iterator tile;
             for (tile = tileEntries.begin(); tile != tileEntries.end(); ++tile)
             {
-                const ModelSpawn &spawn = map_iter->second->UniqueEntries[tile->second];
-                if (spawn.flags & MOD_WORLDSPAWN) // WDT spawn, saved as tile 65/65 currently...
+                const ModelSpawn& spawn = map_iter->second->UniqueEntries[tile->second];
+                if (spawn.flags & MOD_WORLDSPAWN)           // WDT spawn, saved as tile 65/65 currently...
                     continue;
                 uint32 nSpawns = tileEntries.count(tile->first);
                 std::stringstream tilefilename;
@@ -155,17 +155,17 @@ namespace VMAP
                 uint32 x, y;
                 StaticMapTree::unpackTileID(tile->first, x, y);
                 tilefilename << std::setw(2) << x << "_" << std::setw(2) << y << ".vmtile";
-                FILE *tilefile = fopen(tilefilename.str().c_str(), "wb");
+                FILE* tilefile = fopen(tilefilename.str().c_str(), "wb");
                 // file header
                 if (success && fwrite(VMAP_MAGIC, 1, 8, tilefile) != 8) success = false;
                 // write number of tile spawns
                 if (success && fwrite(&nSpawns, sizeof(uint32), 1, tilefile) != 1) success = false;
                 // write tile spawns
-                for (uint32 s=0; s<nSpawns; ++s)
+                for (uint32 s = 0; s < nSpawns; ++s)
                 {
                     if (s)
                         ++tile;
-                    const ModelSpawn &spawn2 = map_iter->second->UniqueEntries[tile->second];
+                    const ModelSpawn& spawn2 = map_iter->second->UniqueEntries[tile->second];
                     success = success && ModelSpawn::writeToFile(tilefile, spawn2);
                     // MapTree nodes to update when loading tile:
                     std::map<uint32, uint32>::iterator nIdx = modelNodeIdx.find(spawn2.ID);
@@ -173,7 +173,7 @@ namespace VMAP
                 }
                 fclose(tilefile);
             }
-            // break; //test, extract only first map; TODO: remvoe this line
+            // break; // test, extract only first map; TODO: remvoe this line
         }
 
         // add an object models, listed in temp_gameobject_models file
@@ -192,7 +192,7 @@ namespace VMAP
             }
         }
 
-        //cleanup:
+        // cleanup:
         for (MapData::iterator map_iter = mapData.begin(); map_iter != mapData.end(); ++map_iter)
         {
             delete map_iter->second;
@@ -203,14 +203,14 @@ namespace VMAP
     bool TileAssembler::readMapSpawns()
     {
         std::string fname = iSrcDir + "/dir_bin";
-        FILE *dirf = fopen(fname.c_str(), "rb");
+        FILE* dirf = fopen(fname.c_str(), "rb");
         if (!dirf)
         {
             printf("Could not read dir_bin file!\n");
             return false;
         }
         printf("Read coordinate mapping...\n");
-        uint32 mapID, tileX, tileY, check=0;
+        uint32 mapID, tileX, tileY, check = 0;
         G3D::Vector3 v1, v2;
         ModelSpawn spawn;
         while (!feof(dirf))
@@ -225,7 +225,7 @@ namespace VMAP
             if (!ModelSpawn::readFromFile(dirf, spawn))
                 break;
 
-            MapSpawns *current;
+            MapSpawns* current;
             MapData::iterator map_iter = mapData.find(mapID);
             if (map_iter == mapData.end())
             {
@@ -241,7 +241,7 @@ namespace VMAP
         return success;
     }
 
-    bool TileAssembler::calculateTransformedBound(ModelSpawn &spawn)
+    bool TileAssembler::calculateTransformedBound(ModelSpawn& spawn)
     {
         std::string modelFilename = iSrcDir + "/" + spawn.name;
         ModelPosition modelPosition;
@@ -297,7 +297,7 @@ namespace VMAP
     {
         bool success = true;
         std::string filename = iSrcDir;
-        if (filename.length() >0)
+        if (filename.length() > 0)
             filename.append("/");
         filename.append(pModelFilename);
 

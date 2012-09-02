@@ -107,35 +107,11 @@ template<> void addUnitState(Creature *obj, CellPair const& cell_pair)
 }
 
 template <class T>
-void LoadHelper(CellGuidSet const& guid_set, CellPair& cell, GridRefManager<T>& /*m*/, uint32& count, Map* map, GridType& grid)
+void LoadHelper(CellGuidSet const& guid_set, CellPair& cell, GridRefManager<T>& /*m*/, uint32& count, Map* map, GridType& grid, TypeID objectTypeID)
 {
-    BattleGround* bg = map->IsBattleGroundOrArena() ? ((BattleGroundMap*)map)->GetBG() : NULL;
-
     for(CellGuidSet::const_iterator i_guid = guid_set.begin(); i_guid != guid_set.end(); ++i_guid)
     {
-        uint32 guid = *i_guid;
-
-        T* obj = new T;
-        //sLog.outString("DEBUG: LoadHelper from table: %s for (guid: %u) Loading",table,guid);
-        if(!obj->LoadFromDB(guid, map))
-        {
-            delete obj;
-            continue;
-        }
-
-        grid.AddGridObject(obj);
-
-        addUnitState(obj,cell);
-        obj->SetMap(map);
-        obj->AddToWorld();
-        if(obj->isActiveObject())
-            map->AddToActive(obj);
-
-        obj->GetViewPoint().Event_AddedToWorld(&grid);
-
-        if (bg)
-            bg->OnObjectDBLoad(obj);
-
+        map->AddLoadingObject(LoadingObjectQueue(*i_guid, objectTypeID, grid));
         ++count;
     }
 }
@@ -179,8 +155,8 @@ ObjectGridLoader::Visit(GameObjectMapType &m)
     CellObjectGuids const& cell_guids = sObjectMgr.GetCellObjectGuids(i_map->GetId(), i_map->GetSpawnMode(), cell_id);
 
     GridType& grid = (*i_map->getNGrid(i_cell.GridX(),i_cell.GridY())) (i_cell.CellX(),i_cell.CellY());
-    LoadHelper(cell_guids.gameobjects, cell_pair, m, i_gameObjects, i_map, grid);
-    LoadHelper(i_map->GetPersistentState()->GetCellObjectGuids(cell_id).gameobjects, cell_pair, m, i_gameObjects, i_map, grid);
+    LoadHelper(cell_guids.gameobjects, cell_pair, m, i_gameObjects, i_map, grid, TYPEID_GAMEOBJECT);
+    LoadHelper(i_map->GetPersistentState()->GetCellObjectGuids(cell_id).gameobjects, cell_pair, m, i_gameObjects, i_map, grid, TYPEID_GAMEOBJECT);
 }
 
 void
@@ -194,8 +170,8 @@ ObjectGridLoader::Visit(CreatureMapType &m)
     CellObjectGuids const& cell_guids = sObjectMgr.GetCellObjectGuids(i_map->GetId(), i_map->GetSpawnMode(), cell_id);
 
     GridType& grid = (*i_map->getNGrid(i_cell.GridX(),i_cell.GridY())) (i_cell.CellX(),i_cell.CellY());
-    LoadHelper(cell_guids.creatures, cell_pair, m, i_creatures, i_map, grid);
-    LoadHelper(i_map->GetPersistentState()->GetCellObjectGuids(cell_id).creatures, cell_pair, m, i_creatures, i_map, grid);
+    LoadHelper(cell_guids.creatures, cell_pair, m, i_creatures, i_map, grid, TYPEID_UNIT);
+    LoadHelper(i_map->GetPersistentState()->GetCellObjectGuids(cell_id).creatures, cell_pair, m, i_creatures, i_map, grid, TYPEID_UNIT);
 }
 
 void
@@ -280,6 +256,8 @@ ObjectGridUnloader::Visit(GridRefManager<T> &m)
             obj->SaveRespawnTime();
         ///- object must be out of world before delete
         obj->RemoveFromWorld();
+        ///- Prevent double remove
+        obj->RemoveObjectFromRemoveList();
         ///- object will get delinked from the manager when deleted
         delete obj;
     }

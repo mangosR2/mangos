@@ -218,6 +218,13 @@ void Map::DeleteFromWorld(Player* pl)
     delete pl;
 }
 
+void Map::setUnitCell(Creature* obj)
+{
+    CellPair xy_val = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
+    Cell cell(xy_val);
+    obj->SetCurrentCell(cell);
+}
+
 void
 Map::EnsureGridCreated(const GridPair &p)
 {
@@ -461,6 +468,33 @@ bool Map::loaded(const GridPair &p) const
 void Map::Update(const uint32 &t_diff)
 {
     m_dyn_tree.update(t_diff);
+    uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
+
+    BattleGround* bg = this->IsBattleGroundOrArena() ? ((BattleGroundMap*)this)->GetBG() : NULL;
+    while(!i_loadingObjectQueue.empty())
+    {
+        LoadingObjectQueue& loadingObject = i_loadingObjectQueue.front();
+        switch(loadingObject.objectTypeID)
+        {
+            case TYPEID_UNIT:
+            {
+                LoadObjectToGrid<Creature>(loadingObject.guid, loadingObject.grid, bg);
+                break;
+            }
+            case TYPEID_GAMEOBJECT:
+            {
+                LoadObjectToGrid<GameObject>(loadingObject.guid, loadingObject.grid, bg);
+                break;
+            }
+            default:
+                sLog.outError("loadingObject.guid = %u, loadingObject.objectTypeID = %u", loadingObject.guid, loadingObject.objectTypeID);
+                break;
+        }
+
+        i_loadingObjectQueue.pop();
+        if ((WorldTimer::getMSTime() - loadingObjectToGridUpdateTime) > 10) // Only 10ms for loading object in one tick
+            break;
+    }
 
     /// update worldsessions for existing players
     for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
@@ -1023,6 +1057,15 @@ void Map::AddObjectToRemoveList(WorldObject *obj)
 
     i_objectsToRemove.insert(obj);
     //DEBUG_LOG("Object (GUID: %u TypeId: %u ) added to removing list.",obj->GetGUIDLow(),obj->GetTypeId());
+}
+
+void Map::RemoveObjectFromRemoveList(WorldObject* obj)
+{
+    if (i_objectsToRemove.empty())
+        return;
+    std::set< WorldObject* >::const_iterator itr = i_objectsToRemove.find(obj);
+    if (itr != i_objectsToRemove.end())
+        i_objectsToRemove.erase(itr);
 }
 
 void Map::RemoveAllObjectsInRemoveList()
@@ -2273,4 +2316,26 @@ void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
 bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 {
     return m_dyn_tree.contains(mdl);
+}
+
+template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
+{
+    T* obj = new T;
+    if(!obj->LoadFromDB(guid, this))
+    {
+        delete obj;
+        return;
+    }
+    grid.AddGridObject(obj);
+    setUnitCell(obj);
+
+    obj->SetMap(this);
+    obj->AddToWorld();
+    if (obj->isActiveObject())
+        AddToActive(obj);
+
+    obj->GetViewPoint().Event_AddedToWorld(&grid);
+
+    if (bg)
+        bg->OnObjectDBLoad(obj);
 }

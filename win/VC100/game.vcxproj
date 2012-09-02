@@ -516,6 +516,7 @@
     <ClCompile Include="..\..\src\game\Transports.cpp" />
     <ClCompile Include="..\..\src\game\Unit.cpp" />
     <ClCompile Include="..\..\src\game\UpdateData.cpp" />
+    <ClCompile Include="..\..\src\game\UpdateFieldFlags.cpp" />
     <ClCompile Include="..\..\src\game\Vehicle.cpp" />
     <ClCompile Include="..\..\src\game\VehicleHandler.cpp" />
     <ClCompile Include="..\..\src\game\vmap\DynamicTree.cpp" />
@@ -706,6 +707,7 @@
     <ClInclude Include="..\..\src\game\Unit.h" />
     <ClInclude Include="..\..\src\game\UnitEvents.h" />
     <ClInclude Include="..\..\src\game\UpdateData.h" />
+    <ClInclude Include="..\..\src\game\UpdateFieldFlags.h" />
     <ClInclude Include="..\..\src\game\UpdateFields.h" />
     <ClInclude Include="..\..\src\game\UpdateMask.h" />
     <ClInclude Include="..\..\src\game\Vehicle.h" />

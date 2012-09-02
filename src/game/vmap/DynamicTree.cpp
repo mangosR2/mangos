@@ -23,6 +23,8 @@
 #include "BIHWrap.h"
 #include "RegularGrid.h"
 #include "GameObjectModel.h"
+#include "VMapDefinitions.h"
+#include "../World.h"
 
 template<> struct HashTrait< GameObjectModel>{
     static size_t hashCode(const GameObjectModel& g) { return (size_t)(void*)&g; }
@@ -190,6 +192,9 @@ bool DynamicMapTree::getIntersectionTime(const uint32 phasemask, const G3D::Ray&
 
 bool DynamicMapTree::getObjectHitPos(uint32 phasemask, float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float& ry, float& rz,float pModifyDist) const
 {
+    // Don't calculate hit position, if wrong src/dest points provided!
+    if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
+        return false;
     Vector3 pos1 = Vector3(x1, y1, z1);
     Vector3 pos2 = Vector3(x2, y2, z2);
     Vector3 resultPos;
@@ -250,6 +255,10 @@ bool DynamicMapTree::getObjectHitPos(const uint32 phasemask, const Vector3& pPos
 
 bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const
 {
+    // Don't calculate hit position, if wrong src/dest points provided!
+    if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
+        return false;
+
     Vector3 v1(x1,y1,z1), v2(x2,y2,z2);
 
     float maxDist = (v2 - v1).magnitude();
@@ -266,6 +275,10 @@ bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, flo
 
 float DynamicMapTree::getHeight(float x, float y, float z, float maxSearchDist, uint32 phasemask) const
 {
+    // Don't calculate hit position, if wrong src/dest points provided!
+    if (!VMAP::CheckPosition(x,y,z))
+        return -G3D::inf();
+
     Vector3 v(x,y,z);
     G3D::Ray r(v, Vector3(0,0,-1));
     DynamicTreeIntersectionCallback callback(phasemask);

@@ -146,6 +146,10 @@ namespace VMAP
         InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree != iInstanceMapTrees.end())
         {
+            // Don't calculate hit position, if wrong src/dest points provided!
+            if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
+                return false;
+
             Vector3 pos1 = convertPositionToInternalRep(x1, y1, z1);
             Vector3 pos2 = convertPositionToInternalRep(x2, y2, z2);
             if (pos1 != pos2)
@@ -168,6 +172,10 @@ namespace VMAP
         rz = z2;
         if (isLineOfSightCalcEnabled())
         {
+            // Don't calculate hit position, if wrong src/dest points provided!
+            if (!VMAP::CheckPosition(x1,y1,z1) || !VMAP::CheckPosition(x2,y2,z2))
+                return false;
+
             InstanceTreeMap::iterator instanceTree = iInstanceMapTrees.find(pMapId);
             if (instanceTree != iInstanceMapTrees.end())
             {
@@ -229,6 +237,10 @@ namespace VMAP
         InstanceTreeMap::const_iterator instanceTree = iInstanceMapTrees.find(pMapId);
         if (instanceTree != iInstanceMapTrees.end())
         {
+            // Don't calculate hit position, if wrong src/dest points provided!
+            if (!VMAP::CheckPosition(x,y,z))
+                return false;
+
             LocationInfo info;
             Vector3 pos = convertPositionToInternalRep(x, y, z);
             if (instanceTree->second->GetLocationInfo(pos, info))

@@ -744,15 +744,15 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player *player, WorldPacke
 
     if (mask & GROUP_UPDATE_FLAG_AURAS)
     {
-        MAPLOCK_READ(player,MAP_LOCK_TYPE_AURAS);
         const uint64& auramask = player->GetAuraUpdateMask();
         *data << uint64(auramask);
         for(uint32 i = 0; i < MAX_AURAS; ++i)
         {
             if(auramask & (uint64(1) << i))
             {
-                *data << uint32(player->GetVisibleAura(i));
-                *data << uint8(1);
+                SpellAuraHolderPtr holder = player->GetVisibleAura(i);
+                *data << uint32(holder ? holder->GetId() : 0);
+                *data << uint8(holder ? 1 : 0);
             }
         }
     }
@@ -828,8 +828,9 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player *player, WorldPacke
             {
                 if(auramask & (uint64(1) << i))
                 {
-                    *data << uint32(pet->GetVisibleAura(i));
-                    *data << uint8(1);
+                    SpellAuraHolderPtr holder = pet->GetVisibleAura(i);
+                    *data << uint32(holder ? holder->GetId() : 0);
+                    *data << uint8(holder ? 1 : 0);
                 }
             }
         }
@@ -912,13 +913,12 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode( WorldPacket &recv_data )
     uint64 auramask = 0;
     size_t maskPos = data.wpos();
     data << uint64(auramask);                               // placeholder
-    for(uint8 i = 0; i < MAX_AURAS; ++i)
+    for (uint8 i = 0; i < MAX_AURAS; ++i)
     {
-        MAPLOCK_READ(player,MAP_LOCK_TYPE_AURAS);
-        if(uint32 aura = player->GetVisibleAura(i))
+        if (SpellAuraHolderPtr holder = player->GetVisibleAura(i))
         {
             auramask |= (uint64(1) << i);
-            data << uint32(aura);
+            data << uint32(holder->GetId());
             data << uint8(1);
         }
     }
@@ -939,13 +939,12 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode( WorldPacket &recv_data )
         uint64 petauramask = 0;
         size_t petMaskPos = data.wpos();
         data << uint64(petauramask);                        // placeholder
-        for(uint8 i = 0; i < MAX_AURAS; ++i)
+        for (uint8 i = 0; i < MAX_AURAS; ++i)
         {
-            MAPLOCK_READ(pet,MAP_LOCK_TYPE_AURAS);
-            if(uint32 petaura = pet->GetVisibleAura(i))
+            if (SpellAuraHolderPtr holder = pet->GetVisibleAura(i))
             {
                 petauramask |= (uint64(1) << i);
-                data << uint32(petaura);
+                data << uint32(holder->GetId());
                 data << uint8(1);
             }
         }

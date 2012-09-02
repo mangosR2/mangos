@@ -29,7 +29,6 @@
 #include "HostileRefManager.h"
 #include "FollowerReference.h"
 #include "FollowerRefManager.h"
-#include "Utilities/EventProcessor.h"
 #include "MapManager.h"
 #include "MotionMaster.h"
 #include "DBCStructure.h"
@@ -1265,7 +1264,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         typedef ACE_Based::LockedVector<AuraPair> AuraList;
         typedef std::list<DiminishingReturn> Diminishing;
         typedef std::set<ObjectGuid> ComboPointHolderSet;
-        typedef ACE_Based::LockedMap<uint8, uint32> VisibleAuraMap;
+        typedef ACE_Based::LockedMap<uint8, SpellAuraHolderPtr> VisibleAuraMap;
         typedef std::map<SpellEntry const*, ObjectGuid> SingleCastSpellTargetMap;
         typedef std::set<uint32> SpellIdSet;
 
@@ -1538,6 +1537,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         }
 
         bool HasAuraType(AuraType auraType) const;
+        bool HasAuraTypeWithCaster(AuraType auraType, ObjectGuid casterGuid) const;
         bool HasNegativeAuraType(AuraType auraType) const;
         bool HasAffectedAura(AuraType auraType, SpellEntry const* spellProto) const;
         bool HasAura(uint32 spellId, SpellEffectIndex effIndex) const;
@@ -1621,7 +1621,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         virtual void SetDeathState(DeathState s);           // overwritten in Creature/Player/Pet
 
         ObjectGuid const& GetOwnerGuid() const { return  GetGuidValue(UNIT_FIELD_SUMMONEDBY); }
-        void SetOwnerGuid(ObjectGuid owner) { SetGuidValue(UNIT_FIELD_SUMMONEDBY, owner); }
+        void SetOwnerGuid(ObjectGuid owner);
         ObjectGuid const& GetCreatorGuid() const;
         void SetCreatorGuid(ObjectGuid creator) { SetGuidValue(UNIT_FIELD_CREATEDBY, creator); }
         ObjectGuid const& GetPetGuid() const { return GetGuidValue(UNIT_FIELD_SUMMON); }
@@ -1843,12 +1843,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         float m_modSpellSpeedPctNeg;
         float m_modSpellSpeedPctPos;
 
-        // Event handler
-        EventProcessor* GetEvents();
-        void UpdateEvents(uint32 update_diff, uint32 time);
-        void KillAllEvents(bool force);
-        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
-
         // stat system
         bool HandleStatModifier(UnitMods unitMod, UnitModifierType modifierType, float amount, bool apply);
         void SetModifierValue(UnitMods unitMod, UnitModifierType modifierType, float value) { m_auraModifiersGroup[unitMod][modifierType] = value; }
@@ -1909,20 +1903,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         HostileRefManager& getHostileRefManager() { return *m_HostileRefManager; }
         void RemoveUnitFromHostileRefManager(Unit* pUnit);
 
-        uint32 GetVisibleAura(uint8 slot) const
-        {
-            VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);
-            if (itr != m_visibleAuras.end())
-                return itr->second;
-            return 0;
-        }
-        void SetVisibleAura(uint8 slot, uint32 spellid)
-        {
-            if (spellid == 0)
-                m_visibleAuras.erase(slot);
-            else
-                m_visibleAuras[slot] = spellid;
-        }
+        SpellAuraHolderPtr GetVisibleAura(uint8 slot) const;
+        void SetVisibleAura(uint8 slot, SpellAuraHolderPtr holder);
         VisibleAuraMap const& GetVisibleAuras() const { return m_visibleAuras; }
         uint8 GetVisibleAurasCount() const { return m_visibleAuras.size(); }
 
@@ -2305,8 +2287,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         GroupPetList m_groupPets;
 
-        EventProcessor m_Events;
-
         GuidSet m_guardianPets;
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
@@ -2407,15 +2387,5 @@ bool Unit::CheckAllControlledUnits(Func const& func, uint32 controlledMask) cons
 
     return false;
 }
-
-class ManaUseEvent : public BasicEvent
-{
-    public:
-        ManaUseEvent(Unit& caster) : BasicEvent(), m_caster(caster) {}
-        bool Execute(uint64 e_time, uint32 p_time);
-
-    private:
-        Unit& m_caster;
-};
 
 #endif

@@ -450,10 +450,6 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (2750, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 2753, '', ''),
 (2752, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
 (2753, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
--- Progress bar
-(2718, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
-(2719, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 2718, '', ''),
-(2720, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 2718, '', ''),
 -- Blood elf
 (2722, 4, 566, @FLAG_INITIAL_ACTIVE, 1, 0, '', ''),
 (2723, 4, 566, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),

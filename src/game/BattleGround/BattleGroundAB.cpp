@@ -115,15 +115,15 @@ void BattleGroundAB::Update(uint32 diff)
                 m_TeamScores[team] += BG_AB_TickPoints[points];
                 m_HonorScoreTics[team] += BG_AB_TickPoints[points];
                 m_ReputationScoreTics[team] += BG_AB_TickPoints[points];
-                if (m_ReputationScoreTics[team] >= m_ReputationTics)
+                if (m_ReputationScoreTics[team] >= m_ReputationTicks)
                 {
                     (team == TEAM_INDEX_ALLIANCE) ? RewardReputationToTeam(509, 10, ALLIANCE) : RewardReputationToTeam(510, 10, HORDE);
-                    m_ReputationScoreTics[team] -= m_ReputationTics;
+                    m_ReputationScoreTics[team] -= m_ReputationTicks;
                 }
-                if (m_HonorScoreTics[team] >= m_HonorTics)
+                if (m_HonorScoreTics[team] >= m_HonorTicks)
                 {
                     RewardHonorToTeam(GetBonusHonorFromKill(1), (team == TEAM_INDEX_ALLIANCE) ? ALLIANCE : HORDE);
-                    m_HonorScoreTics[team] -= m_HonorTics;
+                    m_HonorScoreTics[team] -= m_HonorTicks;
                 }
                 if (!m_IsInformedNearVictory && m_TeamScores[team] > BG_AB_WARNING_NEAR_VICTORY_SCORE)
                 {
@@ -177,7 +177,7 @@ void BattleGroundAB::StartingEventOpenDoors()
     OpenDoorEvent(BG_EVENT_DOOR);
 
     // Players that join battleground after start are not eligible to get achievement.
-    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, BG_AB_EVENT_START_BATTLE);
+    StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, AB_EVENT_START_BATTLE);
 }
 
 void BattleGroundAB::AddPlayer(Player *plr)
@@ -473,8 +473,8 @@ void BattleGroundAB::Reset()
 
     m_IsInformedNearVictory                 = false;
     bool isBGWeekend = BattleGroundMgr::IsBGWeekend(GetTypeID());
-    m_HonorTics = (isBGWeekend) ? BG_AB_ABBGWeekendHonorTicks : BG_AB_NotABBGWeekendHonorTicks;
-    m_ReputationTics = (isBGWeekend) ? BG_AB_ABBGWeekendReputationTicks : BG_AB_NotABBGWeekendReputationTicks;
+    m_HonorTicks = isBGWeekend ? AB_WEEKEND_HONOR_INTERVAL : AB_NORMAL_HONOR_INTERVAL;
+    m_ReputationTicks = isBGWeekend ? AB_WEEKEND_REPUTATION_INTERVAL : AB_NORMAL_REPUTATION_INTERVAL;
 
     for (uint8 i = 0; i < BG_AB_NODES_MAX; ++i)
     {
@@ -568,13 +568,12 @@ void BattleGroundAB::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
     Source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
 }
 
-bool BattleGroundAB::IsAllNodesConrolledByTeam(Team team) const
+bool BattleGroundAB::IsAllNodesControlledByTeam(Team team) const
 {
-    uint32 count = 0;
-    for (int i = 0; i < BG_AB_NODES_MAX; ++i)
-        if ((team == ALLIANCE && m_Nodes[i] == BG_AB_NODE_STATUS_ALLY_OCCUPIED) ||
-            (team == HORDE    && m_Nodes[i] == BG_AB_NODE_STATUS_HORDE_OCCUPIED))
-            ++count;
+    for (uint8 i = 0; i < BG_AB_NODES_MAX; ++i)
+        if ((team == ALLIANCE && m_Nodes[i] != BG_AB_NODE_STATUS_ALLY_OCCUPIED) ||
+                (team == HORDE && m_Nodes[i] != BG_AB_NODE_STATUS_HORDE_OCCUPIED))
+            return false;
 
-    return count == BG_AB_NODES_MAX;
+    return true;
 }

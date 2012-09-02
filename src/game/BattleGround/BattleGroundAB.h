@@ -141,10 +141,11 @@ enum BG_AB_Objectives
     AB_OBJECTIVE_DEFEND_BASE  = 123
 };
 
-#define BG_AB_NotABBGWeekendHonorTicks      330
-#define BG_AB_ABBGWeekendHonorTicks         200
-#define BG_AB_NotABBGWeekendReputationTicks 200
-#define BG_AB_ABBGWeekendReputationTicks    150
+#define AB_NORMAL_HONOR_INTERVAL        260
+#define AB_WEEKEND_HONOR_INTERVAL       160
+#define AB_NORMAL_REPUTATION_INTERVAL   160
+#define AB_WEEKEND_REPUTATION_INTERVAL  120
+#define AB_EVENT_START_BATTLE           9158
 
 // Tick intervals and given points: case 0,1,2,3,4,5 captured nodes
 const uint32 BG_AB_TickIntervals[6] = {0, 12000, 9000, 6000, 3000, 1000};
@@ -206,8 +207,9 @@ class BattleGroundAB : public BattleGround
         virtual void EventPlayerClickedOnFlag(Player *source, GameObject* target_obj);
 
         /* achievement req. */
-        bool IsAllNodesConrolledByTeam(Team team) const;    // overwrited
+        bool IsAllNodesControlledByTeam(Team team) const override;
         bool IsTeamScores500Disadvantage(Team team) const { return m_TeamScores500Disadvantage[GetTeamIndex(team)]; }
+
     private:
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
@@ -234,8 +236,8 @@ class BattleGroundAB : public BattleGround
         uint32              m_HonorScoreTics[PVP_TEAM_COUNT];
         uint32              m_ReputationScoreTics[PVP_TEAM_COUNT];
         bool                m_IsInformedNearVictory;
-        uint32              m_HonorTics;
-        uint32              m_ReputationTics;
+        uint32              m_HonorTicks;
+        uint32              m_ReputationTicks;
         // need for achievements
         bool                m_TeamScores500Disadvantage[PVP_TEAM_COUNT];
 };

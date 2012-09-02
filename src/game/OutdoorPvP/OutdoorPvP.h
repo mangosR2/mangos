@@ -86,8 +86,8 @@ class OutdoorPvP
         // update - called by the OutdoorPvPMgr
         virtual void Update(uint32 /*diff*/) {}
 
-        // handle npc/player kill
-        void HandlePlayerKill(Player* killer, Unit* victim);
+        // Handle player kill
+        void HandlePlayerKill(Player* killer, Player* victim);
 
         // Wrapper for initial (per-script) WorldState filling, once per zone
         void FillInitialWorldState(uint32 zoneId, uint32 stateId, uint32 value);
@@ -105,7 +105,7 @@ class OutdoorPvP
         virtual void SendRemoveWorldStates(Player* /*player*/) {}
 
         // handle npc/player kill
-        virtual void HandlePlayerKillInsideArea(Player* /*killer*/, Unit* /*victim*/) {}
+        virtual void HandlePlayerKillInsideArea(Player* /*killer*/) {}
 
         // send world state update to all players present
         void SendUpdateWorldState(uint32 field, uint32 value);

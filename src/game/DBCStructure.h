@@ -44,11 +44,11 @@ struct AchievementEntry
     uint32    ID;                                           // 0        m_ID
     uint32    factionFlag;                                  // 1        m_faction -1=all, 0=horde, 1=alliance
     uint32    mapID;                                        // 2        m_instance_id -1=none
-    //uint32 parentAchievement;                             // 3        m_supercedes its Achievement parent (can`t start while parent uncomplete, use its Criteria if don`t have own, use its progress on begin)
-    char *name[16];                                         // 4-19     m_title_lang
-    //uint32 name_flags;                                    // 20 string flags
-    //char *description[16];                                // 21-36    m_description_lang
-    //uint32 desc_flags;                                    // 37 string flags
+    // uint32 parentAchievement;                            // 3        m_supercedes its Achievement parent (can`t start while parent uncomplete, use its Criteria if don`t have own, use its progress on begin)
+    char* name[16];                                         // 4-19     m_title_lang
+    // uint32 name_flags;                                   // 20 string flags
+    // char *description[16];                               // 21-36    m_description_lang
+    // uint32 desc_flags;                                   // 37 string flags
     uint32    categoryId;                                   // 38       m_category
     uint32    points;                                       // 39       m_points
     //uint32 OrderInCategory;                               // 40       m_ui_order

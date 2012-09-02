@@ -52,6 +52,7 @@
 #include "movement/MoveSplineInit.h"
 #include "movement/MoveSpline.h"
 #include "CreatureLinkingMgr.h"
+#include "UpdateFieldFlags.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -1120,26 +1121,29 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             he->DuelComplete(DUEL_INTERUPTED);
         }
 
-        // handle player kill in outdoor pvp
-        if (player_tap && pVictim != this)
+        // handle player/npc kill in battleground or outdoor pvp script
+        if (player_tap)
         {
-            if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player_tap->GetCachedZoneId()))
-                outdoorPvP->HandlePlayerKill(player_tap, pVictim);
-        }
-
-        // battleground things (do this at the end, so the death state flag will be properly set to handle in the bg->handlekill)
-        if (pVictim->GetTypeId() == TYPEID_PLAYER && ((Player*)pVictim)->InBattleGround())
-        {
-            Player *killed = ((Player*)pVictim);
-            if (BattleGround *bg = killed->GetBattleGround())
-                if (player_tap)
-                    bg->HandleKillPlayer(killed, player_tap);
-        }
-        else if (pVictim->GetTypeId() == TYPEID_UNIT)
-        {
-            if (player_tap)
-                if (BattleGround *bg = player_tap->GetBattleGround())
+            if (pVictim->GetTypeId() == TYPEID_PLAYER)
+            {
+                Player* killed = (Player*)pVictim;
+                if (killed->InBattleGround())
+                {
+                    if (BattleGround* bg = killed->GetBattleGround())
+                        bg->HandleKillPlayer(killed, player_tap);
+                }
+                else if (pVictim != this)
+                {
+                    // selfkills are not handled in outdoor pvp scripts
+                    if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(player_tap->GetCachedZoneId()))
+                        outdoorPvP->HandlePlayerKill(player_tap, killed);
+                }
+            }
+            else if (pVictim->GetTypeId() == TYPEID_UNIT)
+            {
+                if (BattleGround* bg = player_tap->GetBattleGround())
                     bg->HandleKillUnit((Creature*)pVictim, player_tap);
+            }
         }
     }
     else                                                    // if (health <= damage)
@@ -5886,6 +5890,17 @@ bool Unit::HasAuraType(AuraType auraType) const
     return !GetAurasByType(auraType).empty();
 }
 
+bool Unit::HasAuraTypeWithCaster(AuraType auraType, ObjectGuid casterGuid) const
+{
+    AuraList const& mTotalAuraList = GetAurasByType(auraType);
+    for (AuraList::const_iterator itr = mTotalAuraList.begin(); itr != mTotalAuraList.end(); ++itr)
+    {
+        if ((*itr)->GetCasterGuid() == casterGuid)
+            return true;
+    }
+    return false;
+}
+
 bool Unit::HasNegativeAuraType(AuraType auraType) const
 {
     Unit::AuraList const& auras = GetAurasByType(auraType);
@@ -6052,6 +6067,22 @@ bool Unit::HasAuraOfDifficulty(uint32 spellId) const
 
     MAPLOCK_READ(const_cast<Unit*>(this), MAP_LOCK_TYPE_AURAS);
     return m_spellAuraHolders.find(spellId) != m_spellAuraHolders.end();
+}
+
+SpellAuraHolderPtr Unit::GetVisibleAura(uint8 slot) const
+{
+    VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);
+    if (itr != m_visibleAuras.end())
+        return itr->second;
+    return SpellAuraHolderPtr();
+}
+
+void Unit::SetVisibleAura(uint8 slot, SpellAuraHolderPtr holder)
+{
+    if (!holder)
+        m_visibleAuras.erase(slot);
+    else
+        m_visibleAuras[slot] = holder;
 }
 
 void Unit::AddDynObject(DynamicObject* dynObj)
@@ -6484,8 +6515,12 @@ FactionTemplateEntry const* Unit::getFactionTemplateEntry() const
 
         if (GetObjectGuid() != guid)
         {
-            sLog.outError("%s have invalid faction (faction template id) #%u", GetGuidStr().c_str(), getFaction());
             guid = GetObjectGuid();
+
+            if (guid.GetHigh() == HIGHGUID_PET)
+                sLog.outError("%s (base creature entry %u) have invalid faction template id %u, owner %s", GetGuidStr().c_str(), GetEntry(), getFaction(), ((Pet*)this)->GetOwnerGuid().GetString().c_str());
+            else
+                sLog.outError("%s have invalid faction template id %u", GetGuidStr().c_str(), getFaction());
         }
     }
     return entry;
@@ -7072,6 +7107,31 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
             }
         }
     }
+}
+
+void Unit::SetOwnerGuid(ObjectGuid ownerGuid)
+{
+    if (GetOwnerGuid() == ownerGuid)
+        return;
+
+    SetGuidValue(UNIT_FIELD_SUMMONEDBY, ownerGuid);
+    if (!ownerGuid || !ownerGuid.IsPlayer())
+        return;
+
+    // Update owner dependent fields
+    Player* pPlayer = ObjectMgr::GetPlayer(ownerGuid, true);
+    if (!pPlayer || !pPlayer->HaveAtClient(this)) // if player cannot see this unit yet, he will receive needed data with create object
+        return;
+
+    SetFieldNotifyFlag(UF_FLAG_OWNER);
+
+    UpdateData data;
+    WorldPacket packet;
+    BuildValuesUpdateBlockForPlayer(&data, pPlayer);
+    data.BuildPacket(&packet);
+    pPlayer->SendDirectMessage(&packet);
+
+    RemoveFieldNotifyFlag(UF_FLAG_OWNER);
 }
 
 Unit *Unit::GetOwner() const
@@ -10881,7 +10941,7 @@ void Unit::SetLevel(uint32 lvl)
 }
 
 
-uint8 Unit::getRace() const 
+uint8 Unit::getRace() const
 {
     return GetTypeId() == TYPEID_UNIT ?
         ((Creature*)this)->getRace() :
@@ -13408,40 +13468,6 @@ bool Unit::IsAllowedDamageInArea(Unit* pVictim) const
     return true;
 }
 
-class RelocationNotifyEvent : public BasicEvent
-{
-public:
-    RelocationNotifyEvent(Unit& owner) : BasicEvent(), m_owner(owner)
-    {
-        m_owner._SetAINotifyScheduled(true);
-    }
-
-    bool Execute(uint64 /*e_time*/, uint32 /*p_time*/)
-    {
-        float radius = MAX_CREATURE_ATTACK_RADIUS * sWorld.getConfig(CONFIG_FLOAT_RATE_CREATURE_AGGRO);
-        if (m_owner.GetTypeId() == TYPEID_PLAYER)
-        {
-            MaNGOS::PlayerRelocationNotifier notify((Player&)m_owner);
-            Cell::VisitAllObjects(&m_owner,notify,radius);
-        }
-        else //if(m_owner.GetTypeId() == TYPEID_UNIT)
-        {
-            MaNGOS::CreatureRelocationNotifier notify((Creature&)m_owner);
-            Cell::VisitAllObjects(&m_owner,notify,radius);
-        }
-        m_owner._SetAINotifyScheduled(false);
-        return true;
-    }
-
-    void Abort(uint64)
-    {
-        m_owner._SetAINotifyScheduled(false);
-    }
-
-private:
-    Unit& m_owner;
-};
-
 void Unit::ScheduleAINotify(uint32 delay)
 {
     if (!IsAINotifyScheduled())
@@ -13781,36 +13807,6 @@ void Unit::SendSpellDamageImmune(Unit* target, uint32 spellId)
     SendMessageToSet(&data, true);
 }
 
-EventProcessor* Unit::GetEvents()
-{
-    return &m_Events;
-}
-
-void Unit::KillAllEvents(bool force)
-{
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-    GetEvents()->KillAllEvents(force);
-}
-
-void Unit::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
-{
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-    if (set_addtime)
-        GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
-    else
-        GetEvents()->AddEvent(Event, e_time, set_addtime);
-}
-
-void Unit::UpdateEvents(uint32 update_diff, uint32 time)
-{
-    {
-        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
-        GetEvents()->RenewEvents();
-    }
-
-    GetEvents()->Update(update_diff);
-}
-
 void DamageInfo::Reset(uint32 _damage)
 {
     if (SpellID > 0)
@@ -13850,8 +13846,8 @@ void DamageInfo::Reset(uint32 _damage)
 
 SpellSchoolMask  DamageInfo::SchoolMask() const
 {
-    return GetSpellProto() ? 
-        SpellSchoolMask(GetSpellProto()->SchoolMask) : 
+    return GetSpellProto() ?
+        SpellSchoolMask(GetSpellProto()->SchoolMask) :
         attacker ? attacker->GetMeleeDamageSchoolMask() : SPELL_SCHOOL_MASK_NORMAL;
 };
 
@@ -13873,10 +13869,4 @@ void Unit::SetLastManaUse()
         if (diff > 0)
             ((Player*)this)->RegenerateAll(diff);
     }
-}
-
-bool ManaUseEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
-{
-    m_caster.SetLastManaUse();
-    return true;
 }

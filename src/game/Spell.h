@@ -148,24 +148,32 @@ class SpellCastTargets
             return *this;
         }
 
+        void setUnitTarget(Unit* target);
         ObjectGuid getUnitTargetGuid() const { return m_unitTargetGUID; }
-        Unit *getUnitTarget() const { return m_unitTarget; }
-        void setUnitTarget(Unit *target);
+        Unit* getUnitTarget() const { return m_unitTarget; }
+
         void setDestination(float x, float y, float z);
         void setSource(float x, float y, float z);
+        void getDestination(float& x, float& y, float& z) const { x = m_destX; y = m_destY; z = m_destZ; }
+        void getSource(float& x, float& y, float& z) const { x = m_srcX; y = m_srcY, z = m_srcZ; }
 
+        bool HasLocation() const;
+        void GetLocation(float& x, float& y, float& z) const;
+
+        void setGOTarget(GameObject* target);
         ObjectGuid getGOTargetGuid() const { return m_GOTargetGUID; }
-        GameObject *getGOTarget() const { return m_GOTarget; }
-        void setGOTarget(GameObject *target);
+        GameObject* getGOTarget() const { return m_GOTarget; }
 
-        ObjectGuid getCorpseTargetGuid() const { return m_CorpseTargetGUID; }
         void setCorpseTarget(Corpse* corpse);
+        ObjectGuid getCorpseTargetGuid() const { return m_CorpseTargetGUID; }
 
+        void setItemTarget(Item* item);
         ObjectGuid getItemTargetGuid() const { return m_itemTargetGUID; }
         Item* getItemTarget() const { return m_itemTarget; }
         uint32 getItemTargetEntry() const { return m_itemTargetEntry; }
-        void setItemTarget(Item* item);
+
         void setTradeItemTarget(Player* caster);
+
         void updateTradeSlotItem()
         {
             if(m_itemTarget && (m_targetMask & TARGET_FLAG_TRADE_ITEM))
@@ -181,6 +189,7 @@ class SpellCastTargets
 
         float m_srcX, m_srcY, m_srcZ;
         float m_destX, m_destY, m_destZ;
+
         std::string m_strTarget;
 
         float GetElevation() const { return m_elevation; }
@@ -776,17 +785,9 @@ namespace MaNGOS
                     // This hack from Schmoo - need revert in original state after rework spellsystem on separate
                     // per-effect targeting
                     if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
-                    {
-                        i_centerX = i_spell.m_targets.m_srcX;
-                        i_centerY = i_spell.m_targets.m_srcY;
-                        i_centerZ = i_spell.m_targets.m_srcZ;
-                    }
+                        i_spell.m_targets.getSource(i_centerX, i_centerY, i_centerZ);
                     else
-                    {
-                        i_centerX = i_spell.m_targets.m_destX;
-                        i_centerY = i_spell.m_targets.m_destY;
-                        i_centerZ = i_spell.m_targets.m_destZ;
-                    }
+                        i_spell.m_targets.getDestination(i_centerX, i_centerY, i_centerZ);
                     break;
                 }
                 case PUSH_INHERITED_CENTER:
@@ -954,16 +955,4 @@ namespace MaNGOS
 
 typedef void(Spell::*pEffect)(SpellEffectIndex eff_idx);
 
-class SpellEvent : public BasicEvent
-{
-    public:
-        SpellEvent(Spell* spell);
-        virtual ~SpellEvent();
-
-        virtual bool Execute(uint64 e_time, uint32 p_time);
-        virtual void Abort(uint64 e_time);
-        virtual bool IsDeletable() const;
-    protected:
-        Spell* m_Spell;
-};
 #endif

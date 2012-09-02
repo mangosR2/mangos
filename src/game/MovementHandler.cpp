@@ -583,9 +583,8 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         if((movementInfo.GetPos()->z < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPos()->z < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPos()->z < 20.0f)
         || (plMover->GetMapId() == 562 && movementInfo.GetPos()->z < -20.0f)) // Prevent falling under textures on some arenas
         {
-            if(plMover->InBattleGround()
-                && plMover->GetBattleGround()
-                && plMover->GetBattleGround()->HandlePlayerUnderMap(_player))
+            if (plMover->GetBattleGround()
+                    && plMover->GetBattleGround()->HandlePlayerUnderMap(_player))
             {
                 // do nothing, the handle already did if returned true
             }

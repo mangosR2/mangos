@@ -19,6 +19,7 @@
 #ifndef _VMAPDEFINITIONS_H
 #define _VMAPDEFINITIONS_H
 #include <cstring>
+#include "GridDefines.h"
 
 #define LIQUID_TILE_SIZE (533.333f / 128.f)
 
@@ -30,6 +31,14 @@ namespace VMAP
 
     // defined in TileAssembler.cpp currently...
     bool readChunk(FILE* rf, char* dest, const char* compare, uint32 len);
+
+    inline bool CheckPosition(float const& x, float const& y, float const& z) 
+    {
+        return
+            std::fabs(z) < MAX_HEIGHT   &&
+            std::fabs(y) < MAP_HALFSIZE &&
+            std::fabs(x) < MAP_HALFSIZE;
+    };
 }
 
 #ifndef NO_CORE_FUNCS

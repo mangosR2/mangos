@@ -354,6 +354,23 @@ BattleGround::~BattleGround()
         delete itr->second;
 }
 
+/* Map pointers */
+void BattleGround::SetBgMap(BattleGroundMap* map) 
+{
+    m_Map = map; 
+}
+
+BattleGroundMap* BattleGround::GetBgMap()
+{
+    MANGOS_ASSERT(m_Map);
+    return m_Map;
+}
+
+uint32 BattleGround::GetInstanceID()
+{
+    return GetBgMap() ? GetBgMap()->GetInstanceId() : 0;
+}
+
 void BattleGround::Update(uint32 diff)
 {
     if (!GetPlayersSize())

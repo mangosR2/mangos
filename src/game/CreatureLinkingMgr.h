@@ -85,8 +85,8 @@ struct CreatureLinkingInfo
     uint32 mapId;
     uint32 masterId;
     uint32 masterDBGuid;
-    uint16 linkingFlag:16;
-    uint16 searchRange:16;
+    uint16 linkingFlag: 16;
+    uint16 searchRange: 16;
 };
 
 /**
@@ -163,8 +163,8 @@ class CreatureLinkingHolder
         // Structure associated to a master (entry case)
         struct InfoAndGuids
         {
-            uint16 linkingFlag:16;
-            uint16 searchRange:16;
+            uint16 linkingFlag: 16;
+            uint16 searchRange: 16;
             GuidList linkedGuids;
         };
         // Structure associated to a master (guid case)

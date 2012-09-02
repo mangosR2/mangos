@@ -122,16 +122,21 @@ class BattleGroundWS : public BattleGround
         virtual void StartingEventOpenDoors();
 
         /* BG Flags */
-        ObjectGuid GetAllianceFlagPickerGuid() const{ return m_FlagKeepers[TEAM_INDEX_ALLIANCE]; }
-        ObjectGuid GetHordeFlagPickerGuid() const   { return m_FlagKeepers[TEAM_INDEX_HORDE]; }
-        void SetAllianceFlagPicker(ObjectGuid guid) { m_FlagKeepers[TEAM_INDEX_ALLIANCE] = guid; }
-        void SetHordeFlagPicker(ObjectGuid guid)    { m_FlagKeepers[TEAM_INDEX_HORDE] = guid; }
-        void ClearAllianceFlagPicker()              { m_FlagKeepers[TEAM_INDEX_ALLIANCE].Clear(); }
-        void ClearHordeFlagPicker()                 { m_FlagKeepers[TEAM_INDEX_HORDE].Clear(); }
+        ObjectGuid GetAllianceFlagCarrierGuid() const{ return m_FlagKeepers[TEAM_INDEX_ALLIANCE]; }
+        ObjectGuid GetHordeFlagCarrierGuid() const   { return m_FlagKeepers[TEAM_INDEX_HORDE]; }
+
+        void SetAllianceFlagCarrier(ObjectGuid guid) { m_FlagKeepers[TEAM_INDEX_ALLIANCE] = guid; }
+        void SetHordeFlagCarrier(ObjectGuid guid)    { m_FlagKeepers[TEAM_INDEX_HORDE] = guid; }
+
+        void ClearAllianceFlagCarrier()              { m_FlagKeepers[TEAM_INDEX_ALLIANCE].Clear(); }
+        void ClearHordeFlagCarrier()                 { m_FlagKeepers[TEAM_INDEX_HORDE].Clear(); }
+
         bool IsAllianceFlagPickedup() const         { return !m_FlagKeepers[TEAM_INDEX_ALLIANCE].IsEmpty(); }
         bool IsHordeFlagPickedup() const            { return !m_FlagKeepers[TEAM_INDEX_HORDE].IsEmpty(); }
+
         void RespawnFlag(Team team, bool captured);
         void RespawnFlagAfterDrop(Team team);
+
         uint8 GetFlagState(Team team)             { return m_FlagState[GetTeamIndex(team)]; }
 
         /* Battleground Events */

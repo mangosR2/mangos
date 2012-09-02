@@ -43,6 +43,7 @@
 #include "WorldPacket.h"
 #include "GameEventMgr.h"
 #include "Formulas.h"
+#include "WorldObjectEvents.h"
 
 #include "Policies/SingletonImp.h"
 
@@ -1042,94 +1043,6 @@ void BattleGroundQueue::Update(BattleGroundTypeId bgTypeId, BattleGroundBracketI
             arena->StartBattleGround();
         }
     }
-}
-
-/*********************************************************/
-/***            BATTLEGROUND QUEUE EVENTS              ***/
-/*********************************************************/
-
-bool BGQueueInviteEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
-{
-    Player* plr = sObjectMgr.GetPlayer( m_PlayerGuid );
-    // player logged off (we should do nothing, he is correctly removed from queue in another procedure)
-    if (!plr)
-        return true;
-
-    BattleGround* bg = sBattleGroundMgr.GetBattleGround(m_BgInstanceGUID, m_BgTypeId);
-    //if battleground ended and its instance deleted - do nothing
-    if (!bg)
-        return true;
-
-    BattleGroundQueueTypeId bgQueueTypeId = BattleGroundMgr::BGQueueTypeId(bg->GetTypeID(), bg->GetArenaType());
-    uint32 queueSlot = plr->GetBattleGroundQueueIndex(bgQueueTypeId);
-    if (queueSlot < PLAYER_MAX_BATTLEGROUND_QUEUES)         // player is in queue or in battleground
-    {
-        // check if player is invited to this bg
-        BattleGroundQueue &bgQueue = sBattleGroundMgr.m_BattleGroundQueues[bgQueueTypeId];
-        if (bgQueue.IsPlayerInvited(m_PlayerGuid, m_BgInstanceGUID, m_RemoveTime))
-        {
-            WorldPacket data;
-            //we must send remaining time in queue
-            sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, bg, queueSlot, STATUS_WAIT_JOIN, INVITE_ACCEPT_WAIT_TIME - INVITATION_REMIND_TIME, 0, m_ArenaType);
-            plr->GetSession()->SendPacket(&data);
-        }
-    }
-    return true;                                            //event will be deleted
-}
-
-void BGQueueInviteEvent::Abort(uint64 /*e_time*/)
-{
-    //do nothing
-}
-
-/*
-    this event has many possibilities when it is executed:
-    1. player is in battleground ( he clicked enter on invitation window )
-    2. player left battleground queue and he isn't there any more
-    3. player left battleground queue and he joined it again and IsInvitedToBGInstanceGUID = 0
-    4. player left queue and he joined again and he has been invited to same battleground again -> we should not remove him from queue yet
-    5. player is invited to bg and he didn't choose what to do and timer expired - only in this condition we should call queue::RemovePlayer
-    we must remove player in the 5. case even if battleground object doesn't exist!
-*/
-bool BGQueueRemoveEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
-{
-    Player* plr = sObjectMgr.GetPlayer( m_PlayerGuid );
-    if (!plr)
-        // player logged off (we should do nothing, he is correctly removed from queue in another procedure)
-        return true;
-
-    BattleGround* bg = sBattleGroundMgr.GetBattleGround(m_BgInstanceGUID, m_BgTypeId);
-    //battleground can be deleted already when we are removing queue info
-    //bg pointer can be NULL! so use it carefully!
-
-    uint32 queueSlot = plr->GetBattleGroundQueueIndex(m_BgQueueTypeId);
-    if (queueSlot < PLAYER_MAX_BATTLEGROUND_QUEUES)         // player is in queue, or in Battleground
-    {
-        // check if player is in queue for this BG and if we are removing his invite event
-        BattleGroundQueue &bgQueue = sBattleGroundMgr.m_BattleGroundQueues[m_BgQueueTypeId];
-        if (bgQueue.IsPlayerInvited(m_PlayerGuid, m_BgInstanceGUID, m_RemoveTime))
-        {
-            DEBUG_LOG("Battleground: removing player %u from bg queue for instance %u because of not pressing enter battle in time.",plr->GetGUIDLow(),m_BgInstanceGUID);
-
-            plr->RemoveBattleGroundQueueId(m_BgQueueTypeId);
-            bgQueue.RemovePlayer(m_PlayerGuid, true);
-            //update queues if battleground isn't ended
-            if (bg && bg->isBattleGround() && bg->GetStatus() != STATUS_WAIT_LEAVE)
-                sBattleGroundMgr.ScheduleQueueUpdate(0, ARENA_TYPE_NONE, m_BgQueueTypeId, m_BgTypeId, bg->GetBracketId());
-
-            WorldPacket data;
-            sBattleGroundMgr.BuildBattleGroundStatusPacket(&data, bg, queueSlot, STATUS_NONE, 0, 0, ARENA_TYPE_NONE);
-            plr->GetSession()->SendPacket(&data);
-        }
-    }
-
-    //event will be deleted
-    return true;
-}
-
-void BGQueueRemoveEvent::Abort(uint64 /*e_time*/)
-{
-    //do nothing
 }
 
 /*********************************************************/
