@@ -45,6 +45,7 @@
 #include "movement/packet_builder.h"
 #include "UpdateFieldFlags.h"
 #include "Group.h"
+#include "CreatureLinkingMgr.h"
 
 #define TERRAIN_LOS_STEP_DISTANCE   3.0f        // sample distance for terrain LoS
 
@@ -1759,10 +1760,14 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
     // Active state set before added to map
     pCreature->SetActiveObjectState(asActiveObject);
 
-    pCreature->Summon(spwtype, despwtime);
+    pCreature->Summon(spwtype, despwtime);                  // Also initializes the AI and MMGen
 
     if (GetTypeId()==TYPEID_UNIT && ((Creature*)this)->AI())
         ((Creature*)this)->AI()->JustSummoned(pCreature);
+
+    // Creature Linking, Initial load is handled like respawn
+    if (pCreature->IsLinkingEventTrigger())
+        GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, pCreature);
 
     // return the creature therewith the summoner has access to it
     return pCreature;
@@ -2280,7 +2285,7 @@ uint32 WorldObject::GetWorldState(uint32 stateId)
     return sWorldStateMgr.GetWorldStateValueFor(this, stateId);
 }
 
-EventProcessor* WorldObject::GetEvents()
+WorldObjectEventProcessor* WorldObject::GetEvents()
 {
     return &m_Events;
 }

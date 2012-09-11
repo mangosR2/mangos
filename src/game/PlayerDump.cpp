@@ -327,7 +327,7 @@ void PlayerDumpWriter::DumpTableContent(std::string& dump, uint32 guid, char con
                 case DTT_PET:
                     StoreGUID(result,0,pets);  break;       // pet petnumber collection (character_pet.id)
                 case DTT_MAIL:
-                    StoreGUID(result,0,mails);              // mail id collection (mail.id)
+                    StoreGUID(result,0,mails); break;       // mail id collection (mail.id)
                 case DTT_MAIL_ITEM:
                     StoreGUID(result,1,items); break;       // item guid collection (mail_items.item_guid)
                 default:                       break;

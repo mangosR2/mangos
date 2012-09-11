@@ -160,10 +160,10 @@ namespace MMAP
 
         // load this tile :: mmaps/MMMXXYY.mmtile
         uint32 pathLen = sWorld.GetDataPath().length() + strlen("mmaps/%03i%02i%02i.mmtile")+1;
-        char *fileName = new char[pathLen];
+        char* fileName = new char[pathLen];
         snprintf(fileName, pathLen, (sWorld.GetDataPath()+"mmaps/%03i%02i%02i.mmtile").c_str(), mapId, x, y);
 
-        FILE *file = fopen(fileName, "rb");
+        FILE* file = fopen(fileName, "rb");
         if (!file)
         {
             sLog.outDebug("MMAP:loadMap: Could not open mmtile file '%s'", fileName);
@@ -179,6 +179,7 @@ namespace MMAP
         if (fileHeader.mmapMagic != MMAP_MAGIC)
         {
             sLog.outError("MMAP:loadMap: Bad header in mmap %03u%02i%02i.mmtile", mapId, x, y);
+            fclose(file);
             return false;
         }
 
@@ -186,6 +187,7 @@ namespace MMAP
         {
             sLog.outError("MMAP:loadMap: %03u%02i%02i.mmtile was built with generator v%i, expected v%i",
                                                 mapId, x, y, fileHeader.mmapVersion, MMAP_VERSION);
+            fclose(file);
             return false;
         }
 
@@ -193,14 +195,13 @@ namespace MMAP
         MANGOS_ASSERT(data);
 
         size_t result = fread(data, fileHeader.size, 1, file);
+        fclose(file);
+
         if(!result)
         {
             sLog.outError("MMAP:loadMap: Bad header or data in mmap %03u%02i%02i.mmtile", mapId, x, y);
-            fclose(file);
             return false;
         }
-
-        fclose(file);
 
         dtMeshHeader* header = (dtMeshHeader*)data;
         dtTileRef tileRef = 0;

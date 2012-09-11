@@ -778,25 +778,18 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     QueryResult *result =
           LoginDatabase.PQuery("SELECT "
-                                "a.id, "                      //0
-                                "a.gmlevel, "                 //1
-                                "a.sessionkey, "              //2
-                                "a.last_ip, "                 //3
-                                "a.locked, "                  //4
-                                "a.v, "                       //5
-                                "a.s, "                       //6
-                                "a.expansion, "               //7
-                                "a.mutetime, "                //8
-                                "a.locale, "                  //9
-                                "a.os, "                      //10
-                                "a_fp.accountid, "            //11
-                                "a_fp.realmID, "              //12
-                                "a_fp.security "              //13
-                                "FROM account as a "
-                                "LEFT JOIN account_forcepermission as a_fp "
-                                "ON a.id = a_fp.AccountId "
-                                "WHERE username = '%s'"
-                                "ORDER BY FIELD(a_fp.realmid, '%u') DESC",
+                                "`id`, "                      //0
+                                "`sessionkey`, "              //1
+                                "`last_ip`, "                 //2
+                                "`locked`, "                  //3
+                                "`v`, "                       //4
+                                "`s`, "                       //5
+                                "`expansion`, "               //6
+                                "`mutetime`, "                //7
+                                "`locale`, "                  //8
+                                "`os` "                       //9
+                                "FROM account "
+                                "WHERE username = '%s'",
                                 safe_account.c_str (), realmID);
 
     // Stop if the account is not found
@@ -813,13 +806,13 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     Field* fields = result->Fetch();
 
-    expansion = ((sWorld.getConfig(CONFIG_UINT32_EXPANSION) > fields[7].GetUInt8()) ? fields[7].GetUInt8() : sWorld.getConfig(CONFIG_UINT32_EXPANSION));
+    expansion = ((sWorld.getConfig(CONFIG_UINT32_EXPANSION) > fields[6].GetUInt8()) ? fields[6].GetUInt8() : sWorld.getConfig(CONFIG_UINT32_EXPANSION));
 
     N.SetHexStr("894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
     g.SetDword(7);
 
-    v.SetHexStr(fields[5].GetString());
-    s.SetHexStr(fields[6].GetString());
+    v.SetHexStr(fields[4].GetString());
+    s.SetHexStr(fields[5].GetString());
     m_s = s;
 
     const char* sStr = s.AsHexStr();                        // Must be freed by OPENSSL_free()
@@ -831,7 +824,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     OPENSSL_free((void*)vStr);
 
     ///- Re-check ip locking (same check as in realmd).
-    if (fields[4].GetUInt8() == 1) // if ip is locked
+    if (fields[3].GetUInt8() == 1) // if ip is locked
     {
         if (strcmp(fields[3].GetString(), GetRemoteAddress().c_str()))
         {
@@ -846,30 +839,33 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     }
 
     id = fields[0].GetUInt32();
-    if (fields[11].GetUInt32() != NULL && fields[11].GetUInt32() == id)                 // check to see if account has forced perms
-    {
-        if (fields[12].GetUInt32() != NULL && fields[12].GetUInt32() == realmID)        // check to see if account has forced perms on realm
-            security = fields[13].GetUInt32();                                          // if it does, applies forced perms
-        else
-            security = fields[1].GetUInt32();                                           // if it doesn't for realm, apply regular perms
-    }
-    else
-        security = fields[1].GetUInt32();                                               // if it doesn't for account, apply regular perms
 
-    if(security > SEC_ADMINISTRATOR)                                                    // prevent invalid security settings in DB
-        security = SEC_ADMINISTRATOR;
+    K.SetHexStr(fields[1].GetString());
 
-    K.SetHexStr(fields[2].GetString());
+    time_t mutetime = time_t(fields[7].GetUInt64());
 
-    time_t mutetime = time_t(fields[8].GetUInt64());
-
-    locale = LocaleConstant(fields[9].GetUInt8());
+    locale = LocaleConstant(fields[8].GetUInt8());
     if (locale >= MAX_LOCALE)
         locale = LOCALE_enUS;
 
-    std::string os = fields[10].GetString();
+    std::string os = fields[9].GetString();
 
     delete result;
+
+    // Checks gmlevel per Realm
+    result = LoginDatabase.PQuery ("SELECT `RealmID`, `gmlevel` FROM `account_access` "
+                              "WHERE id = '%d' AND (RealmID = '%d'OR RealmID = '-1')", id, realmID);
+    if(!result)
+        security = SEC_PLAYER;
+    else
+    {
+        fields = result->Fetch();
+        security = fields[1].GetInt32();
+        delete result;
+    }
+
+    if (security > SEC_ADMINISTRATOR)                                                    // prevent invalid security settings in DB
+        security = SEC_ADMINISTRATOR;
 
     // Re-check account ban (same check as in realmd)
     QueryResult *banresult =

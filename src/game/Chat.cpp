@@ -620,6 +620,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "spell_linked",                SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadSpellLinkedCommand,             "", NULL },
         { "anticheat",                   SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadAntiCheatCommand,               "", NULL },
         { "worldstate",                  SEC_ADMINISTRATOR, true,  &ChatHandler::HandleWorldStateReloadCommand,              "", NULL },
+        { "spell_dbc",                   SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadSpellDbcCommand,                "", NULL },
 
         { NULL,                          0,                 false, NULL,                                                     "", NULL }
     };

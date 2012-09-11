@@ -57,52 +57,52 @@
     <ClCompile Include="..\..\src\game\AuctionHouseHandler.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGround.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGround.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundAA.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundAA.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundAB.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundAB.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundAV.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundAV.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundBE.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundBE.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundDS.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundDS.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundEY.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundEY.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundHandler.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundHandler.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundIC.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundIC.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundMgr.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundMgr.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundNA.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundNA.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundRB.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundRB.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundRL.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundRL.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundRV.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundRV.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundSA.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundSA.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\BattleGroundWS.cpp">
+    <ClCompile Include="..\..\src\game\BattleGround\BattleGroundWS.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\CalendarHandler.cpp">
@@ -240,9 +240,6 @@
     <ClCompile Include="..\..\src\game\Spell.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\SpellClassMask.h">
-      <Filter>World/Handlers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\game\SpellAuras.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
@@ -252,7 +249,7 @@
     <ClCompile Include="..\..\src\game\SpellHandler.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-   <ClCompile Include="..\..\src\game\StateMgr.cpp">
+    <ClCompile Include="..\..\src\game\StateMgr.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\TaxiHandler.cpp">
@@ -523,13 +520,13 @@
     <ClCompile Include="..\..\src\game\UnitAuraProcHandler.cpp">
       <Filter>World/Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\ChatLexicsCutter.cpp" >
+    <ClCompile Include="..\..\src\game\ChatLexicsCutter.cpp">
       <Filter>Object</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\ChatLog.cpp" >
+    <ClCompile Include="..\..\src\game\ChatLog.cpp">
       <Filter>Object</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\VehicleHandler.cpp" >
+    <ClCompile Include="..\..\src\game\VehicleHandler.cpp">
       <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\AuctionHouseBot\AuctionHouseBot.cpp">
@@ -595,9 +592,6 @@
     <ClCompile Include="..\..\src\game\PlayerBot\PlayerbotWarriorAI.cpp">
       <Filter>playerbot</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\game\warden\WardenHandler.cpp">
-      <Filter>World/Handlers</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\game\warden\WardenBase.cpp">
       <Filter>Warden</Filter>
     </ClCompile>
@@ -633,11 +627,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\game\vmap\GameObjectModel.cpp">
       <Filter>vmaps</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\game\TransportSystem.cpp">
       <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\game\UpdateFieldFlags.cpp">
       <Filter>Object</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\game\WorldObjectEvents.cpp">
+      <Filter>World/Handlers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -650,49 +648,49 @@
     <ClInclude Include="..\..\src\game\AntiCheat.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGround.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGround.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundAA.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundAA.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundAB.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundAB.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundAV.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundAV.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundBE.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundBE.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundDS.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundDS.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundEY.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundEY.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundIC.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundIC.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundMgr.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundMgr.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundNA.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundNA.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundRB.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundRB.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundRL.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundRL.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundRV.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundRV.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundSA.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundSA.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\BattleGroundWS.h">
+    <ClInclude Include="..\..\src\game\BattleGround\BattleGroundWS.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\Cell.h">
@@ -1077,10 +1075,10 @@
     <ClInclude Include="..\..\src\game\LFGMgr.h">
       <Filter>World/Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\ChatLexicsCutter.h" >
+    <ClInclude Include="..\..\src\game\ChatLexicsCutter.h">
       <Filter>Object</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\ChatLog.h" >
+    <ClInclude Include="..\..\src\game\ChatLog.h">
       <Filter>Object</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\MoveMap.h">
@@ -1164,9 +1162,6 @@
     <ClInclude Include="..\..\src\game\PlayerBot\PlayerbotWarriorAI.h">
       <Filter>playerbot</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\game\warden\WardenHandler.h">
-      <Filter>World/Handlers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\game\warden\WardenBase.h">
       <Filter>Warden</Filter>
     </ClInclude>
@@ -1223,11 +1218,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\game\vmap\RegularGrid.h">
       <Filter>vmaps</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\game\TransportSystem.h">
       <Filter>Object</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\game\UpdateFieldFlags.h">
       <Filter>Object</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\game\WorldObjectEvents.h">
+      <Filter>World/Handlers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

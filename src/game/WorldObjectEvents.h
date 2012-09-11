@@ -36,6 +36,25 @@ enum WorldObjectEventType
     WORLDOBJECT_EVENT_TYPE_MAX
 };
 
+typedef std::queue<std::pair<uint64, BasicEvent*> > EventNewQueue;
+
+class MANGOS_DLL_SPEC WorldObjectEventProcessor : public EventProcessor
+{
+    public:
+        WorldObjectEventProcessor() {};
+        ~WorldObjectEventProcessor() {};
+
+        void Update(uint32 p_time, bool force = false);
+        void KillAllEvents(bool force);
+        void CleanupEventList();
+        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
+        void RenewEvents();
+
+    protected:
+        void _AddEvents();
+        EventNewQueue m_queue;
+};
+
 // Spell events
 class SpellEvent : public BasicEvent
 {

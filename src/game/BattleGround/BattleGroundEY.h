@@ -247,14 +247,14 @@ static const uint32 eyTowers[EY_NODES_MAX] = {GO_CAPTURE_POINT_FEL_REAVER_RUINS,
 class BattleGroundEYScore : public BattleGroundScore
 {
     public:
-        BattleGroundEYScore () : FlagCaptures(0) {};
+        BattleGroundEYScore() : FlagCaptures(0) {};
         virtual ~BattleGroundEYScore() {};
         uint32 FlagCaptures;
 };
 
 class BattleGroundEY : public BattleGround
 {
-    friend class BattleGroundMgr;
+        friend class BattleGroundMgr;
 
     public:
         BattleGroundEY();
@@ -262,7 +262,7 @@ class BattleGroundEY : public BattleGround
         void Update(uint32 diff);
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player *plr);
+        virtual void AddPlayer(Player* plr);
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
@@ -286,15 +286,15 @@ class BattleGroundEY : public BattleGround
         virtual void Reset() override;
         void UpdateTeamScore(Team team);
         void EndBattleGround(Team winner);
-        void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
+        void UpdatePlayerScore(Player* source, uint32 type, uint32 value);
         virtual void FillInitialWorldStates();
         void SetDroppedFlagGuid(ObjectGuid guid)     { m_DroppedFlagGuid = guid;}
         void ClearDroppedFlagGuid()                  { m_DroppedFlagGuid.Clear();}
         ObjectGuid const& GetDroppedFlagGuid() const { return m_DroppedFlagGuid;}
 
         /* Battleground Events */
-        virtual void EventPlayerClickedOnFlag(Player *Source, GameObject* target_obj);
-        virtual void EventPlayerDroppedFlag(Player *Source);
+        virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
+        virtual void EventPlayerDroppedFlag(Player* source);
 
         /* achievement req. */
         bool IsAllNodesControlledByTeam(Team team) const override;

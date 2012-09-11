@@ -86,7 +86,7 @@ void BattleGroundEY::StartingEventOpenDoors()
 
     for (uint8 i = 0; i < EY_NODES_MAX; ++i)
     {
-        //randomly spawn buff
+        // randomly spawn buff
         uint8 buff = urand(0, 2);
         SpawnBGObject(m_BgObjects[EY_OBJECT_SPEEDBUFF_FEL_REAVER_RUINS + buff + i * 3], RESPAWN_IMMEDIATELY);
     }
@@ -139,12 +139,12 @@ void BattleGroundEY::UpdateTeamScore(Team team)
 
 void BattleGroundEY::EndBattleGround(Team winner)
 {
-    //win reward
+    // win reward
     if (winner == ALLIANCE)
         RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
     if (winner == HORDE)
         RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
-    //complete map reward
+    // complete map reward
     RewardHonorToTeam(GetBonusHonorFromKill(1), ALLIANCE);
     RewardHonorToTeam(GetBonusHonorFromKill(1), HORDE);
 
@@ -290,15 +290,15 @@ void BattleGroundEY::ProcessCaptureEvent(GameObject* go, uint32 towerId, Team te
     m_towerOwner[towerId] = team;
 }
 
-void BattleGroundEY::HandleAreaTrigger(Player* source, uint32 Trigger)
+void BattleGroundEY::HandleAreaTrigger(Player* source, uint32 trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    if (!source->isAlive())                                  //hack code, must be removed later
+    if (!source->isAlive())                                 // hack code, must be removed later
         return;
 
-    switch(Trigger)
+    switch (trigger)
     {
         case AREATRIGGER_BLOOD_ELF_TOWER_POINT:
             if (m_towerOwner[NODE_BLOOD_ELF_TOWER] == source->GetTeam())
@@ -341,7 +341,7 @@ bool BattleGroundEY::SetupBattleGround()
 
 void BattleGroundEY::Reset()
 {
-    //call parent's class reset
+    // call parent's class reset
     BattleGround::Reset();
 
     m_TeamScores[TEAM_INDEX_ALLIANCE] = 0;
@@ -392,7 +392,7 @@ void BattleGroundEY::RespawnDroppedFlag()
 {
     RespawnFlag();
 
-    GameObject *obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid());
+    GameObject* obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid());
     if (obj)
         obj->Delete();
     else
@@ -401,13 +401,12 @@ void BattleGroundEY::RespawnDroppedFlag()
     ClearDroppedFlagGuid();
 }
 
-void BattleGroundEY::HandleKillPlayer(Player *player, Player *killer)
+void BattleGroundEY::HandleKillPlayer(Player* player, Player* killer)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     BattleGround::HandleKillPlayer(player, killer);
-
     EventPlayerDroppedFlag(player);
 }
 
@@ -524,20 +523,20 @@ void BattleGroundEY::EventPlayerCapturedFlag(Player* source, EYNodes node)
     UpdatePlayerScore(source, SCORE_FLAG_CAPTURES, 1);
 }
 
-void BattleGroundEY::UpdatePlayerScore(Player* Source, uint32 type, uint32 value)
+void BattleGroundEY::UpdatePlayerScore(Player* source, uint32 type, uint32 value)
 {
-    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(Source->GetObjectGuid());
-    if (itr == m_PlayerScores.end())                         // player not found
+    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(source->GetObjectGuid());
+    if (itr == m_PlayerScores.end())                        // player not found
         return;
 
-    switch(type)
+    switch (type)
     {
         case SCORE_FLAG_CAPTURES:                           // flags captured
             ((BattleGroundEYScore*)itr->second)->FlagCaptures += value;
-            Source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, EY_OBJECTIVE_CAPTURE_FLAG);
+            source->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, EY_OBJECTIVE_CAPTURE_FLAG);
             break;
         default:
-            BattleGround::UpdatePlayerScore(Source, type, value);
+            BattleGround::UpdatePlayerScore(source, type, value);
             break;
     }
 }
@@ -581,7 +580,7 @@ WorldSafeLocsEntry const* BattleGroundEY::GetClosestGraveYard(Player* player)
 {
     uint32 g_id = 0;
 
-    switch(player->GetTeam())
+    switch (player->GetTeam())
     {
         case ALLIANCE: g_id = GRAVEYARD_EY_MAIN_ALLIANCE; break;
         case HORDE:    g_id = GRAVEYARD_EY_MAIN_HORDE;    break;
@@ -606,7 +605,7 @@ WorldSafeLocsEntry const* BattleGroundEY::GetClosestGraveYard(Player* player)
     float plr_z = player->GetPositionZ();
 
 
-    distance = (entry->x - plr_x)*(entry->x - plr_x) + (entry->y - plr_y)*(entry->y - plr_y) + (entry->z - plr_z)*(entry->z - plr_z);
+    distance = (entry->x - plr_x) * (entry->x - plr_x) + (entry->y - plr_y) * (entry->y - plr_y) + (entry->z - plr_z) * (entry->z - plr_z);
     nearestDistance = distance;
 
     for (uint8 i = 0; i < EY_NODES_MAX; ++i)
@@ -618,7 +617,7 @@ WorldSafeLocsEntry const* BattleGroundEY::GetClosestGraveYard(Player* player)
                 sLog.outError("BattleGroundEY: Not found graveyard: %u", eyGraveyards[i]);
             else
             {
-                distance = (entry->x - plr_x)*(entry->x - plr_x) + (entry->y - plr_y)*(entry->y - plr_y) + (entry->z - plr_z)*(entry->z - plr_z);
+                distance = (entry->x - plr_x) * (entry->x - plr_x) + (entry->y - plr_y) * (entry->y - plr_y) + (entry->z - plr_z) * (entry->z - plr_z);
                 if (distance < nearestDistance)
                 {
                     nearestDistance = distance;

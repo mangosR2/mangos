@@ -129,12 +129,6 @@ class MANGOS_DLL_DECL ObjectAccessor : public MaNGOS::Singleton<ObjectAccessor, 
     private:
 
         Player2CorpsesMapType   i_player2corpse;
-
-        typedef ACE_RW_Thread_Mutex LockType;
-        typedef ACE_Read_Guard<LockType> ReadGuard;
-        typedef ACE_Write_Guard<LockType> WriteGuard;
-
-        LockType i_guard;
 };
 
 #define sObjectAccessor ObjectAccessor::Instance()

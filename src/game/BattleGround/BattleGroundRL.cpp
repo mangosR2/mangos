@@ -30,7 +30,7 @@ BattleGroundRL::BattleGroundRL()
     m_StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     m_StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     m_StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    //we must set messageIds
+    // we must set messageIds
     m_StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     m_StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     m_StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
@@ -60,10 +60,10 @@ void BattleGroundRL::StartingEventOpenDoors()
     OpenDoorEvent(BG_EVENT_DOOR);
 }
 
-void BattleGroundRL::AddPlayer(Player *plr)
+void BattleGroundRL::AddPlayer(Player* plr)
 {
     BattleGround::AddPlayer(plr);
-    //create score and add it to map, default values are set in constructor
+    // create score and add it to map, default values are set in constructor
     BattleGroundRLScore* sc = new BattleGroundRLScore;
 
     m_PlayerScores[plr->GetObjectGuid()] = sc;
@@ -83,7 +83,7 @@ void BattleGroundRL::RemovePlayer(Player* /*plr*/, ObjectGuid /*guid*/)
     CheckArenaWinConditions();
 }
 
-void BattleGroundRL::HandleKillPlayer(Player *player, Player *killer)
+void BattleGroundRL::HandleKillPlayer(Player* player, Player* killer)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
@@ -94,7 +94,7 @@ void BattleGroundRL::HandleKillPlayer(Player *player, Player *killer)
         return;
     }
 
-    BattleGround::HandleKillPlayer(player,killer);
+    BattleGround::HandleKillPlayer(player, killer);
 
     UpdateWorldState(0xbb8, GetAlivePlayersCountByTeam(ALLIANCE));
     UpdateWorldState(0xbb9, GetAlivePlayersCountByTeam(HORDE));
@@ -102,33 +102,33 @@ void BattleGroundRL::HandleKillPlayer(Player *player, Player *killer)
     CheckArenaWinConditions();
 }
 
-bool BattleGroundRL::HandlePlayerUnderMap(Player *player)
+bool BattleGroundRL::HandlePlayerUnderMap(Player* player)
 {
-    player->TeleportTo(GetMapId(),1285.810547f,1667.896851f,39.957642f,player->GetOrientation(),false);
+    player->TeleportTo(GetMapId(), 1285.810547f, 1667.896851f, 39.957642f, player->GetOrientation(), false);
     return true;
 }
 
-void BattleGroundRL::HandleAreaTrigger(Player *Source, uint32 Trigger)
+void BattleGroundRL::HandleAreaTrigger(Player* source, uint32 trigger)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    //uint32 SpellId = 0;
-    //uint64 buff_guid = 0;
-    switch(Trigger)
+    // uint32 spellId = 0;
+    // uint64 buff_guid = 0;
+    switch (trigger)
     {
         case 4696:                                          // buff trigger?
         case 4697:                                          // buff trigger?
             break;
         default:
-            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", trigger);
+            source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", trigger);
             break;
     }
 
-    //if (buff_guid)
-    //    HandleTriggerBuff(buff_guid,Source);
+    // if (buff_guid)
+    //    HandleTriggerBuff(buff_guid, source);
 }
 
 void BattleGroundRL::FillInitialWorldStates()
@@ -140,7 +140,7 @@ void BattleGroundRL::FillInitialWorldStates()
 
 void BattleGroundRL::Reset()
 {
-    //call parent's reset
+    // call parent's reset
     BattleGround::Reset();
 }
 

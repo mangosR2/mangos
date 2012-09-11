@@ -118,7 +118,7 @@ void ObjectAccessor::KickPlayer(ObjectGuid guid)
 Corpse*
 ObjectAccessor::GetCorpseForPlayerGUID(ObjectGuid guid)
 {
-    ReadGuard guard(i_guard);
+    HashMapHolder<Corpse>::ReadGuard g(HashMapHolder<Corpse>::GetLock());
 
     Player2CorpsesMapType::iterator iter = i_player2corpse.find(guid);
     if (iter == i_player2corpse.end())
@@ -134,7 +134,10 @@ ObjectAccessor::RemoveCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-    WriteGuard guard(i_guard);
+#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
+#endif
+
     Player2CorpsesMapType::iterator iter = i_player2corpse.find(corpse->GetOwnerGuid());
     if( iter == i_player2corpse.end() )
         return;
@@ -154,7 +157,10 @@ ObjectAccessor::AddCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-    WriteGuard guard(i_guard);
+#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
+#endif
+
     MANGOS_ASSERT(i_player2corpse.find(corpse->GetOwnerGuid()) == i_player2corpse.end());
     i_player2corpse[corpse->GetOwnerGuid()] = corpse;
 
@@ -168,7 +174,11 @@ ObjectAccessor::AddCorpse(Corpse *corpse)
 void
 ObjectAccessor::AddCorpsesToGrid(GridPair const& gridpair,GridType& grid,Map* map)
 {
-    ReadGuard guard(i_guard);
+
+#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    HashMapHolder<Corpse>::ReadGuard g(HashMapHolder<Corpse>::GetLock());
+#endif
+
     for(Player2CorpsesMapType::iterator iter = i_player2corpse.begin(); iter != i_player2corpse.end(); ++iter)
         if(iter->second->GetGrid() == gridpair)
     {
@@ -278,5 +288,4 @@ template <class T> ACE_RW_Thread_Mutex HashMapHolder<T>::i_lock;
 
 template class HashMapHolder<Player>;
 template class HashMapHolder<Corpse>;
-template class HashMapHolder<Pet>;
 

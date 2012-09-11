@@ -26,11 +26,12 @@
 
 BattleGroundRV::BattleGroundRV()
 {
+
     m_StartDelayTimes[BG_STARTING_EVENT_FIRST]  = BG_START_DELAY_1M;
     m_StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     m_StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     m_StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    //we must set messageIds
+    // we must set messageIds
     m_StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     m_StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     m_StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
@@ -108,10 +109,10 @@ void BattleGroundRV::StartingEventOpenDoors()
     OpenDoorEvent(BG_EVENT_DOOR);
 }
 
-void BattleGroundRV::AddPlayer(Player *plr)
+void BattleGroundRV::AddPlayer(Player* plr)
 {
     BattleGround::AddPlayer(plr);
-    //create score and add it to map, default values are set in constructor
+    // create score and add it to map, default values are set in constructor
     BattleGroundRVScore* sc = new BattleGroundRVScore;
 
     m_PlayerScores[plr->GetObjectGuid()] = sc;
@@ -120,7 +121,7 @@ void BattleGroundRV::AddPlayer(Player *plr)
     UpdateWorldState(0xe10, GetAlivePlayersCountByTeam(HORDE));
 }
 
-void BattleGroundRV::RemovePlayer(Player * /*plr*/, ObjectGuid /*guid*/)
+void BattleGroundRV::RemovePlayer(Player* /*plr*/, ObjectGuid /*guid*/)
 {
     if (GetStatus() == STATUS_WAIT_LEAVE)
         return;
@@ -150,18 +151,18 @@ void BattleGroundRV::HandleKillPlayer(Player* player, Player* killer)
     CheckArenaWinConditions();
 }
 
-bool BattleGroundRV::HandlePlayerUnderMap(Player *player)
+bool BattleGroundRV::HandlePlayerUnderMap(Player* player)
 {
     player->TeleportTo(GetMapId(), 763.5f, -284, 28.276f, player->GetOrientation(), false);
     return true;
 }
 
-void BattleGroundRV::HandleAreaTrigger(Player * Source, uint32 Trigger)
+void BattleGroundRV::HandleAreaTrigger(Player* source, uint32 trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    switch(Trigger)
+    switch(trigger)
     {
         case 5224:
         case 5226:
@@ -169,8 +170,8 @@ void BattleGroundRV::HandleAreaTrigger(Player * Source, uint32 Trigger)
         case 5474:
             break;
         default:
-            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", trigger);
+            source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", trigger);
             break;
     }
 }

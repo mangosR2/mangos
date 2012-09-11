@@ -67,8 +67,8 @@ class MANGOS_DLL_SPEC MotionMaster
         // will only work in MMgens where we have a target (TARGETED_MOTION_TYPE)
         void UpdateFinalDistanceToTarget(float fDistance);
 
-        class UnitStateMgr* impl();
-        MovementGenerator*  top();
+        class UnitStateMgr* GetUnitStateMgr();
+        MovementGenerator*  CurrentMovementGenerator();
         Unit* GetOwner() { return m_owner; };
         bool  empty();
 

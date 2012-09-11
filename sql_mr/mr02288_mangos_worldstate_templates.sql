@@ -493,6 +493,9 @@ INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `de
 (3564, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'Battle finish timer (data - 3559,3560,3561)'),
 (3565, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'Round timer (data - 3559,3560,3561)'),
 (3571, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'Bonus timer (data - 3559,3560,3561)'),
+-- State (?)
+(3536, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
+(3537, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 3536, '', ''),
 -- Attackers
 (4352, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
 (4353, 4, 607, @FLAG_INITIAL_ACTIVE, 0, 0, '', ''),
@@ -646,6 +649,27 @@ DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
 INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
 (4390, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'TOC attempts main WS'),
 (4389, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 4390, '', 'TOC attempts counter');
+
+-- Oculus
+SET @MAP := 578;
+DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
+INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
+(3524, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'Oculus CONSTRUCTS'),
+(3486, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 3524, '', 'Oculus CONSTRUCTS_COUNT');
+
+-- ICC
+SET @MAP := 631;
+DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
+INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
+(4903, 4, @MAP, @FLAG_INITIAL_STATE, 0, 0, '', 'Quest 24874/24879 active'),
+(4904, 4, @MAP, @FLAG_INITIAL_STATE, 0, 4903, '', 'Quest 24874/24879 remining time');
+
+-- Culling of stratholme
+SET @MAP := 595;
+DELETE FROM `worldstate_template` WHERE `type` = 4 AND `condition` = @MAP;
+INSERT INTO `worldstate_template` (`state_id`, `type`, `condition`, `flags`, `default`, `linked_id`, `ScriptName`, `comment`) VALUES
+(3479, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 0, '', 'COS Crates'),
+(3480, 4, @MAP, @FLAG_INITIAL_ACTIVE, 0, 3479, '', 'COS Crates count');
 
 -- Zones
 -- Ebon hold

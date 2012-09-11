@@ -2126,9 +2126,14 @@ enum CreatureType
     CREATURE_TYPE_GAS_CLOUD        = 13
 };
 
-uint32 const CREATURE_TYPEMASK_DEMON_OR_UNDEAD = (1 << (CREATURE_TYPE_DEMON-1)) | (1 << (CREATURE_TYPE_UNDEAD-1));
-uint32 const CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD = (1 << (CREATURE_TYPE_HUMANOID-1)) | (1 << (CREATURE_TYPE_UNDEAD-1));
-uint32 const CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL = (1 << (CREATURE_TYPE_MECHANICAL-1)) | (1 << (CREATURE_TYPE_ELEMENTAL-1));
+// Unions of CreatureType
+enum CreatureTypeMask
+{
+    CREATURE_TYPEMASK_NONE                    = 0,                                                                       // In this typemask fits players only
+    CREATURE_TYPEMASK_DEMON_OR_UNDEAD         = (1 << (CREATURE_TYPE_DEMON-1))      | (1 << (CREATURE_TYPE_UNDEAD-1)),
+    CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD      = (1 << (CREATURE_TYPE_HUMANOID-1))   | (1 << (CREATURE_TYPE_UNDEAD-1)),
+    CREATURE_TYPEMASK_MECHANICAL_OR_ELEMENTAL = (1 << (CREATURE_TYPE_MECHANICAL-1)) | (1 << (CREATURE_TYPE_ELEMENTAL-1)),
+};
 
 // CreatureFamily.dbc
 enum CreatureFamily

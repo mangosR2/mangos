@@ -122,15 +122,16 @@ void GameObject::RemoveFromWorld()
             }
         }
 
-        if (m_model)
-            if (GetMap()->ContainsGameObjectModel(*m_model))
-                GetMap()->RemoveGameObjectModel(*m_model);
-
         MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
+
         GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
 
         EnableCollision(false);
     }
+
+    if (m_model)
+        if (GetMap()->ContainsGameObjectModel(*m_model))
+            GetMap()->RemoveGameObjectModel(*m_model);
 
     Object::RemoveFromWorld();
 }

@@ -589,7 +589,7 @@ Player::~Player ()
     //m_social = NULL;
 
     // Clear chache need only if player true loaded, not in broken state
-    if (!GetObjectGuid().IsEmpty())
+    if (m_uint32Values && !GetObjectGuid().IsEmpty())
         sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
 
     // Note: buy back item already deleted from DB when player was saved
@@ -19229,7 +19229,7 @@ void Player::AddSpellMod(Aura* aura, bool apply)
     Modifier const* mod = aura->GetModifier();
     uint16 Opcode= (mod->m_auraname == SPELL_AURA_ADD_FLAT_MODIFIER) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
 
-    for(int eff = 0; eff < 96; ++eff)
+    for (uint8 eff = 0; eff < 96; ++eff)
     {
         if (aura->GetAuraSpellClassMask().test(eff))
         {
@@ -19242,7 +19242,10 @@ void Player::AddSpellMod(Aura* aura, bool apply)
                 if ((*itr)->GetModifier()->m_auraname == mod->m_auraname && ((*itr)->GetAuraSpellClassMask().test(eff)))
                     val += (*itr)->GetModifier()->m_amount;
             }
-            val += apply ? mod->m_amount : -(mod->m_amount);
+
+            // Not need manually remove m_amount from total value - his already removed from calculation due to removed from SpellAuraHolder (IsEmpty() method)
+            val += apply ? mod->m_amount : 0;
+
             WorldPacket data(Opcode, (1+1+4));
             data << uint8(eff);
             data << uint8(mod->m_miscvalue);
@@ -20894,18 +20897,8 @@ void Player::SendUpdateToOutOfRangeGroupMembers()
 
 void Player::SendTransferAborted(uint32 mapid, uint8 reason, uint8 arg)
 {
-    WorldPacket data(SMSG_TRANSFER_ABORTED, 4+2);
-    data << uint32(mapid);
-    data << uint8(reason);                                  // transfer abort reason
-    switch(reason)
-    {
-        case TRANSFER_ABORT_INSUF_EXPAN_LVL:
-        case TRANSFER_ABORT_DIFFICULTY:
-        case TRANSFER_ABORT_UNIQUE_MESSAGE:
-            data << uint8(arg);
-            break;
-    }
-    GetSession()->SendPacket(&data);
+    if (GetSession())
+        GetSession()->SendTransferAborted(mapid, reason, arg);
 }
 
 void Player::SendInstanceResetWarning( uint32 mapid, Difficulty difficulty, uint32 time )
@@ -23776,9 +23769,9 @@ void Player::SendDuelCountdown(uint32 counter)
     GetSession()->SendPacket(&data);
 }
 
-bool Player::IsImmuneToSpell(SpellEntry const* spellInfo) const
+bool Player::IsImmuneToSpell(SpellEntry const* spellInfo, bool isFriendly) const
 {
-    return Unit::IsImmuneToSpell(spellInfo);
+    return Unit::IsImmuneToSpell(spellInfo, isFriendly);
 }
 
 bool Player::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const
@@ -24348,7 +24341,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
         case AREA_LOCKSTATUS_QUEST_NOT_COMPLETED:
             if(at->target_mapId == 269)
             {
-                GetSession()->SendAreaTriggerMessage("%s", at->requiredFailedText.c_str());
+                GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_TELEREQ_QUEST_BLACK_MORASS));
                 return false;
             }
             // No break here!

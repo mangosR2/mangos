@@ -108,7 +108,7 @@ enum BG_WS_Events
 
 class BattleGroundWS : public BattleGround
 {
-    friend class BattleGroundMgr;
+        friend class BattleGroundMgr;
 
     public:
         /* Construction */
@@ -117,45 +117,45 @@ class BattleGroundWS : public BattleGround
         void Update(uint32 diff);
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player *plr);
+        virtual void AddPlayer(Player* plr);
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
         /* BG Flags */
-        ObjectGuid GetAllianceFlagCarrierGuid() const{ return m_FlagKeepers[TEAM_INDEX_ALLIANCE]; }
-        ObjectGuid GetHordeFlagCarrierGuid() const   { return m_FlagKeepers[TEAM_INDEX_HORDE]; }
+        ObjectGuid GetAllianceFlagCarrierGuid() const { return m_FlagKeepers[TEAM_INDEX_ALLIANCE]; }
+        ObjectGuid GetHordeFlagCarrierGuid() const { return m_FlagKeepers[TEAM_INDEX_HORDE]; }
 
         void SetAllianceFlagCarrier(ObjectGuid guid) { m_FlagKeepers[TEAM_INDEX_ALLIANCE] = guid; }
-        void SetHordeFlagCarrier(ObjectGuid guid)    { m_FlagKeepers[TEAM_INDEX_HORDE] = guid; }
+        void SetHordeFlagCarrier(ObjectGuid guid) { m_FlagKeepers[TEAM_INDEX_HORDE] = guid; }
 
-        void ClearAllianceFlagCarrier()              { m_FlagKeepers[TEAM_INDEX_ALLIANCE].Clear(); }
-        void ClearHordeFlagCarrier()                 { m_FlagKeepers[TEAM_INDEX_HORDE].Clear(); }
+        void ClearAllianceFlagCarrier() { m_FlagKeepers[TEAM_INDEX_ALLIANCE].Clear(); }
+        void ClearHordeFlagCarrier() { m_FlagKeepers[TEAM_INDEX_HORDE].Clear(); }
 
-        bool IsAllianceFlagPickedup() const         { return !m_FlagKeepers[TEAM_INDEX_ALLIANCE].IsEmpty(); }
-        bool IsHordeFlagPickedup() const            { return !m_FlagKeepers[TEAM_INDEX_HORDE].IsEmpty(); }
+        bool IsAllianceFlagPickedUp() const { return !m_FlagKeepers[TEAM_INDEX_ALLIANCE].IsEmpty(); }
+        bool IsHordeFlagPickedUp() const { return !m_FlagKeepers[TEAM_INDEX_HORDE].IsEmpty(); }
 
         void RespawnFlag(Team team, bool captured);
         void RespawnFlagAfterDrop(Team team);
 
-        uint8 GetFlagState(Team team)             { return m_FlagState[GetTeamIndex(team)]; }
+        uint8 GetFlagState(Team team) { return m_FlagState[GetTeamIndex(team)]; }
 
         /* Battleground Events */
-        virtual void EventPlayerDroppedFlag(Player *Source);
-        virtual void EventPlayerClickedOnFlag(Player *Source, GameObject* target_obj);
-        virtual void EventPlayerCapturedFlag(Player *Source);
+        virtual void EventPlayerDroppedFlag(Player* source);
+        virtual void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
+        virtual void EventPlayerCapturedFlag(Player* source);
 
-        void RemovePlayer(Player *plr, ObjectGuid guid);
-        void HandleAreaTrigger(Player *Source, uint32 Trigger);
-        void HandleKillPlayer(Player *player, Player *killer);
+        void RemovePlayer(Player* plr, ObjectGuid guid);
+        void HandleAreaTrigger(Player* source, uint32 trigger);
+        void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleGround();
         virtual void Reset();
         void EndBattleGround(Team winner);
         virtual WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
-        uint32 GetRemainingTimeInMinutes() { return m_EndTimer ? (m_EndTimer-1) / (MINUTE * IN_MILLISECONDS) + 1 : 0; }
+        uint32 GetRemainingTimeInMinutes() { return m_EndTimer ? (m_EndTimer - 1) / (MINUTE * IN_MILLISECONDS) + 1 : 0; }
 
         void UpdateFlagState(Team team, uint32 value);
         void UpdateTeamScore(Team team);
-        void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
+        void UpdatePlayerScore(Player* source, uint32 type, uint32 value);
         void SetDroppedFlagGuid(ObjectGuid guid, Team team)  { m_DroppedFlagGuid[GetTeamIndex(team)] = guid;}
         void ClearDroppedFlagGuid(Team team)  { m_DroppedFlagGuid[GetTeamIndex(team)].Clear();}
         ObjectGuid const& GetDroppedFlagGuid(Team team) const { return m_DroppedFlagGuid[GetTeamIndex(team)];}

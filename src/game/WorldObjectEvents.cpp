@@ -15,6 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#include "Object.h"
 #include "WorldObjectEvents.h"
 #include "Spell.h"
 #include "SpellMgr.h"
@@ -29,6 +31,75 @@
 #include "CellImpl.h"
 #include "BattleGround/BattleGroundMgr.h"
 
+// Event processor
+
+void WorldObjectEventProcessor::Update(uint32 p_time, bool force)
+{
+    if (force)
+        RenewEvents();
+
+    EventProcessor::Update(p_time);
+}
+
+void WorldObjectEventProcessor::KillAllEvents(bool force)
+{
+    if (force)
+        RenewEvents();
+
+    EventProcessor::KillAllEvents(force);
+}
+
+void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
+{
+    if (set_addtime)
+        Event->m_addTime = m_time;
+
+    Event->m_execTime = e_time;
+    m_queue.push(std::pair<uint64, BasicEvent*>(e_time, Event));
+}
+
+void WorldObjectEventProcessor::RenewEvents()
+{
+    while (!m_queue.empty())
+    {
+        if (m_queue.front().second)
+        {
+            switch (m_queue.front().second->GetType())
+            {
+                WORLDOBJECT_EVENT_TYPE_UNIQUE:
+                {
+                    bool needInsert = true;
+                    for (EventList::const_iterator i = m_events.begin(); i != m_events.end(); ++i)
+                    {
+                        if (i->second->GetType() == WORLDOBJECT_EVENT_TYPE_UNIQUE)
+                        {
+                            BasicEvent* event = m_queue.front().second;
+                            delete event;
+                            needInsert = false;
+                            break;
+                        }
+                    }
+                    if (needInsert)
+                        m_events.insert(m_queue.front());
+                    break;
+                }
+                WORLDOBJECT_EVENT_TYPE_REPEATABLE:
+                WORLDOBJECT_EVENT_TYPE_DEATH:
+                WORLDOBJECT_EVENT_TYPE_COMMON:
+                default:
+                    m_events.insert(m_queue.front());
+                    break;
+            }
+        }
+        m_queue.pop();
+    }
+}
+
+void WorldObjectEventProcessor::CleanupEventList()
+{
+    KillAllEvents(true);
+    m_aborting = false;
+}
 
 // Spell events
 SpellEvent::SpellEvent(Spell* spell) : BasicEvent(WORLDOBJECT_EVENT_TYPE_COMMON)

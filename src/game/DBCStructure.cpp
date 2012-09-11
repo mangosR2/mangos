@@ -38,7 +38,7 @@ SpellEffectEntry::SpellEffectEntry(const SpellEntry* spellEntry, SpellEffectInde
     EffectPointsPerComboPoint   = spellEntry->EffectPointsPerComboPoint[i];
     EffectRadiusIndex           = spellEntry->EffectRadiusIndex[i];
     EffectRealPointsPerLevel    = spellEntry->EffectRealPointsPerLevel[i];
-    EffectSpellClassMask        = spellEntry->EffectSpellClassMask[i];
+    EffectSpellClassMask        = spellEntry->GetEffectSpellClassMask(i);
     EffectTriggerSpell          = spellEntry->EffectTriggerSpell[i];
     EffectImplicitTargetA       = spellEntry->EffectImplicitTargetA[i];
     EffectImplicitTargetB       = spellEntry->EffectImplicitTargetB[i];

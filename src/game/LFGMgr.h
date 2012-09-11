@@ -226,8 +226,9 @@ class LFGMgr
 
         // Dungeon operations
         LFGDungeonEntry const* GetDungeon(uint32 dungeonID);
-        bool IsRandomDungeon(LFGDungeonEntry const* dungeon);
         LFGDungeonSet GetRandomDungeonsForPlayer(Player* pPlayer);
+        static bool IsRandomDungeon(LFGDungeonEntry const* dungeon);
+        static bool CheckWorldEvent(LFGDungeonEntry const* dungeon);
 
         // Group operations
         void AddMemberToLFDGroup(ObjectGuid guid);

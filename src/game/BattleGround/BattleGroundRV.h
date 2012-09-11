@@ -25,12 +25,12 @@ class BattleGroundRVScore : public BattleGroundScore
     public:
         BattleGroundRVScore() {};
         virtual ~BattleGroundRVScore() {};
-        //TODO fix me
+        // TODO fix me
 };
 
 class BattleGroundRV : public BattleGround
 {
-    friend class BattleGroundMgr;
+        friend class BattleGroundMgr;
 
     public:
         BattleGroundRV();
@@ -38,17 +38,17 @@ class BattleGroundRV : public BattleGround
         void Update(uint32 diff);
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player *plr);
+        virtual void AddPlayer(Player* plr);
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
 
-        void RemovePlayer(Player *plr, ObjectGuid guid);
-        void HandleAreaTrigger(Player *Source, uint32 Trigger);
+        void RemovePlayer(Player* plr, ObjectGuid guid);
+        void HandleAreaTrigger(Player* source, uint32 trigger);
         bool SetupBattleGround();
         virtual void Reset();
         virtual void FillInitialWorldStates();
-        void HandleKillPlayer(Player* player, Player *killer);
-        bool HandlePlayerUnderMap(Player * plr);
+        void HandleKillPlayer(Player* player, Player* killer);
+        bool HandlePlayerUnderMap(Player* plr);
     private:
         uint32 m_uiTeleport;
         uint32 m_uiPillarSwitch;

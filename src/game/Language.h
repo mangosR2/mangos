@@ -809,7 +809,8 @@ enum MangosStrings
     LANG_GUILD_INITIATE                 = 815,
     LANG_FAIL_ENTER_SPECTRAL_REALM      = 816,
     LANG_NO_FLY_ZONE                    = 817,
-    // Room for in-game strings           818-999 not used
+    LANG_TELEREQ_QUEST_BLACK_MORASS     = 818,
+    // Room for in-game strings           819-999 not used
 
     // Level 4 (CLI only commands)
     LANG_COMMAND_EXIT                   = 1000,
@@ -1030,6 +1031,8 @@ enum MangosStrings
     // Use for not-in-official-sources patches
 
     // Use for custom patches             11000-11999
+    LANG_INVALID_REALMID                = 11001,
+
     LANG_COMMAND_FRIEND                 = 11133,
     LANG_COMMAND_FRIEND_ERROR           = 11134,
     LANG_SYSTEMMESSAGE_MODERATOR        = 12000,

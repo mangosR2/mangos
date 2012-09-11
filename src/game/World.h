@@ -408,6 +408,8 @@ enum eConfigBoolValues
     CONFIG_BOOL_RESET_DUEL_AREA_ENABLED,
     CONFIG_BOOL_PET_ADVANCED_AI,
     CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION,
+    CONFIG_BOOL_BLINK_ANIMATION_TYPE,
+    CONFIG_BOOL_FACTION_AND_RACE_CHANGE_WITHOUT_RENAMING,
     CONFIG_BOOL_VALUE_COUNT
 };
 
@@ -669,6 +671,10 @@ class World
         void setDuelResetEnableAreaIds(const char* areas);
         bool IsAreaIdEnabledDuelReset(uint32 areaId);
 
+        // Disable dungeons for LFG system
+        void setDisabledMapIdForDungeonFinder(const char* areas);
+        bool IsDungeonMapIdDisable(uint32 mapId);
+
     protected:
         void _UpdateGameTime();
 
@@ -770,6 +776,8 @@ class World
 
         // reset duel system
         std::set<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
+        // Disable dungeons for LFG system
+        std::set<uint32> disabledMapIdForDungeonFinder; // set of MapIds which are disabled for DungeonFinder
 
 };
 

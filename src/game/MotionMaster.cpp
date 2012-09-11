@@ -45,7 +45,7 @@ void MotionMaster::Initialize()
     if (!m_owner->IsStopped())
         m_owner->StopMoving();
 
-    Clear(true,true);
+    Clear(false,false);
 
     // set new default movement generator
     if (m_owner->GetTypeId() == TYPEID_UNIT /*&& !m_owner->hasUnitState(UNIT_STAT_CONTROLLED)*/)
@@ -62,7 +62,7 @@ MotionMaster::~MotionMaster()
 
 void MotionMaster::MoveIdle()
 {
-    impl()->DropAllStates();
+    GetUnitStateMgr()->DropAllStates();
 }
 
 void MotionMaster::MoveRandom(float radius)
@@ -104,10 +104,21 @@ void MotionMaster::MoveTargetedHome()
     }
     else if (m_owner->GetTypeId() == TYPEID_UNIT && ((Creature*)m_owner)->GetCharmerOrOwnerGuid())
     {
-        if (Unit *target = ((Creature*)m_owner)->GetCharmerOrOwner())
+        if (Unit* target = ((Creature*)m_owner)->GetCharmerOrOwner())
         {
+            float angle = ((Creature*)m_owner)->IsPet() ? ((Pet*)m_owner)->GetPetFollowAngle() : PET_FOLLOW_ANGLE;
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s follow to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
-            Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,PET_FOLLOW_ANGLE), UNIT_ACTION_HOME);
+            switch (((Creature*)m_owner)->GetCharmState(CHARM_STATE_COMMAND))
+            {
+                case COMMAND_STAY:
+                    MoveIdle();
+                    break;
+                case COMMAND_FOLLOW:
+                case COMMAND_ATTACK:
+                default:
+                    Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,angle), UNIT_ACTION_HOME);
+                    break;
+            }
         }
         else
         {
@@ -242,17 +253,17 @@ void MotionMaster::MoveDistract(uint32 timer)
 
 void MotionMaster::Mutate(MovementGenerator* mgen, UnitActionId stateId)
 {
-    impl()->PushAction(stateId, UnitActionPtr(mgen));
+    GetUnitStateMgr()->PushAction(stateId, UnitActionPtr(mgen));
 }
 
 void MotionMaster::propagateSpeedChange()
 {
-    impl()->CurrentAction()->UnitSpeedChanged();
+    GetUnitStateMgr()->CurrentAction()->UnitSpeedChanged();
 }
 
 MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
 {
-    return const_cast<MotionMaster*>(this)->top()->GetMovementGeneratorType();
+    return const_cast<MotionMaster*>(this)->CurrentMovementGenerator()->GetMovementGeneratorType();
 }
 
 bool MotionMaster::GetDestination(float &x, float &y, float &z)
@@ -269,8 +280,8 @@ bool MotionMaster::GetDestination(float &x, float &y, float &z)
 
 void MotionMaster::UpdateFinalDistanceToTarget(float fDistance)
 {
-    if (top()->GetMovementGeneratorType() == FOLLOW_MOTION_TYPE)
-        top()->UpdateFinalDistance(fDistance);
+    if (CurrentMovementGenerator()->GetMovementGeneratorType() == FOLLOW_MOTION_TYPE)
+        CurrentMovementGenerator()->UpdateFinalDistance(fDistance);
 }
 
 MotionMaster::MotionMaster(Unit *unit) : m_owner(unit)
@@ -281,23 +292,26 @@ MotionMaster::MotionMaster(Unit *unit) : m_owner(unit)
 void MotionMaster::Clear(bool reset /*= true*/, bool all /*= false*/)
 {
     if (all)
-        impl()->InitDefaults();
+        GetUnitStateMgr()->InitDefaults();
     else if (reset)
-        impl()->DropAllStates();
+        GetUnitStateMgr()->DropAllStates();
+    // If no command provided, reinit only if states list empty.
+    else if (GetUnitStateMgr()->GetActions().empty())
+        GetUnitStateMgr()->InitDefaults();
 }
 
-MovementGenerator* MotionMaster::top()
+MovementGenerator* MotionMaster::CurrentMovementGenerator()
 {
-    UnitActionPtr mgen = impl()->CurrentAction();
+    UnitActionPtr mgen = GetUnitStateMgr()->CurrentAction();
     if (!mgen)
     {
-        sLog.outError("MotionMaster::top() %s has empty states list! Possible no one update cycle?", m_owner->GetGuidStr().c_str());
+        sLog.outError("MotionMaster::CurrentMovementGenerator() %s has empty states list! Possible no one update cycle?", m_owner->GetGuidStr().c_str());
         return &si_idleMovement;
     }
     return ((MovementGenerator*)&*mgen);
 }
 
-UnitStateMgr* MotionMaster::impl()
+UnitStateMgr* MotionMaster::GetUnitStateMgr()
 {
     MANGOS_ASSERT(m_owner);
     UnitStateMgr* mgr = &m_owner->GetUnitStateMgr();
@@ -307,7 +321,7 @@ UnitStateMgr* MotionMaster::impl()
 
 bool MotionMaster::empty()
 {
-    MovementGenerator* mgen = top();
+    MovementGenerator* mgen = CurrentMovementGenerator();
     if (isStatic(mgen))
         return true;
 

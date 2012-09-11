@@ -671,7 +671,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         uint32 GetWorldState(uint32 state);
 
         // Event handler
-        EventProcessor* GetEvents();
+        WorldObjectEventProcessor* GetEvents();
         void UpdateEvents(uint32 update_diff, uint32 time);
         void KillAllEvents(bool force);
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
@@ -709,7 +709,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         uint32 m_LastUpdateTime;
 
-        EventProcessor m_Events;
+        WorldObjectEventProcessor m_Events;
 };
 
 #endif

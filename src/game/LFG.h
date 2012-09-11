@@ -121,6 +121,20 @@ enum LFGType
     LFG_TYPE_MAX
 };
 
+enum LFGGroupType
+{
+    LFG_GROUP_TYPE_DUNGEON_CLASSIC          = 1,
+    LFG_GROUP_TYPE_NORMAL_DUNGEONS_TBC      = 2,
+    LFG_GROUP_TYPE_HEROIC_DUNGEONS_TBC      = 3,
+    LFG_GROUP_TYPE_NORMAL_DUNGEONS_WOTLK    = 4,
+    LFG_GROUP_TYPE_HEROIC_DUNGEONS_WOTLK    = 5,
+    LFG_GROUP_TYPE_RAID_CLASSIC             = 6,
+    LFG_GROUP_TYPE_RAID_TBC                 = 7,
+    LFG_GROUP_TYPE_RAID_10_WOTLK            = 8,
+    LFG_GROUP_TYPE_RAID_25_WOTLK            = 9,
+    LFG_GROUP_TYPE_WORLD_EVENTS             = 11,
+};
+
 enum LFGProposalState
 {
     LFG_PROPOSAL_INITIATING = 0,

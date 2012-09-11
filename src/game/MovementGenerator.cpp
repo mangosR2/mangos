@@ -25,5 +25,5 @@ MovementGenerator::~MovementGenerator()
 
 bool MovementGenerator::IsActive(Unit& u)
 {
-    return u.GetMotionMaster()->top() == this;
+    return u.GetMotionMaster()->CurrentMovementGenerator() == this;
 }

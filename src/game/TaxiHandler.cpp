@@ -213,12 +213,12 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recv_data)
     TaxiNodesEntry const* curDestNode = sTaxiNodesStore.LookupEntry(curDest);
 
     // far teleport case
-    if(curDestNode && curDestNode->map_id != GetPlayer()->GetMapId())
+    if (curDestNode && curDestNode->map_id != GetPlayer()->GetMapId())
     {
-        if(GetPlayer()->GetMotionMaster()->GetCurrentMovementGeneratorType()==FLIGHT_MOTION_TYPE)
+        if (GetPlayer()->IsInUnitState(UNIT_ACTION_TAXI))
         {
             // short preparations to continue flight
-            FlightPathMovementGenerator* flight = (FlightPathMovementGenerator*)(GetPlayer()->GetMotionMaster()->top());
+            FlightPathMovementGenerator* flight = (FlightPathMovementGenerator*)(GetPlayer()->GetMotionMaster()->CurrentMovementGenerator());
 
             flight->Interrupt(*GetPlayer());                // will reset at map landing
 

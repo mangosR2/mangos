@@ -332,10 +332,16 @@ namespace VMAP
 
     void TileAssembler::exportGameobjectModels()
     {
-        FILE * model_list = fopen((iSrcDir + "/" + GAMEOBJECT_MODELS).c_str(), "rb");
-        FILE * model_list_copy = fopen((iDestDir + "/" + GAMEOBJECT_MODELS).c_str(), "wb");
-        if (!model_list || !model_list_copy)
+        FILE* model_list = fopen((iSrcDir + "/" + GAMEOBJECT_MODELS).c_str(), "rb");
+        if (!model_list)
             return;
+
+        FILE* model_list_copy = fopen((iDestDir + "/" + GAMEOBJECT_MODELS).c_str(), "wb");
+        if (!model_list_copy)
+        {
+            fclose(model_list);
+            return;
+        }
 
         uint32 name_length, displayId;
         char buff[500];
@@ -430,8 +436,14 @@ bool GroupModel_Raw::Read(FILE * rf)
         READ_OR_RETURN(&nindexes, sizeof(uint32));
         if (nindexes > 0)
         {
-            uint16 *indexarray = new uint16[nindexes];
-            READ_OR_RETURN(indexarray, nindexes*sizeof(uint16));
+            uint16* indexarray = new uint16[nindexes];
+            if (fread(indexarray, nindexes*sizeof(uint16), 1, rf) != 1) 
+            {
+                fclose(rf); 
+                delete[] indexarray;
+                printf("readfail, op = %i\n", readOperation); 
+                return false;
+            }
             triangles.reserve(nindexes / 3);
             for (uint32 i=0; i<nindexes; i+=3)
             {
@@ -449,8 +461,15 @@ bool GroupModel_Raw::Read(FILE * rf)
 
         if (nvectors >0)
         {
-            float *vectorarray = new float[nvectors*3];
-            READ_OR_RETURN(vectorarray, nvectors*sizeof(float)*3);
+            float* vectorarray = new float[nvectors*3];
+            if (fread(vectorarray, nvectors*sizeof(float)*3, 1, rf) != 1) 
+            {
+                fclose(rf); 
+                delete[] vectorarray;
+                printf("readfail, op = %i\n", readOperation); 
+                return false;
+            }
+
             for (uint32 i=0; i < nvectors; ++i)
             {
                 vertexArray.push_back( Vector3(vectorarray + 3*i) );

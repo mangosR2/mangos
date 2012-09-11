@@ -340,7 +340,7 @@ void BattleGroundSA::RemovePlayer(Player* /*plr*/, ObjectGuid /*guid*/)
 {
 }
 
-void BattleGroundSA::AddPlayer(Player *plr)
+void BattleGroundSA::AddPlayer(Player* plr)
 {
     BattleGround::AddPlayer(plr);
 
@@ -351,20 +351,21 @@ void BattleGroundSA::AddPlayer(Player *plr)
     m_PlayerScores[plr->GetObjectGuid()] = sc;
 }
 
-void BattleGroundSA::HandleAreaTrigger(Player * /*Source*/, uint32 /*Trigger*/)
+void BattleGroundSA::HandleAreaTrigger(Player* /*source*/, uint32 /*trigger*/)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 }
 
-void BattleGroundSA::UpdatePlayerScore(Player* Source, uint32 type, uint32 value)
+void BattleGroundSA::UpdatePlayerScore(Player* source, uint32 type, uint32 value)
 {
-    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(Source->GetObjectGuid());
-    if(itr == m_PlayerScores.end())                         // player not found...
+
+    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(source->GetObjectGuid());
+    if (itr == m_PlayerScores.end())                        // player not found...
         return;
 
-    switch(type)
+    switch (type)
     {
         case SCORE_DEMOLISHERS_DESTROYED:
             ((BattleGroundSAScore*)itr->second)->DemolishersDestroyed += value;
@@ -373,7 +374,7 @@ void BattleGroundSA::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
             ((BattleGroundSAScore*)itr->second)->GatesDestroyed += value;
             break;
         default:
-            BattleGround::UpdatePlayerScore(Source,type,value);
+            BattleGround::UpdatePlayerScore(source, type, value);
             break;
     }
 }
@@ -499,6 +500,10 @@ bool BattleGroundSA::SetupShips()
 
     for (uint8 i = BG_SA_BOAT_ONE; i <= BG_SA_BOAT_TWO; ++i)
     {
+        // Remove old ships
+        if (Phase == SA_ROUND_TWO)
+            DelObject(i);
+
         uint32 boatid=0;
         switch (i)
         {

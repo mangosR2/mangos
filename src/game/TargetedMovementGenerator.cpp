@@ -206,7 +206,7 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
             return false;
         else
         {
-            i_targetSearchingTimer += 2 * time_diff;
+            i_targetSearchingTimer += 5 * time_diff;
             return true;
         }
     }

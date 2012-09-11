@@ -200,7 +200,7 @@ class BattleGroundSAScore : public BattleGroundScore
 
 class BattleGroundSA : public BattleGround
 {
-    friend class BattleGroundMgr;
+        friend class BattleGroundMgr;
 
     public:
         BattleGroundSA();
@@ -208,7 +208,7 @@ class BattleGroundSA : public BattleGround
         void Update(uint32 diff);
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player *plr);
+        virtual void AddPlayer(Player* plr);
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
         virtual void EventPlayerDamageGO(Player *player, GameObject* target_obj, uint32 eventId, uint32 doneBy = 0);
@@ -240,7 +240,7 @@ class BattleGroundSA : public BattleGround
         uint32 shipsTimer;
         uint32 pillarOpenTimer;
         /* Scorekeeping */
-        void UpdatePlayerScore(Player *Source, uint32 type, uint32 value);
+        void UpdatePlayerScore(Player* Source, uint32 type, uint32 value);
         /* For boats */
         bool SetupShips();
         void StartShips();
@@ -260,8 +260,8 @@ class BattleGroundSA : public BattleGround
         bool isDemolisherDestroyed[2];
 
     private:
-        uint8 m_Gyd[BG_SA_GRY_MAX];
-        uint8 m_prevGyd[BG_SA_GRY_MAX];   // used for performant wordlstate-updating
+        uint8 m_Gyd[BG_SA_GRY_MAX + 1];
+        uint8 m_prevGyd[BG_SA_GRY_MAX + 1];   // used for performant wordlstate-updating
         BG_SA_RoundScore RoundScores[2];
         /* Gameobject spawning/despawning */
         void _CreateBanner(uint8 node, uint8 type, uint8 teamIndex, bool delay);
@@ -282,5 +282,4 @@ class BattleGroundSA : public BattleGround
         bool GateRedSunDamaged;
         bool GateYellowMoonDamaged;
 };
-
 #endif

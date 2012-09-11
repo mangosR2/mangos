@@ -66,7 +66,7 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         void MoveInLineOfSight(Unit *);
         void AttackStart(Unit *);
         void EnterEvadeMode();
-        void AttackedBy(Unit*);
+        void AttackedBy(Unit*) override;
         bool IsVisible(Unit *) const;
 
         void UpdateAI(const uint32);

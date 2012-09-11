@@ -93,6 +93,7 @@ AccountOpResult AccountMgr::DeleteAccount(uint32 accid)
 
     bool res =
         LoginDatabase.PExecute("DELETE FROM account WHERE id='%u'", accid) &&
+        LoginDatabase.PExecute("DELETE FROM account_access WHERE id ='%d'", accid) &&
         LoginDatabase.PExecute("DELETE FROM realmcharacters WHERE acctid='%u'", accid);
 
     LoginDatabase.CommitTransaction();
@@ -165,7 +166,8 @@ uint32 AccountMgr::GetId(std::string username)
 
 AccountTypes AccountMgr::GetSecurity(uint32 acc_id)
 {
-    QueryResult* result = LoginDatabase.PQuery("SELECT gmlevel FROM account WHERE id = '%u'", acc_id);
+
+    QueryResult* result = LoginDatabase.PQuery("SELECT gmlevel FROM account_access WHERE id = '%u'", acc_id);
     if (result)
     {
         AccountTypes sec = AccountTypes((*result)[0].GetInt32());
@@ -311,7 +313,7 @@ AccountOpResult AccountMgr::DeleteRAFLink(uint32 accid, uint32 friendid)
         for (RafLinkedList::iterator itr1 = referred->begin(); itr1 != referred->end();)
         {
             if (*itr1 == accid)
-                referred->erase(itr1);
+                itr1 = referred->erase(itr1);
             else
                 ++itr1;
         }
@@ -323,7 +325,7 @@ AccountOpResult AccountMgr::DeleteRAFLink(uint32 accid, uint32 friendid)
         for (RafLinkedList::iterator itr1 = referal->begin(); itr1 != referal->end();)
         {
             if (*itr1 == friendid)
-                referal->erase(itr1);
+                itr1 = referal->erase(itr1);
             else
                 ++itr1;
         }

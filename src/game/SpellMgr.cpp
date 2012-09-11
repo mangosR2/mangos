@@ -454,20 +454,20 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
         case SPELLFAMILY_MAGE:
         {
             // family flags 18(Molten), 25(Frost/Ice), 28(Mage)
-            if (spellInfo->SpellFamilyFlags.test<CF_MAGE_MOLTEN_ARMOR1, CF_MAGE_ELEMENTAL_ARMOR, CF_MAGE_MAGE_ARMOR>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_MOLTEN_ARMOR1, CF_MAGE_ELEMENTAL_ARMOR, CF_MAGE_MAGE_ARMOR>())
                 return SPELL_MAGE_ARMOR;
 
-            if (spellInfo->SpellFamilyFlags.test<CF_MAGE_POLYMORPH>() && spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_CONFUSE)
+            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_POLYMORPH>() && spellInfo->EffectApplyAuraName[EFFECT_INDEX_0] == SPELL_AURA_MOD_CONFUSE)
                 return SPELL_MAGE_POLYMORPH;
 
-            if (spellInfo->SpellFamilyFlags.test<CF_MAGE_ARCANE_INT>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_MAGE_ARCANE_INT>())
                 return SPELL_MAGE_INTELLECT;
 
             break;
         }
         case SPELLFAMILY_WARRIOR:
         {
-            if (spellInfo->SpellFamilyFlags.test<CF_WARRIOR_BATTLE_SHOUT, CF_WARRIOR_COMMANDING_SHOUT>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_BATTLE_SHOUT, CF_WARRIOR_COMMANDING_SHOUT>())
                 return SPELL_POSITIVE_SHOUT;
 
             break;
@@ -479,11 +479,11 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 return SPELL_CURSE;
 
             // Warlock (Demon Armor | Demon Skin | Fel Armor)
-            if (spellInfo->SpellFamilyFlags.test<CF_WARLOCK_ARMOR, CF_WARLOCK_FEL_ARMOR, CF_WARLOCK_DEMON_SKIN>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_ARMOR, CF_WARLOCK_FEL_ARMOR, CF_WARLOCK_DEMON_SKIN>())
                 return SPELL_WARLOCK_ARMOR;
 
             // Unstable Affliction | Immolate
-            if (spellInfo->SpellFamilyFlags.test<CF_WARLOCK_IMMOLATE, CF_WARLOCK_UNSTABLE_AFFLICTION>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_IMMOLATE, CF_WARLOCK_UNSTABLE_AFFLICTION>())
                 return SPELL_UA_IMMOLATE;
             break;
         }
@@ -503,7 +503,7 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
                 return SPELL_STING;
 
             // only hunter aspects have this
-            if (spellInfo->SpellFamilyFlags.test<CF_HUNTER_ASPECT_OF_THE_MONKEY, CF_HUNTER_ASPECT_OF_THE_HAWK, CF_HUNTER_ASPECT_OF_THE_PACK, CF_HUNTER_ASPECT_OF_THE_VIPER, CF_HUNTER_ASPECT_OF_THE_WILD, CF_HUNTER_ASPECT_OF_THE_BEAST, CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_HUNTER_ASPECT_OF_THE_MONKEY, CF_HUNTER_ASPECT_OF_THE_HAWK, CF_HUNTER_ASPECT_OF_THE_PACK, CF_HUNTER_ASPECT_OF_THE_VIPER, CF_HUNTER_ASPECT_OF_THE_WILD, CF_HUNTER_ASPECT_OF_THE_BEAST, CF_HUNTER_ASPECT_OF_THE_DRAGONHAWK>())
                 return SPELL_ASPECT;
 
             break;
@@ -513,19 +513,19 @@ SpellSpecific GetSpellSpecific(uint32 spellId)
             if (IsSealSpell(spellInfo))
                 return SPELL_SEAL;
 
-            if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_BLESSING_OF_MIGHT, CF_PALADIN_BLESSING_OF_WISDOM, CF_PALADIN_BLESSING_OF_KINGS, CF_PALADIN_MISC_BLESSINGS>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_MIGHT, CF_PALADIN_BLESSING_OF_WISDOM, CF_PALADIN_BLESSING_OF_KINGS, CF_PALADIN_MISC_BLESSINGS>())
                 return SPELL_BLESSING;
 
-            if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_HAND_OF_FREEDOM, CF_PALADIN_HAND_OF_PROTECTION, CF_PALADIN_HAND_OF_SALVATION1, CF_PALADIN_HAND_OF_SACRIFICE>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_HAND_OF_FREEDOM, CF_PALADIN_HAND_OF_PROTECTION, CF_PALADIN_HAND_OF_SALVATION1, CF_PALADIN_HAND_OF_SACRIFICE>())
                 return SPELL_HAND;
 
             // skip Heart of the Crusader and Judgements of the Just that have also same spell family mask
-            if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_JUDGEMENT_OF_RIGHT, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_HEART_OF_THE_CRUSADER, CF_PALADIN_JUDGEMENT_OF_BLOOD_MARTYR>() &&
-                (spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK9) && !spellInfo->SpellFamilyFlags.test<CF_PALADIN_HEART_OF_THE_CRUSADER,CF_PALADIN_JUDGEMENT_OF_JUST>()))
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_RIGHT, CF_PALADIN_JUDGEMENT_OF_WISDOM_LIGHT, CF_PALADIN_JUDGEMENT_OF_JUSTICE, CF_PALADIN_HEART_OF_THE_CRUSADER, CF_PALADIN_JUDGEMENT_OF_BLOOD_MARTYR>() &&
+                (spellInfo->HasAttribute(SPELL_ATTR_EX3_UNK9) && !spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_HEART_OF_THE_CRUSADER,CF_PALADIN_JUDGEMENT_OF_JUST>()))
                 return SPELL_JUDGEMENT;
 
             // only paladin auras have this (for palaldin class family)
-            if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_AURAS>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_AURAS>())
                 return SPELL_AURA;
 
             break;
@@ -763,6 +763,8 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
             switch(spellproto->Id)
             {
                 case 28441:                                 // AB Effect 000
+                case 52748:                                 // Voracious Appetite
+                case 54044:                                 // Carrion Feeder
                     return false;
                 case 48021:                                 // support for quest 12173
                     return true;
@@ -2186,7 +2188,7 @@ bool SpellMgr::canStackSpellRanksInSpellBook(SpellEntry const *spellInfo) const
                 if (spellInfo->Effect[i]==SPELL_EFFECT_APPLY_AREA_AURA_RAID)
                     return false;
                 // Seal of Righteousness, 2 version of same rank
-                if (spellInfo->SpellFamilyFlags.test<CF_PALADIN_SEAL_OF_JUST_RIGHT>() && spellInfo->SpellIconID == 25)
+                if (spellInfo->GetSpellFamilyFlags().test<CF_PALADIN_SEAL_OF_JUST_RIGHT>() && spellInfo->SpellIconID == 25)
                     return false;
                 break;
             case SPELLFAMILY_DRUID:
@@ -2245,7 +2247,7 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
             // Blessing of Forgotten Kings and (Greater) Blessing of Kings
             if (spellInfo_1->Id == 72586)
             {
-                if (spellInfo_2->SpellFamilyFlags.test<CF_PALADIN_BLESSING_OF_KINGS>())
+                if (spellInfo_2->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_KINGS>())
                     return true;
             }
 
@@ -2267,7 +2269,7 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
             if (spellInfo_2->SpellFamilyName == SPELLFAMILY_WARRIOR)
             {
                 // Defensive/Berserker/Battle stance aura can not stack (needed for dummy auras)
-                if (spellInfo_1->SpellFamilyFlags.test<CF_WARRIOR_STANCES>() && spellInfo_2->SpellFamilyFlags.test<CF_WARRIOR_STANCES>())
+                if (spellInfo_1->GetSpellFamilyFlags().test<CF_WARRIOR_STANCES>() && spellInfo_2->GetSpellFamilyFlags().test<CF_WARRIOR_STANCES>())
                     return true;
             }
             break;
@@ -2293,7 +2295,7 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
             }
 
             // Blessing of Forgotten Kings and (Greater) Blessing of Kings
-            if (spellInfo_1->SpellFamilyFlags.test<CF_PALADIN_BLESSING_OF_KINGS>())
+            if (spellInfo_1->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_KINGS>())
             {
                 if (spellInfo_2->Id == 72586)
                     return true;
@@ -2528,6 +2530,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 23138:                                 // Gate of Shazzrah
                 case 28560:                                 // Summon Blizzard
                 case 30769:                                 // Pick Red Riding Hood
+                case 30835:                                 // Infernal Relay
                 case 31347:                                 // Doom TODO: exclude top threat target from target selection
                 case 33711:                                 // Murmur's Touch
                 case 38794:                                 // Murmur's Touch (h)
@@ -2606,6 +2609,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                     break;
                 case 28796:                                 // Poison Bolt Volley
                 case 29213:                                 // Curse of the Plaguebringer
+                case 30004:                                 // Flame Wreath
                 case 31298:                                 // Sleep
                 case 39992:                                 // Needle Spine Targeting (BT, Warlord Najentus)
                 case 51904:                                 // Limiting the count of Summoned Ghouls
@@ -2668,7 +2672,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
         case SPELLFAMILY_DRUID:
         {
             // Starfall
-            if (spellInfo->SpellFamilyFlags.test<CF_DRUID_STARFALL2>())
+            if (spellInfo->GetSpellFamilyFlags().test<CF_DRUID_STARFALL2>())
                 unMaxTargets = 2;
             break;
         }
@@ -2780,7 +2784,7 @@ uint32 SpellMgr::GetSpellTargetsForChainWithCustom(SpellEntry const* spellInfo, 
         case SPELLFAMILY_WARRIOR:
         {
             // Sunder Armor (triggered spell)
-            if (spellInfo->SpellFamilyFlags.test<CF_WARRIOR_SUNDER_ARMOR>() && spellInfo->SpellVisual[0] == 0)
+            if (spellInfo->GetSpellFamilyFlags().test<CF_WARRIOR_SUNDER_ARMOR>() && spellInfo->SpellVisual[0] == 0)
                 if (caster->HasAura(58387))               // Glyph of Sunder Armor
                     effectChainTarget = 2;
             break;
@@ -4772,7 +4776,7 @@ void SpellMgr::CheckUsedSpells(char const* table)
             {
                 if (familyMask == ClassFamilyMask())
                 {
-                    if (spellEntry->SpellFamilyFlags)
+                    if (spellEntry->GetSpellFamilyFlags())
                     {
                         sLog.outError("Spell %u '%s' not fit to (" I64FMT "," I32FMT ") but used in %s.",
                             spell, name.c_str(), familyMask.Flags, familyMask.Flags2, code.c_str());
@@ -4858,7 +4862,7 @@ void SpellMgr::CheckUsedSpells(char const* table)
                 {
                     if (familyMask == ClassFamilyMask())
                     {
-                        if (spellEntry->SpellFamilyFlags)
+                        if (spellEntry->GetSpellFamilyFlags())
                             continue;
                     }
                     else
@@ -4942,10 +4946,10 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
         case SPELLFAMILY_ROGUE:
         {
             // Blind
-            if (spellproto->SpellFamilyFlags.test<CF_ROGUE_BLIND>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_BLIND>())
                 return DIMINISHING_FEAR_CHARM_BLIND;
             // Cheap Shot
-            else if (spellproto->SpellFamilyFlags.test<CF_ROGUE_CHEAP_SHOT>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_ROGUE_CHEAP_SHOT>())
                 return DIMINISHING_CHEAPSHOT_POUNCE;
             // Crippling poison - Limit to 10 seconds in PvP (No SpellFamilyFlags)
             else if (spellproto->SpellIconID == 163)
@@ -4961,51 +4965,51 @@ DiminishingGroup GetDiminishingReturnsGroupForSpell(SpellEntry const* spellproto
             if  (spellproto->SpellIconID == 180 || spellproto->SpellIconID == 1721)
                 return DIMINISHING_DISORIENT;
             // Hunters Mark - limit to 2 minutes in PvP
-            else if (spellproto->SpellFamilyFlags.test<CF_HUNTER_HUNTERS_MARK>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_HUNTERS_MARK>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_PALADIN:
         {
             // Judgement of Justice - limit to 10 seconds in PvP
-            if (spellproto->SpellFamilyFlags.test<CF_PALADIN_JUDGEMENT_OF_JUSTICE>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_JUDGEMENT_OF_JUSTICE>())
                 return DIMINISHING_LIMITONLY;
             // Turn Evil
-            else if (spellproto->SpellFamilyFlags.test<CF_PALADIN_TURN_EVIL>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_TURN_EVIL>())
                 return DIMINISHING_FEAR_CHARM_BLIND;
             break;
         }
         case SPELLFAMILY_SHAMAN:
         {
             // Earthgrab
-            if (spellproto->SpellFamilyFlags.test<CF_SHAMAN_EARTHGRAB>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_SHAMAN_EARTHGRAB>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_WARLOCK:
         {
             // Curses/etc
-            if (spellproto->SpellFamilyFlags.test<CF_WARLOCK_MISC_DEBUFFS, CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS, CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_DRUID:
         {
             // Cyclone
-            if (spellproto->SpellFamilyFlags.test<CF_DRUID_CYCLONE>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_CYCLONE>())
                 return DIMINISHING_CYCLONE;
             // Pounce
-            else if (spellproto->SpellFamilyFlags.test<CF_DRUID_POUNCE>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_POUNCE>())
                 return DIMINISHING_CHEAPSHOT_POUNCE;
             // Faerie Fire
-            else if (spellproto->SpellFamilyFlags.test<CF_DRUID_FAERIE_FIRE>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_FAERIE_FIRE>())
                 return DIMINISHING_LIMITONLY;
             break;
         }
         case SPELLFAMILY_WARRIOR:
         {
             // Hamstring - limit duration to 10s in PvP
-            if (spellproto->SpellFamilyFlags.test<CF_WARRIOR_HAMSTRING>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARRIOR_HAMSTRING>())
                 return DIMINISHING_LIMITONLY;
             // Charge - since 3.1.0
             if (spellproto->Id == 7922)
@@ -5072,40 +5076,40 @@ int32 GetDiminishingReturnsLimitDuration(DiminishingGroup group, SpellEntry cons
         case SPELLFAMILY_WARLOCK:
         {
             // Curse of the Elements - limit to 2 minutes in PvP
-            if (spellproto->SpellFamilyFlags.test<CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_CURSE_OF_THE_ELEMENTS>())
                 return 120000;
             // Banish - limit to 6 seconds in PvP (3.1)
-            else if (spellproto->SpellFamilyFlags.test<CF_WARLOCK_BANISH>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_BANISH>())
                 return 6000;
             // Curse of agony - limit to 24 seconds in PvP (?)
-            else if (spellproto->SpellFamilyFlags.test<CF_WARLOCK_CURSE_OF_AGONY>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_CURSE_OF_AGONY>())
                 return 24000;
             // Shadow embrace - limit to 12 seconds in PvP (?)
-            else if (spellproto->SpellFamilyFlags.test<CF_WARLOCK_MISC_DEBUFFS>() && spellproto->SpellIconID == 2209)
+            else if (spellproto->GetSpellFamilyFlags().test<CF_WARLOCK_MISC_DEBUFFS>() && spellproto->SpellIconID == 2209)
                 return 12000;
             break;
         }
         case SPELLFAMILY_HUNTER:
         {
             // Wyvern Sting
-            if (spellproto->SpellFamilyFlags.test<CF_HUNTER_WYVERN_STING2>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_WYVERN_STING2>())
                 return 6000;
             // Hunters Mark - limit to 2 minutes in PvP
-            else if (spellproto->SpellFamilyFlags.test<CF_HUNTER_HUNTERS_MARK>())
+            else if (spellproto->GetSpellFamilyFlags().test<CF_HUNTER_HUNTERS_MARK>())
                 return 120000;
             break;
         }
         case SPELLFAMILY_PALADIN:
         {
             // Repentance - limit to 6 seconds in PvP
-            if (spellproto->SpellFamilyFlags.test<CF_PALADIN_REPENTANCE>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_PALADIN_REPENTANCE>())
                 return 6000;
             break;
         }
         case SPELLFAMILY_DRUID:
         {
             // Faerie Fire - limit to 40 seconds in PvP (3.1)
-            if (spellproto->SpellFamilyFlags.test<CF_DRUID_FAERIE_FIRE>())
+            if (spellproto->GetSpellFamilyFlags().test<CF_DRUID_FAERIE_FIRE>())
                 return 40000;
             break;
         }
@@ -5306,10 +5310,13 @@ SpellPreferredTargetType GetPreferredTargetForSpell(SpellEntry const* spellInfo)
         return positive ? SPELL_PREFERRED_TARGET_SELF : SPELL_PREFERRED_TARGET_VICTIM;
 
     uint32 firstTarget = spellInfo->EffectImplicitTargetA[EFFECT_INDEX_0];
+    uint32 firstTargetB = spellInfo->EffectImplicitTargetB[EFFECT_INDEX_0];
+
+    if (firstTarget == TARGET_NONE && firstTargetB == TARGET_NONE)
+        return SPELL_PREFERRED_TARGET_SELF;
 
     if (!IsSpellCauseDamage(spellInfo) && firstTarget == TARGET_DUELVSPLAYER)
         return SPELL_PREFERRED_TARGET_RANDOM;
-
     if (positive)
     {
         switch (firstTarget)
@@ -5342,4 +5349,63 @@ SpellPreferredTargetType GetPreferredTargetForSpell(SpellEntry const* spellInfo)
     }
 
     return SPELL_PREFERRED_TARGET_SELF;
+}
+
+static char* SPELL_DBC_SPELL      = "reconstructed by spell_dbc spell";
+
+struct SpellDbcLoader : public SQLStorageLoaderBase<SpellDbcLoader>
+{
+    template<class S, class D>
+    void default_fill(uint32 field_pos, S src, D &dst)
+    {
+        dst = D(src);
+    }
+
+    void default_fill_to_str(uint32 field_pos, char const* /*src*/, char * & dst)
+    {
+        if (field_pos == LOADED_SPELLDBC_FIELD_POS_SPELLNAME_0)
+        {
+            dst = SPELL_DBC_SPELL;
+        }
+        else
+        {
+            dst = new char[1];
+            *dst = 0;
+        }
+    }
+};
+
+void SpellMgr::LoadSpellDbc()
+{
+    SpellDbcLoader loader;
+    loader.Load(sSpellDbcTemplate);
+
+    sLog.outString(">> Loaded %u spell definitions", sSpellDbcTemplate.RecordCount);
+    sLog.outString();
+
+    for (uint32 i = 1; i < sSpellDbcTemplate.MaxEntry; ++i)
+    {
+        // check data correctness
+        SpellEntry const* spellEntry = sSpellDbcTemplate.LookupEntry<SpellEntry>(i);
+        if (!spellEntry)
+            continue;
+
+        // insert serverside spell data
+        if (sSpellStore.GetNumRows() <= i)
+        {
+            sLog.outErrorDb("SpellMgr::LoadSpellDbc Loading Spell Template for spell %u, index out of bounds (max = %u)", i, sSpellStore.GetNumRows());
+            continue;
+        }
+        else if (SpellEntry const* originalSpellEntry = sSpellStore.LookupEntry(i))
+        {
+            sLog.outDetail("SpellMgr::LoadSpellDbc Index %u already exists in SpellStorage! replacing on spell_dbc data fields!", i, spellEntry->Id);
+            sSpellStore.EraseEntry(i);
+            sSpellStore.InsertEntry(const_cast<SpellEntry*>(spellEntry), i);
+        }
+        else
+        {
+            sLog.outDetail("SpellMgr::LoadSpellDbc reconstructed spell %u inserted in SpellStorage", spellEntry->Id);
+            sSpellStore.InsertEntry(const_cast<SpellEntry*>(spellEntry), i);
+        }
+    }
 }

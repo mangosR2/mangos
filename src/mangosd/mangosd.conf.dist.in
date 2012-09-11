@@ -935,11 +935,19 @@ LexicsCutterNoActionOnGM = 1
 #        enable/disable alternative resilence damage reduction calculation (for Avenger/Sanctified wrath mostly)
 #        Default: 0     (disable, default mangos style)
 #
+#    BlinkAnimationType
+#        enable/disable alternative (fast move, like 2.4.3/3.0.1) animation type for blink-like spells
+#        Default: 0     (disable, default mangos style - teleport)
+#
 #    AllowTransferToCustomMap
 #        Allowing moving to maps, enter for which absent in AraeTrigger.dbc (by custom areatrigger_teleport entryes)
 #        Attention! Changing this option "on-the-fly" required reload areatrigger_teleport table!
 #        Default: 0 - disabled (only GM's may transfer to this maps
 #                 1 - enabled  (any player, fit to custom areatrigger_teleport condition, may transfer to this maps).
+#
+#    FactiomAndRaceChangeWithoutRenaming
+#        Default: 0 - false
+#                 1 - true -> not blizzlike
 #
 ###################################################################################################################
 
@@ -1022,6 +1030,8 @@ Raid.MinLevel = 10
 CrowdControlHPBase = 0.1
 AllowTransferToCustomMap = 0
 ResilenceAlternativeCalculation = 0
+BlinkAnimationType = 0
+FactiomAndRaceChangeWithoutRenaming = 0
 
 ###################################################################################################################
 # PLAYER INTERACTION
@@ -1994,6 +2004,9 @@ Rate.RAF.LevelPerLevel  = 0.5
 #        max number of kick from group before group disband
 #    LFG.OnlyLastEncounterForCompleteDungeon = 0
 #        need complete only last encounter for dungeon complete (not blizzlike!)
+#    LFG.DisableDungeonMapIds
+#        If maybe a dungeon is buggy or something you can disable this
+#        default:            = ""
 #
 ###################################################################################################################
 LFR.Enable              = 1
@@ -2002,6 +2015,7 @@ LFG.Debug               = 0
 LFR.Extend              = 0
 LFG.MaxKicks            = 5
 LFG.OnlyLastEncounterForCompleteDungeon = 0
+LFG.DisableDungeonMapIds= ""
 
 ###################################################################################################################
 # PLAYERBOTAI CONFIGURATION

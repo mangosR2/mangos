@@ -157,10 +157,10 @@ void BattleGroundWS::StartingEventOpenDoors()
     StartTimedAchievement(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, BG_WS_EVENT_START_BATTLE);
 }
 
-void BattleGroundWS::AddPlayer(Player *plr)
+void BattleGroundWS::AddPlayer(Player* plr)
 {
     BattleGround::AddPlayer(plr);
-    //create score and add it to map, default values are set in constructor
+    // create score and add it to map, default values are set in constructor
     BattleGroundWGScore* sc = new BattleGroundWGScore;
 
     m_PlayerScores[plr->GetObjectGuid()] = sc;
@@ -183,7 +183,7 @@ void BattleGroundWS::RespawnFlag(Team team, bool captured)
 
     if (captured)
     {
-        //when map_update will be allowed for battlegrounds this code will be useless
+        // when map_update will be allowed for battlegrounds this code will be useless
         SpawnEvent(WS_EVENT_FLAG_A, 0, true);
         SpawnEvent(WS_EVENT_FLAG_H, 0, true);
         SendMessageToAll(LANG_BG_WS_F_PLACED, CHAT_MSG_BG_SYSTEM_NEUTRAL);
@@ -204,7 +204,7 @@ void BattleGroundWS::RespawnFlagAfterDrop(Team team)
 
     PlaySoundToAll(BG_WS_SOUND_FLAGS_RESPAWNED);
 
-    GameObject *obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid(team));
+    GameObject* obj = GetBgMap()->GetGameObject(GetDroppedFlagGuid(team));
     if (obj)
         obj->Delete();
     else
@@ -213,28 +213,28 @@ void BattleGroundWS::RespawnFlagAfterDrop(Team team)
     ClearDroppedFlagGuid(team);
 }
 
-void BattleGroundWS::EventPlayerCapturedFlag(Player *Source)
+void BattleGroundWS::EventPlayerCapturedFlag(Player* source)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    m_LastCapturedFlagTeam = Source->GetTeam();
+    m_LastCapturedFlagTeam = source->GetTeam();
 
-    if(m_FirstCapturedFlagTeam == TEAM_NONE)
-        m_FirstCapturedFlagTeam = Source->GetTeam();
+    if (m_FirstCapturedFlagTeam == TEAM_NONE)
+        m_FirstCapturedFlagTeam = source->GetTeam();
 
     Team winner = TEAM_NONE;
 
-    Source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
-    if (Source->GetTeam() == ALLIANCE)
+    source->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
+    if (source->GetTeam() == ALLIANCE)
     {
-        if (!IsHordeFlagPickedup())
+        if (!IsHordeFlagPickedUp())
             return;
-        ClearHordeFlagCarrier();                             // must be before aura remove to prevent 2 events (drop+capture) at the same time
-                                                            // horde flag in base (but not respawned yet)
+        ClearHordeFlagCarrier();                            // must be before aura remove to prevent 2 events (drop+capture) at the same time
+        // horde flag in base (but not respawned yet)
         m_FlagState[TEAM_INDEX_HORDE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
-                                                            // Drop Horde Flag from Player
-        Source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+        // Drop Horde Flag from Player
+        source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
         if (GetTeamScore(ALLIANCE) < BG_WS_MAX_TEAM_SCORE)
             AddPoint(ALLIANCE, 1);
         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_ALLIANCE);
@@ -242,34 +242,34 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player *Source)
     }
     else
     {
-        if (!IsAllianceFlagPickedup())
+        if (!IsAllianceFlagPickedUp())
             return;
-        ClearAllianceFlagCarrier();                          // must be before aura remove to prevent 2 events (drop+capture) at the same time
-                                                            // alliance flag in base (but not respawned yet)
+        ClearAllianceFlagCarrier();                         // must be before aura remove to prevent 2 events (drop+capture) at the same time
+        // alliance flag in base (but not respawned yet)
         m_FlagState[TEAM_INDEX_ALLIANCE] = BG_WS_FLAG_STATE_WAIT_RESPAWN;
-                                                            // Drop Alliance Flag from Player
-        Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+        // Drop Alliance Flag from Player
+        source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
         if (GetTeamScore(HORDE) < BG_WS_MAX_TEAM_SCORE)
             AddPoint(HORDE, 1);
         PlaySoundToAll(BG_WS_SOUND_FLAG_CAPTURED_HORDE);
         RewardReputationToTeam(889, m_ReputationCapture, HORDE);
     }
-    //for flag capture is reward 2 honorable kills
-    RewardHonorToTeam(GetBonusHonorFromKill(2), Source->GetTeam());
+    // for flag capture is reward 2 honorable kills
+    RewardHonorToTeam(GetBonusHonorFromKill(2), source->GetTeam());
 
     // despawn flags
     SpawnEvent(WS_EVENT_FLAG_A, 0, false);
     SpawnEvent(WS_EVENT_FLAG_H, 0, false);
 
-    if (Source->GetTeam() == ALLIANCE)
-        SendMessageToAll(LANG_BG_WS_CAPTURED_HF, CHAT_MSG_BG_SYSTEM_ALLIANCE, Source);
+    if (source->GetTeam() == ALLIANCE)
+        SendMessageToAll(LANG_BG_WS_CAPTURED_HF, CHAT_MSG_BG_SYSTEM_ALLIANCE, source);
     else
-        SendMessageToAll(LANG_BG_WS_CAPTURED_AF, CHAT_MSG_BG_SYSTEM_HORDE, Source);
+        SendMessageToAll(LANG_BG_WS_CAPTURED_AF, CHAT_MSG_BG_SYSTEM_HORDE, source);
 
-    UpdateFlagState(Source->GetTeam(), 1);                  // flag state none
-    UpdateTeamScore(Source->GetTeam());
+    UpdateFlagState(source->GetTeam(), 1);                  // flag state none
+    UpdateTeamScore(source->GetTeam());
     // only flag capture should be updated
-    UpdatePlayerScore(Source, SCORE_FLAG_CAPTURES, 1);      // +1 flag captures
+    UpdatePlayerScore(source, SCORE_FLAG_CAPTURES, 1);      // +1 flag captures
 
     if (GetTeamScore(ALLIANCE) == BG_WS_MAX_TEAM_SCORE)
         winner = ALLIANCE;
@@ -288,34 +288,34 @@ void BattleGroundWS::EventPlayerCapturedFlag(Player *Source)
     }
     else
     {
-        m_FlagsTimer[GetOtherTeamIndex(GetTeamIndex(Source->GetTeam()))] = BG_WS_FLAG_RESPAWN_TIME;
+        m_FlagsTimer[GetOtherTeamIndex(GetTeamIndex(source->GetTeam()))] = BG_WS_FLAG_RESPAWN_TIME;
     }
 }
 
-void BattleGroundWS::EventPlayerDroppedFlag(Player *Source)
+void BattleGroundWS::EventPlayerDroppedFlag(Player* source)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
     {
         // if not running, do not cast things at the dropper player (prevent spawning the "dropped" flag), neither send unnecessary messages
         // just take off the aura
-        if (Source->GetTeam() == ALLIANCE)
+        if (source->GetTeam() == ALLIANCE)
         {
-            if (!IsHordeFlagPickedup())
+            if (!IsHordeFlagPickedUp())
                 return;
-            if (GetHordeFlagCarrierGuid() == Source->GetObjectGuid())
+            if (GetHordeFlagCarrierGuid() == source->GetObjectGuid())
             {
                 ClearHordeFlagCarrier();
-                Source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+                source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
             }
         }
         else
         {
-            if (!IsAllianceFlagPickedup())
+            if (!IsAllianceFlagPickedUp())
                 return;
-            if (GetAllianceFlagCarrierGuid() == Source->GetObjectGuid())
+            if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
             {
                 ClearAllianceFlagCarrier();
-                Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+                source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
             }
         }
         return;
@@ -323,50 +323,50 @@ void BattleGroundWS::EventPlayerDroppedFlag(Player *Source)
 
     bool set = false;
 
-    if (Source->GetTeam() == ALLIANCE)
+    if (source->GetTeam() == ALLIANCE)
     {
-        if (!IsHordeFlagPickedup())
+        if (!IsHordeFlagPickedUp())
             return;
-        if (GetHordeFlagCarrierGuid() == Source->GetObjectGuid())
+        if (GetHordeFlagCarrierGuid() == source->GetObjectGuid())
         {
             ClearHordeFlagCarrier();
-            Source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
+            source->RemoveAurasDueToSpell(BG_WS_SPELL_WARSONG_FLAG);
             m_FlagState[TEAM_INDEX_HORDE] = BG_WS_FLAG_STATE_ON_GROUND;
-            Source->CastSpell(Source, BG_WS_SPELL_WARSONG_FLAG_DROPPED, true);
+            source->CastSpell(source, BG_WS_SPELL_WARSONG_FLAG_DROPPED, true);
             set = true;
         }
     }
     else
     {
-        if (!IsAllianceFlagPickedup())
+        if (!IsAllianceFlagPickedUp())
             return;
-        if (GetAllianceFlagCarrierGuid() == Source->GetObjectGuid())
+        if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
         {
             ClearAllianceFlagCarrier();
-            Source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
+            source->RemoveAurasDueToSpell(BG_WS_SPELL_SILVERWING_FLAG);
             m_FlagState[TEAM_INDEX_ALLIANCE] = BG_WS_FLAG_STATE_ON_GROUND;
-            Source->CastSpell(Source, BG_WS_SPELL_SILVERWING_FLAG_DROPPED, true);
+            source->CastSpell(source, BG_WS_SPELL_SILVERWING_FLAG_DROPPED, true);
             set = true;
         }
     }
 
     if (set)
     {
-        Source->CastSpell(Source, SPELL_RECENTLY_DROPPED_FLAG, true);
-        UpdateFlagState(Source->GetTeam(), 1);
+        source->CastSpell(source, SPELL_RECENTLY_DROPPED_FLAG, true);
+        UpdateFlagState(source->GetTeam(), 1);
 
-        if (Source->GetTeam() == ALLIANCE)
+        if (source->GetTeam() == ALLIANCE)
         {
-            SendMessageToAll(LANG_BG_WS_DROPPED_HF, CHAT_MSG_BG_SYSTEM_HORDE, Source);
+            SendMessageToAll(LANG_BG_WS_DROPPED_HF, CHAT_MSG_BG_SYSTEM_HORDE, source);
             UpdateWorldState(BG_WS_FLAG_UNK_HORDE, uint32(-1));
         }
         else
         {
-            SendMessageToAll(LANG_BG_WS_DROPPED_AF, CHAT_MSG_BG_SYSTEM_ALLIANCE, Source);
+            SendMessageToAll(LANG_BG_WS_DROPPED_AF, CHAT_MSG_BG_SYSTEM_ALLIANCE, source);
             UpdateWorldState(BG_WS_FLAG_UNK_ALLIANCE, uint32(-1));
         }
 
-        m_FlagsDropTimer[GetOtherTeamIndex(GetTeamIndex(Source->GetTeam()))] = BG_WS_FLAG_DROP_TIME;
+        m_FlagsDropTimer[GetOtherTeamIndex(GetTeamIndex(source->GetTeam()))] = BG_WS_FLAG_DROP_TIME;
     }
 }
 
@@ -408,33 +408,33 @@ void BattleGroundWS::PickOrReturnFlag(Player* pPlayer, Team forTeam, bool picked
     pPlayer->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_PVP_COMBAT);
 }
 
-void BattleGroundWS::EventPlayerClickedOnFlag(Player* Source, GameObject* target_obj)
+void BattleGroundWS::EventPlayerClickedOnFlag(Player* source, GameObject* target_obj)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
     uint8 event = (sBattleGroundMgr.GetGameObjectEventIndex(target_obj->GetGUIDLow())).event1;
 
-    bool A = Source->GetTeam() == ALLIANCE;
+    bool A = source->GetTeam() == ALLIANCE;
     // Flag picked up from base.
     if (GetFlagState(A ? HORDE : ALLIANCE) == BG_WS_FLAG_STATE_ON_BASE && event == (A ? WS_EVENT_FLAG_H : WS_EVENT_FLAG_A))
-        PickOrReturnFlag(Source, A ? ALLIANCE : HORDE, true);
+        PickOrReturnFlag(source, A ? ALLIANCE : HORDE, true);
     else
     {
         // Flag on ground (not in base). Return or picked up again.
         if ((GetFlagState(ALLIANCE) == BG_WS_FLAG_STATE_ON_GROUND || GetFlagState(HORDE) == BG_WS_FLAG_STATE_ON_GROUND) &&
-            Source->IsWithinDistInMap(target_obj, 10.0f))
+            source->IsWithinDistInMap(target_obj, 10.0f))
         {
             Team team = A ? ALLIANCE : HORDE;
-            PickOrReturnFlag(Source, team, !(GetFlagState(team) == BG_WS_FLAG_STATE_ON_GROUND), true);
+            PickOrReturnFlag(source, team, !(GetFlagState(team) == BG_WS_FLAG_STATE_ON_GROUND), true);
         }
     }
 }
 
-void BattleGroundWS::RemovePlayer(Player *plr, ObjectGuid guid)
+void BattleGroundWS::RemovePlayer(Player* plr, ObjectGuid guid)
 {
     // sometimes flag aura not removed :(
-    if (IsAllianceFlagPickedup() && m_FlagKeepers[TEAM_INDEX_ALLIANCE] == guid)
+    if (IsAllianceFlagPickedUp() && m_FlagKeepers[TEAM_INDEX_ALLIANCE] == guid)
     {
         if (!plr)
         {
@@ -445,7 +445,7 @@ void BattleGroundWS::RemovePlayer(Player *plr, ObjectGuid guid)
         else
             EventPlayerDroppedFlag(plr);
     }
-    if (IsHordeFlagPickedup() && m_FlagKeepers[TEAM_INDEX_HORDE] == guid)
+    if (IsHordeFlagPickedUp() && m_FlagKeepers[TEAM_INDEX_HORDE] == guid)
     {
         if (!plr)
         {
@@ -474,15 +474,15 @@ void BattleGroundWS::UpdateTeamScore(Team team)
         UpdateWorldState(BG_WS_FLAG_CAPTURES_HORDE, GetTeamScore(team));
 }
 
-void BattleGroundWS::HandleAreaTrigger(Player *Source, uint32 Trigger)
+void BattleGroundWS::HandleAreaTrigger(Player* source, uint32 trigger)
 {
     // this is wrong way to implement these things. On official it done by gameobject spell cast.
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    //uint32 SpellId = 0;
-    //uint64 buff_guid = 0;
-    switch(Trigger)
+    // uint32 SpellId = 0;
+    // uint64 buff_guid = 0;
+    switch (trigger)
     {
         case 3686:                                          // Alliance elixir of speed spawn. Trigger not working, because located inside other areatrigger, can be replaced by IsWithinDist(object, dist) in BattleGround::Update().
         case 3687:                                          // Horde elixir of speed spawn. Trigger not working, because located inside other areatrigger, can be replaced by IsWithinDist(object, dist) in BattleGround::Update().
@@ -493,13 +493,13 @@ void BattleGroundWS::HandleAreaTrigger(Player *Source, uint32 Trigger)
             break;
         case 3646:                                          // Alliance Flag spawn
             if (m_FlagState[TEAM_INDEX_HORDE] && !m_FlagState[TEAM_INDEX_ALLIANCE])
-                if (GetHordeFlagCarrierGuid() == Source->GetObjectGuid())
-                    EventPlayerCapturedFlag(Source);
+                if (GetHordeFlagCarrierGuid() == source->GetObjectGuid())
+                    EventPlayerCapturedFlag(source);
             break;
         case 3647:                                          // Horde Flag spawn
             if (m_FlagState[TEAM_INDEX_ALLIANCE] && !m_FlagState[TEAM_INDEX_HORDE])
-                if (GetAllianceFlagCarrierGuid() == Source->GetObjectGuid())
-                    EventPlayerCapturedFlag(Source);
+                if (GetAllianceFlagCarrierGuid() == source->GetObjectGuid())
+                    EventPlayerCapturedFlag(source);
             break;
         case 3649:                                          // unk1
         case 3688:                                          // unk2
@@ -507,8 +507,8 @@ void BattleGroundWS::HandleAreaTrigger(Player *Source, uint32 Trigger)
         case 4629:                                          // unk4
             break;
         default:
-            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", trigger);
+            source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", trigger);
             break;
     }
 }
@@ -520,7 +520,7 @@ bool BattleGroundWS::SetupBattleGround()
 
 void BattleGroundWS::Reset()
 {
-    //call parent's class reset
+    // call parent's class reset
     BattleGround::Reset();
 
     // spiritguides and flags not spawned at beginning
@@ -528,7 +528,7 @@ void BattleGroundWS::Reset()
     m_ActiveEvents[WS_EVENT_FLAG_A] = BG_EVENT_NONE;
     m_ActiveEvents[WS_EVENT_FLAG_H] = BG_EVENT_NONE;
 
-    for(uint32 i = 0; i < PVP_TEAM_COUNT; ++i)
+    for (uint8 i = 0; i < PVP_TEAM_COUNT; ++i)
     {
         m_DroppedFlagGuid[i].Clear();
         m_FlagKeepers[i].Clear();
@@ -550,19 +550,19 @@ void BattleGroundWS::Reset()
 
 void BattleGroundWS::EndBattleGround(Team winner)
 {
-    //win reward
+    // win reward
     if (winner == ALLIANCE)
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), ALLIANCE);
     if (winner == HORDE)
         RewardHonorToTeam(GetBonusHonorFromKill(m_HonorWinKills), HORDE);
-    //complete map_end rewards (even if no team wins)
+    // complete map_end rewards (even if no team wins)
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), ALLIANCE);
     RewardHonorToTeam(GetBonusHonorFromKill(m_HonorEndKills), HORDE);
 
     BattleGround::EndBattleGround(winner);
 }
 
-void BattleGroundWS::HandleKillPlayer(Player *player, Player *killer)
+void BattleGroundWS::HandleKillPlayer(Player* player, Player* killer)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
@@ -572,15 +572,16 @@ void BattleGroundWS::HandleKillPlayer(Player *player, Player *killer)
     BattleGround::HandleKillPlayer(player, killer);
 }
 
-void BattleGroundWS::UpdatePlayerScore(Player* Source, uint32 type, uint32 value)
+void BattleGroundWS::UpdatePlayerScore(Player* source, uint32 type, uint32 value)
 {
-    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(Source->GetObjectGuid());
-    if (itr == m_PlayerScores.end())                         // player not found
+
+    BattleGroundScoreMap::iterator itr = m_PlayerScores.find(source->GetObjectGuid());
+    if (itr == m_PlayerScores.end())                        // player not found
         return;
 
     uint32 achCriId;
 
-    switch(type)
+    switch (type)
     {
         case SCORE_FLAG_CAPTURES:                           // flags captured
             ((BattleGroundWGScore*)itr->second)->FlagCaptures += value;
@@ -591,20 +592,20 @@ void BattleGroundWS::UpdatePlayerScore(Player* Source, uint32 type, uint32 value
             achCriId = WS_OBJECTIVE_RETURN_FLAG;
             break;
         default:
-            BattleGround::UpdatePlayerScore(Source, type, value);
+            BattleGround::UpdatePlayerScore(source, type, value);
             return;
     }
 
-    Source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
+    source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
 }
 
 WorldSafeLocsEntry const* BattleGroundWS::GetClosestGraveYard(Player* player)
 {
-    //if status in progress, it returns main graveyards with spiritguides
-    //else it will return the graveyard in the flagroom - this is especially good
-    //if a player dies in preparation phase - then the player can't cheat
-    //and teleport to the graveyard outside the flagroom
-    //and start running around, while the doors are still closed
+    // if status in progress, it returns main graveyards with spiritguides
+    // else it will return the graveyard in the flagroom - this is especially good
+    // if a player dies in preparation phase - then the player can't cheat
+    // and teleport to the graveyard outside the flagroom
+    // and start running around, while the doors are still closed
     if (player->GetTeam() == ALLIANCE)
     {
         if (GetStatus() == STATUS_IN_PROGRESS)
@@ -652,6 +653,6 @@ void BattleGroundWS::FillInitialWorldStates()
     else
         FillInitialWorldState(BG_WS_FLAG_STATE_ALLIANCE, 1);
 
-    FillInitialWorldState(BG_WS_TIME_ENABLED, 1);
+    FillInitialWorldState(BG_WS_TIME_ENABLED, WORLD_STATE_ADD);
     FillInitialWorldState(BG_WS_TIME_REMAINING, GetRemainingTimeInMinutes());
 }

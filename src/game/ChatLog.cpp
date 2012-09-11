@@ -58,13 +58,15 @@ void ChatLog::Initialize()
     {
         // initialize lexics cutter
         Lexics = new LexicsCutter;
-        if (Lexics) Lexics->Read_Letter_Analogs(fn_analogsfile);
-        if (Lexics) Lexics->Read_Innormative_Words(fn_wordsfile);
-        if (Lexics) Lexics->Map_Innormative_Words();
-
-        // read additional parameters
-        Lexics->IgnoreLetterRepeat = LexicsCutterIgnoreLetterRepeat;
-        Lexics->IgnoreMiddleSpaces = LexicsCutterIgnoreMiddleSpaces;
+        if (Lexics)
+        {
+            Lexics->Read_Letter_Analogs(fn_analogsfile);
+            Lexics->Read_Innormative_Words(fn_wordsfile);
+            Lexics->Map_Innormative_Words();
+            // read additional parameters
+            Lexics->IgnoreLetterRepeat = LexicsCutterIgnoreLetterRepeat;
+            Lexics->IgnoreMiddleSpaces = LexicsCutterIgnoreMiddleSpaces;
+        }
     }
 
     // open all files (with aliasing)

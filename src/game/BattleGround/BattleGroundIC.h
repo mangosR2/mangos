@@ -27,7 +27,8 @@ class BattleGround;
 #define BG_IC_SCORE_INITIAL_POINTS          300
 #define BG_IC_GATE_MAX                      6
 #define BG_IC_GRY_MAX                       6
-#define BG_IC_NODES_MAX                     7
+
+// Used only 2 nodes for check resource, but need create array for all! This define not used.
 #define BG_IC_MAX_RESOURCE_NODES            2
 
 #define BG_IC_KILL_BOSS                     4   // honor given for boss kill
@@ -96,6 +97,20 @@ enum BG_IC_WorldStates
 };
 
 const uint32 BG_IC_OP_NODEICONS[7]  =    {4301, 4296, 4294, 4306, 4311, 4339, 4345};
+
+/* do NOT change the order, else wrong behaviour */
+enum BG_IC_Nodes
+{
+    BG_IC_NODE_DOCKS            = 0,
+    BG_IC_NODE_HANGAR           = 1,
+    BG_IC_NODE_WORKSHOP         = 2,
+    BG_IC_NODE_QUARRY           = 3,
+    BG_IC_NODE_REFINERY         = 4,
+    BG_IC_NODE_A_KEEP           = 5,
+    BG_IC_NODE_H_KEEP           = 6,
+    BG_IC_NODES_MAX             = 7,
+    BG_IC_NODES_ERROR           = 255,
+};
 
 // alliance_contested horde_contested a_owned h_owned
 const uint32 BG_IC_NodeWorldStates[BG_IC_NODES_MAX][4] =
@@ -182,18 +197,6 @@ enum BG_IC_GUNSHIPS
     GO_ALLIANCE_GUNSHIP =  195121
 };
 
-/* do NOT change the order, else wrong behaviour */
-enum BG_IC_Nodes
-{
-    BG_IC_NODE_DOCKS            = 0,
-    BG_IC_NODE_HANGAR           = 1,
-    BG_IC_NODE_WORKSHOP         = 2,
-    BG_IC_NODE_QUARRY           = 3,
-    BG_IC_NODE_REFINERY         = 4,
-    BG_IC_NODE_A_KEEP           = 5,
-    BG_IC_NODE_H_KEEP           = 6,
-    BG_IC_NODES_ERROR           = 255
-};
 
 enum BG_IC_NodeStatus
 {
@@ -295,7 +298,7 @@ class BattleGroundICScore : public BattleGroundScore
 
 class BattleGroundIC : public BattleGround
 {
-    friend class BattleGroundMgr;
+        friend class BattleGroundMgr;
 
     public:
         BattleGroundIC();
@@ -337,7 +340,7 @@ class BattleGroundIC : public BattleGround
 
     private:
         uint32 closeFortressDoorsTimer;
-        uint32 m_resource_Timer[BG_IC_MAX_RESOURCE_NODES];
+        uint32 m_resource_Timer[BG_IC_NODES_MAX];
         bool doorsClosed;
         bool aOpen;
         bool hOpen;

@@ -26,11 +26,12 @@
 
 BattleGroundDS::BattleGroundDS()
 {
+
     m_StartDelayTimes[BG_STARTING_EVENT_FIRST]  = BG_START_DELAY_1M;
     m_StartDelayTimes[BG_STARTING_EVENT_SECOND] = BG_START_DELAY_30S;
     m_StartDelayTimes[BG_STARTING_EVENT_THIRD]  = BG_START_DELAY_15S;
     m_StartDelayTimes[BG_STARTING_EVENT_FOURTH] = BG_START_DELAY_NONE;
-    //we must set messageIds
+    // we must set messageIds
     m_StartMessageIds[BG_STARTING_EVENT_FIRST]  = LANG_ARENA_ONE_MINUTE;
     m_StartMessageIds[BG_STARTING_EVENT_SECOND] = LANG_ARENA_THIRTY_SECONDS;
     m_StartMessageIds[BG_STARTING_EVENT_THIRD]  = LANG_ARENA_FIFTEEN_SECONDS;
@@ -67,13 +68,13 @@ void BattleGroundDS::Update(uint32 diff)
 
                     float angle = (plr->GetBGTeam() == ALLIANCE /*gold*/) ? plr->GetAngle(1259.58f, 764.43f) : plr->GetAngle(1325.84f, 817.304f);
 
-                    plr->KnockBackPlayerWithAngle(angle, 45, 7);
+                    plr->KnockBackWithAngle(angle, 45, 7);
 
                     if (plr->IsWithinDist2d(1214, 765, 50) && plr->IsWithinLOS(1214, 765, 14))
-                        plr->KnockBackPlayerWithAngle(6.40f,55,7);
+                        plr->KnockBackWithAngle(6.40f,55,7);
 
                     if (plr->IsWithinDist2d(1369, 817, 50) && plr->IsWithinLOS(1369, 817, 14))
-                        plr->KnockBackPlayerWithAngle(3.03f,55,7);
+                        plr->KnockBackWithAngle(3.03f,55,7);
                 }
                 pushbackCheck = false;
                 m_uiKnockback = 1000;
@@ -155,10 +156,10 @@ void BattleGroundDS::StartingEventOpenDoors()
     OpenDoorEvent(BG_EVENT_DOOR);
 }
 
-void BattleGroundDS::AddPlayer(Player *plr)
+void BattleGroundDS::AddPlayer(Player* plr)
 {
     BattleGround::AddPlayer(plr);
-    //create score and add it to map, default values are set in constructor
+    // create score and add it to map, default values are set in constructor
     BattleGroundDSScore* sc = new BattleGroundDSScore;
 
     m_PlayerScores[plr->GetObjectGuid()] = sc;
@@ -178,7 +179,7 @@ void BattleGroundDS::RemovePlayer(Player* /*plr*/, ObjectGuid /*guid*/)
     CheckArenaWinConditions();
 }
 
-void BattleGroundDS::HandleKillPlayer(Player *player, Player *killer)
+void BattleGroundDS::HandleKillPlayer(Player* player, Player* killer)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
@@ -189,7 +190,7 @@ void BattleGroundDS::HandleKillPlayer(Player *player, Player *killer)
         return;
     }
 
-    BattleGround::HandleKillPlayer(player,killer);
+    BattleGround::HandleKillPlayer(player, killer);
 
     UpdateWorldState(0xe11, GetAlivePlayersCountByTeam(ALLIANCE));
     UpdateWorldState(0xe10, GetAlivePlayersCountByTeam(HORDE));
@@ -197,28 +198,28 @@ void BattleGroundDS::HandleKillPlayer(Player *player, Player *killer)
     CheckArenaWinConditions();
 }
 
-bool BattleGroundDS::HandlePlayerUnderMap(Player *player)
+bool BattleGroundDS::HandlePlayerUnderMap(Player* player)
 {
     player->TeleportTo(GetMapId(),1299.046f,784.825f,9.338f,player->GetOrientation(),false);
     return true;
 }
 
-void BattleGroundDS::HandleAreaTrigger(Player *Source, uint32 Trigger)
+void BattleGroundDS::HandleAreaTrigger(Player* source, uint32 trigger)
 {
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    switch(Trigger)
+    switch (trigger)
     {
         case 5326:
-            Source->TeleportTo(GetMapId(),1299.046f, 784.825f, 9.338f, Source->GetOrientation(),false);
+            source->TeleportTo(GetMapId(),1299.046f, 784.825f, 9.338f, source->GetOrientation(),false);
             break;
         case 5347:
         case 5348:
             break;
         default:
-            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", Trigger);
-            Source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", Trigger);
+            sLog.outError("WARNING: Unhandled AreaTrigger in Battleground: %u", trigger);
+            source->GetSession()->SendAreaTriggerMessage("Warning: Unhandled AreaTrigger in Battleground: %u", trigger);
             break;
     }
 }

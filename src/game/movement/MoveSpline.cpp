@@ -212,8 +212,8 @@ namespace Movement
 #undef CHECK
     }
 
-// MONSTER_MOVE packet format limitation for not CatmullRom movement:
-// each vertex offset packed into 11 bytes
+    // MONSTER_MOVE packet format limitation for not CatmullRom movement:   
+    // each vertex offset packed into 11 bytes
     bool MoveSplineInitArgs::_checkPathBounds() const
     {
         if (!(flags & MoveSplineFlag::Mask_CatmullRom) && path.size() > 2)

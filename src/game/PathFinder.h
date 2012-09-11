@@ -39,6 +39,11 @@ class Unit;
 #define SMOOTH_PATH_STEP_SIZE   4.0f
 #define SMOOTH_PATH_SLOP        0.3f
 
+// How many points can be cutted
+// May occupt visual bugs when lenght > 20y
+#define SKIP_POINT_LIMIT        6
+#define LINE_FAULT              0.5f
+
 #define VERTEX_SIZE       3
 #define INVALID_POLYREF   0
 

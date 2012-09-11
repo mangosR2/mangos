@@ -958,7 +958,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature, Unit* owner)
 bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 {
 
-    CreatureInfo const *cinfo = GetCreatureInfo();
+    CreatureInfo const* cinfo = GetCreatureInfo();
     MANGOS_ASSERT(cinfo);
 
     if(!owner)
@@ -995,42 +995,29 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
 
     uint32 createResistance[MAX_SPELL_SCHOOL] = {0,0,0,0,0,0,0};
 
-    if(cinfo) // Default create values (from creature_template)
-    {
-        createResistance[SPELL_SCHOOL_HOLY]   = cinfo->resistance1;
-        createResistance[SPELL_SCHOOL_FIRE]   = cinfo->resistance2;
-        createResistance[SPELL_SCHOOL_NATURE] = cinfo->resistance3;
-        createResistance[SPELL_SCHOOL_FROST]  = cinfo->resistance4;
-        createResistance[SPELL_SCHOOL_SHADOW] = cinfo->resistance5;
-        createResistance[SPELL_SCHOOL_ARCANE] = cinfo->resistance6;
-        // Armor
-        createResistance[SPELL_SCHOOL_NORMAL] = int32(cinfo->armor  * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
+    createResistance[SPELL_SCHOOL_HOLY]   = cinfo->resistance1;
+    createResistance[SPELL_SCHOOL_FIRE]   = cinfo->resistance2;
+    createResistance[SPELL_SCHOOL_NATURE] = cinfo->resistance3;
+    createResistance[SPELL_SCHOOL_FROST]  = cinfo->resistance4;
+    createResistance[SPELL_SCHOOL_SHADOW] = cinfo->resistance5;
+    createResistance[SPELL_SCHOOL_ARCANE] = cinfo->resistance6;
+    // Armor
+    createResistance[SPELL_SCHOOL_NORMAL] = int32(cinfo->armor  * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
 
-        for (int i = 0; i < MAX_STATS; ++i)
-            createStats[i] *= petlevel/10;
+    for (int i = 0; i < MAX_STATS; ++i)
+        createStats[i] *= petlevel/10;
 
-        createStats[MAX_STATS]    = int32(cinfo->maxhealth * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
-        createStats[MAX_STATS+1]  = int32(cinfo->maxmana * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
-        createStats[MAX_STATS+2]  = int32(cinfo->attackpower * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
-        createStats[MAX_STATS+3]  = int32( cinfo->mindmg * petlevel / cinfo->maxlevel / (1 + cinfo->rank));
-        createStats[MAX_STATS+4]  = int32( cinfo->maxdmg * petlevel / cinfo->maxlevel / (1 + cinfo->rank));
-        createStats[MAX_STATS+5]  = int32(cinfo->minrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
-        createStats[MAX_STATS+6]  = int32(cinfo->maxrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
-        SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, float(cinfo->maxrangedmg * petlevel / cinfo->maxlevel));
-        setPowerType(Powers(cinfo->powerType));
-        SetAttackTime(BASE_ATTACK, cinfo->baseattacktime);
-        SetAttackTime(RANGED_ATTACK, cinfo->rangeattacktime);
-    }
-    else
-    {
-        SetAttackTime(BASE_ATTACK, BASE_ATTACK_TIME);
-        SetAttackTime(RANGED_ATTACK, BASE_ATTACK_TIME);
-
-        for (int i = 0; i < MAX_STATS+7; ++i)
-            createStats[i] *= petlevel/10;
-        // Armor
-        createResistance[SPELL_SCHOOL_NORMAL] = petlevel*50;
-    }
+    createStats[MAX_STATS]    = int32(cinfo->maxhealth * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
+    createStats[MAX_STATS+1]  = int32(cinfo->maxmana * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
+    createStats[MAX_STATS+2]  = int32(cinfo->attackpower * petlevel / cinfo->maxlevel / (1 +  cinfo->rank));
+    createStats[MAX_STATS+3]  = int32( cinfo->mindmg * petlevel / cinfo->maxlevel / (1 + cinfo->rank));
+    createStats[MAX_STATS+4]  = int32( cinfo->maxdmg * petlevel / cinfo->maxlevel / (1 + cinfo->rank));
+    createStats[MAX_STATS+5]  = int32(cinfo->minrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
+    createStats[MAX_STATS+6]  = int32(cinfo->maxrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
+    SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, float(cinfo->maxrangedmg * petlevel / cinfo->maxlevel));
+    setPowerType(Powers(cinfo->powerType));
+    SetAttackTime(BASE_ATTACK, cinfo->baseattacktime);
+    SetAttackTime(RANGED_ATTACK, cinfo->rangeattacktime);
 
     switch(getPetType())
     {
@@ -2151,10 +2138,23 @@ bool Pet::Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* ci
     return true;
 }
 
-bool Pet::HasSpell(uint32 spell) const
+bool Pet::HasSpell(uint32 spellId) const
 {
-    PetSpellMap::const_iterator itr = m_spells.find(spell);
-    return (itr != m_spells.end() && itr->second.state != PETSPELL_REMOVED );
+    uint32 parentSpell = 0;
+    switch (spellId)
+    {
+        case 54045:
+            parentSpell = 54044;
+            break;
+        case 52749:
+            parentSpell = 52748;
+            break;
+        default:
+            parentSpell = spellId;
+            break;
+    }
+    PetSpellMap::const_iterator itr = m_spells.find(parentSpell);
+    return (itr != m_spells.end() && itr->second.state != PETSPELL_REMOVED);
 }
 
 // Get all passive spells in our skill line
@@ -2883,6 +2883,15 @@ Unit* Pet::GetOwner() const
 
 bool Pet::IsInEvadeMode() const
 {
+    switch (GetCharmState(CHARM_STATE_COMMAND))
+    {
+        case COMMAND_STAY:
+            return false;
+        case COMMAND_FOLLOW:
+        case COMMAND_ATTACK:
+        default:
+            return IsInUnitState(UNIT_ACTION_HOME) && !IsWithinDistInMap(GetOwner(), PET_FOLLOW_DIST + 1.0f);
+    }
     return false;
 }
 
