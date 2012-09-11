@@ -90,7 +90,7 @@ set_target_properties(${EXECUTABLE_NAME} PROPERTIES LINK_FLAGS
 )
 
 install(TARGETS ${EXECUTABLE_NAME} DESTINATION ${BIN_DIR})
-install(FILES realmd.conf.dist.in DESTINATION ${CONF_DIR} RENAME realmd.conf.dist)
+install(FILES login.conf.dist.in DESTINATION ${CONF_DIR} RENAME login.conf.dist)
 
 if(WIN32 AND MSVC)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/\${BUILD_TYPE}/${EXECUTABLE_NAME}.pdb DESTINATION ${BIN_DIR} CONFIGURATIONS Debug)
