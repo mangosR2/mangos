@@ -334,6 +334,9 @@ inline bool IsSpellWithCasterSourceTargetsOnly(SpellEntry const* spellInfo)
 {
     for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
+        if (spellInfo->Effect[i] == SPELL_EFFECT_NONE)
+            continue;
+
         uint32 targetA = spellInfo->EffectImplicitTargetA[i];
         if (targetA && !IsCasterSourceTarget(targetA))
             return false;
@@ -873,7 +876,7 @@ struct SpellLinkedEntry
 {
     uint32 spellId;
     uint32 linkedId;
-    uint32 type;
+    SpellLinkedType type;
     uint32 effectMask;
 };
 

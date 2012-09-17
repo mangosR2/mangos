@@ -790,7 +790,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
                                 "`os` "                       //9
                                 "FROM account "
                                 "WHERE username = '%s'",
-                                safe_account.c_str (), realmID);
+                                safe_account.c_str ());
 
     // Stop if the account is not found
     if (!result)
@@ -826,7 +826,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     ///- Re-check ip locking (same check as in realmd).
     if (fields[3].GetUInt8() == 1) // if ip is locked
     {
-        if (strcmp(fields[3].GetString(), GetRemoteAddress().c_str()))
+        if (strcmp(fields[2].GetString(), GetRemoteAddress().c_str()))
         {
             packet.Initialize(SMSG_AUTH_RESPONSE, 1);
             packet << uint8(AUTH_FAILED);

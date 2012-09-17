@@ -856,7 +856,6 @@ void BattleGround::EndBattleGround(Team winner)
 
     SetStatus(STATUS_WAIT_LEAVE);
 
-    int32 iRealEndTime = m_EndTime;
     // we must set it this way, because end time is sent in packet!
     m_EndTime = TIME_TO_AUTOREMOVE;
 

@@ -39,6 +39,7 @@
 #include "CreatureLinkingMgr.h"
 #include "ObjectLock.h"
 #include "vmap/DynamicTree.h"
+#include "WorldObjectEvents.h"
 
 #include <bitset>
 #include <list>
@@ -319,6 +320,13 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
             i_loadingObjectQueue.push(obj);
         }
 
+        // Event handler
+        WorldObjectEventProcessor* GetEvents();
+        void UpdateEvents(uint32 update_diff);
+        void KillAllEvents(bool force);
+        void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
+
+
     private:
         void LoadMapAndVMap(int gx, int gy);
 
@@ -420,6 +428,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         mutable ObjectLockType  i_lock[MAP_LOCK_TYPE_MAX];
         AttackersMap        m_attackersMap;
         bool                m_broken;
+
+        WorldObjectEventProcessor m_Events;
 
 };
 

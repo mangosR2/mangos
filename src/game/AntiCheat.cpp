@@ -841,7 +841,7 @@ bool AntiCheat::CheckSpellFamily()
 
 bool AntiCheat::CheckSpellInbook()
 {
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_currentspellID);
+//    SpellEntry const* spellInfo = sSpellStore.LookupEntry(m_currentspellID);
 
     // not have spell in spellbook or spell passive and not casted by client
     if (!GetPlayer()->GetUInt16Value(PLAYER_FIELD_BYTES2, 0) == 0 ||

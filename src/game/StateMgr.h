@@ -38,7 +38,7 @@ class ActionInfo
 {
 public:
     ActionInfo(UnitActionId _Id, UnitActionPtr _action, UnitActionPriority _priority, bool _restoreable)
-        : Id(_Id), action(_action), priority(_priority), restoreable(_restoreable), m_flags(0)
+        : Id(_Id), action(_action), priority(_priority), m_flags(0), restoreable(_restoreable)
     {}
 
     ~ActionInfo() {};

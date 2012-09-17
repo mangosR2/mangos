@@ -570,6 +570,7 @@ bool ChatHandler::HandleServerLogLevelCommand(char *args)
         return true;
     }
 
+    sLog.ReloadConfigDefaults();
     sLog.SetLogLevel(args);
     return true;
 }

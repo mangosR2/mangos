@@ -21,7 +21,7 @@
 
 #include "Utilities/EventProcessor.h"
 #include "ObjectGuid.h"
-#include "BattleGround/BattleGround.h"
+#include "SharedDefines.h"
 
 class Spell;
 class Unit;

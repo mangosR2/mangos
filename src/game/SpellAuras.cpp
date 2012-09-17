@@ -376,9 +376,9 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
 static AuraType const frozenAuraTypes[] = { SPELL_AURA_MOD_ROOT, SPELL_AURA_MOD_STUN, SPELL_AURA_NONE };
 
 Aura::Aura(AuraClassType type, SpellEntry const* spellproto, SpellEffectIndex eff, int32 *currentBasePoints, SpellAuraHolderPtr holder, Unit *target, Unit *caster, Item* castItem) :
-m_classType(type),m_periodicTimer(0), m_periodicTick(0), m_removeMode(AURA_REMOVE_BY_DEFAULT),
-m_effIndex(eff), m_positive(false), m_isPeriodic(false), m_isAreaAura(false), m_deleted(false),
-m_isPersistent(false), m_spellAuraHolder(holder)
+m_periodicTimer(0), m_periodicTick(0), m_removeMode(AURA_REMOVE_BY_DEFAULT),
+m_effIndex(eff), m_deleted(false), m_positive(false), m_isPeriodic(false), m_isAreaAura(false),
+m_isPersistent(false), m_spellAuraHolder(holder), m_classType(type)
 {
     MANGOS_ASSERT(target);
     MANGOS_ASSERT(spellproto && spellproto == sSpellStore.LookupEntry( spellproto->Id ) && "`info` must be pointer to sSpellStore element");
@@ -594,8 +594,7 @@ Aura* SpellAuraHolder::CreateAura(AuraClassType type, SpellEffectIndex eff, int3
 
 SpellAuraHolderPtr CreateSpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem)
 {
-     SpellAuraHolder* holder = new SpellAuraHolder(spellproto, target, caster, castItem);
-     SpellAuraHolderPtr holderPtr = SpellAuraHolderPtr(holder);
+     SpellAuraHolderPtr holderPtr = SpellAuraHolderPtr(new SpellAuraHolder(spellproto, target, caster, castItem));
      return holderPtr;
 }
 
@@ -877,7 +876,7 @@ void Aura::AreaAuraUpdate(uint32 diff)
                     {
                         SpellAuraHolderPtr newholder = CreateSpellAuraHolder(actualSpellInfo, i_target,  GetAffectiveCaster());
                         newholder->SetAuraDuration(GetAuraDuration());
-                        Aura* aura = newholder->CreateAura(AURA_CLASS_AREA_AURA, m_effIndex, &actualBasePoints, newholder, i_target, GetAffectiveCaster(), NULL);
+                        /*Aura* aura = */newholder->CreateAura(AURA_CLASS_AREA_AURA, m_effIndex, &actualBasePoints, newholder, i_target, GetAffectiveCaster(), NULL);
                         i_target->AddSpellAuraHolder(newholder);
                     }
                     else
@@ -1983,7 +1982,7 @@ void Aura::TriggerSpell()
                         if (damage >= 0)
                             return;
 
-                        if (triggerTarget->GetPower(POWER_MANA) < abs(damage))
+                        if (int32(triggerTarget->GetPower(POWER_MANA)) < abs(damage))
                         {
                             damage = -int32(triggerTarget->GetPower(POWER_MANA));
                             triggerTarget->RemoveAurasDueToSpell(auraId);
@@ -8932,6 +8931,12 @@ void Aura::PeriodicTick()
                 if (Aura *aur = GetHolder()->GetAuraByEffectIndex(EFFECT_INDEX_1))
                     aur->GetModifier()->m_amount = int32(target->GetHealthPercent());
             }
+            else if (GetId() == 20578 || GetId() == 52749 || GetId() == 54045)
+            {
+                // cannibalize anim
+                target->HandleEmoteCommand(EMOTE_STATE_CANNIBALIZE);
+            }
+
 
 //            uint32 procAttacker = PROC_FLAG_ON_DO_PERIODIC;//   | PROC_FLAG_SUCCESSFUL_HEAL;
 //            uint32 procVictim   = 0;//ROC_FLAG_ON_TAKE_PERIODIC | PROC_FLAG_TAKEN_HEAL;
@@ -9225,12 +9230,6 @@ void Aura::PeriodicTick()
                 // eating anim
                 target->HandleEmoteCommand(EMOTE_ONESHOT_EAT);
             }
-            else if ( GetId() == 20577 )
-            {
-                // cannibalize anim
-                target->HandleEmoteCommand(EMOTE_STATE_CANNIBALIZE);
-            }
-
             // Anger Management
             // amount = 1+ 16 = 17 = 3,4*5 = 10,2*5/3
             // so 17 is rounded amount for 5 sec tick grow ~ 1 range grow in 3 sec
@@ -10474,7 +10473,7 @@ bool Aura::HasMechanic(uint32 mechanic) const
 SpellAuraHolder::SpellAuraHolder(SpellEntry const* spellproto, Unit *target, WorldObject *caster, Item *castItem) :
 m_spellProto(spellproto), m_target(target), m_castItemGuid(castItem ? castItem->GetObjectGuid() : ObjectGuid()),
 m_auraSlot(MAX_AURAS), m_auraFlags(AFLAG_NONE), m_auraLevel(1), m_procCharges(0),
-m_stackAmount(1), m_removeMode(AURA_REMOVE_BY_DEFAULT), m_AuraDRGroup(DIMINISHING_NONE), m_timeCla(1000),
+m_stackAmount(1), m_timeCla(1000), m_removeMode(AURA_REMOVE_BY_DEFAULT), m_AuraDRGroup(DIMINISHING_NONE),
 m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
 {
     MANGOS_ASSERT(target);
@@ -10543,9 +10542,9 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
     }
 }
 
-void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
+void SpellAuraHolder::AddAura(Aura const& aura, SpellEffectIndex index)
 {
-    if (Aura* _aura = GetAuraByEffectIndex(index))
+    if (/*Aura* _aura = */GetAuraByEffectIndex(index))
     {
         DEBUG_LOG("SpellAuraHolder::AddAura attempt to add aura (effect %u) to holder of spell %u, but holder already have active aura!", index, GetId());
         RemoveAura(index);
@@ -10560,7 +10559,7 @@ void SpellAuraHolder::AddAura(Aura aura, SpellEffectIndex index)
         }
     }
 
-    m_aurasStorage.insert(std::make_pair(index,aura));
+    m_aurasStorage.insert(AuraStorage::value_type(index,aura));
     m_auraFlags |= (1 << index);
 }
 
@@ -12685,7 +12684,7 @@ bool Aura::IsAffectedByCrowdControlEffect(uint32 damage)
     if (!IsCrowdControlAura(m_modifier.m_auraname))
         return false;
 
-    if (damage > abs(m_modifier.m_baseamount))
+    if (int32(damage) > abs(m_modifier.m_baseamount))
     {
         m_modifier.m_baseamount = 0;
         return false;

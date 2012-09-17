@@ -170,23 +170,6 @@ struct BattleGroundObjectInfo
     uint32      spellid;
 };
 
-// handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
-enum BattleGroundQueueTypeId
-{
-    BATTLEGROUND_QUEUE_NONE     = 0,
-    BATTLEGROUND_QUEUE_AV       = 1,    // Alterac Vally
-    BATTLEGROUND_QUEUE_WS       = 2,    // Warsong Gulch
-    BATTLEGROUND_QUEUE_AB       = 3,    // Arathi basin
-    BATTLEGROUND_QUEUE_EY       = 4,    // Eye of the Storm
-    BATTLEGROUND_QUEUE_SA       = 5,    // Strand of the Ancients
-    BATTLEGROUND_QUEUE_IC       = 6,    // Isle of Conquest
-    BATTLEGROUND_QUEUE_RB       = 7,
-    BATTLEGROUND_QUEUE_2v2      = 8,
-    BATTLEGROUND_QUEUE_3v3      = 9,
-    BATTLEGROUND_QUEUE_5v5      = 10
-};
-#define MAX_BATTLEGROUND_QUEUE_TYPES 11
-
 enum ScoreType
 {
     SCORE_KILLING_BLOWS         = 1,

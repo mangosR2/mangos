@@ -117,6 +117,14 @@ namespace Movement
              */
             void SetVelocity(float velocity);
 
+            /* Sets BoardVehicle flag
+             */
+            void SetBoardVehicle();
+
+            /* Sets ExitVehicle flag
+             */
+            void SetExitVehicle();
+
             PointsArray& Path() { return args.path; }
 
         protected:
@@ -133,6 +141,8 @@ namespace Movement
     inline void MoveSplineInit::SetVelocity(float vel) {  args.velocity = vel;}
     inline void MoveSplineInit::SetOrientationInversed() { args.flags.orientationInversed = true;}
     inline void MoveSplineInit::SetOrientationFixed(bool enable) { args.flags.orientationFixed = enable;}
+    inline void MoveSplineInit::SetBoardVehicle() { args.flags.EnableBoardVehicle(); }
+    inline void MoveSplineInit::SetExitVehicle() { args.flags.EnableExitVehicle(); }
 
     inline void MoveSplineInit::MovebyPath(const PointsArray& controls, int32 path_offset)
     {
@@ -181,16 +191,6 @@ namespace Movement
         args.facing.f.y = spot.y;
         args.facing.f.z = spot.z;
         args.flags.EnableFacingPoint();
-    }
-
-    inline void MoveSplineInit::SetTransportEnter()
-    {
-        args.flags.EnableTransport();
-    }
-
-    inline void MoveSplineInit::SetTransportExit()
-    {
-        args.flags.EnableTransportExit();
     }
 }
 #endif // MANGOSSERVER_MOVESPLINEINIT_H

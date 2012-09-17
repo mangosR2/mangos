@@ -1334,7 +1334,7 @@ enum Targets
     TARGET_88                               = 88,
     TARGET_DIRECTLY_FORWARD                 = 89,
     TARGET_NONCOMBAT_PET                    = 90,
-    TARGET_91                               = 91,
+    TARGET_DEST_RADIUS                      = 91,
     TARGET_UNIT_CREATOR                     = 92,
     TARGET_93                               = 93,
     TARGET_OWNED_VEHICLE                    = 94,
@@ -2919,6 +2919,23 @@ enum BattleGroundTypeId
 };
 #define MAX_BATTLEGROUND_TYPE_ID 33
 
+// handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
+enum BattleGroundQueueTypeId
+{
+    BATTLEGROUND_QUEUE_NONE     = 0,
+    BATTLEGROUND_QUEUE_AV       = 1,    // Alterac Vally
+    BATTLEGROUND_QUEUE_WS       = 2,    // Warsong Gulch
+    BATTLEGROUND_QUEUE_AB       = 3,    // Arathi basin
+    BATTLEGROUND_QUEUE_EY       = 4,    // Eye of the Storm
+    BATTLEGROUND_QUEUE_SA       = 5,    // Strand of the Ancients
+    BATTLEGROUND_QUEUE_IC       = 6,    // Isle of Conquest
+    BATTLEGROUND_QUEUE_RB       = 7,
+    BATTLEGROUND_QUEUE_2v2      = 8,
+    BATTLEGROUND_QUEUE_3v3      = 9,
+    BATTLEGROUND_QUEUE_5v5      = 10
+};
+#define MAX_BATTLEGROUND_QUEUE_TYPES 11
+
 enum ArenaType
 {
     ARENA_TYPE_NONE         = 0,                            // used for mark non-arenas or problematic cases
@@ -3098,6 +3115,13 @@ enum AreaLockStatus
 #define DEFAULT_VISIBILITY_DISTANCE 90.0f       // default visible distance, 90 yards on continents
 #define DEFAULT_VISIBILITY_INSTANCE 120.0f      // default visible distance in instances, 120 yards
 #define DEFAULT_VISIBILITY_BGARENAS 180.0f      // default visible distance in BG/Arenas, 180 yards
+
+enum PhaseMasks
+{
+    PHASEMASK_NONE     = 0,
+    PHASEMASK_NORMAL   = 0x00000001,
+    PHASEMASK_ANYWHERE = 0xFFFFFFFF
+};
 
 enum ActivateTaxiReply
 {

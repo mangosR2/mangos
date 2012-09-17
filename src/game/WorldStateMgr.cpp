@@ -72,6 +72,7 @@ void WorldStateMgr::Update()
                                 state->SetValue(WORLD_STATE_REMOVE);
                         }
                     }
+                    break;
                 }
                 case WORLD_STATE_TYPE_CUSTOM:
                 case WORLD_STATE_TYPE_WORLD:
@@ -130,7 +131,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
         if (bl && bl->HolidayWorldStateId)
         {
             m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(bl->HolidayWorldStateId, 
-                WorldStateTemplate(bl->HolidayWorldStateId, WORLD_STATE_TYPE_BGWEEKEND, WORLD_STATE_TYPE_BGWEEKEND, (1 << WORLD_STATE_FLAG_INITIAL_STATE), BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)) ? 1 : 0, 0)));
+                WorldStateTemplate(bl->HolidayWorldStateId, WORLD_STATE_TYPE_BGWEEKEND, WORLD_STATE_TYPE_BGWEEKEND, (1 << WORLD_STATE_FLAG_INITIAL_STATE), BattleGroundMgr::IsBGWeekend(BattleGroundTypeId(bl->id)) ? 1 : 0, 0, 0)));
             ++count;
         }
     }
@@ -149,43 +150,42 @@ void WorldStateMgr::LoadTemplatesFromDBC()
         if (!id)
             continue;
 
-        uint32 stateId = 0;
+        uint32 stateId   = 0;
         uint32 condition = 0;
-        WorldStatesLinkedSet linkedList;
+        uint32 phasemask = wsEntry->m_flags;
 
-        WorldStateTemplate const* tmpl = FindTemplate(stateId);
+        WorldStatesLinkedSet linkedList;
 
         if (wsEntry->m_uiType == "CAPTUREPOINT")
         {
             stateId = id;
             type = WORLD_STATE_TYPE_CAPTURE_POINT;
-
-            if (tmpl)
-            {
-                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(wsEntry->m_linked1);
-                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(wsEntry->m_linked2);
-                continue;
-            }
+            uint32 condition = 0;
             linkedList.insert(wsEntry->m_linked1);
             linkedList.insert(wsEntry->m_linked2);
         }
         else if (wsEntry->map_id && !wsEntry->m_zone)
         {
-            if (tmpl)
-                continue;
-
             stateId = id;
             condition = wsEntry->map_id;
             type = WORLD_STATE_TYPE_MAP;
         }
-        else if (wsEntry->map_id && wsEntry->m_zone)
+        else if (wsEntry->m_zone)
         {
-            if (tmpl)
-                continue;
-
             stateId = id;
             condition = wsEntry->m_zone;
             type = WORLD_STATE_TYPE_ZONE;
+        }
+        else if (!wsEntry->map_id && !wsEntry->m_zone)
+        {
+            stateId = id;
+            condition = wsEntry->m_flags;   // Phase currently
+            type = WORLD_STATE_TYPE_EVENT;
+        }
+        else
+        {
+            sLog.outErrorDb("WorldStateMgr::LoadTemplatesFromDBC unhandled template %u!",id);
+            continue;
         }
 
         // parse linked worldstates here
@@ -210,36 +210,54 @@ void WorldStateMgr::LoadTemplatesFromDBC()
             }
         }
 
+        WorldStateTemplate const* tmpl = FindTemplate(stateId, type, condition);
+
         if (type != WORLD_STATE_TYPE_CUSTOM)
         {
-            m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
-                WorldStateTemplate(stateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, 0)));
-            ++count;
+            if (!tmpl)
+            {
+                m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
+                    WorldStateTemplate(stateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, 0, phasemask)));
+                ++count;
+            }
+            else
+            {
+                const_cast<WorldStateTemplate*>(tmpl)->m_phasemask |= phasemask;
+            }
+
+            tmpl = FindTemplate(stateId, type, condition);
+            MANGOS_ASSERT(tmpl);
+
             if (!linkedList.empty())
             {
-                for(WorldStatesLinkedSet::const_iterator itr = linkedList.begin(); itr != linkedList.end(); ++itr)
+                for (WorldStatesLinkedSet::const_iterator itr = linkedList.begin(); itr != linkedList.end(); ++itr)
                 {
                     uint32 linkedstateId = *itr;
+                    if (!linkedstateId || linkedstateId == stateId)
+                        continue;
 
                     // Check linked templates
-                    WorldStateTemplate const* tmpl = FindTemplate(linkedstateId);
-                    if (tmpl)
+                    WorldStateTemplate const* downlinktmpl = FindTemplate(linkedstateId, type, condition);
+                    if (downlinktmpl)
                     {
-                        if (tmpl->m_linkedId != stateId)
+                        if (downlinktmpl->m_linkedId != stateId)
                         {
-                            sLog.outErrorDb("WorldStateMgr::LoadTemplatesFromDBC template %u present, but linked to %u instead of %u in DBC, need correct!",linkedstateId,tmpl->m_linkedId, stateId);
-                            if (tmpl->m_linkedId == 0)
-                                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(stateId);
+                            sLog.outDetail("WorldStateMgr::LoadTemplatesFromDBC template %u present, but linked to %u instead of %u (condition %u) in DBC, %s!",
+                                linkedstateId, downlinktmpl->m_linkedId, stateId, condition, downlinktmpl->m_linkedId ? "need correct" : "corrected");
+
+                            if (downlinktmpl->m_linkedId == 0)
+                            {
+                                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(linkedstateId);
+                                const_cast<WorldStateTemplate*>(downlinktmpl)->m_linkedId = stateId;
+                            }
                         }
-                        continue;
                     }
                     else
                     {
-                        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId,
-                            WorldStateTemplate(linkedstateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, stateId)));
+                        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(linkedstateId,
+                            WorldStateTemplate(linkedstateId, type, condition, (1 << WORLD_STATE_FLAG_INITIAL_STATE), 0, stateId, tmpl->m_phasemask)));
                         ++count;
-                        if (WorldStateTemplate const* tmpl1 = FindTemplate(linkedstateId))
-                            const_cast<WorldStateTemplate*>(tmpl1)->m_linkedList.insert(stateId);
+                        const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(linkedstateId);
                     }
                 }
             }
@@ -263,6 +281,7 @@ void WorldStateMgr::LoadTemplatesFromDB()
 
     std::map<uint32, WorldStatesLinkedSet> m_worldStateLink;
     uint32 count = 0;
+    uint32 count2 = 0;
     BarGoLink bar((int)result->GetRowCount());
     do
     {
@@ -276,24 +295,25 @@ void WorldStateMgr::LoadTemplatesFromDB()
         uint32   flags          = fields[3].GetUInt32();
         uint32   default_value  = fields[4].GetUInt32();
         uint32   linkedId       = fields[5].GetUInt32();
+        //uint32   phasemask       = fields[6].GetUInt32();
 
         // Store the state data
-        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId, WorldStateTemplate(stateId, type, condition, flags, default_value, linkedId)));
+        m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(stateId, WorldStateTemplate(stateId, type, condition, flags, default_value, linkedId, 0 /*phasemask*/)));
 
-        if (linkedId != 0)
-            m_worldStateLink[linkedId].insert(stateId);
 
         ++count;
     }
     while (result->NextRow());
 
-    uint32 count2 = 0;
-    for (std::map<uint32, WorldStatesLinkedSet>::const_iterator itr = m_worldStateLink.begin(); itr != m_worldStateLink.end(); ++itr)
+    for (WorldStateTemplateMap::const_iterator itr = m_worldStateTemplates.begin(); itr != m_worldStateTemplates.end(); ++itr)
     {
-        if (WorldStateTemplate const* tmpl = FindTemplate(itr->first))
+        if (itr->second.m_linkedId != 0)
         {
-            const_cast<WorldStateTemplate*>(tmpl)->m_linkedList = itr->second;
-            ++count2;
+            if (WorldStateTemplate const* tmpl = FindTemplate(itr->second.m_linkedId, itr->second.m_stateType, itr->second.m_condition))
+            {
+                const_cast<WorldStateTemplate*>(tmpl)->m_linkedList.insert(itr->second.m_stateId);
+                ++count2;
+            }
         }
     }
 
@@ -332,10 +352,10 @@ void WorldStateMgr::LoadTemplatesFromObjectTemplateDB()
             continue;
 
         m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(goInfo->capturePoint.worldState1,
-            WorldStateTemplate(goInfo->capturePoint.worldState1, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), WORLD_STATE_ADD, 0)));
+            WorldStateTemplate(goInfo->capturePoint.worldState1, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), WORLD_STATE_ADD, 0, PHASEMASK_NONE)));
         ++count;
 
-        WorldStateTemplate* tmpl = const_cast<WorldStateTemplate*>(FindTemplate(goInfo->capturePoint.worldState1));
+        WorldStateTemplate* tmpl = const_cast<WorldStateTemplate*>(FindTemplate(goInfo->capturePoint.worldState1,WORLD_STATE_TYPE_CAPTURE_POINT, goEntry));
         if (!tmpl)
             continue;
 
@@ -344,7 +364,7 @@ void WorldStateMgr::LoadTemplatesFromObjectTemplateDB()
             continue;
 
         m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(goInfo->capturePoint.worldState2,
-            WorldStateTemplate(goInfo->capturePoint.worldState2, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), CAPTURE_SLIDER_NEUTRAL, goInfo->capturePoint.worldState1)));
+            WorldStateTemplate(goInfo->capturePoint.worldState2, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), CAPTURE_SLIDER_NEUTRAL, goInfo->capturePoint.worldState1, PHASEMASK_NONE)));
         tmpl->m_linkedList.insert(goInfo->capturePoint.worldState2);
         ++count;
 
@@ -353,7 +373,7 @@ void WorldStateMgr::LoadTemplatesFromObjectTemplateDB()
             continue;
 
         m_worldStateTemplates.insert(WorldStateTemplateMap::value_type(goInfo->capturePoint.worldState3,
-            WorldStateTemplate(goInfo->capturePoint.worldState3, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), goInfo->capturePoint.neutralPercent, goInfo->capturePoint.worldState1)));
+            WorldStateTemplate(goInfo->capturePoint.worldState3, WORLD_STATE_TYPE_CAPTURE_POINT, goEntry, (1 << WORLD_STATE_FLAG_ACTIVE), goInfo->capturePoint.neutralPercent, goInfo->capturePoint.worldState1, PHASEMASK_NONE)));
         tmpl->m_linkedList.insert(goInfo->capturePoint.worldState3);
         ++count;
     }
@@ -395,11 +415,11 @@ void WorldStateMgr::LoadFromDB()
         time_t   renewtime      = time_t(fields[6].GetUInt64());
 
         // Store the state data
-        WorldStateTemplate const* tmpl = FindTemplate(stateId);
+        WorldStateTemplate const* tmpl = FindTemplate(stateId, type, condition);
         if (tmpl)
         {
             // Some worldstates loaded after creating (linked). need only set value.
-            if (WorldState const* state  = GetWorldState(stateId, instanceId, type))
+            if (WorldState const* state  = GetWorldState(tmpl, instanceId))
             {
                 if (state->GetValue() != _value)
                     const_cast<WorldState*>(state)->SetValue(_value);
@@ -409,13 +429,13 @@ void WorldStateMgr::LoadFromDB()
         }
         else if (type == WORLD_STATE_TYPE_CUSTOM)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_DB_STRICTED_CHECK,"WorldStateMgr::LoadFromDB loaded custom state %u (%u %u %u %u %u)",
+            DEBUG_FILTER_LOG(LOG_FILTER_DB_STRICTED_CHECK,"WorldStateMgr::LoadFromDB loaded custom state %u (%u %u %u %u %u %ld)",
                 stateId, instanceId, type, condition, flags, _value, renewtime);
             m_worldState.insert(WorldStateMap::value_type(stateId, WorldState(stateId, instanceId, flags, _value, renewtime)));
         }
         else
         {
-            sLog.outError("WorldStateMgr::LoadFromDB unknown state %u (%u %u %u %u %u)",
+            sLog.outError("WorldStateMgr::LoadFromDB unknown state %u (%u %u %u %u %u %ld)",
                 stateId, instanceId, type, condition, flags, _value, renewtime);
         }
     }
@@ -435,7 +455,7 @@ void WorldStateMgr::CreateWorldStatesIfNeed()
             (itr->second.m_stateType == WORLD_STATE_TYPE_WORLD ||
             itr->second.m_stateType == WORLD_STATE_TYPE_BGWEEKEND))
         {
-            if (GetWorldState(itr->second.m_stateId, 0))
+            if (GetWorldState(&itr->second, 0))
                 continue;
 
             CreateWorldState(&itr->second, 0);
@@ -464,7 +484,9 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                     if (goInfo->capturePoint.worldState1)
                     {
                         WorldState const* _state = NULL;
-                        if (_state  = GetWorldState(goInfo->capturePoint.worldState1, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        WorldStateTemplate const* tmpl = FindTemplate(goInfo->capturePoint.worldState1, WORLD_STATE_TYPE_CAPTURE_POINT, goInfo->id);
+                        MANGOS_ASSERT(tmpl);
+                        if (_state  = GetWorldState(tmpl, instanceId))
                         {
                             if (_state->GetValue() != WORLD_STATE_ADD)
                                 DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
@@ -475,7 +497,7 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                                 );
                         }
                         else
-                            _state = CreateWorldState(goInfo->capturePoint.worldState1, instanceId);
+                            _state = CreateWorldState(tmpl, instanceId);
 
                         const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
                     }
@@ -484,7 +506,9 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                     if (goInfo->capturePoint.worldState2)
                     {
                         WorldState const* _state = NULL;
-                        if (_state  = GetWorldState(goInfo->capturePoint.worldState2, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        WorldStateTemplate const* tmpl = FindTemplate(goInfo->capturePoint.worldState2, WORLD_STATE_TYPE_CAPTURE_POINT, goInfo->id);
+                        MANGOS_ASSERT(tmpl);
+                        if (_state  = GetWorldState(tmpl, instanceId))
                         {
                             if (_state->GetValue() != CAPTURE_SLIDER_NEUTRAL)
                                 DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
@@ -495,7 +519,7 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                                 );
                         }
                         else
-                             _state = CreateWorldState(goInfo->capturePoint.worldState2, instanceId);
+                             _state = CreateWorldState(tmpl, instanceId);
 
                         const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
                     }
@@ -504,7 +528,9 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                     if (goInfo->capturePoint.worldState3)
                     {
                         WorldState const* _state = NULL;
-                        if (_state  = GetWorldState(goInfo->capturePoint.worldState3, instanceId, WORLD_STATE_TYPE_CAPTURE_POINT))
+                        WorldStateTemplate const* tmpl = FindTemplate(goInfo->capturePoint.worldState3, WORLD_STATE_TYPE_CAPTURE_POINT, goInfo->id);
+                        MANGOS_ASSERT(tmpl);
+                        if (_state  = GetWorldState(tmpl, instanceId))
                         {
                             if (_state->GetValue() != goInfo->capturePoint.neutralPercent)
                                 DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
@@ -515,7 +541,7 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                                 );
                         }
                         else
-                            _state = CreateWorldState(goInfo->capturePoint.worldState3, instanceId);
+                            _state = CreateWorldState(tmpl, instanceId);
 
                         const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
                     }
@@ -523,10 +549,12 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                 }
                 case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
                 {
-                    if (goInfo->destructibleBuilding.linkedWorldState)
+                    if (CheckWorldState(goInfo->destructibleBuilding.linkedWorldState))
                     {
                         WorldState const* _state = NULL;
-                        if (_state  = GetWorldState(goInfo->destructibleBuilding.linkedWorldState, instanceId, WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT))
+                        WorldStateTemplate const* tmpl = FindTemplate(goInfo->destructibleBuilding.linkedWorldState, WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT, object->GetZoneId());
+                        MANGOS_ASSERT(tmpl);
+                        if (_state  = GetWorldState(tmpl, instanceId))
                         {
                             if (_state->GetValue() != OBJECT_STATE_NONE)
                                 DEBUG_LOG("WorldStateMgr::CreateLinkedWorldStatesIfNeed Warning - at load WorldState %u for %s current value %u not equal default %u!", 
@@ -537,7 +565,7 @@ void WorldStateMgr::CreateLinkedWorldStatesIfNeed(WorldObject* object)
                                 );
                         }
                         else
-                            _state = CreateWorldState(goInfo->destructibleBuilding.linkedWorldState, instanceId);
+                            _state = CreateWorldState(tmpl, instanceId);
 
                         if (_state)
                             const_cast<WorldState*>(_state)->SetLinkedGuid(guid);
@@ -630,23 +658,27 @@ void WorldStateMgr::DeleteWorldState(WorldState* state)
     }
 }
 
-WorldStateTemplate const* WorldStateMgr::FindTemplate(uint32 stateId, uint32 type, uint32 condition)
+WorldStateTemplate const* WorldStateMgr::FindTemplate(uint32 stateId, uint32 type, uint32 condition, uint32 linkedId)
 {
     ReadGuard guard(GetLock());
+
+    if (type == WORLD_STATE_TYPE_MAX && condition == 0 && linkedId == 0 && ((int)m_worldStateTemplates.count(stateId) > 1))
+    {
+        sLog.outError("WorldStateMgr::FindTemplate tru find template with simple rules, but in DB not one template Id %u!", stateId);
+        return NULL;
+    }
+
     WorldStateTemplateBounds bounds = m_worldStateTemplates.equal_range(stateId);
 
     if (bounds.first == bounds.second)
         return NULL;
 
-    if (stateId != 0)
-        return &bounds.first->second;
-
-    // for custom States (Id == 0)
     for (WorldStateTemplateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
     {
-        if (iter->second.m_stateId == stateId &&
-            iter->second.m_stateType == type &&
-            iter->second.m_condition == condition)
+        if (iter->second.m_stateId == stateId
+            && (type == WORLD_STATE_TYPE_MAX || iter->second.m_stateType == type)
+            && (condition == 0 || iter->second.m_condition == condition)
+            && (linkedId == 0 || iter->second.m_linkedId == linkedId))
             return &iter->second;
     }
     return NULL;
@@ -753,8 +785,9 @@ WorldStateSet WorldStateMgr::GetUpdatedWorldStatesFor(Player* player, time_t upd
                     // Always send UpLinked worldstate with own chains
                     // Attention! possible need sent ALL linked chain in this case. need tests.
                     if (itr->second.GetTemplate() && itr->second.GetTemplate()->m_linkedId)
-                        if (WorldState const* state = GetWorldState(itr->second.GetTemplate()->m_linkedId, itr->second.GetInstance()))
-                            statesSet.push_back(state);
+                        if (WorldStateTemplate const* tmpl = FindTemplate(itr->second.GetTemplate()->m_linkedId, itr->second.GetType(), itr->second.GetCondition()))
+                            if (WorldState const* state = GetWorldState(tmpl, itr->second.GetInstance()))
+                                statesSet.push_back(state);
 
                     statesSet.push_back(&itr->second);
                 }
@@ -768,6 +801,9 @@ bool WorldStateMgr::IsFitToCondition(Player* player, WorldState const* state)
         return false;
 
     if (state->HasFlag(WORLD_STATE_FLAG_DELETED))
+        return false;
+
+    if (state->GetPhaseMask() && !(state->GetPhaseMask() & player->GetPhaseMask()))
         return false;
 
     switch (state->GetType())
@@ -805,7 +841,18 @@ bool WorldStateMgr::IsFitToCondition(Player* player, WorldState const* state)
         }
         case WORLD_STATE_TYPE_CAPTURE_POINT:
         {
-            return state->HasClient(player);
+            if (state->HasClient(player))
+                return true;
+            if (GameObject* point = player->GetMap()->GetGameObject(state->GetLinkedGuid()))
+            {
+                GameObjectInfo const* goInfo = point->GetGOInfo();
+                if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_CAPTURE_POINT)
+                    return false;
+
+                if (player->IsWithinDistInMap(point, goInfo->capturePoint.radius, true))
+                    return true;
+            }
+            return false;
             break;
         }
         case  WORLD_STATE_TYPE_DESTRUCTIBLE_OBJECT:
@@ -1147,7 +1194,7 @@ WorldState const* WorldStateMgr::CreateWorldState(WorldStateTemplate const* tmpl
         return NULL;
     }
 
-    if (WorldState const* _state  = GetWorldState(tmpl->m_stateId, instanceId, tmpl->m_stateType))
+    if (WorldState const* _state  = GetWorldState(tmpl, instanceId))
     {
         DEBUG_LOG("WorldStateMgr::CreateWorldState tru create  state %u  instance %u type %u (value %u) but state exists (value %u).",
             tmpl->m_stateId, instanceId, tmpl->m_stateType, value, _state->GetValue());
@@ -1160,7 +1207,7 @@ WorldState const* WorldStateMgr::CreateWorldState(WorldStateTemplate const* tmpl
         WriteGuard guard(GetLock());
         m_worldState.insert(WorldStateMap::value_type(tmpl->m_stateId, WorldState(tmpl, instanceId)));
     }
-    WorldState* _state  = const_cast<WorldState*>(GetWorldState(tmpl->m_stateId, instanceId));
+    WorldState* _state  = const_cast<WorldState*>(GetWorldState(tmpl, instanceId));
 
     if (value != UINT32_MAX)
         _state->SetValue(value);
@@ -1180,7 +1227,7 @@ WorldState const* WorldStateMgr::CreateWorldState(WorldStateTemplate const* tmpl
     return _state;
 }
 
-WorldState const* WorldStateMgr::GetWorldState(uint32 stateId, uint32 instanceId, uint32 type)
+WorldState const* WorldStateMgr::GetWorldState(uint32 stateId, uint32 instanceId, WorldStateType type, uint32 condition)
 {
     ReadGuard guard(GetLock());
     WorldStateBounds bounds = m_worldState.equal_range(stateId);
@@ -1189,8 +1236,43 @@ WorldState const* WorldStateMgr::GetWorldState(uint32 stateId, uint32 instanceId
 
     for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
     {
-        if (iter->second.GetInstance() == instanceId &&
-            ((type == WORLD_STATE_TYPE_MAX) || (type == iter->second.GetType())))
+        if (iter->second.GetInstance() == instanceId 
+            && type == iter->second.GetType()
+            && condition == iter->second.GetCondition())
+            return &iter->second;
+    }
+    return NULL;
+};
+
+WorldState const* WorldStateMgr::GetWorldState(uint32 stateId, uint32 instanceId, Player* player)
+{
+    ReadGuard guard(GetLock());
+    WorldStateBounds bounds = m_worldState.equal_range(stateId);
+    if (bounds.first == bounds.second)
+        return NULL;
+
+    for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+    {
+        if (iter->second.GetInstance() == instanceId
+            && (!player || IsFitToCondition(player, &iter->second)))
+            return &iter->second;
+    }
+    return NULL;
+};
+
+WorldState const* WorldStateMgr::GetWorldState(WorldStateTemplate const* tmpl, uint32 instanceId)
+{
+    if (!tmpl)
+        return NULL;
+
+    ReadGuard guard(GetLock());
+    WorldStateBounds bounds = m_worldState.equal_range(tmpl->m_stateId);
+    if (bounds.first == bounds.second)
+        return NULL;
+
+    for (WorldStateMap::const_iterator iter = bounds.first; iter != bounds.second; ++iter)
+    {
+        if (iter->second.GetInstance() == instanceId && iter->second.GetTemplate() == tmpl)
             return &iter->second;
     }
     return NULL;
@@ -1202,7 +1284,7 @@ void WorldStateMgr::AddWorldStateFor(Player* player, uint32 stateId, uint32 inst
     if (!player)
         return;
 
-    WorldState const* state = GetWorldState(stateId,instanceId);
+    WorldState const* state = GetWorldState(stateId,instanceId,player);
 
     if (state && !state->HasClient(player))
     {
@@ -1239,7 +1321,7 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId, uint32 i
     if (!player || !player->IsInWorld())
         return;
 
-    WorldState const* state = GetWorldState(stateId, instanceId);
+    WorldState const* state = GetWorldState(stateId, instanceId, player);
 
     if (state && state->HasClient(player))
     {
@@ -1289,13 +1371,13 @@ void WorldStateMgr::CreateZoneAreaStateIfNeed(Player* player, uint32 zone, uint3
         {
             if (itr->second.m_stateType == WORLD_STATE_TYPE_ZONE && itr->second.m_condition == zone)
             {
-                if (GetWorldState(itr->second.m_stateId, player->GetInstanceId()))
+                if (GetWorldState(&itr->second, player->GetInstanceId()))
                     continue;
                 CreateWorldState(&itr->second, player->GetInstanceId());
             }
             else if (itr->second.m_stateType == WORLD_STATE_TYPE_AREA && itr->second.m_condition == area)
             {
-                if (GetWorldState(itr->second.m_stateId, player->GetInstanceId()))
+                if (GetWorldState(&itr->second, player->GetInstanceId()))
                     continue;
                 CreateWorldState(&itr->second, player->GetInstanceId());
             }
@@ -1346,7 +1428,7 @@ WorldStateSet WorldStateMgr::GetInstanceStates(uint32 mapId, uint32 instanceId, 
     ReadGuard guard(GetLock());
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if (!flags || itr->second.GetFlags() & flags)
+        if (!flags || (itr->second.GetFlags() & flags))
         {
             if (itr->second.GetType() == WORLD_STATE_TYPE_MAP &&
                 itr->second.GetCondition() == mapId &&
@@ -1402,7 +1484,12 @@ WorldStateSet WorldStateMgr::GetDownLinkedWorldStates(WorldState const* state)
 
     for (WorldStatesLinkedSet::const_iterator itr = state->GetLinkedSet()->begin(); itr != state->GetLinkedSet()->end(); ++itr)
     {
-        if (WorldState const* linkedState = GetWorldState(*itr, state->GetInstance()))
+        WorldStateTemplate const* tmpl = FindTemplate(*itr, state->GetType(), state->GetCondition(), state->GetId());
+
+        if (!tmpl)
+            continue;
+
+        if (WorldState const* linkedState = GetWorldState(tmpl, state->GetInstance()))
             statesSet.push_back(linkedState);
     }
     return statesSet;
@@ -1413,7 +1500,12 @@ WorldState const* WorldStateMgr::GetUpLinkWorldState(WorldState const* state)
     if (!state->HasUpLink())
         return NULL;
 
-    return GetWorldState(state->GetTemplate()->m_linkedId, state->GetInstance());
+    WorldStateTemplate const* tmpl = FindTemplate(state->GetTemplate()->m_linkedId, state->GetType(), state->GetCondition());
+
+    if (!tmpl)
+        return NULL;
+
+    return GetWorldState(tmpl, state->GetInstance());
 }
 
 uint32 WorldStateMgr::GetMapIdByZoneId(uint32 zoneId) const

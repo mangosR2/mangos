@@ -97,9 +97,9 @@ class MANGOS_DLL_SPEC VehicleKit
 
         void Dismount(Unit* passenger, VehicleSeatEntry const* pSeatInfo = NULL);
 
+        Unit* m_pBase;
         SeatMap m_Seats;
         uint32 m_uiNumFreeSeats;
-        Unit* m_pBase;
         bool  b_dstSet;
         float m_dst_x, m_dst_y, m_dst_z, m_dst_o, m_dst_speed, m_dst_elevation;
 

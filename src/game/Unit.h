@@ -902,7 +902,7 @@ struct DamageInfo
     public:
         // Constructors for use with spell and melee damage
         DamageInfo(Unit *_attacker, Unit *_target, uint32 _SpellID, uint32 _damage)
-            :  attacker(_attacker), target(_target), SpellID(_SpellID), m_spellInfo(NULL)
+            :  attacker(_attacker), target(_target), m_spellInfo(NULL), SpellID(_SpellID)
         { Reset(_damage); };
 
         DamageInfo(Unit *_attacker, Unit *_target, SpellEntry const* spellInfo, uint32 _damage = 0)
@@ -911,11 +911,11 @@ struct DamageInfo
 
         // Constructors for use on temporary operation
         DamageInfo(uint32 _damage)
-            : attacker(NULL), target(NULL), SpellID(0), m_spellInfo(NULL)
+            : attacker(NULL), target(NULL), m_spellInfo(NULL), SpellID(0)
         { Reset(_damage); };
 
         DamageInfo(uint32 _damage, uint32 _SpellID)
-            : attacker(NULL), target(NULL), SpellID(_SpellID), m_spellInfo(NULL)
+            : attacker(NULL), target(NULL), m_spellInfo(NULL), SpellID(_SpellID)
         { Reset(_damage); };
 
         DamageInfo(uint32 _damage, SpellEntry const* spellInfo)

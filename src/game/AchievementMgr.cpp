@@ -1206,7 +1206,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
             case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT:
             {
                 uint32 counter = 0;
-                for (QuestStatusMap::const_iterator itr = GetPlayer()->getQuestStatusMap().begin(); itr != GetPlayer()->getQuestStatusMap().end(); ++itr)
+                for (QuestStatusMap::const_iterator itr = GetPlayer()->GetQuestStatusMap().begin(); itr != GetPlayer()->GetQuestStatusMap().end(); ++itr)
                     if (itr->second.m_rewarded)
                         ++counter;
                 change = counter;
@@ -1231,7 +1231,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     continue;
 
                 uint32 counter = 0;
-                for (QuestStatusMap::const_iterator itr = GetPlayer()->getQuestStatusMap().begin(); itr != GetPlayer()->getQuestStatusMap().end(); ++itr)
+                for (QuestStatusMap::const_iterator itr = GetPlayer()->GetQuestStatusMap().begin(); itr != GetPlayer()->GetQuestStatusMap().end(); ++itr)
                 {
                     Quest const* quest = sObjectMgr.GetQuestTemplate(itr->first);
                     if (itr->second.m_rewarded && quest->GetZoneOrSort() >= 0 && uint32(quest->GetZoneOrSort()) == achievementCriteria->complete_quests_in_zone.zoneID)
@@ -1665,11 +1665,8 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                     continue;
                 // possible additional requirements
                 AchievementCriteriaRequirementSet const* data = sAchievementMgr.GetCriteriaRequirementSet(achievementCriteria);
-                if (!data)
+                if (data && !data->Meets(GetPlayer(), unit, miscvalue1))
                     continue;
-                if (!data->Meets(GetPlayer(), unit, miscvalue1))
-                    continue;
-
                 change = 1;
                 progressType = PROGRESS_ACCUMULATE;
                 break;

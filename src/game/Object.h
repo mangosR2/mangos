@@ -56,12 +56,6 @@ enum TempSummonType
     TEMPSUMMON_DEAD_OR_LOST_UNIQUENESS_DESPAWN              = 24,            // despawns when owner spawn creature this type in visible range, or by rules of TEMPSUMMON_DEAD_DESPAWN
 };
 
-enum PhaseMasks
-{
-    PHASEMASK_NORMAL   = 0x00000001,
-    PHASEMASK_ANYWHERE = 0xFFFFFFFF
-};
-
 class WorldPacket;
 class UpdateData;
 class WorldSession;
@@ -84,20 +78,81 @@ struct Position
 {
     Position() : x(0.0f), y(0.0f), z(0.0f), o(0.0f) {}
     Position(float _x, float _y, float _z, float _o) : x(_x), y(_y), z(_z), o(_o) {}
-    float x, y, z, o;
+    union
+    {
+        float x;
+        float coord_x;
+    };
+    union
+    {
+        float y;
+        float coord_y;
+    };
+    union
+    {
+        float z;
+        float coord_z;
+    };
+    union
+    {
+        float o;
+        float orientation;
+    };
+
+    virtual bool HasMap() const { return false; };
+
+    bool operator == (Position const &pos) const
+    {
+        return ((x - pos.x < M_NULL_F)
+            && (y - pos.y < M_NULL_F)
+            && (z - pos.z < M_NULL_F));
+    }
 };
 
-struct WorldLocation
+struct WorldLocation : public Position
 {
-    uint32 mapid;
-    float coord_x;
-    float coord_y;
-    float coord_z;
-    float orientation;
-    explicit WorldLocation(uint32 _mapid = 0, float _x = 0, float _y = 0, float _z = 0, float _o = 0)
-        : mapid(_mapid), coord_x(_x), coord_y(_y), coord_z(_z), orientation(_o) {}
+    // mapid = -1 for not initialized WorldLocation
+    int32     mapid;
+    uint32    instance;
+
+    // assume 0 as "current realm"
+    uint32    realmid;
+
+    WorldLocation()
+        : mapid(-1), Position(), realmid(0), instance(0)
+    {}
+
+    WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0)
+        : mapid(_mapid), Position(_x, _y, _z, _o), realmid(0), instance(0)
+    {}
+
+    WorldLocation(uint32 _mapid, uint32 _instance, uint32 _realmid)
+        : mapid(_mapid), instance(_instance), realmid(_realmid), Position()
+    {}
+
+    WorldLocation(float _x, float _y, float _z, float _o, uint32 _mapid, uint32 _instance, uint32 _realmid)
+        : Position(_x, _y, _z, _o), mapid(_mapid), instance(_instance), realmid(_realmid)
+    {}
+
     WorldLocation(WorldLocation const &loc)
-        : mapid(loc.mapid), coord_x(loc.coord_x), coord_y(loc.coord_y), coord_z(loc.coord_z), orientation(loc.orientation) {}
+        : mapid(loc.mapid), Position(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation), realmid(loc.realmid), instance(loc.instance) 
+    {}
+
+    bool operator == (WorldLocation const &loc) const
+    {
+        return (realmid    == loc.realmid
+            && mapid       == loc.mapid
+            && instance    == loc.instance
+            && (coord_x - loc.coord_x < M_NULL_F)
+            && (coord_y - loc.coord_y < M_NULL_F)
+            && (coord_z - loc.coord_z < M_NULL_F));
+    }
+
+    bool HasMap() const override
+    {
+        return mapid >= 0;
+    }
+    Position const& GetPosition() { return *this; };
 };
 
 

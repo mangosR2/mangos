@@ -192,13 +192,13 @@ void GlobalCooldownMgr::CancelGlobalCooldown(SpellEntry const* spellInfo)
 // Methods of class Unit
 
 Unit::Unit() :
+    movespline(new Movement::MoveSpline()),
+    m_charmInfo(NULL),
     i_motionMaster(this),
+    m_vehicleInfo(NULL),
     m_ThreatManager(this),
     m_HostileRefManager(new HostileRefManager(this)),
-    m_charmInfo(NULL),
-    m_vehicleInfo(NULL),
-    m_stateMgr(this),
-    movespline(new Movement::MoveSpline())
+    m_stateMgr(this)
 {
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
@@ -854,7 +854,8 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
                     {
                         SpellEntry const* shareSpell = (*itr)->GetSpellProto();
                         int32 shareDamage = int32(damageInfo->damage * (*itr)->GetModifier()->m_amount / 100.0f);
-                        linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto, shareDamage));
+                        //linkedDamageList.push_back(DamageInfo(this, shareTarget, spellProto, shareDamage));
+                        linkedDamageList.push_back(DamageInfo(this, shareTarget, shareSpell, shareDamage));
                         DamageInfo* sharedDamageInfo   = &linkedDamageList.back();
                         DealDamageMods(sharedDamageInfo);
                         sharedDamageInfo->cleanDamage  = shareDamage;
@@ -1463,7 +1464,7 @@ void Unit::CastSpell(Unit* Victim, SpellEntry const *spellInfo, bool triggered, 
         }
     }
 
-    Spell *spell = new Spell(this, spellInfo, triggered, originalCaster, triggeredBy);
+    Spell* spell = new Spell(this, spellInfo, triggered, originalCaster, triggeredBy);
 
     SpellCastTargets targets;
     targets.setUnitTarget( Victim );
@@ -6922,15 +6923,7 @@ void Unit::AttackedBy(Unit* attacker)
 
     // trigger pet AI reaction
     if (attacker->IsHostileTo(this))
-    {
-        GroupPetList m_groupPets = GetPets();
-        if (!m_groupPets.empty())
-        {
-            for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
-                if (Pet* _pet = GetMap()->GetPet(*itr))
-                    _pet->AttackedBy(attacker);
-        }
-    }
+        CallForAllControlledUnits(AttackedByHelper(attacker),CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
 
     // Place reaction on attacks in combat state here
 }
@@ -10482,6 +10475,8 @@ int32 Unit::CalculateSpellDamage(Unit const* target, SpellEntry const* spellProt
             case EFFECT_INDEX_2:
                 modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_EFFECT3, value);
                 break;
+            default:
+                break;
         }
     }
 
@@ -11547,8 +11542,6 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                         }
                         else
                         {
-                            GetMotionMaster()->Clear();
-
                             if (((Creature*)this)->AI())
                                 ((Creature*)this)->AI()->AttackStart(TargetUnit);
 
@@ -12869,7 +12862,6 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
     else
     {
         ExitVehicle();
-        Creature* c = (Creature*)this;
         GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
         SendHeartBeat();
     }
@@ -13431,7 +13423,7 @@ void Unit::_AddAura(uint32 spellID, uint32 duration)
                     spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA  ||
                     spellInfo->Effect[i] == SPELL_EFFECT_PERSISTENT_AREA_AURA )
                 {
-                    Aura *aura = holder->CreateAura(spellInfo, SpellEffectIndex(i), NULL, holder, this, NULL, NULL);
+                    /*Aura *aura = */holder->CreateAura(spellInfo, SpellEffectIndex(i), NULL, holder, this, NULL, NULL);
                     holder->SetAuraDuration(duration);
                     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Manually adding aura of spell %u, index %u, duration %u ms", spellID, i, duration);
                 }

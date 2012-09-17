@@ -189,6 +189,9 @@ void PetAI::Reset()
     }
     m_savedAIType = m_AIType;
 
+    if (!m_creature->IsInUnitState(UNIT_ACTION_HOME))
+        m_creature->GetMotionMaster()->MoveTargetedHome();
+
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"PetAI::Reset %s, AI %u dist %f, spells: %u %u %u %u %u %u %u %u %u %u %u %u",
         m_creature->GetObjectGuid().GetString().c_str(),
         m_AIType,
@@ -382,10 +385,13 @@ void PetAI::_stopAttack()
 {
     inCombat = false;
 
-    m_creature->CastStop(true);
-    m_creature->AttackStop();
-
-    m_creature->GetMotionMaster()->MoveTargetedHome();
+    if (IsInCombat())
+    {
+        m_creature->CastStop(true);
+        m_creature->AttackStop();
+        if (!m_creature->IsInUnitState(UNIT_ACTION_HOME))
+            m_creature->GetMotionMaster()->MoveTargetedHome();
+    }
 }
 
 void PetAI::UpdateAI(const uint32 diff)
@@ -501,15 +507,28 @@ void PetAI::UpdateAI(const uint32 diff)
                 m_attackDistanceRecheckTimer -= diff;
         }
     }
-    else if (owner && m_creature->GetCharmInfo())
+    else if (owner && owner->IsInCombat())
     {
-        if (owner->isInCombat() && owner->getVictim() && owner->getVictim()->isAlive() &&
-            !(m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT,REACT_PASSIVE) || m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND,COMMAND_STAY)))
+        switch (m_creature->GetCharmState(CHARM_STATE_REACT))
         {
-            AttackStart(owner->getAttackerForHelper());
+            case REACT_DEFENSIVE:
+            {
+                if (!m_creature->getVictim() 
+                    || !m_creature->getVictim()->isAlive() 
+                    || (owner->getVictim() != m_creature->getVictim() && owner->getVictim()->isAlive()))
+                    AttackStart(owner->getAttackerForHelper());
+                break;
+            }
+            case REACT_AGGRESSIVE:
+            {
+                if (!m_creature->getVictim() || !m_creature->getVictim()->isAlive())
+                    AttackStart(owner->getAttackerForHelper());
+                break;
+            }
+            case REACT_PASSIVE:
+            default:
+                break;
         }
-        else 
-            m_creature->GetMotionMaster()->MoveTargetedHome();
     }
 
     UpdateAIType();

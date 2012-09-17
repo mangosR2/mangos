@@ -361,7 +361,7 @@ void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horiz
     init.SetVelocity(horizontalSpeed);
     init.SetFacing(o);
     if (!eject)
-        init.SetTransportExit();
+        init.SetExitVehicle();
     init.Launch();
     Mutate(new EjectMovementGenerator(0), UNIT_ACTION_EFFECT);
 }

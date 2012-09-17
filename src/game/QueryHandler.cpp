@@ -453,7 +453,7 @@ void WorldSession::HandleQueryQuestsCompletedOpcode( WorldPacket & /*recv_data *
     WorldPacket data(SMSG_ALL_QUESTS_COMPLETED, 4+4*count);
     data << uint32(count);
 
-    for(QuestStatusMap::const_iterator itr = _player->getQuestStatusMap().begin(); itr != _player->getQuestStatusMap().end(); ++itr)
+    for(QuestStatusMap::const_iterator itr = _player->GetQuestStatusMap().begin(); itr != _player->GetQuestStatusMap().end(); ++itr)
     {
         if(itr->second.m_rewarded)
         {

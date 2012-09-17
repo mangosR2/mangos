@@ -1548,7 +1548,8 @@ class MANGOS_DLL_SPEC Player : public Unit
             UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED);
         }
 
-        QuestStatusMap& getQuestStatusMap() { return mQuestStatus; };
+        QuestStatusMap const& GetQuestStatusMap() { return mQuestStatus; };
+        QuestStatusData* GetQuestStatusData(uint32 questId);
 
         ObjectGuid const& GetSelectionGuid( ) const { return m_curSelectionGuid; }
         void SetSelectionGuid(ObjectGuid guid) { m_curSelectionGuid = guid; SetTargetGuid(guid); }

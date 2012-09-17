@@ -1888,6 +1888,7 @@ void SpellMgr::LoadSpellLinked()
         bar.step();
         uint32 entry       = fields[0].GetUInt32();
         uint32 linkedEntry = fields[1].GetUInt32();
+        uint32 uitype      = fields[2].GetUInt32();
 
         SpellEntry const* spell = sSpellStore.LookupEntry(entry);
         SpellEntry const* spell1 = sSpellStore.LookupEntry(linkedEntry);
@@ -1903,6 +1904,14 @@ void SpellMgr::LoadSpellLinked()
             continue;
         }
 
+        if (uitype >= SPELL_LINKED_TYPE_MAX)
+        {
+            sLog.outErrorDb("Spell %u has no valid type %u", entry, uitype);
+            continue;
+        }
+
+        SpellLinkedType type = SpellLinkedType(uitype);
+
         uint32 first_id = GetFirstSpellInChain(entry);
 
         if ( first_id != entry )
@@ -1914,7 +1923,7 @@ void SpellMgr::LoadSpellLinked()
 
         data.spellId      = entry;
         data.linkedId     = linkedEntry;
-        data.type         = fields[2].GetUInt32();
+        data.type         = type;
         data.effectMask   = fields[3].GetUInt32();
 
         mSpellLinkedMap.insert(SpellLinkedMap::value_type(entry,data));
@@ -2541,6 +2550,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 50988:                                 // Glare of the Tribunal (Halls of Stone)
                 case 51146:                                 // Searching Gaze (Halls Of Stone)
                 case 52438:                                 // Summon Skittering Swarmer (Azjol Nerub,  Krik'thir the Gatewatcher)
+                case 52449:                                 // Summon Skittering Infector (Azjol Nerub,  Krik'thir the Gatewatcher)
                 case 53457:                                 // Impale (Azjol Nerub,  Anub'arak)
                 case 54148:                                 // Ritual of the Sword (Utgarde Pinnacle, Svala)
                 case 55479:                                 // Forced Obedience (Naxxramas, Razovius)
@@ -5396,9 +5406,9 @@ void SpellMgr::LoadSpellDbc()
             sLog.outErrorDb("SpellMgr::LoadSpellDbc Loading Spell Template for spell %u, index out of bounds (max = %u)", i, sSpellStore.GetNumRows());
             continue;
         }
-        else if (SpellEntry const* originalSpellEntry = sSpellStore.LookupEntry(i))
+        else if (/*SpellEntry const* originalSpellEntry = */sSpellStore.LookupEntry(i))
         {
-            sLog.outDetail("SpellMgr::LoadSpellDbc Index %u already exists in SpellStorage! replacing on spell_dbc data fields!", i, spellEntry->Id);
+            sLog.outDetail("SpellMgr::LoadSpellDbc Index %u already exists in SpellStorage! replacing on spell_dbc data fields!", i);
             sSpellStore.EraseEntry(i);
             sSpellStore.InsertEntry(const_cast<SpellEntry*>(spellEntry), i);
         }

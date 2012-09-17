@@ -369,6 +369,14 @@ struct DoPetCastWithHelper
     SpellEntry const* spellInfo;
 };
 
+struct AttackedByHelper
+{
+    explicit AttackedByHelper(Unit* _attacker) : attacker(_attacker)
+    {}
+    void operator()(Unit* unit) const { unit->AttackedBy(attacker); };
+    Unit* attacker;
+};
+
 typedef std::map<uint32,std::string> KnownPetNames;
 
 #endif

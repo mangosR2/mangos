@@ -184,6 +184,9 @@ ObjectMgr::~ObjectMgr()
 
     for (CacheTrainerSpellMap::iterator itr = m_mCacheTrainerSpellMap.begin(); itr != m_mCacheTrainerSpellMap.end(); ++itr)
         itr->second.Clear();
+
+    for (PetScalingDataMap::iterator itr = m_PetScalingData.begin(); itr != m_PetScalingData.end(); ++itr)
+        delete itr->second;
 }
 
 Group* ObjectMgr::GetGroupById(uint32 id) const
@@ -3888,7 +3891,7 @@ void ObjectMgr::LoadGroups()
             uint32 mapId = fields[1].GetUInt32();
             Difficulty diff = (Difficulty)fields[4].GetUInt8();
             uint32 groupId = fields[7].GetUInt32();
-            uint64 resetTime = fields[5].GetUInt64();
+            time_t resetTime = fields[5].GetUInt64();
             uint32 encountersMask = fields[8].GetUInt32();
 
             if (!group || group->GetId() != groupId)
@@ -3915,7 +3918,7 @@ void ObjectMgr::LoadGroups()
                 diff = REGULAR_DIFFICULTY;                  // default for both difficaly types
             }
 
-            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), Difficulty(diff), (time_t)fields[5].GetUInt64(), (fields[6].GetUInt32() == 0), true, true, fields[8].GetUInt32());
+            DungeonPersistentState *state = (DungeonPersistentState*)sMapPersistentStateMgr.AddPersistentState(mapEntry, fields[2].GetUInt32(), Difficulty(diff), resetTime, (fields[6].GetUInt32() == 0), true, true, encountersMask);
             group->BindToInstance(state, fields[3].GetBool(), true);
 
         }while( result->NextRow() );
@@ -7273,7 +7276,7 @@ void ObjectMgr::LoadSpellTemplate()
             sLog.outErrorDb("Loading Spell Template for spell %u, index out of bounds (max = %u)", i, sSpellStore.GetNumRows());
             continue;
         }
-        else if (SpellEntry const* originalSpellEntry = sSpellStore.LookupEntry(i))
+        else if (/*SpellEntry const* originalSpellEntry = */sSpellStore.LookupEntry(i))
         {
             sLog.outErrorDb("Loading Spell Template for spell %u failed, index already handled (possible in spell_dbc)", i);
             continue;

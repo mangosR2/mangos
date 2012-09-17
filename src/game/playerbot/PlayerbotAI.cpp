@@ -2179,9 +2179,9 @@ void PlayerbotAI::SetQuestNeedCreatures()
         if (questid == 0)
             continue;
 
-        QuestStatusData &qData = m_bot->getQuestStatusMap()[questid];
+        QuestStatusData* qData = m_bot->GetQuestStatusData(questid);
         // only check quest if it is incomplete
-        if (qData.m_status != QUEST_STATUS_INCOMPLETE)
+        if (!qData || qData->m_status != QUEST_STATUS_INCOMPLETE)
             continue;
 
         Quest const* qInfo = sObjectMgr.GetQuestTemplate(questid);
@@ -2191,9 +2191,9 @@ void PlayerbotAI::SetQuestNeedCreatures()
         // All creature/GO slain/casted (not required, but otherwise it will display "Creature slain 0/10")
         for (int i = 0; i < QUEST_OBJECTIVES_COUNT; i++)
         {
-            if (!qInfo->ReqCreatureOrGOCount[i] || (qInfo->ReqCreatureOrGOCount[i] - qData.m_creatureOrGOcount[i]) <= 0)
+            if (!qInfo->ReqCreatureOrGOCount[i] || (qInfo->ReqCreatureOrGOCount[i] - qData->m_creatureOrGOcount[i]) <= 0)
                 continue;
-            m_needCreatureOrGOList[qInfo->ReqCreatureOrGOId[i]] = (qInfo->ReqCreatureOrGOCount[i] - qData.m_creatureOrGOcount[i]);
+            m_needCreatureOrGOList[qInfo->ReqCreatureOrGOId[i]] = (qInfo->ReqCreatureOrGOCount[i] - qData->m_creatureOrGOcount[i]);
         }
     }
 }
@@ -2210,9 +2210,9 @@ void PlayerbotAI::SetQuestNeedItems()
         if (questid == 0)
             continue;
 
-        QuestStatusData &qData = m_bot->getQuestStatusMap()[questid];
+        QuestStatusData* qData = m_bot->GetQuestStatusData(questid);
         // only check quest if it is incomplete
-        if (qData.m_status != QUEST_STATUS_INCOMPLETE)
+        if (!qData || qData->m_status != QUEST_STATUS_INCOMPLETE)
             continue;
 
         Quest const* qInfo = sObjectMgr.GetQuestTemplate(questid);
@@ -2222,9 +2222,9 @@ void PlayerbotAI::SetQuestNeedItems()
         // check for items we not have enough of
         for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; i++)
         {
-            if (!qInfo->ReqItemCount[i] || (qInfo->ReqItemCount[i] - qData.m_itemcount[i]) <= 0)
+            if (!qInfo->ReqItemCount[i] || (qInfo->ReqItemCount[i] - qData->m_itemcount[i]) <= 0)
                 continue;
-            m_needItemList[qInfo->ReqItemId[i]] = (qInfo->ReqItemCount[i] - qData.m_itemcount[i]);
+            m_needItemList[qInfo->ReqItemId[i]] = (qInfo->ReqItemCount[i] - qData->m_itemcount[i]);
         }
     }
 }
@@ -3381,7 +3381,7 @@ bool PlayerbotAI::IsInRange(Unit* Target, uint32 spellId)
         return false;
 
     // TODO: ugly line of code
-    if (TempRange->minRange == TempRange->maxRange == 0.0f)
+    if ((TempRange->minRange == TempRange->maxRange) && (TempRange->maxRange == 0.0f))
         return true;
 
     //Unit is out of range of this spell

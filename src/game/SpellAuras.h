@@ -196,7 +196,7 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         ~SpellAuraHolder();
 
     private:
-        void AddAura(Aura aura, SpellEffectIndex index);
+        void AddAura(Aura const& aura, SpellEffectIndex index);
 
         SpellEntry const* m_spellProto;
 

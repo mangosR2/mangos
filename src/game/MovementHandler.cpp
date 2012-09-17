@@ -312,7 +312,6 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
 void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
 {
     uint32 opcode = recv_data.GetOpcode();
-    DEBUG_LOG("WORLD: Recvd %s (%u, 0x%X) opcode", LookupOpcodeName(opcode), opcode, opcode);
 
     /* extract packet */
     ObjectGuid guid;
@@ -323,6 +322,9 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
     recv_data >> Unused<uint32>();                          // counter or moveEvent
     recv_data >> movementInfo;
     recv_data >> newspeed;
+
+    DEBUG_LOG("WORLD: Recvd %s (%u, 0x%X) opcode, unit %s new speed %u ", LookupOpcodeName(opcode), opcode, opcode,
+        guid ? guid.GetString().c_str() : "<none>", newspeed);
 
     // now can skip not our packet
     if(_player->GetObjectGuid() != guid)

@@ -601,7 +601,7 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setDirty(true);
                 }
                 if (getOwner() && getOwner()->IsInWorld())
-                    if (Unit* target = getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
+                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
                         getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
@@ -625,7 +625,7 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
             if(hostileReference->isOnline())
             {
                 if (getOwner() && getOwner()->IsInWorld())
-                    if (Unit* target = getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
+                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
                         getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;

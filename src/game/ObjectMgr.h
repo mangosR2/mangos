@@ -1235,6 +1235,10 @@ class ObjectMgr
         uint32 GetModelForRace(uint32 sourceModelId, uint32 racemask);
     protected:
 
+        // initial free low guid for selected guid type for map local guids
+        uint32 m_FirstTemporaryCreatureGuid;
+        uint32 m_FirstTemporaryGameObjectGuid;
+
         // first free id for selected id type
         IdGenerator<uint32> m_ArenaTeamIds;
         IdGenerator<uint32> m_AuctionIds;
@@ -1242,10 +1246,6 @@ class ObjectMgr
         IdGenerator<uint32> m_GuildIds;
         IdGenerator<uint32> m_MailIds;
         IdGenerator<uint32> m_PetNumbers;
-
-        // initial free low guid for selected guid type for map local guids
-        uint32 m_FirstTemporaryCreatureGuid;
-        uint32 m_FirstTemporaryGameObjectGuid;
 
         // guids from reserved range for use in .npc add/.gobject add commands for adding new static spawns (saved in DB) from client.
         ObjectGuidGenerator<HIGHGUID_UNIT>        m_StaticCreatureGuids;

@@ -576,7 +576,7 @@ void Spell::FillTargetMap()
                     switch(m_spellInfo->EffectImplicitTargetB[i])
                     {
                         case TARGET_NONE:
-                            if (m_caster->GetObjectGuid().IsPet())
+                            if (m_caster->GetObjectGuid().IsPet() && m_spellInfo->TargetCreatureType == CREATURE_TYPEMASK_NONE)
                                 SetTargetMap(SpellEffectIndex(i), TARGET_SELF, tmpUnitLists[i /*==effToIndex[i]*/]);
                             else
                                 SetTargetMap(SpellEffectIndex(i), TARGET_EFFECT_SELECT, tmpUnitLists[i /*==effToIndex[i]*/]);
@@ -762,7 +762,7 @@ void Spell::FillTargetMap()
         {
             if (Unit* pMagnetTarget = m_caster->SelectMagnetTarget(*tmpUnitLists[effToIndex[i]].begin(), this, SpellEffectIndex(i)))
             {
-                if (pMagnetTarget != *tmpUnitLists[effToIndex[i]].begin())
+                if (pMagnetTarget && pMagnetTarget != *tmpUnitLists[effToIndex[i]].begin())
                 {
                     tmpUnitLists[effToIndex[i]].clear();
                     tmpUnitLists[effToIndex[i]].push_back(pMagnetTarget);
@@ -770,7 +770,7 @@ void Spell::FillTargetMap()
                 }
             }
         }
-
+        GuidList currentTargets;
         for (UnitList::iterator itr = tmpUnitLists[effToIndex[i]].begin(); itr != tmpUnitLists[effToIndex[i]].end();)
         {
             if (!CheckTarget(*itr, SpellEffectIndex(i)))
@@ -779,11 +779,17 @@ void Spell::FillTargetMap()
                 continue;
             }
             else
+            {
+                currentTargets.push_back((*itr)->GetObjectGuid());
                 ++itr;
+            }
         }
 
-        for (UnitList::const_iterator iunit = tmpUnitLists[effToIndex[i]].begin(); iunit != tmpUnitLists[effToIndex[i]].end(); ++iunit)
-            AddUnitTarget((*iunit), SpellEffectIndex(i));
+        if (!currentTargets.empty())
+        {
+            for (GuidList::const_iterator iguid = currentTargets.begin(); iguid != currentTargets.end(); ++iguid)
+                AddTarget((*iguid), SpellEffectIndex(i));
+        }
     }
 }
 
@@ -1022,13 +1028,50 @@ this piece of code make delayed stun and other effects for charge-like spells. s
         target.reflectResult = SPELL_MISS_NONE;
 
     // Add target to list
+    // valgrind says, that memleak here. need research...
     m_UniqueTargetInfo.push_back(target);
 }
 
-void Spell::AddUnitTarget(ObjectGuid unitGuid, SpellEffectIndex effIndex)
+void Spell::AddTarget(ObjectGuid targetGuid, SpellEffectIndex effIndex)
 {
-    if (Unit* unit = m_caster->GetObjectGuid() == unitGuid ? m_caster : ObjectAccessor::GetUnit(*m_caster, unitGuid))
-        AddUnitTarget(unit, effIndex);
+    if (targetGuid.IsEmpty())
+        return;
+
+    switch(targetGuid.GetHigh())
+    {
+        case HIGHGUID_UNIT:
+        case HIGHGUID_VEHICLE:
+        case HIGHGUID_PET:
+        case HIGHGUID_PLAYER:
+        {
+            // Only for speedup (may be removed later)
+            if (m_caster->GetObjectGuid() == targetGuid)
+                AddUnitTarget(m_caster, effIndex);
+            else if (Unit* unit = m_caster->GetMap()->GetUnit(targetGuid))
+                AddUnitTarget(unit, effIndex);
+            break;
+        }
+        case HIGHGUID_GAMEOBJECT:
+        case HIGHGUID_TRANSPORT:
+        case HIGHGUID_DYNAMICOBJECT:
+        case HIGHGUID_MO_TRANSPORT:
+        {
+            if (GameObject* object = m_caster->GetMap()->GetGameObject(targetGuid))
+                AddGOTarget(object, effIndex);
+            break;
+        }
+        case HIGHGUID_CORPSE:
+        case HIGHGUID_ITEM:
+        {
+            sLog.outError("Spell::AddTarget currently this type of targets (%s) supported by another way!", targetGuid.GetString().c_str());
+            break;
+        }
+        HIGHGUID_INSTANCE:
+        HIGHGUID_GROUP:  
+        default:
+            sLog.outError("Spell::AddTarget unhandled type of spell target (%s)!", targetGuid.GetString().c_str());
+            break;
+    }
 }
 
 void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
@@ -1088,12 +1131,6 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
 
     // Add target to list
     m_UniqueGOTargetInfo.push_back(target);
-}
-
-void Spell::AddGOTarget(ObjectGuid goGuid, SpellEffectIndex effIndex)
-{
-    if (GameObject* go = m_caster->GetMap()->GetGameObject(goGuid))
-        AddGOTarget(go, effIndex);
 }
 
 void Spell::AddItemTarget(Item* pitem, SpellEffectIndex effIndex)
@@ -1498,8 +1535,6 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         m_spellAuraHolder->setDiminishGroup(m_diminishGroup);
         m_spellAuraHolder->SetInUse(true);
     }
-    else
-        m_spellAuraHolder = SpellAuraHolderPtr(NULL);
 
     for(int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
     {
@@ -1801,7 +1836,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 targetUnitMap.push_back(m_caster);
             break;
         }
-        case TARGET_91:
+        case TARGET_DEST_RADIUS:
         case TARGET_RANDOM_NEARBY_DEST:
         {
             // Get a random point IN the CIRCEL around current M_TARGETS COORDINATES(!).
@@ -2994,12 +3029,11 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 case SPELL_EFFECT_DUMMY:
                 {
-
                     if (m_targets.getUnitTarget())
                         targetUnitMap.push_back(m_targets.getUnitTarget());
 
                     // Add AoE target-mask to self, if no target-dest provided already
-                    if ((m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) == 0)
+                    if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
                         m_targets.setDestination(m_caster->GetPositionX(), m_caster->GetPositionY(), m_caster->GetPositionZ());
                     break;
                 }
@@ -5786,6 +5820,8 @@ SpellCastResult Spell::CheckCast(bool strict)
         // for effects of spells that have only one target
         switch(m_spellInfo->Effect[i])
         {
+            case SPELL_EFFECT_NONE:
+                continue;
             case SPELL_EFFECT_INSTAKILL:
                 break;
             case SPELL_EFFECT_DUMMY:
@@ -5820,30 +5856,29 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_TOTEMS;
                 }
                 // Voracious Appetite && Cannibalize && Carrion Feeder
-                else if (strict /*only in first check!*/
-                    && m_spellInfo->HasAttribute(SPELL_ATTR_ABILITY)
-                    && m_spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET)
-                    && m_spellInfo->TargetCreatureType != CREATURE_TYPEMASK_NONE)
+                else if (m_UniqueTargetInfo.empty() /*only in first check!*/
+                    && (m_spellInfo->Id == 20577 || m_spellInfo->Id == 52749 || m_spellInfo->Id == 54044))
                 {
+                    m_targets.setUnitTarget(NULL);
                     WorldObject* result = FindCorpseUsing<MaNGOS::CannibalizeObjectCheck>(m_spellInfo->TargetCreatureType);
-                    if (result)
+                    if (result && result->IsInWorld())
                     {
-                        switch(result->GetTypeId())
+                        switch (result->GetTypeId())
                         {
                             case TYPEID_UNIT:
                             case TYPEID_PLAYER:
                                 m_targets.setUnitTarget((Unit*)result);
                                 break;
                             case TYPEID_CORPSE:
-                                m_targets.setCorpseTarget((Corpse*)result);
                                 if (Player* owner = ObjectAccessor::FindPlayer(((Corpse*)result)->GetOwnerGuid()))
-                                    m_targets.setUnitTarget(owner);
+                                    if (owner->IsInMap(m_caster) && !owner->isAlive())
+                                        m_targets.setUnitTarget((Unit*)owner);
                                 break;
                             default:
                                 return SPELL_FAILED_NO_EDIBLE_CORPSES;
                         }
                     }
-                    else
+                    if (!m_targets.getUnitTarget())
                         return SPELL_FAILED_NO_EDIBLE_CORPSES;
                 }
                 break;
@@ -7683,8 +7718,11 @@ bool Spell::CheckTargetBeforeLimitation(Unit* target, SpellEffectIndex eff)
     return true;
 }
 
-bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
+bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff )
 {
+    if (!target)
+        return false;
+
     // Check targets for creature type mask and remove not appropriate (skip explicit self target case, maybe need other explicit targets)
     if (m_spellInfo->EffectImplicitTargetA[eff] != TARGET_SELF )
     {
@@ -7769,11 +7807,7 @@ bool Spell::CheckTarget( Unit* target, SpellEffectIndex eff )
                 return false;
             break;
         case SPELL_EFFECT_DUMMY:
-            if (!m_spellInfo->HasAttribute(SPELL_ATTR_ABILITY)
-                || !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET)
-                || m_spellInfo->TargetCreatureType == CREATURE_TYPEMASK_NONE)
-            break;                                          // Cannibalize-like spell bundle
-            /* no break - fall through*/
+            break;
         case SPELL_EFFECT_RESURRECT_NEW:
             // player far away, maybe his corpse near?
             if (target != m_caster && !target->IsVisibleTargetForSpell(m_caster, m_spellInfo))
@@ -8192,6 +8226,17 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 64804:
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_AOE_DAMAGE);
+            break;
+        }
+        // Voracious Appetite && Cannibalize && Carrion Feeder additional check
+        case 20577:
+        case 52748:
+        case 54044:
+        {
+            if (m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
+                targetUnitMap.push_back(m_targets.getUnitTarget());
+            else
+                targetUnitMap.clear();
             break;
         }
         case 28374: // Decimate - Gluth encounter

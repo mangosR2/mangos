@@ -2583,7 +2583,6 @@ bool ChatHandler::HandlePInfoCommand(char* args)
     uint8 race = 0;
     uint8 Class = 0;
     uint32 latency = 0;
-    uint32 realmID = sConfig.GetIntDefault("RealmId", 0);
 
     // get additional information from Player object
     if (target)

@@ -134,7 +134,7 @@ enum CharacterCustomizeFlags
 #define DEATH_EXPIRE_STEP (5*MINUTE)
 #define MAX_DEATH_COUNT 3
 
-static uint32 copseReclaimDelay[MAX_DEATH_COUNT] = { 30, 60, 120 };
+static const uint32 corpseReclaimDelay[MAX_DEATH_COUNT] = {30, 60, 120};
 
 //== PlayerTaxi ================================================
 
@@ -971,10 +971,6 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
 {
     if(!isAlive() || isGameMaster())
         return 0;
-
-    // Absorb, resist some environmental damage type
-    uint32 absorb = 0;
-    uint32 resist = 0;
 
     //16455 lava, 16456 slime
     uint32 spellID = 0;
@@ -11217,7 +11213,6 @@ Item* Player::StoreItem( ItemPosCountVec const& dest, Item* pItem, bool update )
         return NULL;
 
     Item* lastItem = pItem;
-    uint32 entry = pItem->GetEntry();
 
     for(ItemPosCountVec::const_iterator itr = dest.begin(); itr != dest.end(); )
     {
@@ -14127,8 +14122,9 @@ void Player::AddQuest( Quest const *pQuest, Object *questGiver )
         uint32 limittime = pQuest->GetLimitTime();
 
         // shared timed quest
-        if (questGiver && questGiver->GetTypeId()==TYPEID_PLAYER)
-            limittime = ((Player*)questGiver)->getQuestStatusMap()[quest_id].m_timer / IN_MILLISECONDS;
+        if (questGiver && questGiver->GetTypeId() == TYPEID_PLAYER)
+            if (QuestStatusData* data = ((Player*)questGiver)->GetQuestStatusData(quest_id))
+                limittime = data->m_timer / IN_MILLISECONDS;
 
         AddTimedQuest( quest_id );
         questStatusData.m_timer = limittime * IN_MILLISECONDS;
@@ -14915,9 +14911,9 @@ bool Player::GetQuestRewardStatus( uint32 quest_id ) const
     return false;
 }
 
-QuestStatus Player::GetQuestStatus( uint32 quest_id ) const
+QuestStatus Player::GetQuestStatus(uint32 quest_id) const
 {
-    if ( quest_id )
+    if (quest_id)
     {
         QuestStatusMap::const_iterator itr = mQuestStatus.find( quest_id );
         if ( itr != mQuestStatus.end() )
@@ -14925,6 +14921,12 @@ QuestStatus Player::GetQuestStatus( uint32 quest_id ) const
     }
     return QUEST_STATUS_NONE;
 }
+
+QuestStatusData* Player::GetQuestStatusData(uint32 questId)
+{
+    QuestStatusMap::iterator itr = mQuestStatus.find(questId);
+    return itr == mQuestStatus.end() ? NULL : &itr->second;
+};
 
 bool Player::CanShareQuest(uint32 quest_id) const
 {
@@ -15891,7 +15893,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder )
 
     // player bounded instance saves loaded in _LoadBoundInstances, group versions at group loading
     DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(savedLocation.mapid);
-    Map* targetMap = sMapMgr.FindMap(savedLocation.mapid, state ? state->GetInstanceId() : 0);
+//    Map* targetMap = sMapMgr.FindMap(savedLocation.mapid, state ? state->GetInstanceId() : 0);
 
     if (m_bgData.bgInstanceID)                              //saved in BattleGround
     {
@@ -16709,6 +16711,7 @@ void Player::_LoadInventory(QueryResult *result, uint32 timediff)
                         looters.insert(atol(*itr));
                     item->SetSoulboundTradeable(&looters, this, true);
                     m_itemSoulboundTradeable.push_back(item);
+                    delete result;
                 }
             }
 
@@ -18300,9 +18303,14 @@ void Player::_SaveQuestStatus()
     static SqlStatementID updateQuestStatus ;
 
     // we don't need transactions here.
-    for( QuestStatusMap::iterator i = mQuestStatus.begin( ); i != mQuestStatus.end( ); ++i )
+    for (QuestStatusMap::const_iterator i = GetQuestStatusMap().begin(); i != GetQuestStatusMap().end(); ++i)
     {
-        switch (i->second.uState)
+        QuestStatusData const* data = &i->second;
+        if (!data)
+            continue;
+        uint32 questID              = i->first;
+
+        switch (data->uState)
         {
             case QUEST_NEW :
                 {
@@ -18310,16 +18318,18 @@ void Player::_SaveQuestStatus()
                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
                     stmt.addUInt32(GetGUIDLow());
-                    stmt.addUInt32(i->first);
-                    stmt.addUInt8(i->second.m_status);
-                    stmt.addUInt8(i->second.m_rewarded);
-                    stmt.addUInt8(i->second.m_explored);
-                    stmt.addUInt64(uint64(i->second.m_timer / IN_MILLISECONDS+ sWorld.GetGameTime()));
+                    stmt.addUInt32(questID);
+                    stmt.addUInt8(data->m_status);
+                    stmt.addUInt8(data->m_rewarded);
+                    stmt.addUInt8(data->m_explored);
+                    stmt.addUInt64(uint64(data->m_timer / IN_MILLISECONDS+ sWorld.GetGameTime()));
                     for (int k = 0; k < QUEST_OBJECTIVES_COUNT; ++k)
-                        stmt.addUInt32(i->second.m_creatureOrGOcount[k]);
+                        stmt.addUInt32(data->m_creatureOrGOcount[k]);
                     for (int k = 0; k < QUEST_ITEM_OBJECTIVES_COUNT; ++k)
-                        stmt.addUInt32(i->second.m_itemcount[k]);
+                        stmt.addUInt32(data->m_itemcount[k]);
                     stmt.Execute();
+                    if (QuestStatusData* _data = GetQuestStatusData(questID))
+                        _data->uState = QUEST_UNCHANGED;
                 }
                 break;
             case QUEST_CHANGED :
@@ -18327,23 +18337,25 @@ void Player::_SaveQuestStatus()
                     SqlStatement stmt = CharacterDatabase.CreateStatement(updateQuestStatus, "UPDATE character_queststatus SET status = ?,rewarded = ?,explored = ?,timer = ?,"
                         "mobcount1 = ?,mobcount2 = ?,mobcount3 = ?,mobcount4 = ?,itemcount1 = ?,itemcount2 = ?,itemcount3 = ?,itemcount4 = ?,itemcount5 = ?,itemcount6 = ? WHERE guid = ? AND quest = ?");
 
-                    stmt.addUInt8(i->second.m_status);
-                    stmt.addUInt8(i->second.m_rewarded);
-                    stmt.addUInt8(i->second.m_explored);
-                    stmt.addUInt64(uint64(i->second.m_timer / IN_MILLISECONDS + sWorld.GetGameTime()));
+                    stmt.addUInt8(data->m_status);
+                    stmt.addUInt8(data->m_rewarded);
+                    stmt.addUInt8(data->m_explored);
+                    stmt.addUInt64(uint64(data->m_timer / IN_MILLISECONDS + sWorld.GetGameTime()));
                     for (int k = 0; k < QUEST_OBJECTIVES_COUNT; ++k)
-                        stmt.addUInt32(i->second.m_creatureOrGOcount[k]);
+                        stmt.addUInt32(data->m_creatureOrGOcount[k]);
                     for (int k = 0; k < QUEST_ITEM_OBJECTIVES_COUNT; ++k)
-                        stmt.addUInt32(i->second.m_itemcount[k]);
+                        stmt.addUInt32(data->m_itemcount[k]);
                     stmt.addUInt32(GetGUIDLow());
-                    stmt.addUInt32(i->first);
+                    stmt.addUInt32(questID);
                     stmt.Execute();
+                    if (QuestStatusData* _data = GetQuestStatusData(questID))
+                        _data->uState = QUEST_UNCHANGED;
                 }
                 break;
             case QUEST_UNCHANGED:
+            default:
                 break;
         };
-        i->second.uState = QUEST_UNCHANGED;
     }
 }
 
@@ -21839,13 +21851,13 @@ uint32 Player::GetCorpseReclaimDelay(bool pvp) const
     if ((pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVP)) ||
        (!pvp && !sWorld.getConfig(CONFIG_BOOL_DEATH_CORPSE_RECLAIM_DELAY_PVE) ))
     {
-        return copseReclaimDelay[0];
+        return corpseReclaimDelay[0];
     }
 
     time_t now = time(NULL);
     // 0..2 full period
-    uint32 count = (now < m_deathExpireTime) ? uint32((m_deathExpireTime - now)/DEATH_EXPIRE_STEP) : 0;
-    return copseReclaimDelay[count];
+    uint32 count = (now < m_deathExpireTime) ? uint32((m_deathExpireTime - now) / DEATH_EXPIRE_STEP) : 0;
+    return corpseReclaimDelay[count];
 }
 
 void Player::UpdateCorpseReclaimDelay()
@@ -21895,7 +21907,7 @@ void Player::SendCorpseReclaimDelay(bool load)
         else
             count=0;
 
-        time_t expected_time = corpse->GetGhostTime()+copseReclaimDelay[count];
+        time_t expected_time = corpse->GetGhostTime() + corpseReclaimDelay[count];
 
         time_t now = time(NULL);
         if (now >= expected_time)
@@ -24044,16 +24056,16 @@ void Player::LoadAccountLinkedState()
         if (referredAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS))
             sLog.outError("Player:RAF:Warning: loaded %u referred accounts instead of %u for player %s",referredAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %u",referredAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %s",referredAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 
     RafLinkedList const* referalAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
     if (referalAccounts)
     {
         if (referalAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS))
-            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %u",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
+            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %s",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %u",referalAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %s",referalAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 }
 
