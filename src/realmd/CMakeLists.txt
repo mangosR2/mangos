@@ -17,9 +17,9 @@
 #
 
 if(NOT UNIX)
-  set(EXECUTABLE_NAME realmd)
+  set(EXECUTABLE_NAME login)
 else()
-  set(EXECUTABLE_NAME mangos-realmd)
+  set(EXECUTABLE_NAME spp-login)
 endif()
 
 file(GLOB_RECURSE EXECUTABLE_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.h)
