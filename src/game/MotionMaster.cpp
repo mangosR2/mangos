@@ -116,7 +116,7 @@ void MotionMaster::MoveTargetedHome()
                 case COMMAND_FOLLOW:
                 case COMMAND_ATTACK:
                 default:
-                    Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,angle), UNIT_ACTION_HOME);
+                    Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,angle), UNIT_ACTION_DOWAYPOINTS);
                     break;
             }
         }

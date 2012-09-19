@@ -356,6 +356,7 @@ void PetAI::EnterEvadeMode()
 {
     Reset();
     UpdateAIType();
+    m_creature->GetMotionMaster()->MoveTargetedHome();
 }
 
 bool PetAI::IsVisible(Unit *pl) const

@@ -78,6 +78,7 @@ struct Position
 {
     Position() : x(0.0f), y(0.0f), z(0.0f), o(0.0f) {}
     Position(float _x, float _y, float _z, float _o) : x(_x), y(_y), z(_z), o(_o) {}
+    virtual ~Position() {};
     union
     {
         float x;
@@ -119,15 +120,15 @@ struct WorldLocation : public Position
     uint32    realmid;
 
     WorldLocation()
-        : mapid(-1), Position(), realmid(0), instance(0)
+        : Position(), mapid(-1), instance(0), realmid(0)
     {}
 
     WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0)
-        : mapid(_mapid), Position(_x, _y, _z, _o), realmid(0), instance(0)
+        : Position(_x, _y, _z, _o), mapid(_mapid), instance(0), realmid(0)
     {}
 
     WorldLocation(uint32 _mapid, uint32 _instance, uint32 _realmid)
-        : mapid(_mapid), instance(_instance), realmid(_realmid), Position()
+        : Position(), mapid(_mapid), instance(_instance), realmid(_realmid)
     {}
 
     WorldLocation(float _x, float _y, float _z, float _o, uint32 _mapid, uint32 _instance, uint32 _realmid)
@@ -135,8 +136,10 @@ struct WorldLocation : public Position
     {}
 
     WorldLocation(WorldLocation const &loc)
-        : mapid(loc.mapid), Position(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation), realmid(loc.realmid), instance(loc.instance) 
+        : Position(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation), mapid(loc.mapid), instance(loc.instance), realmid(loc.realmid)
     {}
+
+    ~WorldLocation() {};
 
     bool operator == (WorldLocation const &loc) const
     {

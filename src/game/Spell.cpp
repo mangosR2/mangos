@@ -5820,8 +5820,6 @@ SpellCastResult Spell::CheckCast(bool strict)
         // for effects of spells that have only one target
         switch(m_spellInfo->Effect[i])
         {
-            case SPELL_EFFECT_NONE:
-                continue;
             case SPELL_EFFECT_INSTAKILL:
                 break;
             case SPELL_EFFECT_DUMMY:
