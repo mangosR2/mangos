@@ -533,7 +533,7 @@ int8 VehicleKit::GetSeatId(Unit* passenger)
 
 void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
 {
-    if (!passenger)
+    if (!passenger || !passenger->IsInWorld() || !GetBase()->IsInWorld())
         return;
 
     float ox, oy, oz, oo;

@@ -615,12 +615,15 @@ ActionInfo* UnitStateMgr::CurrentState()
 
 void UnitStateMgr::DropAllStates()
 {
-    if (!m_actions.empty())
+    // Assume, that if only one action - that IDLE appears (rechecked later).
+    if (m_actions.size() > 1 )
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "UnitStateMgr:DropAllStates %s drop all active states (count = %u)", GetOwnerStr().c_str(), m_actions.size());
         DropActionHigherThen(UNIT_ACTION_PRIORITY_IDLE);
     }
-    PushAction(UNIT_ACTION_IDLE);
+    // Unique action after dropping may be not UNIT_ACTION_IDLE
+    if (m_actions.empty() || GetCurrentState() != UNIT_ACTION_IDLE)
+        PushAction(UNIT_ACTION_IDLE);
 }
 
 std::string const UnitStateMgr::GetOwnerStr() 
