@@ -714,7 +714,7 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
     WorldPacket data(SMSG_ACHIEVEMENT_EARNED, 8 + 4 + 8);
     data << GetPlayer()->GetPackGUID();
     data << uint32(achievement->ID);
-    data << uint32(secsToTimeBitFields(time(NULL)));
+    data.AppendPackedTime(time(NULL));
     data << uint32(0);
     GetPlayer()->SendMessageToSetInRange(&data, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY), true);
 }
@@ -730,7 +730,7 @@ void AchievementMgr::SendCriteriaUpdate(uint32 id, CriteriaProgress const* progr
 
     data << GetPlayer()->GetPackGUID();
     data << uint32(progress->timedCriteriaFailed ? 1 : 0);
-    data << uint32(secsToTimeBitFields(now));
+    data.AppendPackedTime(now);
     data << uint32(now - progress->date);                   // timer 1
     data << uint32(now - progress->date);                   // timer 2
     GetPlayer()->SendDirectMessage(&data);
@@ -3022,7 +3022,7 @@ void AchievementMgr::BuildAllDataPacket(WorldPacket* data)
             continue;
 
         *data << uint32(iter->first);
-        *data << uint32(secsToTimeBitFields(iter->second.date));
+        data->AppendPackedTime(iter->second.date);
     }
     *data << int32(-1);
 
@@ -3033,7 +3033,7 @@ void AchievementMgr::BuildAllDataPacket(WorldPacket* data)
         data->appendPackGUID(iter->second.counter);
         *data << GetPlayer()->GetPackGUID();
         *data << uint32(iter->second.timedCriteriaFailed ? 1 : 0);
-        *data << uint32(secsToTimeBitFields(now));
+        data->AppendPackedTime(now);
         *data << uint32(now - iter->second.date);
         *data << uint32(now - iter->second.date);
     }

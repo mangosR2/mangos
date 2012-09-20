@@ -322,6 +322,15 @@ class ByteBuffer
             return guid;
         }
 
+        uint32 ReadPackedTime();
+
+        ByteBuffer& ReadPackedTime(uint32& time)
+        {
+            time = ReadPackedTime();
+            return *this;
+        }
+
+
         const uint8 *contents() const { return &_storage[0]; }
 
         size_t size() const { return _storage.size(); }
@@ -409,6 +418,8 @@ class ByteBuffer
 
             return append(packGUID, size);
         }
+
+        void AppendPackedTime(time_t time);
 
         void put(size_t pos, const uint8 *src, size_t cnt)
         {

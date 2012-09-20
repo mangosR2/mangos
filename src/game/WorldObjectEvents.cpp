@@ -33,6 +33,12 @@
 
 // Event processor
 
+WorldObjectEventProcessor::WorldObjectEventProcessor()
+{
+    //m_time = WorldTimer::getMSTime();
+    m_events.clear();
+}
+
 void WorldObjectEventProcessor::Update(uint32 p_time, bool force)
 {
     if (force)
@@ -48,6 +54,7 @@ void WorldObjectEventProcessor::KillAllEvents(bool force)
 
     EventProcessor::KillAllEvents(force);
 }
+
 
 void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {

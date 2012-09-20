@@ -38,12 +38,6 @@ std::string secsToTimeString(time_t timeInSecs, bool shortText = false, bool hou
 uint32 TimeStringToSecs(const std::string& timestring);
 std::string TimeToTimestampStr(time_t t);
 
-inline uint32 secsToTimeBitFields(time_t secs)
-{
-    tm* lt = localtime(&secs);
-    return (lt->tm_year - 100) << 24 | lt->tm_mon  << 20 | (lt->tm_mday - 1) << 14 | lt->tm_wday << 11 | lt->tm_hour << 6 | lt->tm_min;
-}
-
 inline time_t timeBitFieldsToTimeStamp(uint32 bits)
 {
     time_t tim = time(NULL);

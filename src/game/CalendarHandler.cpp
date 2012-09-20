@@ -39,7 +39,7 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recv_data*/)
     data << (uint32) 0;                                     // event count
 
     data << uint32(cur_time);                               // current time, unix timestamp
-    data << (uint32) secsToTimeBitFields(cur_time);         // current packed time
+    data.AppendPackedTime(cur_time);                        // current packed time
 
     uint32 counter = 0;
     size_t p_counter = data.wpos();

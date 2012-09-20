@@ -1576,12 +1576,6 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
             unit->AddSpellAuraHolder(m_spellAuraHolder);
             m_spellAuraHolder->SetInUse(false);
         }
-        else
-        {
-            m_spellAuraHolder->SetInUse(false);
-            if (!unit->AddSpellAuraHolderToRemoveList(m_spellAuraHolder))
-                DEBUG_LOG("Spell::DoSpellHitOnUnit cannot insert SpellAuraHolder (spell %u) to remove list!", m_spellAuraHolder ? m_spellAuraHolder->GetId() : 0);
-        }
     }
 }
 
@@ -6794,15 +6788,17 @@ SpellCastResult Spell::CheckCasterAuras() const
 SpellCastResult Spell::CheckCastTargets() const
 {
 
+    if (!IsSpellRequiresTarget(m_spellInfo) || IsSpellWithCasterSourceTargetsOnly(m_spellInfo))
+        return SPELL_CAST_OK;
+
     // Spell without any target
-    if (!IsSpellWithCasterSourceTargetsOnly(m_spellInfo) &&
-        !m_targets.HasLocation() &&
+    if ( !m_targets.HasLocation() &&
         m_UniqueTargetInfo.empty() &&
         m_UniqueGOTargetInfo.empty() &&
         m_UniqueItemInfo.empty())
         return SPELL_FAILED_BAD_TARGETS;
 
-    // check by target mask - NY currently
+    // recheck by target mask - NY currently
     /*
     if (m_targets.m_targetMask & (TARGET_FLAG_DEST_LOCATION | TARGET_FLAG_SRC_LOCATION))
         if (!m_targets.HasLocation())

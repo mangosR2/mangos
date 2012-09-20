@@ -41,7 +41,7 @@ typedef std::queue<std::pair<uint64, BasicEvent*> > EventNewQueue;
 class MANGOS_DLL_SPEC WorldObjectEventProcessor : public EventProcessor
 {
     public:
-        WorldObjectEventProcessor() {};
+        WorldObjectEventProcessor();
         ~WorldObjectEventProcessor() {};
 
         void Update(uint32 p_time, bool force = false);
@@ -49,6 +49,9 @@ class MANGOS_DLL_SPEC WorldObjectEventProcessor : public EventProcessor
         void CleanupEventList();
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
         void RenewEvents();
+
+        uint32 size(bool withQueue = false)  const { return (withQueue ? (m_events.size() + m_queue.size()) :  m_events.size()); };
+        bool   empty() const { return m_events.empty(); };
 
     protected:
         void _AddEvents();
