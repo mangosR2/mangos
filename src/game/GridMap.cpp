@@ -823,14 +823,6 @@ float TerrainInfo::GetHeightStatic(float x, float y, float z, bool pUseVmaps, fl
     else
         vmapHeight = VMAP_INVALID_HEIGHT_VALUE;
 
-    //I thing not need with dynmaicVMaps, I hope someone with ICC-Content can check and REPORT this
-    //hack for LK frozen throne true height
-    if (GetAreaId(x,y,z) == 4859)
-    {
-        mapHeight  += 200.0f;
-        vmapHeight += 200.0f;
-    }
-
     // mapHeight set for any above raw ground Z or <= INVALID_HEIGHT
     // vmapheight set for any under Z value or <= INVALID_HEIGHT
 

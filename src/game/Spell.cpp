@@ -2179,10 +2179,19 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     targetUnitMap.resize(unMaxTargets);
                 }
             }
-            else if (m_spellInfo->Id == 30843)              // Enfeeble (do not target current victim)
+            else
             {
-                if (Unit* pVictim = m_caster->getVictim())
-                    targetUnitMap.remove(pVictim);
+                switch (m_spellInfo->Id)
+                {
+                    case 30843:                                             // Enfeeble
+                    case 37676:                                             // Insidious Whisper
+                    case 38028:                                             // Watery Grave
+                        if (Unit* pVictim = m_caster->getVictim())
+                            targetUnitMap.remove(pVictim);
+                        break;
+                    default:
+                        break;
+                }
             }
             break;
         }
@@ -2616,6 +2625,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 case 3879: pushType = PUSH_IN_BACK;     break;
                 case 7441: pushType = PUSH_IN_FRONT_15; break;
+                case 8669: pushType = PUSH_IN_FRONT_15; break;
             }
             FillAreaTargets(targetUnitMap, radius, pushType, SPELL_TARGETS_AOE_DAMAGE);
             break;
