@@ -116,14 +116,12 @@ void MotionMaster::MoveTargetedHome()
                 case COMMAND_FOLLOW:
                 case COMMAND_ATTACK:
                 default:
-                    Mutate(new FollowMovementGenerator<Creature>(*target,PET_FOLLOW_DIST,angle), UNIT_ACTION_DOWAYPOINTS);
+                    MoveFollow(target, PET_FOLLOW_DIST, angle);
                     break;
             }
         }
         else
-        {
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s attempt but fail to follow owner", m_owner->GetGuidStr().c_str());
-        }
     }
     else
         sLog.outError("MotionMaster: %s attempt targeted home", m_owner->GetGuidStr().c_str());

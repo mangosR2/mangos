@@ -46,6 +46,31 @@ SpellEffectEntry::SpellEffectEntry(const SpellEntry* spellEntry, SpellEffectInde
     EffectIndex                 = i;
 };
 
+SpellEffectEntry::SpellEffectEntry(SpellEffectEntry const& effect)
+{
+    Effect                      = effect.Effect;
+    EffectMultipleValue         = effect.EffectMultipleValue;
+    EffectApplyAuraName         = effect.EffectApplyAuraName;
+    EffectAmplitude             = effect.EffectAmplitude;
+    EffectBasePoints            = effect.EffectBasePoints;
+    DmgMultiplier               = effect.DmgMultiplier;
+    EffectChainTarget           = effect.EffectChainTarget;
+    EffectDieSides              = effect.EffectDieSides;
+    EffectItemType              = effect.EffectItemType;
+    EffectMechanic              = effect.EffectMechanic;
+    EffectMiscValue             = effect.EffectMiscValue;
+    EffectMiscValueB            = effect.EffectMiscValueB;
+    EffectPointsPerComboPoint   = effect.EffectPointsPerComboPoint;
+    EffectRadiusIndex           = effect.EffectRadiusIndex;
+    EffectRealPointsPerLevel    = effect.EffectRealPointsPerLevel;
+    EffectSpellClassMask        = effect.EffectSpellClassMask;
+    EffectTriggerSpell          = effect.EffectTriggerSpell;
+    EffectImplicitTargetA       = effect.EffectImplicitTargetA;
+    EffectImplicitTargetB       = effect.EffectImplicitTargetB;
+    EffectSpellId               = effect.EffectSpellId;
+    EffectIndex                 = effect.EffectIndex;
+};
+
 SpellEffectEntry const* SpellEntry::GetSpellEffect(SpellEffectIndex eff) const
 {
     return GetSpellEffectEntry(Id, eff);

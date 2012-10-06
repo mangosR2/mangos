@@ -527,6 +527,12 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recv_data)
             return;
         }
 
+        // prevent selling item for sellprice when the item is still refundable
+        // this probably happens when right clicking a refundable item, the client sends both
+        // CMSG_SELL_ITEM and CMSG_REFUND_ITEM
+        if (pItem->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
+            return; // Therefore, no feedback to client
+
         // special case at auto sell (sell all)
         if (count == 0)
         {
@@ -1459,7 +1465,7 @@ void WorldSession::HandleSocketOpcode(WorldPacket& recv_data)
 
     _player->ToggleMetaGemsActive(slot, true);              // turn on all metagems (except for target item)
 
-    itemTarget->SetSoulboundTradeable(NULL, _player, false); // clear tradeable flag
+    itemTarget->SetNotSoulboundTradeable(_player);          // clear tradeable flag
 }
 
 void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
@@ -1488,32 +1494,44 @@ void WorldSession::HandleCancelTempEnchantmentOpcode(WorldPacket& recv_data)
 
 void WorldSession::HandleItemRefundInfoRequest(WorldPacket& recv_data)
 {
-    DEBUG_LOG("WORLD: CMSG_ITEM_REFUND_INFO_REQUEST");
+    DEBUG_LOG("WORLD: CMSG_GET_ITEM_REFUND_INFO");
 
     ObjectGuid itemGuid;
     recv_data >> itemGuid;
 
-    Item* item = _player->GetItemByGuid(itemGuid);
-
+    Item* item = GetPlayer()->GetItemByGuid(itemGuid);
     if (!item)
     {
         DEBUG_LOG("Item refund: item not found!");
         return;
     }
 
-    if (!(item->GetProto()->Flags & ITEM_FLAG_REFUNDABLE))
+    GetPlayer()->SendRefundInfo(item);
+}
+
+void WorldSession::HandleItemRefund(WorldPacket &recv_data)
+{
+    DEBUG_LOG("WORLD: CMSG_ITEM_REFUND");
+
+    ObjectGuid itemGuid;
+    recv_data >> itemGuid;
+
+    Item* item = GetPlayer()->GetItemByGuid(itemGuid);
+    if (!item)
     {
-        DEBUG_LOG("Item refund: item not refundable!");
+        DEBUG_LOG("Item refund: item not found!");
         return;
     }
 
-    // item refund system not implemented yet
+    GetPlayer()->RefundItem(item);
 }
 
 /**
  * Handles the packet sent by the client when requesting information about item text.
  *
- * This function is called when player clicks on item which has some flag set
+ * This function is called when client needs mail message body,
+ * SetFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_READABLE | ITEM_DYNFLAG_UNK15 | ITEM_DYNFLAG_UNK16);
+ * or when player clicks on item which has ITEM_FIELD_ITEM_TEXT_ID > 0
  */
 void WorldSession::HandleItemTextQuery(WorldPacket& recv_data)
 {

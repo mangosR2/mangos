@@ -336,7 +336,7 @@ class AchievementGlobalMgr
         // store achievements by referenced achievement id to speed up lookup
         AchievementListByReferencedId m_AchievementListByReferencedId;
 
-        typedef std::set<uint32> AllCompletedAchievements;
+        typedef std::map<uint32, time_t> AllCompletedAchievements;
         AllCompletedAchievements m_allCompletedAchievements;
 
         AchievementRewardsMap       m_achievementRewards;

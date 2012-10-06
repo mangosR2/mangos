@@ -55,7 +55,6 @@ void WorldObjectEventProcessor::KillAllEvents(bool force)
     EventProcessor::KillAllEvents(force);
 }
 
-
 void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {
     if (set_addtime)
@@ -254,6 +253,7 @@ bool RelocationNotifyEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 void RelocationNotifyEvent::Abort(uint64)
 {
     m_owner._SetAINotifyScheduled(false);
+    to_Abort = true;
 };
 
 bool ManaUseEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
@@ -436,6 +436,13 @@ bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         if (!m_vehicle.RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, passenger->GetObjectGuid()))
             passenger->ExitVehicle();
     }
+    return true;
+}
+
+// Player events
+bool TeleportDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    m_owner.TeleportTo(m_location, m_options);
     return true;
 }
 

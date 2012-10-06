@@ -51,21 +51,25 @@ struct VehicleSeat
 
 typedef std::map<int8, VehicleSeat> SeatMap;
 
-struct VehicleAccessory
+enum AcccessoryFlags
 {
-    explicit VehicleAccessory(uint32 _uiAccessory, int32 _uiSeat, bool _bMinion) : uiAccessory(_uiAccessory), uiSeat(_uiSeat), bMinion(_bMinion) 
-    {
-        m_offsetX = m_offsetY = m_offsetZ = m_offsetO = 0.0f;
-    }
-    void Offset(float x, float y, float z, float o = 0.0f) {m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o;};
-    uint32 uiAccessory;
-    int32   uiSeat;
-    bool   bMinion;
-    float m_offsetX, m_offsetY, m_offsetZ, m_offsetO;
+    ACCCESSORY_FLAG_MINION = 0,
+    ACCCESSORY_FLAG_MAX,
 };
 
-typedef std::vector<VehicleAccessory> VehicleAccessoryList;
-typedef std::map<uint32, VehicleAccessoryList> VehicleAccessoryMap;
+struct VehicleAccessory
+{
+    uint32   vehicleEntry;
+    uint32   passengerEntry;
+    int32    seatId;
+    uint32   m_flags;
+    float    m_offsetX;
+    float    m_offsetY;
+    float    m_offsetZ;
+    float    m_offsetO;
+
+    void Offset(float x, float y, float z, float o = 0.0f) {m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o;};
+};
 
 class MANGOS_DLL_SPEC VehicleKit
 {

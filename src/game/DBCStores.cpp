@@ -534,7 +534,7 @@ void LoadDBCStores(const std::string& dataPath)
 
         for (uint8 j = 0; i < MAX_EFFECT_INDEX; ++i)
         {
-            sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = new SpellEffectEntry(spell, SpellEffectIndex(i));
+            sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = SpellEffectEntry(spell, SpellEffectIndex(i));
         }
     }
 
@@ -774,7 +774,7 @@ SpellEffectEntry const* GetSpellEffectEntry(uint32 spellId, SpellEffectIndex eff
     if(itr == sSpellEffectMap.end())
         return NULL;
 
-    return itr->second.effects[effect];
+    return &itr->second.effects[effect];
 }
 
 

@@ -2,24 +2,25 @@
 -- `vehicle_accessory`
 --
 
+DROP TABLE IF EXISTS `vehicle_accessory`;
 CREATE TABLE IF NOT EXISTS `vehicle_accessory` (
-    `entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
-    `accessory_entry` mediumint(8) unsigned NOT NULL DEFAULT '0',
-    `seat_id` mediumint(8) NOT NULL DEFAULT '0',
-    `minion` tinyint(1) unsigned NOT NULL DEFAULT '0',
-    `offset_x` FLOAT NOT NULL DEFAULT '0',
-    `offset_y` FLOAT NOT NULL DEFAULT '0',
-    `offset_z` FLOAT NOT NULL DEFAULT '0',
-    `offset_o` FLOAT NOT NULL DEFAULT '0',
-    `description` text NOT NULL,
+    `entry`    int(10) UNSIGNED NOT NULL COMMENT 'entry of the npc who has some accessory as vehicle',
+    `accessory_entry` int(10) UNSIGNED NOT NULL COMMENT 'entry of the passenger that is to be boarded',
+    `seat_id`  mediumint(8) NOT NULL DEFAULT '0' COMMENT 'onto which seat shall the passenger be boarded',
+    `flags`    int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT 'various flags',
+    `offset_x` FLOAT NOT NULL DEFAULT '0' COMMENT 'custom passenger offset X',
+    `offset_y` FLOAT NOT NULL DEFAULT '0' COMMENT 'custom passenger offset Y',
+    `offset_z` FLOAT NOT NULL DEFAULT '0' COMMENT 'custom passenger offset Z',
+    `offset_o` FLOAT NOT NULL DEFAULT '0' COMMENT 'custom passenger offset O',
+    `description` varchar(255) NOT NULL DEFAULT '',
     PRIMARY KEY (`entry`,`seat_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Vehicle Accessory System';
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Vehicle Accessory (passengers that are auto-boarded onto a vehicle)';
 
 --
 -- `vehicle_accessory`
 --
 
-REPLACE INTO `vehicle_accessory` (`entry`, `accessory_entry`, `seat_id`, `minion`, `description`) VALUES
+REPLACE INTO `vehicle_accessory` (`entry`, `accessory_entry`, `seat_id`, `flags`, `description`) VALUES
 (36891, 31260, 0, 0, 'Ymirjar Skycaller'),
 (27626, 27627, 0, 1, 'Tatjana''s Horse'),
 (28312, 28319, 7, 1, 'Wintergrasp Siege Engine'),
@@ -73,7 +74,7 @@ REPLACE INTO `vehicle_accessory` (`entry`, `accessory_entry`, `seat_id`, `minion
 
 -- IOC (to be continued)
 DELETE FROM `vehicle_accessory` WHERE entry IN (35069, 34776);
-INSERT INTO `vehicle_accessory` (entry, accessory_entry, seat_id, minion, description) VALUES
+INSERT INTO `vehicle_accessory` (entry, accessory_entry, seat_id, flags, description) VALUES
 (35069, 36355, 7, 1, 'Isle of Conquest Siege Engine - main turret (horde)'),
 (35069, 34778, 1, 1, 'Isle of Conquest Siege Engine - flame turret 1 (horde)'),
 (35069, 34778, 2, 1, 'Isle of Conquest Siege Engine - flame turret 2 (horde)'),

@@ -98,15 +98,29 @@ enum LevelRequirementVsMode
 
 typedef std::map<ObjectGuid,GuidSet>  AttackersMap;
 
-struct LoadingObjectQueue
+struct LoadingObjectQueueMember
 {
-    explicit LoadingObjectQueue(uint32 _guid, TypeID _objectTypeID, GridType& _grid) :
+    explicit LoadingObjectQueueMember(uint32 _guid, TypeID _objectTypeID, GridType& _grid) :
         guid(_guid), objectTypeID(_objectTypeID), grid(_grid)
     {}
     uint32 guid;
     TypeID objectTypeID;
     GridType& grid;
 };
+
+class LoadingObjectsCompare
+{
+    public:
+        LoadingObjectsCompare()
+        {}
+
+        bool operator() (LoadingObjectQueueMember const* lqm, LoadingObjectQueueMember const* rqm) const
+        {
+            return lqm->objectTypeID < rqm->objectTypeID;
+        };
+};
+
+typedef std::priority_queue<LoadingObjectQueueMember*, std::vector<LoadingObjectQueueMember*>, LoadingObjectsCompare> LoadingObjectsQueue;
 
 class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 {
@@ -315,10 +329,12 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void RemoveGameObjectModel(const GameObjectModel& mdl);
         bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
 
-        void AddLoadingObject(LoadingObjectQueue obj)
+        void AddLoadingObject(LoadingObjectQueueMember* obj)
         {
             i_loadingObjectQueue.push(obj);
         }
+        LoadingObjectsQueue const& GetLoadingObjectsQueue() { return i_loadingObjectQueue; };
+ 
 
         // Event handler
         WorldObjectEventProcessor* GetEvents();
@@ -370,7 +386,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         std::set<Object *> i_objectsToClientUpdate;
         std::set<Object *> i_objectsToClientNotUpdate;
         std::queue<Object*> i_objectsToClientUpdateQueue;
-        std::queue<LoadingObjectQueue> i_loadingObjectQueue;
+
+        LoadingObjectsQueue i_loadingObjectQueue;
 
     protected:
         MapEntry const* i_mapEntry;

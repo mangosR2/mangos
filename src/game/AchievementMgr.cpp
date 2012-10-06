@@ -2899,10 +2899,7 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement)
     ca.date = time(NULL);
     ca.changed = true;
 
-    // don't insert for ACHIEVEMENT_FLAG_REALM_FIRST_KILL since otherwise only the first group member would reach that achievement
-    // TODO: where do set this instead?
-    if (!(achievement->flags & ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
-        sAchievementMgr.SetRealmCompleted(achievement);
+    sAchievementMgr.SetRealmCompleted(achievement);
 
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_ACHIEVEMENT);
 
@@ -3087,12 +3084,14 @@ AchievementCriteriaRequirementSet const* AchievementGlobalMgr::GetCriteriaRequir
 
 bool AchievementGlobalMgr::IsRealmCompleted(AchievementEntry const* achievement) const
 {
-    return m_allCompletedAchievements.find(achievement->ID) != m_allCompletedAchievements.end();
+    AllCompletedAchievements::const_iterator itr = m_allCompletedAchievements.find(achievement->ID);
+    return itr != m_allCompletedAchievements.end() && time_t(itr->second + 2) < time(NULL);
 }
 
 void AchievementGlobalMgr::SetRealmCompleted(AchievementEntry const* achievement)
 {
-    m_allCompletedAchievements.insert(achievement->ID);
+    if (m_allCompletedAchievements.find(achievement->ID) == m_allCompletedAchievements.end())
+        m_allCompletedAchievements[achievement->ID] = time(NULL);
 }
 
 void AchievementGlobalMgr::LoadAchievementCriteriaList()
@@ -3312,7 +3311,7 @@ void AchievementGlobalMgr::LoadAchievementCriteriaRequirements()
 
 void AchievementGlobalMgr::LoadCompletedAchievements()
 {
-    QueryResult* result = CharacterDatabase.Query("SELECT achievement FROM character_achievement GROUP BY achievement");
+    QueryResult* result = CharacterDatabase.Query("SELECT `achievement`, `date` FROM `character_achievement` GROUP BY `achievement`");
 
     if (!result)
     {
@@ -3339,7 +3338,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
             continue;
         }
 
-        m_allCompletedAchievements.insert(achievement_id);
+        m_allCompletedAchievements[achievement_id] = time_t(fields[1].GetUInt64());
     }
     while (result->NextRow());
 

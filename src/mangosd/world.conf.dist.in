@@ -222,6 +222,12 @@ BindIP = "0.0.0.0"
 #        MaxVisitorsInUpdate - count of maximal update diffs for calculation update deadline. Min = 1, default = 9, max = 50.
 #        MaxVisitsInUpdate   - limits count of units in one per-visit update cycle (for maps only) min = 10, default = 20, max = 100.
 #
+#    ObjectLoadingSplitter.MaxAllowedTime
+#        Limitation for time, used per map update cycle, for object loading (in ms)
+#        Default: 10
+#        Min:     5    ( less then 3 - objects not be loaded anyway )
+#        Max:     1000 ( value more may cause false-freeze detection )
+#
 ###################################################################################################################
 
 UseProcessors = 0
@@ -254,6 +260,7 @@ MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
+ObjectLoadingSplitter.MaxAllowedTime = 10
 
 ###################################################################################################################
 # SERVER LOGGING

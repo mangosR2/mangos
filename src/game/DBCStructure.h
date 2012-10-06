@@ -1936,6 +1936,8 @@ struct MANGOS_DLL_SPEC SpellEntry;
 struct SpellEffectEntry
 {
     SpellEffectEntry(SpellEntry const* spellEntry, SpellEffectIndex i);
+    SpellEffectEntry() {};
+    SpellEffectEntry(SpellEffectEntry const& effect);
 
     //uint32        Id;                                         // 0        m_ID
     uint32        Effect;                                       // 73-75    m_effect
@@ -1968,9 +1970,6 @@ struct SpellEffectEntry
 
     void Initialize(const SpellEntry* spellEntry, SpellEffectIndex i);
 
-    private:
-        SpellEffectEntry() {};
-        SpellEffectEntry(SpellEffectEntry const&) {};
 };
 
 #define MAX_SPELL_REAGENTS 8
@@ -2641,18 +2640,14 @@ typedef std::map<uint32,TalentSpellPos> TalentSpellPosMap;
 
 struct SpellEffect
 {
-    SpellEffectEntry const* effects[MAX_EFFECT_INDEX];
+    SpellEffectEntry effects[MAX_EFFECT_INDEX];
 
     SpellEffect()
     {
-        for (uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
-            effects[SpellEffectIndex(i)] = NULL;
     }
 
     ~SpellEffect()
     {
-        for (uint8 i = 0; i < MAX_EFFECT_INDEX; ++i)
-            delete effects[SpellEffectIndex(i)];
     }
 };
 

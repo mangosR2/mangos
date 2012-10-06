@@ -1186,7 +1186,7 @@ void Creature::SelectLevel(const CreatureInfo* cinfo, float percentHealth, float
         }
         case POWER_ENERGY:
         {
-            maxPower = uint32(GetCreatePowers(powerType) * cinfo->power_mod);
+            maxPower = uint32(GetCreatePowers(powerType) * cinfo->powerModifier);
             break;
         }
         default:

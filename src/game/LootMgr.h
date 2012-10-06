@@ -67,8 +67,6 @@ enum LootSlotType
     MAX_LOOT_SLOT_TYPE                                      // custom, use for mark skipped from show items
 };
 
-
-
 class Player;
 class LootStore;
 
@@ -101,7 +99,7 @@ struct LootItem
     uint32  itemid;
     uint32  randomSuffix;
     int32   randomPropertyId;
-    AllowedLooterSet allowedGUIDs;
+    AllowedLooterSet allowedGuids;
     uint16  conditionId       : 16;                         // allow compiler pack structure
     uint8   count             : 8;
     bool    is_looted         : 1;
@@ -122,7 +120,7 @@ struct LootItem
     LootSlotType GetSlotTypeForSharedLoot(PermissionTypes permission, Player* viewer, bool condition_ok = false) const;
 
     void AddAllowedLooter(Player const* player);
-    AllowedLooterSet* GetAllowedLooters() { return &allowedGUIDs; }
+    AllowedLooterSet* GetAllowedLooters() { return &allowedGuids; }
 };
 
 typedef std::vector<LootItem> LootItemList;

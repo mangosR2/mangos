@@ -430,9 +430,18 @@ void WaypointManager::Cleanup()
 
 void WaypointManager::Unload()
 {
-    for(WaypointPathMap::iterator itr = m_pathMap.begin(); itr != m_pathMap.end(); ++itr)
+    for (WaypointPathMap::iterator itr = m_pathMap.begin(); itr != m_pathMap.end(); ++itr)
         _clearPath(itr->second);
     m_pathMap.clear();
+
+    for (WaypointPathTemplateMap::iterator itr = m_pathTemplateMap.begin(); itr != m_pathTemplateMap.end(); ++itr)
+    {
+        for (WaypointPath::iterator itr1 = itr->second.begin(); itr1 != itr->second.end(); ++itr1)
+            if ((*itr1).behavior)
+                delete (*itr1).behavior;
+    }
+
+    m_pathTemplateMap.clear();
 }
 
 void WaypointManager::_clearPath(WaypointPath &path)

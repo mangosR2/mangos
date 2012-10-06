@@ -2588,6 +2588,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 67470:                                 // Pursuing Spikes
                 case 68950:                                 // Fear (FoS)
                 case 68912:                                 // Wailing Souls (FoS)
+                case 68987:                                 // Pursuit (Pit of Saron, Ick)
                 case 69048:                                 // Mirrored Soul (FoS)
                 case 69140:                                 // Coldflame (ICC, Marrowgar)
                 case 69674:                                 // Mutated Infection (ICC, Rotface)
@@ -3822,7 +3823,7 @@ void SpellMgr::LoadPetDefaultSpells()
     uint32 countCreature = 0;
     uint32 countData = 0;
 
-    for(uint32 i = 0; i < sCreatureStorage.MaxEntry; ++i )
+    for (uint32 i = 0; i < sCreatureStorage.GetMaxEntry(); ++i)
     {
         CreatureInfo const* cInfo = sCreatureStorage.LookupEntry<CreatureInfo>(i);
         if(!cInfo)
@@ -3874,8 +3875,12 @@ void SpellMgr::LoadPetDefaultSpells()
                     continue;
 
                 PetDefaultSpellsEntry petDefSpells;
-                for(int j = 0; j < MAX_CREATURE_SPELL_DATA_SLOT; ++j)
-                    petDefSpells.spellid[j] = cInfo->spells[j];
+                CreatureSpellsList const* spellList = sObjectMgr.GetCreatureSpells(creature_id);
+                if (spellList)
+                {
+                    for (CreatureSpellsList::const_iterator itr = spellList->begin(); itr != spellList->end(); ++itr)
+                        petDefSpells.spellid[itr->first] = itr->second.spell;
+                }
 
                 if (LoadPetDefaultSpells_helper(cInfo, petDefSpells))
                 {
@@ -5365,7 +5370,7 @@ SpellPreferredTargetType GetPreferredTargetForSpell(SpellEntry const* spellInfo)
 
 static char* SPELL_DBC_SPELL      = "reconstructed by spell_dbc spell";
 
-struct SpellDbcLoader : public SQLStorageLoaderBase<SpellDbcLoader>
+struct SpellDbcLoader : public SQLStorageLoaderBase<SpellDbcLoader, SQLHashStorage>
 {
     template<class S, class D>
     void default_fill(uint32 field_pos, S src, D &dst)
@@ -5392,10 +5397,10 @@ void SpellMgr::LoadSpellDbc()
     SpellDbcLoader loader;
     loader.Load(sSpellDbcTemplate);
 
-    sLog.outString(">> Loaded %u spell definitions", sSpellDbcTemplate.RecordCount);
+    sLog.outString(">> Loaded %u spell definitions", sSpellDbcTemplate.GetRecordCount());
     sLog.outString();
 
-    for (uint32 i = 1; i < sSpellDbcTemplate.MaxEntry; ++i)
+    for (uint32 i = 1; i < sSpellDbcTemplate.GetMaxEntry(); ++i)
     {
         // check data correctness
         SpellEntry const* spellEntry = sSpellDbcTemplate.LookupEntry<SpellEntry>(i);

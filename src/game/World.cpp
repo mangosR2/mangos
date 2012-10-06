@@ -574,6 +574,8 @@ void World::LoadConfigSettings(bool reload)
     setConfigMinMax(CONFIG_UINT32_MAPUPDATE_MAXVISITORS, "MapUpdate.MaxVisitorsInUpdate", 9, 1, 50);
     setConfigMinMax(CONFIG_UINT32_MAPUPDATE_MAXVISITS, "MapUpdate.MaxVisitsInUpdate", 20, 10, 100);
 
+    setConfigMinMax(CONFIG_UINT32_OBJECTLOADINGSPLITTER_ALLOWEDTIME, "ObjectLoadingSplitter.MaxAllowedTime", 10, 5, 1000);
+
     setConfig(CONFIG_UINT32_INTERVAL_CHANGEWEATHER, "ChangeWeatherInterval", 10 * MINUTE * IN_MILLISECONDS);
 
     if (configNoReload(reload, CONFIG_UINT32_PORT_WORLD, "WorldServerPort", DEFAULT_WORLDSERVER_PORT))
@@ -1227,17 +1229,21 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading Equipment templates...");
     sObjectMgr.LoadEquipmentTemplates();
 
-    sLog.outString( "Loading Creature templates..." );
-    sObjectMgr.LoadCreatureTemplates();
-
+    // FIXME! currently spells must be loaded _before_ templates for correct detection.
     sLog.outString( "Loading Creature spells..." );
     sObjectMgr.LoadCreatureSpells();
+
+    sLog.outString( "Loading Creature templates..." );
+    sObjectMgr.LoadCreatureTemplates();
 
     sLog.outString( "Loading Creature Model for race..." ); // must be after creature templates
     sObjectMgr.LoadCreatureModelRace();
 
     sLog.outString( "Loading SpellsScriptTarget...");
     sSpellMgr.LoadSpellScriptTarget();                      // must be after LoadCreatureTemplates and LoadGameobjectInfo
+
+    sLog.outString("Loading Vehicle Accessory...");         // must be after creature templates
+    sObjectMgr.LoadVehicleAccessory();
 
     sLog.outString( "Loading ItemRequiredTarget...");
     sObjectMgr.LoadItemRequiredTarget();
@@ -1268,9 +1274,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr.LoadCreatureAddons();                        // must be after LoadCreatureTemplates() and LoadCreatures()
     sLog.outString( ">>> Creature Addon Data loaded" );
     sLog.outString();
-
-    sLog.outString("Loading Vehicle Accessories...");
-    sObjectMgr.LoadVehicleAccessories();
 
     sLog.outString( "Loading Gameobject Data..." );
     sObjectMgr.LoadGameObjects();

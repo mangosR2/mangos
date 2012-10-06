@@ -111,7 +111,7 @@ void LoadHelper(CellGuidSet const& guid_set, CellPair& cell, GridRefManager<T>& 
 {
     for(CellGuidSet::const_iterator i_guid = guid_set.begin(); i_guid != guid_set.end(); ++i_guid)
     {
-        map->AddLoadingObject(LoadingObjectQueue(*i_guid, objectTypeID, grid));
+        map->AddLoadingObject(new LoadingObjectQueueMember(*i_guid, objectTypeID, grid));
         ++count;
     }
 }

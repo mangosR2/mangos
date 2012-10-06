@@ -8915,8 +8915,8 @@ void Aura::PeriodicTick()
 
             target->getHostileRefManager().threatAssist(pCaster, float(gain) * 0.5f * sSpellMgr.GetSpellThreatMultiplier(spellProto), spellProto);
 
-            // heal for caster damage
-            if (target != pCaster && spellProto->SpellVisual[0] == 163)
+            // heal for caster damage (Health funnel only! spellProto->SpellVisual[0] == 163 wrong - some repair spells here!)
+            if (target != pCaster && spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_HEALTH_FUNNEL>())
             {
                 uint32 dmg = spellProto->manaPerSecond;
                 if (pCaster->GetHealth() <= dmg && pCaster->GetTypeId()==TYPEID_PLAYER)
@@ -8929,11 +8929,13 @@ void Aura::PeriodicTick()
                 }
                 else
                 {
-                    damageInfo.damage = gain;
-                    damageInfo.absorb = 0;
-                    pCaster->DealDamageMods(&damageInfo);
-                    pCaster->SendSpellNonMeleeDamageLog(pCaster, GetId(), damageInfo.damage, GetSpellSchoolMask(spellProto), damageInfo.absorb, 0, false, 0, false);
-                    pCaster->DealDamage(pCaster, &damageInfo, true);
+                    DamageInfo funneldamageInfo = DamageInfo(pCaster, pCaster, spellProto);
+                    funneldamageInfo.damage = gain;
+                    funneldamageInfo.absorb = 0;
+                    funneldamageInfo.damageType = DOT;
+                    pCaster->DealDamageMods(&funneldamageInfo);
+                    pCaster->SendSpellNonMeleeDamageLog(pCaster, GetId(), funneldamageInfo.damage, GetSpellSchoolMask(spellProto), funneldamageInfo.absorb, 0, false, 0, false);
+                    pCaster->DealDamage(pCaster, &funneldamageInfo, true);
                 }
             }
 
@@ -12283,6 +12285,14 @@ void SpellAuraHolder::HandleSpellSpecificBoostsForward(bool apply)
                         break;
                 }
                 break;
+            }
+            // Improved Health Funnel (damage reducing part)
+            else if (m_spellProto->GetSpellFamilyFlags().test<CF_WARLOCK_HEALTH_FUNNEL>())
+            {
+                if (pCaster->HasAura(18703))
+                    linkedSet.insert(60955);
+                else if (pCaster->HasAura(18704))
+                    linkedSet.insert(60956);
             }
             break;
         }

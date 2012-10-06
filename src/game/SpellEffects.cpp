@@ -7070,7 +7070,7 @@ void Spell::EffectEnchantItemPerm(SpellEffectIndex eff_idx)
     // add new enchanting if equipped
     item_owner->ApplyEnchantment(itemTarget,PERM_ENCHANTMENT_SLOT,true);
 
-    itemTarget->SetSoulboundTradeable(NULL, item_owner, false);
+    itemTarget->SetNotSoulboundTradeable(item_owner);
 }
 
 void Spell::EffectEnchantItemPrismatic(SpellEffectIndex eff_idx)
@@ -7130,7 +7130,7 @@ void Spell::EffectEnchantItemPrismatic(SpellEffectIndex eff_idx)
     // add new enchanting if equipped
     item_owner->ApplyEnchantment(itemTarget,PRISMATIC_ENCHANTMENT_SLOT,true);
 
-    itemTarget->SetSoulboundTradeable(NULL, item_owner, false);
+    itemTarget->SetNotSoulboundTradeable(item_owner);
 }
 
 void Spell::EffectEnchantItemTmp(SpellEffectIndex eff_idx)
@@ -8422,6 +8422,22 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         m_caster->CastCustomSpell(unitTarget, 28375, &damage, NULL, NULL, true);
                     return;
                 }
+                case 28526:                                 // Icebolt (Naxxramas: Sapphiron)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    if (unitTarget->GetTypeId() == TYPEID_UNIT)
+                    {
+                        Creature* pCreature = (Creature*)unitTarget;
+                        if (pCreature && pCreature->AI())
+                        {
+                            if (Unit* pTarget = pCreature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0, uint32(0), SELECT_FLAG_PLAYER))
+                                pCreature->CastSpell(pTarget, 28522, true);
+                        }
+                    }
+                    return;
+                }
                 case 28560:                                 // Summon Blizzard
                 {
                     if (!unitTarget)
@@ -8990,9 +9006,9 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         return;
 
                     if (unitTarget->GetAreaId() == 4157)
-                        unitTarget->CastSpell(unitTarget, 47325, true);
-                    else if (unitTarget->GetAreaId() == 4156)
                         unitTarget->CastSpell(unitTarget, 47324, true);
+                    else if (unitTarget->GetAreaId() == 4156)
+                        unitTarget->CastSpell(unitTarget, 47325, true);
 
                     break;
                 }

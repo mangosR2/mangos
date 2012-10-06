@@ -123,15 +123,14 @@ struct CreatureInfo
     int32   resistance4;
     int32   resistance5;
     int32   resistance6;
-    uint32  spells[CREATURE_MAX_SPELLS];
     uint32  PetSpellDataId;
     uint32  mingold;
     uint32  maxgold;
     char const* AIName;
     uint32  MovementType;
     uint32  InhabitType;
-    float   unk16;
-    float   power_mod;
+    float   healthModifier;
+    float   powerModifier;
     bool    RacialLeader;
     uint32  questItems[6];
     uint32  movementId;

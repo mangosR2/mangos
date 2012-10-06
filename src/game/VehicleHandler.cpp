@@ -126,7 +126,7 @@ void WorldSession::HandleRequestVehicleSwitchSeat(WorldPacket &recv_data)
 
 void WorldSession::HandleEnterPlayerVehicle(WorldPacket &recv_data)
 {
-    DEBUG_LOG("WORLD: Received CMSG_PLAYER_VEHICLE_ENTER");
+    DEBUG_LOG("WORLD: Received CMSG_RIDE_VEHICLE_INTERACT");
     recv_data.hexlike();
 
     ObjectGuid guid;
@@ -146,13 +146,8 @@ void WorldSession::HandleEnterPlayerVehicle(WorldPacket &recv_data)
     if (player->GetTransport())
         return;
 
-    if (VehicleKitPtr pVehicle = player->GetVehicleKit())
-    {
-        if (pVehicle->HasEmptySeat(-1))
-            GetPlayer()->EnterVehicle(pVehicle, -1);
-        else
-            DEBUG_LOG("WorldSession::HandleEnterPlayerVehicle player %s try seat on vehicle %s, but no free seats.",guid.GetString().c_str(),GetPlayer()->GetObjectGuid().GetString().c_str());
-    }
+    GetPlayer()->CastSpell(player, SPELL_RIDE_VEHICLE_HARDCODED, true);
+
 }
 
 void WorldSession::HandleEjectPassenger(WorldPacket &recv_data)
@@ -162,7 +157,7 @@ void WorldSession::HandleEjectPassenger(WorldPacket &recv_data)
     ObjectGuid guid;
     recv_data >> guid;
 
-    DEBUG_LOG("WORLD: Received CMSG_EJECT_PASSENGER %s",guid.GetString().c_str());
+    DEBUG_LOG("WORLD: Received CMSG_CONTROLLER_EJECT_PASSENGER %s",guid.GetString().c_str());
 
     Unit* passenger = ObjectAccessor::GetUnit(*GetPlayer(), guid);
 
@@ -179,7 +174,7 @@ void WorldSession::HandleEjectPassenger(WorldPacket &recv_data)
         return;
     }
 
-    passenger->ExitVehicle();
+    GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE, guid);
 
     // eject and remove creatures of player mounts
     if (passenger->GetTypeId() == TYPEID_UNIT)

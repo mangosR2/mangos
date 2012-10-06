@@ -101,6 +101,8 @@ Guild::Guild()
 Guild::~Guild()
 {
     DeleteGuildBankItems();
+    for (TabListMap::iterator itr = m_TabListMap.begin(); itr != m_TabListMap.end(); ++itr)
+        delete (*itr);
 }
 
 bool Guild::Create(Player* leader, std::string gname)
