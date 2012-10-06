@@ -41,7 +41,7 @@
 
 typedef ACE_SHLIB_HANDLE MANGOS_LIBRARY_HANDLE;
 
-#define MANGOS_SCRIPT_NAME "sppscripts"
+#define MANGOS_SCRIPT_NAME "mangosscriptR2"
 #define MANGOS_SCRIPT_SUFFIX ACE_DLL_SUFFIX
 #define MANGOS_SCRIPT_PREFIX ACE_DLL_PREFIX
 #define MANGOS_LOAD_LIBRARY(libname)    ACE_OS::dlopen(libname)
