@@ -778,16 +778,16 @@ enum ArenaTeamInfoType
 
 enum RestType
 {
-    REST_TYPE_NO        = 0,
-    REST_TYPE_IN_TAVERN = 1,
-    REST_TYPE_IN_CITY   = 2
+    REST_TYPE_NO                = 0,
+    REST_TYPE_IN_TAVERN         = 1,
+    REST_TYPE_IN_CITY           = 2
 };
 
 enum DuelCompleteType
 {
-    DUEL_INTERUPTED = 0,
-    DUEL_WON        = 1,
-    DUEL_FLED       = 2
+    DUEL_INTERRUPTED            = 0,
+    DUEL_WON                    = 1,
+    DUEL_FLED                   = 2
 };
 
 enum TeleportToOptions
@@ -803,29 +803,29 @@ enum TeleportToOptions
 /// Type of environmental damages
 enum EnviromentalDamage
 {
-    DAMAGE_EXHAUSTED = 0,
-    DAMAGE_DROWNING  = 1,
-    DAMAGE_FALL      = 2,
-    DAMAGE_LAVA      = 3,
-    DAMAGE_SLIME     = 4,
-    DAMAGE_FIRE      = 5,
-    DAMAGE_FALL_TO_VOID = 6                                 // custom case for fall without durability loss
+    DAMAGE_EXHAUSTED            = 0,
+    DAMAGE_DROWNING             = 1,
+    DAMAGE_FALL                 = 2,
+    DAMAGE_LAVA                 = 3,
+    DAMAGE_SLIME                = 4,
+    DAMAGE_FIRE                 = 5,
+    DAMAGE_FALL_TO_VOID         = 6                         // custom case for fall without durability loss
 };
 
 enum PlayerChatTag
 {
-    CHAT_TAG_NONE       = 0x00,
-    CHAT_TAG_AFK        = 0x01,
-    CHAT_TAG_DND        = 0x02,
-    CHAT_TAG_GM         = 0x04,
-    CHAT_TAG_COM        = 0x08,                             // Commentator
-    CHAT_TAG_DEV        = 0x10,                             // Developer
+    CHAT_TAG_NONE               = 0x00,
+    CHAT_TAG_AFK                = 0x01,
+    CHAT_TAG_DND                = 0x02,
+    CHAT_TAG_GM                 = 0x04,
+    CHAT_TAG_COM                = 0x08,                     // Commentator
+    CHAT_TAG_DEV                = 0x10,                     // Developer
 };
 
 enum PlayedTimeIndex
 {
-    PLAYED_TIME_TOTAL = 0,
-    PLAYED_TIME_LEVEL = 1
+    PLAYED_TIME_TOTAL           = 0,
+    PLAYED_TIME_LEVEL           = 1
 };
 
 #define MAX_PLAYED_TIME_INDEX 2
@@ -1057,12 +1057,12 @@ class MANGOS_DLL_SPEC Player : public Unit
         void AddToWorld();
         void RemoveFromWorld();
 
-        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0);
-
-        bool TeleportTo(WorldLocation const &loc, uint32 options = 0)
+        bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
-            return TeleportTo(loc.mapid, loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation, options);
+            return TeleportTo(WorldLocation(x, y, z, orientation, mapid, 0, realmID), options);
         }
+
+        bool TeleportTo(WorldLocation const& loc, uint32 options = 0);
 
         bool TeleportToBGEntryPoint();
 

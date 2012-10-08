@@ -179,6 +179,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
             GridPair p = MaNGOS::ComputeGridPair(x, y);
             return loaded(p);
         }
+        bool PreloadGrid(float x, float y);
 
         bool GetUnloadLock(const GridPair &p) const { return getNGrid(p.x_coord, p.y_coord)->getUnloadLock(); }
         void SetUnloadLock(const GridPair &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadExplicitLock(on); }
@@ -334,7 +335,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
             i_loadingObjectQueue.push(obj);
         }
         LoadingObjectsQueue const& GetLoadingObjectsQueue() { return i_loadingObjectQueue; };
- 
+        bool IsLoadingObjectsQueueEmpty() const { return i_loadingObjectQueue.empty(); };
 
         // Event handler
         WorldObjectEventProcessor* GetEvents();

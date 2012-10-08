@@ -356,8 +356,6 @@ class MANGOS_DLL_SPEC Object
 
         uint16 GetValuesCount() const { return m_valuesCount; }
 
-        void InitValues() { _InitValues(); }
-
         // Frozen Mod
         void ForceValuesUpdateAtIndex(uint16);
         // Frozen Mod

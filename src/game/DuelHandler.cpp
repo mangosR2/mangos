@@ -110,7 +110,7 @@ void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
             GetPlayer()->duel->opponent->GetGuidValue(PLAYER_DUEL_ARBITER) != guid)
         {
             sLog.outError("WorldSession::HandleDuelCancelledOpcode player %s try cancel duel with %s, but his different arbiters! Possible exploit use.",GetPlayer()->GetObjectGuid().GetString().c_str(),GetPlayer()->duel->opponent->GetObjectGuid().GetString().c_str());
-            GetPlayer()->DuelComplete(DUEL_INTERUPTED);
+            GetPlayer()->DuelComplete(DUEL_INTERRUPTED);
             return;
         }
     }
@@ -127,5 +127,5 @@ void WorldSession::HandleDuelCancelledOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    GetPlayer()->DuelComplete(DUEL_INTERUPTED);
+    GetPlayer()->DuelComplete(DUEL_INTERRUPTED);
 }

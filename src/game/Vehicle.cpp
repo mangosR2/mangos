@@ -235,7 +235,6 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
             case 33651:                                     // VX 001
             case 33432:                                     // Leviathan MX
             case 33118:                                     // Ignis (Ulduar)
-            case 32934:                                     // Kologarn Right Arm (Ulduar)
             case 30234:                                     // Nexus Lord's Hover Disk (Eye of Eternity, Malygos Encounter)
             case 30248:                                     // Scion's of Eternity Hover Disk (Eye of Eternity, Malygos Encounter)
                 break;

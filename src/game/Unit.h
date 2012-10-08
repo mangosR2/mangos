@@ -205,7 +205,7 @@ enum UnitRename
     UNIT_CAN_BE_ABANDONED   = 0x02,
 };
 
-#define CREATURE_MAX_SPELLS     4
+#define CREATURE_MAX_SPELLS     8
 
 enum Swing
 {

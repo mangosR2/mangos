@@ -309,6 +309,19 @@ void Map::LoadGrid(const Cell& cell, bool no_unload)
         getNGrid(cell.GridX(), cell.GridY())->setUnloadExplicitLock(true);
 }
 
+bool Map::PreloadGrid(float x, float y)
+{
+    CellPair pair = MaNGOS::ComputeCellPair(x, y);
+    if(pair.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || pair.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
+    {
+        sLog.outError("Map::PreloadGrid: invalid coordinates X:%f Y:%f grid cell [%u:%u]", x, y, pair.x_coord, pair.y_coord);
+        return false;
+    }
+    Cell cell(pair);
+    EnsureGridLoaded(cell);
+    return IsLoadingObjectsQueueEmpty();
+}
+
 bool Map::Add(Player *player)
 {
     player->GetMapRef().link(this, player);

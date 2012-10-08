@@ -1981,6 +1981,17 @@ void Aura::TriggerSpell()
 //                    case 65422: break;
 //                    // Rolling Throw
 //                    case 67546: break;
+                    case 69012:                             // Explosive Barrage - Krick and Ick
+                    {
+                        if (triggerTarget->GetTypeId() == TYPEID_UNIT)
+                        {
+                            if (Unit* pTarget = ((Creature*)triggerTarget)->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
+                            {
+                                triggerTarget->CastSpell(pTarget, 69015, true);
+                            }
+                        }
+                        return;
+                    }
                     case 70017:                             // Gunship Cannon Fire
                         trigger_spell_id = 70021;
                         break;
