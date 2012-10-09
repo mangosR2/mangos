@@ -894,6 +894,7 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_PET_SAVE_ALL,      "PetSaveAllInDB", false);
 
     setConfig(CONFIG_BOOL_PET_ADVANCED_AI,      "PetAdvancedAI", false);
+    setConfig(CONFIG_BOOL_PET_ADVANCED_AI_SLACKER, "PetAdvancedAIWithSlacker", false);
 
     setConfig(CONFIG_BOOL_RAID_FLAGS_UNIQUE,      "RaidFlags.Unique", false);
 

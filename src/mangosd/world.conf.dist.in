@@ -895,6 +895,11 @@ LexicsCutterNoActionOnGM = 1
 #        Default: 0 - default mangos pet AI style
 #                 1 - enable advanced AI usage
 #
+#    PetAdvancedAIWithSlacker
+#        Should only use in combination with PetAdvancedAI
+#        Default: 0 - disable, default mangos pet AI style
+#                 1 - enable, pet returns below 20% life to owner
+#
 #    RaidFlags.Unique
 #        Set raid flags (assistant, main assistant, main tank) unique in raid
 #        Default: 0 - flags not unique
@@ -1025,6 +1030,7 @@ OffhandCheckAtTalentsReset = 0
 PetUnsummonAtMount = 1
 PetSaveAllInDB = 0
 PetAdvancedAI = 0
+PetAdvancedAIWithSlacker = 0
 RaidFlags.Unique = 0
 AllowFlightOnOldMaps = 0
 ClientCacheVersion = 0
