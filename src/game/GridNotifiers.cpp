@@ -81,7 +81,7 @@ void VisibleNotifier::Notify()
                 continue;
 
             if (Player* plr = ObjectAccessor::FindPlayer(*iter))
-                plr->UpdateVisibilityOf(plr->GetCamera().GetBody(), &player);
+                plr->UpdateVisibilityOf(plr->GetCamera()->GetBody(), &player);
         }
     }
 

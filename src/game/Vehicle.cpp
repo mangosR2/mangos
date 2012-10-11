@@ -220,7 +220,7 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
 
     if (passenger->GetTypeId() == TYPEID_PLAYER)
     {
-        ((Player*)passenger)->GetCamera().SetView(m_pBase);
+        ((Player*)passenger)->SetViewPoint(m_pBase);
 
         WorldPacket data(SMSG_FORCE_MOVE_ROOT, 8+4);
         data << passenger->GetPackGUID();
@@ -383,7 +383,7 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount)
     if (passenger->GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = (Player*)passenger;
-        player->GetCamera().ResetView();
+        player->SetViewPoint(NULL);
 
         WorldPacket data(SMSG_FORCE_MOVE_UNROOT, 8+4);
         data << passenger->GetPackGUID();

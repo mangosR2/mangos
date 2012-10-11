@@ -381,7 +381,7 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 //== Player ====================================================
 
-Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m_achievementMgr(this), m_reputationMgr(this)
+Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m_achievementMgr(this), m_reputationMgr(this)
 {
     m_speakTime = 0;
     m_speakCount = 0;
@@ -578,6 +578,8 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(this), m
     SetPendingBind(NULL, 0);
     m_LFGState = new LFGPlayerState(this);
 
+    m_camera = new Camera(*this);
+
     m_cachedGS = 0;
 }
 
@@ -625,6 +627,7 @@ Player::~Player ()
     delete m_runes;
     delete m_anticheat;
     delete m_LFGState;
+    delete m_camera;
 
     // Playerbot mod
     if (m_playerbotAI)
@@ -2100,8 +2103,8 @@ void Player::RemoveFromWorld()
     ///- Do not add/remove the player from the object storage
     ///- It will crash when updating the ObjectAccessor
     ///- The player should only be removed when logging out
-    if (IsInWorld())
-        GetCamera().ResetView();
+    if (IsInWorld() && GetCamera())
+        GetCamera()->ResetView();
 
     Unit::RemoveFromWorld();
 }
@@ -2489,7 +2492,7 @@ void Player::SetGameMaster(bool on)
         getHostileRefManager().setOnlineOfflineState(true);
     }
 
-    m_camera.UpdateVisibilityForOwner();
+    GetCamera()->UpdateVisibilityForOwner();
     UpdateObjectVisibility();
     UpdateForQuestWorldObjects();
 }
@@ -4623,7 +4626,7 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     UpdateZone(newzone,newarea);
 
     // update visibility of world around viewpoint
-    m_camera.UpdateVisibilityForOwner();
+    GetCamera()->UpdateVisibilityForOwner();
     // update visibility of player for nearby cameras
     UpdateObjectVisibility();
 
@@ -19382,7 +19385,7 @@ void Player::HandleStealthedUnitsDetection()
     MaNGOS::UnitListSearcher<MaNGOS::AnyStealthedCheck > searcher(stealthedUnits, u_check);
     Cell::VisitAllObjects(this, searcher, MAX_PLAYER_STEALTH_DETECT_RANGE);
 
-    WorldObject const* viewPoint = GetCamera().GetBody();
+    WorldObject const* viewPoint = GetCamera()->GetBody();
 
     for (std::list<Unit*>::const_iterator i = stealthedUnits.begin(); i != stealthedUnits.end(); ++i)
     {
@@ -24903,4 +24906,26 @@ void Player::RefundItem(Item* item)
     SaveInventoryAndGoldToDB();
 
     CharacterDatabase.CommitTransaction();
+}
+
+void Player::SetViewPoint(WorldObject* target, bool immediate, bool update_far_sight_field)
+{
+    if (target && target->IsInWorld() && GetCamera())
+    {
+        if (immediate && (HasExternalViewPoint() && GetCamera()->GetBody() != target))
+        {
+            WorldPacket data(SMSG_CLEAR_FAR_SIGHT_IMMEDIATE, 0);
+            GetSession()->SendPacket(&data);
+        }
+        GetCamera()->SetView(target, update_far_sight_field);
+    }
+    else
+    {
+        if (immediate &&  HasExternalViewPoint())
+        {
+            WorldPacket data(SMSG_CLEAR_FAR_SIGHT_IMMEDIATE, 0);
+            GetSession()->SendPacket(&data);
+        }
+        GetCamera()->ResetView(update_far_sight_field);
+    }
 }

@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "GridDefines.h"
+#include "ObjectGuid.h"
 
 class ViewPoint;
 class WorldObject;
@@ -34,10 +35,10 @@ class MANGOS_DLL_SPEC Camera
         friend class ViewPoint;
     public:
 
-        explicit Camera(Player* pl);
+        explicit Camera(Player& player);
         ~Camera();
 
-        WorldObject* GetBody() { return m_source;}
+        WorldObject* GetBody();
         Player* GetOwner() { return &m_owner;}
 
         // set camera's view to any worldobject
@@ -81,13 +82,14 @@ class MANGOS_DLL_SPEC ViewPoint
 {
         friend class Camera;
 
-        typedef std::list<Camera*> CameraList;
+        typedef std::set<Camera*> CameraList;
 
-        CameraList m_cameras;
-        GridType* m_grid;
+        CameraList          m_cameras;
+        GridType*           m_grid;
+        WorldObject&        m_body;
 
-        void Attach(Camera* c) { m_cameras.push_back(c); }
-        void Detach(Camera* c) { m_cameras.remove(c); }
+        void Attach(Camera* camera);
+        void Detach(Camera* camera);
 
         void CameraCall(void (Camera::*handler)())
         {
@@ -103,8 +105,13 @@ class MANGOS_DLL_SPEC ViewPoint
 
     public:
 
-        ViewPoint() : m_grid(0) {}
+        ViewPoint(WorldObject& object) : m_body(object), m_grid(NULL) 
+        {
+            m_cameras.clear();
+        }
         ~ViewPoint();
+
+        WorldObject* GetBody() { return &m_body;}
 
         bool hasViewers() const { return !m_cameras.empty(); }
 

@@ -1229,25 +1229,35 @@ void WorldSession::HandleRealmSplitOpcode( WorldPacket & recv_data )
 
 void WorldSession::HandleFarSightOpcode( WorldPacket & recv_data )
 {
-    DEBUG_LOG("WORLD: CMSG_FAR_SIGHT");
-    //recv_data.hexlike();
-
     uint8 op;
     recv_data >> op;
-
-    WorldObject* obj = _player->GetMap()->GetWorldObject(_player->GetFarSightGuid());
-    if (!obj)
-        return;
 
     switch(op)
     {
         case 0:
-            DEBUG_LOG("Removed FarSight from %s", _player->GetGuidStr().c_str());
-            _player->GetCamera().ResetView(false);
+            DEBUG_LOG("WorldSession: CMSG_FAR_SIGHT removed FarSight from %s", GetPlayer()->GetGuidStr().c_str());
+            GetPlayer()->SetViewPoint(NULL, false, false);
             break;
         case 1:
-            DEBUG_LOG("Added FarSight %s to %s", _player->GetFarSightGuid().GetString().c_str(), _player->GetGuidStr().c_str());
-            _player->GetCamera().SetView(obj, false);
+            {
+                if (GetPlayer()->GetFarSightGuid().IsEmpty())
+                {
+                    sLog.outError("WorldSession: CMSG_FAR_SIGHT try add FarSight to %s, but ViewPoint guid is empty!", GetPlayer()->GetGuidStr().c_str());
+                    return;
+                }
+                WorldObject* obj = GetPlayer()->GetMap()->GetWorldObject(GetPlayer()->GetFarSightGuid());
+                if (!obj || !obj->IsInWorld())
+                {
+                    sLog.outError("WorldSession: CMSG_FAR_SIGHT try added FarSight %s to %s, but ViewPoint absent or not in world!", GetPlayer()->GetFarSightGuid().GetString().c_str(), GetPlayer()->GetGuidStr().c_str());
+                    GetPlayer()->SetGuidValue(PLAYER_FARSIGHT, ObjectGuid());
+                    return;
+                }
+                DEBUG_LOG("WorldSession: CMSG_FAR_SIGHT added FarSight %s to %s", GetPlayer()->GetFarSightGuid().GetString().c_str(), GetPlayer()->GetGuidStr().c_str());
+                GetPlayer()->SetViewPoint(obj, true, false);
+                break;
+            }
+        default:
+            sLog.outError("WorldSession: CMSG_FAR_SIGHT unknown command %u for player %s", op, GetPlayer()->GetGuidStr().c_str());
             break;
     }
 }

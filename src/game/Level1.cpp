@@ -2279,7 +2279,7 @@ bool ChatHandler::HandleModifyDrunkCommand(char* args)
 bool ChatHandler::HandleSetViewCommand(char* /*args*/)
 {
     if (Unit* unit = getSelectedUnit())
-        m_session->GetPlayer()->GetCamera().SetView(unit);
+        m_session->GetPlayer()->SetViewPoint(unit);
     else
     {
         PSendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);

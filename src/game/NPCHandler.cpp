@@ -443,14 +443,14 @@ void WorldSession::SendSpiritResurrect()
         // or update at original position
         else
         {
-            _player->GetCamera().UpdateVisibilityForOwner();
+            _player->GetCamera()->UpdateVisibilityForOwner();
             _player->UpdateObjectVisibility();
         }
     }
     // or update at original position
     else
     {
-        _player->GetCamera().UpdateVisibilityForOwner();
+        _player->GetCamera()->UpdateVisibilityForOwner();
         _player->UpdateObjectVisibility();
     }
 }
