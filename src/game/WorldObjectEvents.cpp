@@ -442,6 +442,9 @@ bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 // Player events
 bool TeleportDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
+    if (!m_owner.GetSession() || m_owner.GetSession()->PlayerLogout())
+        return true;
+
     m_owner.TeleportTo(m_location, m_options);
     return true;
 }

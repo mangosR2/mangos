@@ -1097,6 +1097,10 @@ typedef std::map<uint32, PetLevelupSpellSet> PetLevelupSpellMap;
 
 struct PetDefaultSpellsEntry
 {
+    explicit PetDefaultSpellsEntry()
+    {
+        memset(spellid, 0, MAX_CREATURE_SPELL_DATA_SLOT * sizeof(uint32));
+    }
     uint32 spellid[MAX_CREATURE_SPELL_DATA_SLOT];
 };
 
