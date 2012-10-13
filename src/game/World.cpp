@@ -285,7 +285,7 @@ World::AddSession_ (WorldSession* s)
         static SqlStatementID id;
 
         SqlStatement stmt = LoginDatabase.CreateStatement(id, "UPDATE realmlist SET population = ? WHERE id = ?");
-        stmt.PExecute(popu, realmID);
+        stmt.PExecute(popu, getConfig(CONFIG_UINT32_REALMID));
 
         DETAIL_LOG("Server Population (%f).", popu);
     }
@@ -452,6 +452,10 @@ void World::LoadConfigSettings(bool reload)
             Log::WaitBeforeContinueIfNeed();
         }
     }
+
+    // Set Realm ID from config
+    setConfig(CONFIG_UINT32_REALMID, "RealmID",0);
+    MANGOS_ASSERT(getConfig(CONFIG_UINT32_REALMID) == 0);
 
     ///- Read the player limit and the Message of the day from the config file
     SetPlayerLimit( sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true );
@@ -1127,7 +1131,7 @@ void World::SetInitialWorldSettings()
     // not send custom type REALM_FFA_PVP to realm list
     uint32 server_type = IsFFAPvPRealm() ? REALM_TYPE_PVP : getConfig(CONFIG_UINT32_GAME_TYPE);
     uint32 realm_zone = getConfig(CONFIG_UINT32_REALM_ZONE);
-    LoginDatabase.PExecute("UPDATE realmlist SET icon = %u, timezone = %u WHERE id = '%u'", server_type, realm_zone, realmID);
+    LoginDatabase.PExecute("UPDATE realmlist SET icon = %u, timezone = %u WHERE id = '%u'", server_type, realm_zone, getConfig(CONFIG_UINT32_REALMID));
 
     ///- Remove the bones (they should not exist in DB though) and old corpses after a restart
     CharacterDatabase.PExecute("DELETE FROM corpse WHERE corpse_type = '0' OR time < (UNIX_TIMESTAMP()-'%u')", 3*DAY);
@@ -1548,7 +1552,7 @@ void World::SetInitialWorldSettings()
     sprintf( isoDate, "%04d-%02d-%02d %02d:%02d:%02d",
         local.tm_year+1900, local.tm_mon+1, local.tm_mday, local.tm_hour, local.tm_min, local.tm_sec);
 
-    LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, startstring, uptime) VALUES('%u', " UI64FMTD ", '%s', 0)", realmID, uint64(m_startTime), isoDate);
+    LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, startstring, uptime) VALUES('%u', " UI64FMTD ", '%s', 0)", getConfig(CONFIG_UINT32_REALMID), uint64(m_startTime), isoDate);
 
     static uint32 abtimer = 0;
     abtimer = sConfig.GetIntDefault("AutoBroadcast.Timer", 60000);
@@ -1763,7 +1767,7 @@ void World::Update(uint32 diff)
         uint32 maxClientsNum = GetMaxActiveSessionCount();
 
         m_timers[WUPDATE_UPTIME].Reset();
-        LoginDatabase.PExecute("UPDATE uptime SET uptime = %u, maxplayers = %u WHERE realmid = %u AND starttime = " UI64FMTD, tmpDiff, maxClientsNum, realmID, uint64(m_startTime));
+        LoginDatabase.PExecute("UPDATE uptime SET uptime = %u, maxplayers = %u WHERE realmid = %u AND starttime = " UI64FMTD, tmpDiff, maxClientsNum, getConfig(CONFIG_UINT32_REALMID), uint64(m_startTime));
     }
 
     /// <li> Handle all other objects
@@ -2542,7 +2546,7 @@ void World::SetPlayerLimit( int32 limit, bool needUpdate )
 
     if (db_update_need)
         LoginDatabase.PExecute("UPDATE realmlist SET allowedSecurityLevel = '%u' WHERE id = '%u'",
-            uint32(GetPlayerSecurityLimit()), realmID);
+            uint32(GetPlayerSecurityLimit()), getConfig(CONFIG_UINT32_REALMID));
 }
 
 void World::UpdateMaxSessionCounters()

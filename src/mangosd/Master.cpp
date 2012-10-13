@@ -226,7 +226,7 @@ int Master::Run()
     {
         std::string builds = AcceptableClientBuildsListStr();
         LoginDatabase.escape_string(builds);
-        LoginDatabase.DirectPExecute("UPDATE realmlist SET realmflags = realmflags & ~(%u), population = 0, realmbuilds = '%s'  WHERE id = '%u'", REALM_FLAG_OFFLINE, builds.c_str(), realmID);
+        LoginDatabase.DirectPExecute("UPDATE realmlist SET realmflags = realmflags & ~(%u), population = 0, realmbuilds = '%s'  WHERE id = '%u'", REALM_FLAG_OFFLINE, builds.c_str(), sWorld.getConfig(CONFIG_UINT32_REALMID));
     }
 
     ACE_Based::Thread* cliThread = NULL;
@@ -342,7 +342,7 @@ int Master::Run()
     }
 
     ///- Set server offline in realmlist
-    LoginDatabase.DirectPExecute("UPDATE realmlist SET realmflags = realmflags | %u WHERE id = '%u'", REALM_FLAG_OFFLINE, realmID);
+    LoginDatabase.DirectPExecute("UPDATE realmlist SET realmflags = realmflags | %u WHERE id = '%u'", REALM_FLAG_OFFLINE, sWorld.getConfig(CONFIG_UINT32_REALMID));
 
     ///- Remove signal handling before leaving
     _UnhookSignals();
@@ -517,7 +517,7 @@ bool Master::_StartDB()
     }
 
     ///- Get the realm Id from the configuration file
-    realmID = sConfig.GetIntDefault("RealmID", 0);
+    uint32 realmID = sConfig.GetIntDefault("RealmID", 0);
     if(!realmID)
     {
         sLog.outError("Realm ID not defined in configuration file");
@@ -546,7 +546,7 @@ void Master::clearOnlineAccounts()
 {
     // Cleanup online status for characters hosted at current realm
     /// \todo Only accounts with characters logged on *this* realm should have online status reset. Move the online column from 'account' to 'realmcharacters'?
-    LoginDatabase.PExecute("UPDATE account SET active_realm_id = 0 WHERE active_realm_id = '%u'", realmID);
+    LoginDatabase.PExecute("UPDATE account SET active_realm_id = 0 WHERE active_realm_id = '%u'", sWorld.getConfig(CONFIG_UINT32_REALMID));
 
     CharacterDatabase.Execute("UPDATE characters SET online = 0 WHERE online<>0");
 

@@ -854,7 +854,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     // Checks gmlevel per Realm
     result = LoginDatabase.PQuery ("SELECT `RealmID`, `gmlevel` FROM `account_access` "
-                              "WHERE id = '%d' AND (RealmID = '%d'OR RealmID = '-1')", id, realmID);
+                              "WHERE id = '%d' AND (RealmID = '%d'OR RealmID = '-1')", id, sWorld.getConfig(CONFIG_UINT32_REALMID));
     if(!result)
         security = SEC_PLAYER;
     else

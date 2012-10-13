@@ -24,8 +24,8 @@ if [ ! -d ./build ]; then
     -DUSE_STD_MALLOC=1 \
     -DPREFIX=/home/mangos \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -ffast-math -finput-charset=utf-8 -fexec-charset=utf-8" \
-    -DCMAKE_CXX_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -ffast-math -finput-charset=utf-8 -fexec-charset=utf-8" \
+    -DCMAKE_C_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -finput-charset=utf-8 -fexec-charset=utf-8" \
+    -DCMAKE_CXX_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -finput-charset=utf-8 -fexec-charset=utf-8" \
     -DPCH=1 \
     ..
 else

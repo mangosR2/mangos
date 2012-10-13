@@ -1888,7 +1888,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             if (!map->PreloadGrid(loc.coord_x, loc.coord_y))
             {
                 // If loading grid not finished, delay teleport 5 map update ticks
-                AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation, loc.mapid, map->GetInstanceId(), realmID), options),
+                AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation, loc.mapid, map->GetInstanceId(), sWorld.getConfig(CONFIG_UINT32_REALMID)), options),
                     5 * sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 
                 DEBUG_LOG("Player::TeleportTo grid (map %u, instance %u, X%f Y%f) not fully loaded, far teleport %s delayed.", loc.mapid, map->GetInstanceId(), loc.coord_x, loc.coord_y, GetName());
@@ -4467,7 +4467,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     sAccountMgr.ClearPlayerDataCache(playerguid);
 
     if (updateRealmChars)
-        sAccountMgr.UpdateCharactersCount(accountId, realmID);
+        sAccountMgr.UpdateCharactersCount(accountId, sWorld.getConfig(CONFIG_UINT32_REALMID));
 }
 
 /**

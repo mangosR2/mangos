@@ -166,7 +166,7 @@ uint32 AccountMgr::GetId(std::string username)
 
 AccountTypes AccountMgr::GetSecurity(uint32 acc_id)
 {
-    QueryResult* result = LoginDatabase.PQuery("SELECT `gmlevel` FROM `account_access` WHERE `id` = '%u' AND (`RealmID` = '%u' OR `RealmID` = -1)", acc_id, realmID);
+    QueryResult* result = LoginDatabase.PQuery("SELECT `gmlevel` FROM `account_access` WHERE `id` = '%u' AND (`RealmID` = '%u' OR `RealmID` = -1)", acc_id, sWorld.getConfig(CONFIG_UINT32_REALMID));
     if (result)
     {
         AccountTypes sec = AccountTypes((*result)[0].GetInt32());

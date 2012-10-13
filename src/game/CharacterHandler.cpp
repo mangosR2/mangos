@@ -481,7 +481,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
     // Player created, save it now
     pNewChar.SaveToDB();
 
-    sAccountMgr.UpdateCharactersCount(GetAccountId(), realmID);
+    sAccountMgr.UpdateCharactersCount(GetAccountId(), sWorld.getConfig(CONFIG_UINT32_REALMID));
 
     data << (uint8)CHAR_CREATE_SUCCESS;
     SendPacket(&data);
@@ -770,7 +770,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         static SqlStatementID updAccount;
 
         stmt = LoginDatabase.CreateStatement(updAccount, "UPDATE account SET active_realm_id = ? WHERE id = ?");
-        stmt.PExecute(realmID, GetAccountId());
+        stmt.PExecute(sWorld.getConfig(CONFIG_UINT32_REALMID), GetAccountId());
     }
 
     pCurrChar->SetInGameTime(WorldTimer::getMSTime());

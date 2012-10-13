@@ -56,8 +56,6 @@ DatabaseType WorldDatabase;                                 ///< Accessor to the
 DatabaseType CharacterDatabase;                             ///< Accessor to the character database
 DatabaseType LoginDatabase;                                 ///< Accessor to the realm/login database
 
-uint32 realmID;                                             ///< Id of the realm
-
 /// Print out the usage string for this program on the console.
 void usage(const char *prog)
 {
