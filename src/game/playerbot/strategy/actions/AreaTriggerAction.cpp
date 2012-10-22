@@ -35,11 +35,12 @@ bool ReachAreaTriggerAction::Execute(Event event)
     }
 
     ai->ChangeStrategy("-follow,+stay", BOT_STATE_NON_COMBAT);
+
     MotionMaster &mm = *bot->GetMotionMaster();
     mm.Clear();
-    bot->TeleportTo(atEntry->mapid, atEntry->x, atEntry->y, atEntry->z, 0.0f, TELE_TO_NOT_LEAVE_TRANSPORT);
-    bot->SendHeartBeat();
+	mm.MovePoint(atEntry->mapid, atEntry->x, atEntry->y, atEntry->z);
     ai->SetNextCheckDelay(sPlayerbotAIConfig.teleportDelay);
+
     ostringstream out; out << "I will follow you in " << sPlayerbotAIConfig.teleportDelay / 1000 << " seconds";
     ai->TellMaster(out);
 
@@ -66,10 +67,9 @@ bool AreaTriggerAction::Execute(Event event)
         return true;
 
     ai->ChangeStrategy("-follow,+stay", BOT_STATE_NON_COMBAT);
+
     MotionMaster &mm = *bot->GetMotionMaster();
     mm.Clear();
-    bot->TeleportTo(atEntry->mapid, atEntry->x, atEntry->y, atEntry->z, 0.0f, TELE_TO_NOT_LEAVE_TRANSPORT);
-    bot->SendHeartBeat();
 
     WorldPacket p(CMSG_AREATRIGGER);
     p << triggerId;
