@@ -113,6 +113,11 @@ ConfVersion=2010102201
 AiPlayerbot.enabled=1
 AiPlayerbot.AllowGuildBots=1
 AiPlayerbot.RandomBotAccounts=11,12
+AiPlayerbot.MinRandomBots = 1
+AiPlayerbot.MaxRandomBots = 10
+AiPlayerbot.MinRandomBotsPerInterval = 1
+AiPlayerbot.MaxRandomBotsPerInterval = 5
+AiPlayerbot.RandomBotUpdateInterval=60
 
 AiPlayerbot.GlobalCooldown=600
 AiPlayerbot.ReactDelay=100
