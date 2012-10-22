@@ -782,3 +782,7 @@ DELETE FROM `spell_chain` WHERE `first_spell` IN (62764); -- delete this!
 -- (70805) Item - Rogue T10 2P Bonus (Rank 3)
 DELETE FROM `spell_proc_event` WHERE `entry` IN (70805);
 INSERT INTO `spell_proc_event` VALUES (70805, 0x00, 0x08, 0x00000000, 0x00000000, 0x00000000, 0x00020000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00004400, 0x00000000, 0, 100, 0);
+
+-- (70664) Item - Druid T10 Restoration 4P Bonus (Rejuvenation)
+DELETE FROM `spell_proc_event` WHERE `entry` IN (70664);
+INSERT INTO `spell_proc_event` VALUES (70664, 0x00, 0x07, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00040000, 0x00040000, 0, 2, 0);

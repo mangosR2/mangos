@@ -2184,8 +2184,11 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 switch (m_spellInfo->Id)
                 {
                     case 30843:                                             // Enfeeble
+                    case 31347:                                             // Doom
                     case 37676:                                             // Insidious Whisper
                     case 38028:                                             // Watery Grave
+                    case 40618:                                             // Insignificance
+                    case 41376:                                             // Spite
                         if (Unit* pVictim = m_caster->getVictim())
                             targetUnitMap.remove(pVictim);
                         break;
@@ -5343,6 +5346,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                 else return SPELL_FAILED_STUNNED;
             }
         }
+
+        // Disengage-like spells allow use only in combat
+        if (m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET) && m_spellInfo->HasAttribute(SPELL_ATTR_EX2_UNK26) && !m_caster->isInCombat())
+            return SPELL_FAILED_CASTER_AURASTATE;
 
         if (!m_IsTriggeredSpell 
             && NeedsComboPoints(m_spellInfo) 

@@ -20830,20 +20830,9 @@ void Player::SendInitialPacketsAfterAddToMap()
         SetRoot(true);
 
     // manual send package (have code in ApplyModifier(true,true); that don't must be re-applied.
-    if (HasAuraType(SPELL_AURA_MOD_ROOT))
+    if (HasAuraType(SPELL_AURA_MOD_ROOT) || GetVehicle())
     {
-        WorldPacket data2(SMSG_FORCE_MOVE_ROOT, 10);
-        data2 << GetPackGUID();
-        data2 << (uint32)2;
-        SendMessageToSet(&data2,true);
-    }
-
-    if (GetVehicle())
-    {
-        WorldPacket data3(SMSG_FORCE_MOVE_ROOT, 10);
-        data3 << GetPackGUID();
-        data3 << uint32((m_movementInfo.GetVehicleSeatFlags() & SEAT_FLAG_CAN_CAST) ? 2 : 0);
-        SendMessageToSet(&data3,true);
+        SetRoot(true);
     }
 
     SendAurasForTarget(this);

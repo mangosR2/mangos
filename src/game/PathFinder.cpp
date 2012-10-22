@@ -75,25 +75,11 @@ bool PathFinder::calculate(float destX, float destY, float destZ, bool forceDest
 
     updateFilter();
 
-    // check if destination moved - if not we can optimize something here
-    // we are following old, precalculated path?
-    float dist = m_sourceUnit->GetObjectBoundingRadius();
-    if (inRange(oldDest, dest, dist, dist) && m_pathPoints.size() > 2)
     {
-        // our target is not moving - we just coming closer
-        // we are moving on precalculated path - enjoy the ride
-        DEBUG_FILTER_LOG(LOG_FILTER_PATHFINDING, "++ PathFinder::calculate:: precalculated path\n");
-
-        m_pathPoints.erase(m_pathPoints.begin());
-        return false;
-    }
-    else
-    {
-        // target moved, so we need to update the poly path
         ReadGuard Guard(MMAP::MMapFactory::createOrGetMMapManager()->GetLock(m_sourceUnit->GetMapId()));
         BuildPolyPath(start, dest);
-        return true;
     }
+    return true;
 }
 
 dtPolyRef PathFinder::getPathPolyByPosition(const dtPolyRef *polyPath, uint32 polyPathSize, const float* point, float *distance) const

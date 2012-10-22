@@ -455,7 +455,7 @@ void World::LoadConfigSettings(bool reload)
 
     // Set Realm ID from config
     setConfig(CONFIG_UINT32_REALMID, "RealmID",0);
-    MANGOS_ASSERT(getConfig(CONFIG_UINT32_REALMID) == 0);
+    MANGOS_ASSERT(getConfig(CONFIG_UINT32_REALMID) != 0);
 
     ///- Read the player limit and the Message of the day from the config file
     SetPlayerLimit( sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true );

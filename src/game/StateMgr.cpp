@@ -85,11 +85,7 @@ public:
         }
 
         target->SendMeleeAttackStop(NULL);
-
-        WorldPacket data(SMSG_FORCE_MOVE_ROOT, target->GetPackGUID().size() + 4);
-        data << target->GetPackGUID();
-        data << uint32(0);
-        target->SendMessageToSet(&data, true);
+        target->SetRoot(true);
     }
 
     void Finalize(Unit &u)
@@ -103,10 +99,7 @@ public:
         if(target->getVictim())
             target->SetTargetGuid(target->getVictim()->GetObjectGuid());
 
-        WorldPacket data(SMSG_FORCE_MOVE_UNROOT, target->GetPackGUID().size() + 4);
-        data << target->GetPackGUID();
-        data << uint32(0);
-        target->SendMessageToSet(&data, true);
+        target->SetRoot(false);
         target->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
         target->AddEvent(new AttackResumeEvent(*target), ATTACK_DISPLAY_DELAY);
     }
@@ -134,23 +127,8 @@ public:
         //Clear unit movement flags
         target->m_movementInfo.RemoveMovementFlag(movementFlagsMask);
         target->m_movementInfo.AddMovementFlag(MOVEFLAG_ROOT);
-
         target->SendMeleeAttackStop(NULL);
-
-        if(target->GetTypeId() == TYPEID_PLAYER)
-        {
-            WorldPacket data(SMSG_FORCE_MOVE_ROOT, target->GetPackGUID().size() + 4);
-            data << target->GetPackGUID();
-            data << target->GetUnitStateMgr().GetCounter(UNIT_ACTION_ROOT);
-            target->SendMessageToSet(&data, true);
-        }
-        else
-        {
-            target->StopMoving();
-            WorldPacket data(SMSG_SPLINE_MOVE_ROOT, target->GetPackGUID().size());
-            data << target->GetPackGUID();
-            target->SendMessageToSet(&data, true);
-        }
+        target->SetRoot(true);
 
     }
 
@@ -160,19 +138,7 @@ public:
         if (!target)
             return;
         target->clearUnitState(UNIT_STAT_ROOT);
-        if(target->GetTypeId() == TYPEID_PLAYER)
-        {
-            WorldPacket data(SMSG_FORCE_MOVE_UNROOT, target->GetPackGUID().size() + 4);
-            data << target->GetPackGUID();
-            data << target->GetUnitStateMgr().GetCounter(UNIT_ACTION_ROOT);
-            target->SendMessageToSet(&data, true);
-        }
-        else
-        {
-            WorldPacket data(SMSG_SPLINE_MOVE_UNROOT, target->GetPackGUID().size());
-            data << target->GetPackGUID();
-            target->SendMessageToSet(&data, true);
-        }
+        target->SetRoot(false);
         target->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
 
         if(target->getVictim())

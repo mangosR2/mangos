@@ -64,9 +64,6 @@ class MANGOS_DLL_SPEC MotionMaster
 
         void propagateSpeedChange();
 
-        // will only work in MMgens where we have a target (TARGETED_MOTION_TYPE)
-        void UpdateFinalDistanceToTarget(float fDistance);
-
         class UnitStateMgr* GetUnitStateMgr();
         MovementGenerator*  CurrentMovementGenerator();
         Unit* GetOwner() { return m_owner; };
