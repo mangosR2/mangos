@@ -28,9 +28,9 @@ REM ****************************************************************************
 :vc10
 SET COMPILER="Visual Studio 10"                                    
 if %BUILD_PLATFORM%==Win64 (SET COMPILER="Visual Studio 10 Win64")
-SET COMPILER_PATH="C:/Program Files/Microsoft Visual Studio 10.0/VC/bin/cl.exe"
-SET LINKER_PATH="C:/Program Files/Microsoft Visual Studio 10.0/VC/bin/link.exe"
-SET VC_VARS="C:\\Program Files\\Microsoft Visual Studio 10.0\\VC\\"
+SET COMPILER_PATH="C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin/cl.exe"
+SET LINKER_PATH="C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin/link.exe"
+SET VC_VARS="C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\"
 goto :common
 REM *****************************************************************************************
 :help
