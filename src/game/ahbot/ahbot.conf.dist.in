@@ -20,6 +20,7 @@ AhBot.Enabled = 1
 AhBot.Account = 1
 AhBot.GUID = 1
 
+AhBot.UpdateIntervalInSeconds = 300
 AhBot.MaxItemLevel = 9999
 
 AhBot.PriceMultiplier = 1.0
