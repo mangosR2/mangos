@@ -68,6 +68,8 @@
 #include "CreatureLinkingMgr.h"
 #include "LFGMgr.h"
 #include "warden/WardenDataStorage.h"
+#include "ahbot/AhBot.h"
+#include "playerbot/PlayerbotAIConfig.h"
 
 INSTANTIATE_SINGLETON_1( World );
 
@@ -1618,6 +1620,9 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Warden Data..." );
     WardenDataStorage.Init();
+    
+    sLog.outString("Initializing AuctionHouseBot...");
+    auctionbot.Init();
 
     // Delete all characters which have been deleted X days before
     Player::DeleteOldCharacters();
@@ -1626,6 +1631,7 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Initialize AuctionHouseBot...");
     sAuctionBot.Initialize();
+    sPlayerbotAIConfig.Initialize();
 
     sLog.outString( "WORLD: World initialized" );
 
@@ -1717,6 +1723,7 @@ void World::Update(uint32 diff)
     /// <ul><li> Handle auctions when the timer has passed
     if (m_timers[WUPDATE_AUCTIONS].Passed())
     {
+        auctionbot.Update();
         m_timers[WUPDATE_AUCTIONS].Reset();
 
         ///- Update mails (return old mails with item, or delete them)

@@ -38,7 +38,7 @@
 #include "CellImpl.h"
 
 // Playerbot mod
-#include "playerbot/PlayerbotAI.h"
+#include "playerbot/playerbot.h"
 
 bool WorldSession::processChatmessageFurtherAfterSecurityChecks(std::string& msg, uint32 lang)
 {
@@ -244,11 +244,12 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
             // Playerbot mod: handle whispered command to bot
             if (player->GetPlayerbotAI())
             {
-                player->GetPlayerbotAI()->HandleCommand(msg, *GetPlayer());
+                player->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
                 GetPlayer()->m_speakTime = 0;
                 GetPlayer()->m_speakCount = 0;
             }
             else
+            // END Playerbot mod
                 GetPlayer()->Whisper(msg, lang, player->GetObjectGuid());
         } break;
 
@@ -290,7 +291,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                 Player* player = itr->getSource();
                 if (player && player->GetPlayerbotAI())
                 {
-                    player->GetPlayerbotAI()->HandleCommand(msg, *GetPlayer());
+                    player->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
                     GetPlayer()->m_speakTime = 0;
                     GetPlayer()->m_speakCount = 0;
                 }
@@ -328,6 +329,19 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                 if (guild)
                     guild->BroadcastToGuild(this, msg, lang == LANG_ADDON ? LANG_ADDON : LANG_UNIVERSAL);
             }
+            // Playerbot mod: broadcast message to bot members
+            PlayerbotMgr *mgr = GetPlayer()->GetPlayerbotMgr();
+            if (mgr)
+            {
+                for (PlayerBotMap::const_iterator it = mgr->GetPlayerBotsBegin(); it != mgr->GetPlayerBotsEnd(); ++it)
+                {
+                    Player* const bot = it->second;
+                    if (bot->GetGuildId() == GetPlayer()->GetGuildId())
+                        bot->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
+                }
+            }
+            // END Playerbot mod
+
             break;
         }
         case CHAT_MSG_OFFICER:
@@ -386,6 +400,19 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                     return;
             }
 
+            // Playerbot mod: broadcast message to bot members
+            for(GroupReference* itr = group->GetFirstMember(); itr != NULL; itr=itr->next())
+            {
+                Player* player = itr->getSource();
+                if (player && player->GetPlayerbotAI())
+                {
+                    player->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
+                    GetPlayer()->m_speakTime = 0;
+                    GetPlayer()->m_speakCount = 0;
+                }
+            }
+            // END Playerbot mod
+
             WorldPacket data;
             ChatHandler::FillMessageData(&data, this, CHAT_MSG_RAID, lang, msg.c_str());
             group->BroadcastPacket(&data, false);
@@ -418,6 +445,19 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                     return;
             }
 
+            // Playerbot mod: broadcast message to bot members
+            for(GroupReference* itr = group->GetFirstMember(); itr != NULL; itr=itr->next())
+            {
+                Player* player = itr->getSource();
+                if (player && player->GetPlayerbotAI())
+                {
+                    player->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
+                    GetPlayer()->m_speakTime = 0;
+                    GetPlayer()->m_speakCount = 0;
+                }
+            }
+            // END Playerbot mod
+
             WorldPacket data;
             ChatHandler::FillMessageData(&data, this, CHAT_MSG_RAID_LEADER, lang, msg.c_str());
             group->BroadcastPacket(&data, false);
@@ -440,6 +480,19 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
             if (!group || !group->isRaidGroup() ||
                     !(group->IsLeader(GetPlayer()->GetObjectGuid()) || group->IsAssistant(GetPlayer()->GetObjectGuid())))
                 return;
+
+            // Playerbot mod: broadcast message to bot members
+            for(GroupReference* itr = group->GetFirstMember(); itr != NULL; itr=itr->next())
+            {
+                Player* player = itr->getSource();
+                if (player && player->GetPlayerbotAI())
+                {
+                    player->GetPlayerbotAI()->HandleCommand(type, msg, *GetPlayer());
+                    GetPlayer()->m_speakTime = 0;
+                    GetPlayer()->m_speakCount = 0;
+                }
+            }
+            // END Playerbot mod
 
             WorldPacket data;
             // in battleground, raid warning is sent only to players in battleground - code is ok

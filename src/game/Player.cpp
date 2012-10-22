@@ -67,8 +67,8 @@
 #include <cmath>
 
 // Playerbot mod:
-#include "playerbot/PlayerbotAI.h"
-#include "playerbot/PlayerbotMgr.h"
+#include "playerbot/playerbot.h"
+
 #include "Config/Config.h"
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
@@ -383,6 +383,11 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m_achievementMgr(this), m_reputationMgr(this)
 {
+    // Playerbot mod:
+    m_playerbotAI = 0;
+    m_playerbotMgr = 0;
+    m_randomPlayerbotMgr = 0;
+
     m_speakTime = 0;
     m_speakCount = 0;
 
@@ -630,16 +635,17 @@ Player::~Player ()
     delete m_camera;
 
     // Playerbot mod
-    if (m_playerbotAI)
-    {
+    if (m_playerbotAI) {
         delete m_playerbotAI;
-        m_playerbotAI = NULL;
+        m_playerbotAI = 0;
     }
-
-    if (m_playerbotMgr)
-    {
+    if (m_playerbotMgr) {
         delete m_playerbotMgr;
-        m_playerbotMgr = NULL;
+        m_playerbotMgr = 0;
+    }
+    if (m_randomPlayerbotMgr) {
+        delete m_randomPlayerbotMgr;
+        m_randomPlayerbotMgr = 0;
     }
 
 }
@@ -1460,14 +1466,13 @@ void Player::Update(uint32 update_diff, uint32 p_time)
     if (IsHasDelayedTeleport())
         TeleportTo(m_teleport_dest, m_teleport_options);
 
-        // Playerbot mod
-    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-    {
-        if (m_playerbotAI)
-            m_playerbotAI->UpdateAI(p_time);
-        else if (m_playerbotMgr)
-            m_playerbotMgr->UpdateAI(p_time);
-    }
+    // Playerbot mod
+    if (m_playerbotAI)
+       m_playerbotAI->UpdateAI(p_time);
+    if (m_playerbotMgr)
+       m_playerbotMgr->UpdateAI(p_time);
+    if (m_randomPlayerbotMgr)
+        m_randomPlayerbotMgr->UpdateAI(p_time);
 }
 
 void Player::SetDeathState(DeathState s)
@@ -1753,11 +1758,6 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
 
     // preparing unsummon pet if lost (we must get pet before teleportation or will not find it later)
     Pet* pet = GetPet();
-
-    // Playerbot mod: if this user has bots, tell them to stop following master
-    // so they don't try to follow the master after the master teleports
-    if (GetPlayerbotMgr())
-        GetPlayerbotMgr()->Stay();
 
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.mapid);
 
@@ -4420,12 +4420,18 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
                 delete resultFriend;
             }
 
+            // wow armory begin
+            CharacterDatabase.PExecute("DELETE FROM armory_character_stats WHERE guid = '%u'", lowguid);
+            // wow armory end
             CharacterDatabase.PExecute("DELETE FROM characters WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_account_data WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_declinedname WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_action WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_aura WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_battleground_data WHERE guid = '%u'", lowguid);
+            // wow armory begin
+            CharacterDatabase.PExecute("DELETE FROM character_feed_log WHERE guid = '%u'", lowguid);
+            // wow armory end
             CharacterDatabase.PExecute("DELETE FROM character_gifts WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_glyphs WHERE guid = '%u'", lowguid);
             CharacterDatabase.PExecute("DELETE FROM character_homebind WHERE guid = '%u'", lowguid);
@@ -4455,6 +4461,7 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             CharacterDatabase.CommitTransaction();
             break;
         }
+
         // The character gets unlinked from the account, the name gets freed up and appears as deleted ingame
         case 1:
             CharacterDatabase.PExecute("UPDATE characters SET deleteInfos_Name=name, deleteInfos_Account=account, deleteDate='" UI64FMTD "', name='', account=0 WHERE guid=%u", uint64(time(NULL)), lowguid);
@@ -16651,14 +16658,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             if (!item->LoadSoulboundTradeableDataFromDB(this))
                 DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
         }
-        else if (proto->HolidayId)
-        {
-            if (!IsHolidayActive(HolidayIds(proto->HolidayId)))
-            {
-                DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with not active HolidayId (%u), deleted.", GetGuidStr().c_str(), itemId, itemLowGuid, proto->HolidayId);
-                removeItem = true;
-            }
-        }
 
         if (removeItem)
         {
@@ -17881,6 +17880,30 @@ void Player::SaveToDB()
 
     CharacterDatabase.CommitTransaction();
 
+    // wow armory begin
+    // Place this code AFTER CharacterDatabase.CommitTransaction(); to avoid some character saving errors.
+    // Wowarmory feeds
+    std::ostringstream sWowarmory;
+    for (WowarmoryFeeds::iterator iter = m_wowarmory_feeds.begin(); iter < m_wowarmory_feeds.end(); ++iter) {
+        sWowarmory << "INSERT IGNORE INTO character_feed_log (guid,type,data,date,counter,difficulty,item_guid,item_quality) VALUES ";
+        //                      guid                    type                        data                    date                            counter                   difficulty                        item_guid                      item_quality
+        sWowarmory << "(" << (*iter).guid << ", " << (*iter).type << ", " << (*iter).data << ", " << uint64((*iter).date) << ", " << (*iter).counter << ", " << uint32((*iter).difficulty) << ", " << (*iter).item_guid << ", " << (*iter).item_quality <<  ");";
+        CharacterDatabase.PExecute(sWowarmory.str().c_str());
+        sWowarmory.str("");
+    }
+    // Clear old saved feeds from storage - they are not required for server core.
+    InitWowarmoryFeeds();
+    // Character stats
+    std::ostringstream ps;
+    time_t t = time(NULL);
+    CharacterDatabase.PExecute("DELETE FROM armory_character_stats WHERE guid = %u", GetGUIDLow());
+    ps << "INSERT INTO armory_character_stats (guid, data, save_date) VALUES (" << GetGUIDLow() << ", '";
+    for (uint16 i = 0; i < m_valuesCount; ++i)
+        ps << GetUInt32Value(i) << " ";
+    ps << "', " << uint64(t) << ");";
+    CharacterDatabase.PExecute(ps.str().c_str());
+    // wow armory end
+
     // check if stats should only be saved on logout
     // save stats can be out of transaction
     if (m_session->isLogingOut() || !sWorld.getConfig(CONFIG_BOOL_STATS_SAVE_ONLY_ON_LOGOUT))
@@ -17889,6 +17912,10 @@ void Player::SaveToDB()
     // save pet (hunter pet level and experience and all type pets health/mana).
     if (Pet* pet = GetPet())
         pet->SavePetToDB(PET_SAVE_AS_CURRENT);
+
+    // playerbot mod
+    if (m_playerbotMgr) m_playerbotMgr->SaveToDB();
+    // end
 }
 
 // fast save function for item/money cheating preventing - save only inventory and money state
@@ -24531,6 +24558,47 @@ void Player::_fillGearScoreData(Item* item, GearScoreVec* gearScore, uint32& two
             break;
     }
 }
+
+void Player::InitWowarmoryFeeds() {
+    // Clear feeds
+    m_wowarmory_feeds.clear();
+}
+
+void Player::CreateWowarmoryFeed(uint32 type, uint32 data, uint32 item_guid, uint32 item_quality) {
+    /*
+        1 - TYPE_ACHIEVEMENT_FEED
+        2 - TYPE_ITEM_FEED
+        3 - TYPE_BOSS_FEED
+    */
+    sLog.outDebug("[Wowarmory]: entering Player::CreateWowarmoryFeed(%d, %u, %u, %u)", type, data, item_guid, item_quality); // For debugging
+    if (GetGUIDLow() == 0)
+    {
+        sLog.outError("[Wowarmory]: player is not initialized, unable to create log entry!");
+        return;
+    }
+    if (type <= 0 || type > 3)
+    {
+        sLog.outError("[Wowarmory]: unknown feed type: %d, ignore.", type);
+        return;
+    }
+    if (data == 0)
+    {
+        sLog.outError("[Wowarmory]: empty data (GUID: %u), ignore.", GetGUIDLow());
+        return;
+    }
+    WowarmoryFeedEntry feed;
+    feed.guid = GetGUIDLow();
+    feed.type = type;
+    feed.data = data;
+    feed.difficulty = type == 3 ? GetMap()->GetDifficulty() : 0;
+    feed.item_guid  = item_guid;
+    feed.item_quality = item_quality;
+    feed.counter = 0;
+    feed.date = time(NULL);
+    sLog.outDebug("[Wowarmory]: create wowarmory feed (GUID: %u, type: %d, data: %u).", feed.guid, feed.type, feed.data);
+    m_wowarmory_feeds.push_back(feed);
+}
+
 
 uint8 Player::GetTalentsCount(uint8 tab)
 {

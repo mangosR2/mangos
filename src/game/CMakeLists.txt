@@ -78,6 +78,58 @@ source_group("Movement"
     movement/util.cpp
 )
 
+source_group("AhBot"
+  REGULAR_EXPRESSION ahbot/.*
+)
+
+source_group("playerbot"
+  REGULAR_EXPRESSION playerbot/.*
+)
+
+source_group("playerbot_strategy"
+  REGULAR_EXPRESSION playerbot/strategy/.*
+)
+
+source_group("playerbot_strategy_actions"
+  REGULAR_EXPRESSION playerbot/strategy/actions/.*
+)
+
+source_group("playerbot_strategy_triggers"
+  REGULAR_EXPRESSION playerbot/strategy/triggers/.*
+)
+
+source_group("playerbot_strategy_values"
+  REGULAR_EXPRESSION playerbot/strategy/values/.*
+)
+
+source_group("playerbot_strategy_druid"
+  REGULAR_EXPRESSION playerbot/strategy/druid/.*
+)
+source_group("playerbot_strategy_hunter"
+  REGULAR_EXPRESSION playerbot/strategy/hunter/.*
+)
+source_group("playerbot_strategy_mage"
+  REGULAR_EXPRESSION playerbot/strategy/mage/.*
+)
+source_group("playerbot_strategy_paladin"
+  REGULAR_EXPRESSION playerbot/strategy/paladin/.*
+)
+source_group("playerbot_strategy_priest"
+  REGULAR_EXPRESSION playerbot/strategy/priest/.*
+)
+source_group("playerbot_strategy_rogue"
+  REGULAR_EXPRESSION playerbot/strategy/rogue/.*
+)
+source_group("playerbot_strategy_shaman"
+  REGULAR_EXPRESSION playerbot/strategy/shaman/.*
+)
+source_group("playerbot_strategy_warlock"
+  REGULAR_EXPRESSION playerbot/strategy/warlock/.*
+)
+source_group("playerbot_strategy_warrior"
+  REGULAR_EXPRESSION playerbot/strategy/warrior/.*
+)
+
 if(PCH)
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()

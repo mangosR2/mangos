@@ -145,6 +145,7 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleAccountSetAddonCommand(char* args);
         bool HandleAccountSetGmLevelCommand(char* args);
         bool HandleAccountSetPasswordCommand(char* args);
+        bool HandleAHBotOptionsCommand(char* args);
 
         bool HandleAccountFriendAddCommand(char* args);
         bool HandleAccountFriendDeleteCommand(char* args);
@@ -606,11 +607,12 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleRespawnCommand(char* args);
         bool HandleComeToMeCommand(char* args);
         bool HandleCombatStopCommand(char* args);
+        bool HandlePlayerbotCommand(char* args);
+        bool HandleAhBotCommand(char* args);
         bool HandleFlushArenaPointsCommand(char* args);
         bool HandleRepairitemsCommand(char* args);
         bool HandleStableCommand(char* args);
         bool HandleWaterwalkCommand(char* args);
-        bool HandlePlayerbotCommand(char* args);
         bool HandleQuitCommand(char* args);
         bool HandleShowGearScoreCommand(char* args);
 

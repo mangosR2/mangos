@@ -285,6 +285,14 @@ bool Item::Create(uint32 guidlow, uint32 itemId, Player const* owner)
 
     SetUInt32Value(ITEM_FIELD_DURATION, itemProto->Duration);
 
+    // wow armory begin
+    if (itemProto->Quality > 2 && itemProto->Flags != 2048 && (itemProto->Class == ITEM_CLASS_WEAPON || itemProto->Class == ITEM_CLASS_ARMOR))
+    {
+        if (!GetOwner())
+            return true;
+		GetOwner()->CreateWowarmoryFeed(2, itemProto->ItemId, guidlow, itemProto->Quality);
+    }
+    // wow armory end
     return true;
 }
 

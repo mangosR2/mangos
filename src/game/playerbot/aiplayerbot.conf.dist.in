@@ -1,0 +1,140 @@
+##########################################
+# MANGOS Ai Playerbot Configuration file #
+##########################################
+
+[AiPlayerbotConf]
+ConfVersion=2010102201
+
+###################################################################################################################
+# AI PLAYERBOT SETTINGS
+#
+#    AiPlayerbot.enabled
+#        General enable or disable Ai Playerbot
+#    Default 0 (Disabled)
+#
+#    AiPlayerbot.GlobalCooldown
+#        Delay in milliseconds after short bot actions, i.e. casting an instant spell. Increasing greayly improves performance
+#        but makes bots lazy
+#    Default 600 (0.6 sec)
+#
+#    AiPlayerbot.ReactDelay
+#        Delay in milliseconds after very short bot actions, i.e. response in chat. Increasing greayly improves performance
+#        but makes bots lazy
+#    Default 100 (0.1 sec)
+#
+#    AiPlayerbot.TeleportDelay
+#        Delay in milliseconds before bot is teleported (e.g. follow master in an instance)
+#    Default 10000 (10 secs)
+#
+#    AiPlayerbot.IterationsPerTickReactDelay
+#        Iterations count that ai engine computes per tick
+#    Default 10
+#
+#    AiPlayerbot.SightDistance
+#        Distance to game objects, targets, etc. bot can interact to
+#    Default 50
+#
+#    AiPlayerbot.SpellDistance
+#        Distance to target bot needs to maintain before casting a ranged spell
+#    Default 25
+#
+#    AiPlayerbot.MeleeDistance
+#        Distance to target when melee can be started
+#    Default 2.0
+#
+#    AiPlayerbot.FollowDistance
+#        Distance to target while following (not in melee combat)
+#    Default 2.0
+#
+#    AiPlayerbot.ReactDistance
+#        Maximim distance from master bot can react (does not affect chat)
+#    Default 100
+#
+#    AiPlayerbot.GrindDistance
+#        Distance to game objects, targets, etc. bot can interact to while grinding
+#    Default 75
+#
+#    AiPlayerbot.TooCloseDistance
+#        Distance when flee is necessary
+#    Default 10
+#
+#    AiPlayerbot.FleeDistance
+#        Distance to flee from or master when in danger
+#    Default 15
+#
+#    AiPlayerbot.RandomBotAccounts
+#        Comma-separated list of accounts where random bots are created
+#    Default <empty>
+#
+#    AiPlayerbot.CriticalHealth
+#        Health level when healing is essential (in percents)
+#        Takes effect if health is less or equal to AiPlayerbot.CriticalHealth
+#    Default 25
+#
+#    AiPlayerbot.LowHealth
+#        Health level when healing is required (in percents)
+#        Takes effect if health is between AiPlayerbot.LowHealth and AiPlayerbot.CriticalHealth
+#    Default 45
+#
+#    AiPlayerbot.MediumHealth
+#        Health level when healing is nice (in percents).
+#        Takes effect if health is between AiPlayerbot.MediumHealth and AiPlayerbot.LowHealth
+#    Default 65
+#
+#    AiPlayerbot.AlmostFullHealth
+#        Health level when healing over time is nice (in percents)
+#    Default 85
+#
+#    AiPlayerbot.LowMana
+#        Mana level when drink is required
+#    Default 15
+#
+#    AiPlayerbot.MediumMana
+#        Mana level when mana-cost spells are prohibited
+#    Default 40
+#
+#    AiPlayerbot.AllowGuildBots
+#        Allow use guild members as bots
+#    Default 1
+#
+#    AiPlayerbot.RandomGearQuality
+#        Gear qualify for .bot init <name> coommand
+#        0 - Poor, 1 - Common, 2 - Uncommon, 3 - Rare, 4 - Epic, etc.
+#    Default 3 (rare)
+#
+#    AiPlayerbot.PvpChance
+#        Allow opposing faction bots to summon themselves accidentaly near player and start PVP combat
+#        0 - Disabled
+#        1 and more - Enabled with chance higher with higher values
+#    Default 5
+#
+###################################################################################################################
+
+AiPlayerbot.enabled=1
+AiPlayerbot.AllowGuildBots=1
+AiPlayerbot.RandomBotAccounts=11,12
+
+AiPlayerbot.GlobalCooldown=600
+AiPlayerbot.ReactDelay=100
+AiPlayerbot.TeleportDelay=10000
+
+AiPlayerbot.IterationsPerTick=10
+
+AiPlayerbot.SightDistance=50
+AiPlayerbot.SpellDistance=25
+AiPlayerbot.MeleeDistance=2
+AiPlayerbot.FollowDistance=2.0
+AiPlayerbot.ReactDistance=100
+AiPlayerbot.GrindDistance=75
+AiPlayerbot.FleeDistance=15
+AiPlayerbot.TooCloseDistance=7
+
+AiPlayerbot.CriticalHealth=25
+AiPlayerbot.LowHealth=45
+AiPlayerbot.MediumHealth=65
+AiPlayerbot.AlmostFullHealth=85
+
+AiPlayerbot.LowMana=15
+
+AiPlayerbot.PvpChance = 10
+AiPlayerbot.RandomGearQuality = 3

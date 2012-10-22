@@ -3,7 +3,7 @@ ALTER TABLE character_db_version CHANGE COLUMN required_10160_02_characters_pet_
 ALTER TABLE auctionhouse
   ADD COLUMN houseid int(11) unsigned NOT NULL default '0' AFTER id;
 
-UPDATE auctionhouse, mangos.creature AS c, mangos.creature_template AS ct
+UPDATE auctionhouse, ytdb_355a.creature AS c, ytdb_355a.creature_template AS ct
   SET houseid =
     CASE ct.faction_A
       WHEN   12 THEN 1 /* human                                  */

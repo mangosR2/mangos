@@ -26,6 +26,7 @@
 #include "World.h"
 #include "Group.h"
 #include "Player.h"
+#include "GameEventMgr.h"
 
 #include <limits>
 

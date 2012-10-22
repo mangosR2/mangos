@@ -1,0 +1,6 @@
+## Title: Basic World of Warcraft AddOn
+## Version: 1.0
+## Author: skuzmin
+## Interface: 20400
+
+AiPlayerbotFrame.xml

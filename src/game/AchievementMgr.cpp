@@ -2895,6 +2895,9 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement)
         return;
 
     SendAchievementEarned(achievement);
+    // wow armory begin
+    GetPlayer()->CreateWowarmoryFeed(1, achievement->ID, 0, 0);
+    // wow armory end
     CompletedAchievementData& ca =  m_completedAchievements[achievement->ID];
     ca.date = time(NULL);
     ca.changed = true;
