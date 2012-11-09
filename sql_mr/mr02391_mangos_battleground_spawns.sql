@@ -1,4 +1,4 @@
-- Sql to create buff object pool for some BG
+-- Sql to create buff object pool for some BG
 
 -- Arathi bassin
 -- -------------

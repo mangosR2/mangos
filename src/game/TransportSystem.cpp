@@ -44,11 +44,6 @@ TransportBase::TransportBase(WorldObject* owner) :
     MANGOS_ASSERT(m_owner);
 }
 
-TransportBase::~TransportBase()
-{
-    MANGOS_ASSERT(m_passengers.size() == 0);
-}
-
 // Update every now and then (after some change of transporter's position)
 // This is used to calculate global positions (which don't have to be exact, they are only required for some server-side calculations
 void TransportBase::Update(uint32 diff)
@@ -103,9 +98,9 @@ void TransportBase::UpdateGlobalPositionOf(WorldObject* passenger, float lx, flo
         else
             m_owner->GetMap()->CreatureRelocation((Creature*)passenger, gx, gy, gz, go);
 
-        //// If passenger is vehicle
-        //if (((Unit*)passenger)->IsVehicle())
-        //    ((Unit*)passenger)->GetVehicleInfo()->UpdateGlobalPositions();
+        // If passenger is vehicle
+        if (((Unit*)passenger)->IsVehicle())
+            ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
     }
     // ToDo: Add gameobject relocation
     // ToDo: Add passenger relocation for MO transports

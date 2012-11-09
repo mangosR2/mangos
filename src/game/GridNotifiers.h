@@ -946,7 +946,7 @@ namespace MaNGOS
                 : i_obj(obj), i_originalCaster(originalCaster), i_range(range)
             {
                 i_targetForUnit = i_originalCaster->isType(TYPEMASK_UNIT);
-                i_targetForPlayer = (i_originalCaster->GetObjectGuid().IsVehicle() ? ((Unit*)i_originalCaster)->GetCharmerOrOwnerOrSelf()->GetTypeId() == TYPEID_PLAYER : i_originalCaster->GetTypeId() == TYPEID_PLAYER);
+                i_targetForPlayer = (i_originalCaster->IsVehicle() ? ((Unit*)i_originalCaster)->GetCharmerOrOwnerOrSelf()->GetTypeId() == TYPEID_PLAYER : i_originalCaster->GetTypeId() == TYPEID_PLAYER);
             }
             WorldObject const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)

@@ -657,28 +657,26 @@ void Creature::Regenerate(Powers power)
             break;
         }
         case POWER_ENERGY:
+        {
             if (IsVehicle())
             {
-                if (VehicleEntry const* vehicleInfo = sVehicleStore.LookupEntry(GetCreatureInfo()->vehicleId))
+                switch (GetVehicleInfo()->m_powerType)
                 {
-
-                    switch (vehicleInfo->m_powerType)
-                    {
-                        case ENERGY_TYPE_PYRITE:
-                        case ENERGY_TYPE_BLOOD:
-                        case ENERGY_TYPE_OOZE:
+                    case ENERGY_TYPE_PYRITE:
+                    case ENERGY_TYPE_BLOOD:
+                    case ENERGY_TYPE_OOZE:
                         break;
 
-                        case ENERGY_TYPE_STEAM:
-                        default:
-                            addvalue = 10 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
+                    case ENERGY_TYPE_STEAM:
+                    default:
+                        addvalue = 10 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
                         break;
-                    }
                 }
             }
             else
                 addvalue = 20 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_ENERGY);
             break;
+        }
         case POWER_FOCUS:
             addvalue = 24 * sWorld.getConfig(CONFIG_FLOAT_RATE_POWER_FOCUS);
             break;
@@ -2208,7 +2206,8 @@ bool Creature::HasSpellCooldown(uint32 spell_id) const
 
 uint8 Creature::getRace() const
 {
-    return GetCreatureModelRace(GetNativeDisplayId());
+    uint8 race = Unit::getRace();
+    return race ? race : GetCreatureModelRace(GetNativeDisplayId());
 }
 
 bool Creature::IsInEvadeMode() const

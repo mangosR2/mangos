@@ -524,24 +524,7 @@ void WorldSession::LogoutPlayer(bool Save)
         GetPlayer()->InterruptNonMeleeSpells(true);
 
         if (VehicleKitPtr vehicle = GetPlayer()->GetVehicle())
-        {
-            if (Creature* base = ((Creature*)vehicle->GetBase()))
-            {
-                bool dismiss = true;
-                if (!base->IsTemporarySummon() ||
-                    (base->GetVehicleInfo()->GetEntry()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY)))
-                    dismiss = false;
-
-                if (!base->RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, GetPlayer()->GetObjectGuid()))
-                    GetPlayer()->ExitVehicle();
-
-                if (base->HasAuraType(SPELL_AURA_CONTROL_VEHICLE))
-                    dismiss = false;
-
-                if (dismiss)
-                    base->ForcedDespawn(1000);
-            }
-        }
+            GetPlayer()->ExitVehicle();
 
         ///- empty buyback items and save the player in the database
         // some save parts only correctly work in case player present in map/player_lists (pets, etc)

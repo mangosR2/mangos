@@ -81,8 +81,8 @@ class EjectMovementGenerator : public MovementGenerator
 {
     public:
         explicit EjectMovementGenerator(uint32 Id) : m_Id(Id) {}
-        void Initialize(Unit &) {}
-        void Finalize(Unit &unit);
+        void Initialize(Unit& unit);
+        void Finalize(Unit& unit);
         void Interrupt(Unit &) {}
         void Reset(Unit &) {}
         bool Update(Unit &u, const uint32 &);

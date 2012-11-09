@@ -141,6 +141,10 @@ void Totem::UnSummon()
                 owner->RemoveAurasDueToSpell(spellId);
         }
 
+        // Sentry totem has dummy aura on owner at least
+        if (GetUInt32Value(UNIT_CREATED_BY_SPELL) != 0);
+            owner->RemoveAurasDueToSpell(GetUInt32Value(UNIT_CREATED_BY_SPELL));
+
         //remove aura all party members too
         if (owner->GetTypeId() == TYPEID_PLAYER)
         {

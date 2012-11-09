@@ -371,7 +371,8 @@ namespace MMAP
     ObjectLockType& MMapManager::GetLock(uint32 mapId, MapLockType _lockType)
     {
         // need implement method for fast find first instanceable map by num.
-        Map* map = sMapMgr.FindMap(mapId, 0);
-        return map ? map->GetLock(_lockType) : sWorld.GetLock(_lockType);
+        // Map* map = sMapMgr.FindMap(mapId, 0);
+        // return map ? map->GetLock(_lockType) : sWorld.GetLock(_lockType);
+        return sWorld.GetLock(_lockType);
     }
 }

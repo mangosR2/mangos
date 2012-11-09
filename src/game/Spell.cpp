@@ -204,8 +204,10 @@ void SpellCastTargets::setCorpseTarget(Corpse* corpse)
 void SpellCastTargets::Update(Unit* caster)
 {
     m_GOTarget   = m_GOTargetGUID ? caster->GetMap()->GetGameObject(m_GOTargetGUID) : NULL;
-    m_unitTarget = m_unitTargetGUID ?
-        ( m_unitTargetGUID == caster->GetObjectGuid() ? caster : ObjectAccessor::GetUnit(*caster, m_unitTargetGUID) ) :
+    m_unitTarget = (m_unitTargetGUID && caster->GetMap()) ?
+        (m_unitTargetGUID == caster->GetObjectGuid() ? 
+            caster : 
+            caster->GetMap()->GetUnit(m_unitTargetGUID)) :
         NULL;
 
     m_itemTarget = NULL;
@@ -958,12 +960,8 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     // spell fly from visual cast object
     WorldObject* affectiveObject = GetAffectiveCasterObject();
 
-    float speed_proto = m_spellInfo->speed;
-    // spell speed calculation for charge-like spells
-    if (m_spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) && (fabs(m_spellInfo->speed) < M_NULL_F))
-    {
-        speed_proto = BASE_CHARGE_SPEED;
-    }
+    // Speed possible inherited from triggering spell
+    float speed_proto = GetBaseSpellSpeed();
 
     // Spell have trajectory - need calculate incoming time
     if (affectiveObject && (m_targets.GetSpeed() > M_NULL_F))
@@ -1101,6 +1099,9 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
     // spell fly from visual cast object
     WorldObject* affectiveObject = GetAffectiveCasterObject();
 
+    // Speed possible inherited from triggering spell
+    float speed_proto = GetBaseSpellSpeed();
+
     // Spell have trajectory - need calculate incoming time
     if (affectiveObject && m_targets.GetSpeed() > 0.0f)
     {
@@ -1115,7 +1116,7 @@ void Spell::AddGOTarget(GameObject* pVictim, SpellEffectIndex effIndex)
         target.timeDelay = (uint64) floor(dist / speed * 1000.0f);
     }
     // Spell have speed - need calculate incoming time
-    else if (m_spellInfo->speed > 0.0f && affectiveObject && pVictim != affectiveObject)
+    else if (speed_proto > M_NULL_F && affectiveObject && pVictim != affectiveObject)
     {
         // calculate spell incoming interval
         float dist = affectiveObject->GetDistance(pVictim->GetPositionX(), pVictim->GetPositionY(), pVictim->GetPositionZ());
@@ -1200,7 +1201,10 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
         damageInfo.procVictim   = PROC_FLAG_NONE;
     }
 
-    if (m_spellInfo->speed > 0 || GetDelayStart())
+    // Speed possible inherited from triggering spell
+    float speed_proto = GetBaseSpellSpeed();
+
+    if (speed_proto > M_NULL_F || GetDelayStart())
     {
         // mark effects that were already handled in Spell::HandleDelayedSpellLaunch on spell launch as processed
         for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -1212,7 +1216,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
     }
 
     // recheck for availability/visibility of target
-    if (((m_spellInfo->speed > 0.0f ||
+    if (((speed_proto > M_NULL_F ||
         (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE &&
         GetSpellCastTime(m_spellInfo, this) > 0)) &&
         (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell)))
@@ -1286,7 +1290,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
     {
         // Fill base damage struct (unitTarget - is real spell target)
 
-        if (m_spellInfo->speed > 0)
+        if (speed_proto > M_NULL_F)
         {
             damageInfo.damage = m_damage;
             damageInfo.HitInfo = target->HitInfo;
@@ -1422,10 +1426,13 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
 
     Unit* realCaster = GetAffectiveCaster();
 
+    // Speed possible inherited from triggering spell
+    float speed_proto = GetBaseSpellSpeed();
+
     // Recheck effect immune (only for delayed spells)
-    if (m_spellInfo->speed)
+    if (speed_proto > M_NULL_F)
     {
-        for(int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
+        for (int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
         {
             if (effectMask & (1 << effectNumber))
             {
@@ -1437,7 +1444,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
     }
 
     // Recheck immune (only for delayed spells)
-    if (m_spellInfo->speed && (
+    if (speed_proto > M_NULL_F && (
         (IsSpellCauseDamage(m_spellInfo) && unit->IsImmunedToDamage(GetSpellSchoolMask(m_spellInfo))) ||
         unit->IsImmuneToSpell(m_spellInfo, GetAffectiveUnitCaster()->IsFriendlyTo(unit))) &&
         !m_spellInfo->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
@@ -1461,7 +1468,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
     if (realCaster && realCaster != unit)
     {
         // Recheck  UNIT_FLAG_NON_ATTACKABLE for delayed spells
-        if (m_spellInfo->speed > 0.0f &&
+        if (speed_proto > M_NULL_F &&
             unit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE) &&
             unit->GetCharmerOrOwnerGuid() != m_caster->GetObjectGuid())
         {
@@ -1473,7 +1480,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         if (!realCaster->IsFriendlyTo(unit))
         {
             // for delayed spells ignore not visible explicit target
-            if (m_spellInfo->speed > 0.0f && unit == m_targets.getUnitTarget() &&
+            if (speed_proto > M_NULL_F && unit == m_targets.getUnitTarget() &&
                 (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell))
             {
                 realCaster->SendSpellMiss(unit, m_spellInfo->Id, SPELL_MISS_EVADE);
@@ -1495,7 +1502,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
         else
         {
             // for delayed spells ignore negative spells (after duel end) for friendly targets
-            if (m_spellInfo->speed > 0.0f && !IsPositiveSpell(m_spellInfo->Id))
+            if (speed_proto > M_NULL_F && !IsPositiveSpell(m_spellInfo->Id))
             {
                 realCaster->SendSpellMiss(unit, m_spellInfo->Id, SPELL_MISS_EVADE);
                 ResetEffectDamageAndHeal();
@@ -1545,7 +1552,7 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
     }
 
     // now apply all created auras
-    if (m_spellAuraHolder)
+    if (m_spellAuraHolder && m_spellAuraHolder->GetTarget() == unit)
     {
         // normally shouldn't happen
         if (!m_spellAuraHolder->IsEmptyHolder())
@@ -1576,6 +1583,13 @@ void Spell::DoSpellHitOnUnit(Unit *unit, uint32 effectMask)
             unit->AddSpellAuraHolder(m_spellAuraHolder);
             m_spellAuraHolder->SetInUse(false);
         }
+    }
+    else if (m_spellAuraHolder)
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST,"Spell::DoSpellHitOnUnit spell %u caster %s cannot apply spellauraholder to %s due to different targets.",
+            m_spellInfo->Id,
+            realCaster->GetObjectGuid().GetString().c_str(),
+            unit->GetObjectGuid().GetString().c_str());
     }
 }
 
@@ -2201,10 +2215,17 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_AREAEFFECT_INSTANT:
         {
             SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
-
-            // Select friendly targets for positive effect
-            if (IsPositiveEffect(m_spellInfo, effIndex))
-                targetB = SPELL_TARGETS_FRIENDLY;
+            switch (m_spellInfo->Effect[effIndex])
+            {
+                case SPELL_EFFECT_QUEST_COMPLETE:
+                case SPELL_EFFECT_KILL_CREDIT_PERSONAL:
+                case SPELL_EFFECT_KILL_CREDIT_GROUP:
+                    targetB = SPELL_TARGETS_ALL;
+                default:
+                    // Select friendly targets for positive effect
+                    if (IsPositiveEffect(m_spellInfo, effIndex))
+                        targetB = SPELL_TARGETS_FRIENDLY;
+            }
 
             UnitList tempTargetUnitMap;
             SpellScriptTargetBounds bounds = sSpellMgr.GetSpellScriptTargetBounds(m_spellInfo->Id);
@@ -2484,7 +2505,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_UNIT_PASSENGER_5:
         case TARGET_UNIT_PASSENGER_6:
         case TARGET_UNIT_PASSENGER_7:
-            if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->GetObjectGuid().IsVehicle())
+            if (m_caster->GetTypeId() == TYPEID_UNIT && m_caster->IsVehicle())
                 if (Unit *unit = m_caster->GetVehicleKit()->GetPassenger(targetMode - TARGET_UNIT_PASSENGER_0))
                     targetUnitMap.push_back(unit);
             break;
@@ -3250,6 +3271,14 @@ void Spell::prepare(SpellCastTargets const* targets, Aura const* triggeredByAura
     if (triggeredByAura)
         m_triggeredByAuraSpell  = triggeredByAura->GetSpellProto();
 
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell::prepare spell %u caster %s %s formal target %s %s preparing.", 
+        m_spellInfo->Id, 
+        m_caster ? m_caster->GetObjectGuid().GetString().c_str() : "<none>",
+        (m_caster && !m_caster->IsInWorld()) ? "(not in World)" : "",
+        m_targets.getUnitTargetGuid() ? m_targets.getUnitTargetGuid().GetString().c_str() : "<none>",
+        (m_targets.getUnitTarget() && !m_targets.getUnitTarget()->IsInWorld()) ? "(not in world)" : ""
+        );
+
     // create and add update event for this spell
     m_caster->AddEvent(new SpellEvent(this), 1);
 
@@ -3263,12 +3292,10 @@ void Spell::prepare(SpellCastTargets const* targets, Aura const* triggeredByAura
 
     if (uint8 resultDisable = sObjectMgr.IsSpellDisabled(m_spellInfo->Id))
     {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        {
-            sLog.outDebug("Player %s cast a spell %u which was disabled by server administrator",   m_caster->GetName(), m_spellInfo->Id);
-            if (resultDisable == 2)
-            sLog.outChar("Player %s cast a spell %u which was disabled by server administrator and marked as CheatSpell",   m_caster->GetName(), m_spellInfo->Id);
-        }
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST,"Spell::prepare  %s try cast a spell %u which was disabled by server administrator",   m_caster ? m_caster->GetObjectGuid().GetString().c_str() : "<none>", m_spellInfo->Id);
+        if (m_caster->GetTypeId() == TYPEID_PLAYER &&resultDisable == 2)
+            sLog.outChar("Player %s cast a spell %u which was disabled by server administrator and marked as CheatSpell",   m_caster->GetObjectGuid().GetString().c_str(), m_spellInfo->Id);
+
         SendCastResult(SPELL_FAILED_SPELL_UNAVAILABLE);
         finish(false);
         return;
@@ -4767,6 +4794,11 @@ void Spell::SendChannelUpdate(uint32 time)
                 if (possessed->GetUInt32Value(UNIT_CREATED_BY_SPELL) == m_spellInfo->Id && possessed->GetTypeId() == TYPEID_UNIT)
                     ((Creature*)possessed)->ForcedDespawn();
             }
+        }
+        else if (m_spellInfo->HasAttribute(SPELL_ATTR_EX_FARSIGHT) && m_caster->GetTypeId() == TYPEID_PLAYER)
+        {
+            if (DynamicObject* dynObj = m_caster->GetDynObject(m_triggeredByAuraSpell ? m_triggeredByAuraSpell->Id : m_spellInfo->Id))
+                ((Player*)m_caster)->SetViewPoint(NULL);
         }
 
         m_caster->RemoveAurasByCasterSpell(m_spellInfo->Id, m_caster->GetObjectGuid());
@@ -7908,7 +7940,12 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff )
             // Get GO cast coordinates if original caster -> GO
             if (target != m_caster)
             {
-                if (WorldObject* caster = GetCastingObject())
+                if (DynamicObject* dynObj = m_caster->GetDynObject(m_triggeredByAuraSpell ? m_triggeredByAuraSpell->Id : m_spellInfo->Id))
+                {
+                    if (!target->IsVisibleTargetForSpell(dynObj, m_spellInfo))
+                        return false;
+                }
+                else if (WorldObject* caster = GetCastingObject())
                     if (!target->IsVisibleTargetForSpell(caster, m_spellInfo))
                         return false;
             }
@@ -8284,6 +8321,20 @@ void Spell::CancelGlobalCooldown()
         ((Player*)m_caster)->GetGlobalCooldownMgr().CancelGlobalCooldown(m_spellInfo);
 }
 
+float Spell::GetBaseSpellSpeed()
+{
+    // Speed possible inherited from triggering spell
+    float speed_proto = (fabs(m_spellInfo->speed) < M_NULL_F && m_triggeredBySpellInfo) ?
+                            m_triggeredBySpellInfo->speed : m_spellInfo->speed;
+
+    // spell speed calculation for charge-like spells
+    if (m_spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT) 
+        && (fabs(speed_proto) < M_NULL_F))
+        speed_proto = BASE_CHARGE_SPEED;
+
+    return speed_proto;
+}
+
 bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
 {
     float radius;
@@ -8557,6 +8608,21 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 }
                 uiPhaseIndex++;
             }
+            break;
+        }
+        case 58836:  // Initialize Images
+        {
+            if ( i != EFFECT_INDEX_0)
+                return false;
+
+            GroupPetList guardians = m_caster->GetGuardians();
+            if (guardians.empty())
+                return true;
+
+            for (GuardianPetList::const_iterator itr = guardians.begin(); itr != guardians.end(); ++itr)
+                if (Pet* _pet = m_caster->GetMap()->GetPet(*itr))
+                    targetUnitMap.push_back(_pet);
+
             break;
         }
         case 59754:                    //Rune Tap triggered from Glyph of Rune Tap

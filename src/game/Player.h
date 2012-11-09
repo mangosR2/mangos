@@ -1982,8 +1982,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool IsBeingTeleported() const { return mSemaphoreTeleport_Near || mSemaphoreTeleport_Far; }
         bool IsBeingTeleportedNear() const { return mSemaphoreTeleport_Near; }
         bool IsBeingTeleportedFar() const { return mSemaphoreTeleport_Far; }
+        bool IsBeingTeleportedDelayEvent() const { return mSemaphoreTeleport_DelayEvent; }
         void SetSemaphoreTeleportNear(bool semphsetting) { mSemaphoreTeleport_Near = semphsetting; }
         void SetSemaphoreTeleportFar(bool semphsetting) { mSemaphoreTeleport_Far = semphsetting; }
+        void SetSemaphoreTeleportDelayEvent(bool semphsetting) { mSemaphoreTeleport_DelayEvent = semphsetting; }
         void ProcessDelayedOperations();
 
         void CheckAreaExploreAndOutdoor(void);
@@ -2391,6 +2393,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CheckTransferPossibility(uint32 mapId);
         bool CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq = false);
 
+        bool NeedGoingToHomebind();
+
         // LFG
         LFGPlayerState* GetLFGPlayerState() { return m_LFGState; }
         uint8 GetTalentsCount(uint8 tab);
@@ -2797,6 +2801,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_teleport_options;
         bool mSemaphoreTeleport_Near;
         bool mSemaphoreTeleport_Far;
+        bool mSemaphoreTeleport_DelayEvent;
 
         uint32 m_DelayedOperations;
         bool m_bCanDelayTeleport;

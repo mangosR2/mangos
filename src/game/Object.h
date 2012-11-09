@@ -648,6 +648,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void KillAllEvents(bool force);
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
 
+        virtual bool IsVehicle() const { return false; }
+
     protected:
         explicit WorldObject();
 

@@ -176,7 +176,7 @@ void PetAI::Reset()
     }
 
     // define initial AI type
-    if (m_creature->GetObjectGuid().IsVehicle())
+    if (m_creature->IsVehicle())
         m_AIType = PET_AI_PASSIVE;
     if (m_spellType[PET_SPELL_RANGED].size() > 0 && (m_spellType[PET_SPELL_MELEE].size() < m_spellType[PET_SPELL_RANGED].size()))
     {
@@ -277,7 +277,7 @@ bool PetAI::UpdateAIType()
     if (!inCombat)
         return false;
 
-    if (m_creature->GetObjectGuid().IsVehicle() && m_creature->GetCharmerOrOwner())
+    if (m_creature->IsVehicle() && m_creature->GetCharmerOrOwner())
     {
         m_AIType = PET_AI_PASSIVE;
         return false;

@@ -103,6 +103,7 @@ enum GameObjectWorldState
     OBJECT_STATE_DAMAGE              = 2,
     OBJECT_STATE_DESTROY             = 3,
     OBJECT_STATE_PERIOD              = 3,
+    OBJECT_STATE_REBUILD             = 4,
     OBJECT_STATE_LAST_INDEX          = OBJECT_STATE_ALLIANCE_DESTROY,
 };
 

@@ -96,7 +96,7 @@ void Pet::RemoveFromWorld()
     Unit::RemoveFromWorld();
 }
 
-bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool current, CreatureCreatePos* pos)
+bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool current, CreatureCreatePos* pos)
 {
     m_loading = true;
 
@@ -156,7 +156,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     setPetType(PetType(fields[16].GetUInt8()));
 
-    if(getPetType() == HUNTER_PET)
+    if (getPetType() == HUNTER_PET)
     {
         if (!creatureInfo->isTameable(owner->CanTameExoticPets()))
         {
@@ -185,17 +185,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
         return false;
     }
 
-    if (GetPetCounter() == 1)
-        SetPetFollowAngle(PET_FOLLOW_ANGLE*3);
-    else if (GetPetCounter() == 2)
-        SetPetFollowAngle(PET_FOLLOW_ANGLE*2);
-    else
-        SetPetFollowAngle(PET_FOLLOW_ANGLE);
-
-    if (getPetType() == MINI_PET)
-        SetPetFollowAngle(M_PI_F*1.25f);
-
-    //Map *map = owner->GetMap();
+    SetPetFollowAngle(getPetType() == MINI_PET ? M_PI_F * 1.25f : PET_FOLLOW_ANGLE * (1 - GetPetCounter()));
 
     CreatureCreatePos *temp_pos = NULL;
     if (!pos)
@@ -210,6 +200,8 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
             delete temp_pos;
         return false;
     }
+    if (temp_pos)
+        delete temp_pos;
 
     SetDisplayId(fields[3].GetUInt32());
     SetNativeDisplayId(fields[3].GetUInt32());
@@ -222,27 +214,24 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
 
     // reget for sure use real creature info selected for Pet at load/creating
-    CreatureInfo const *cinfo = GetCreatureInfo();
+    CreatureInfo const* cinfo = GetCreatureInfo();
+
 
     if (cinfo->type == CREATURE_TYPE_CRITTER)
     {
-        AIM_Initialize();
+        LoadCreatureAddon(true);
         pos->GetMap()->Add((Creature*)this);
+        AIM_Initialize();
         delete result;
-        if (temp_pos)
-            delete temp_pos;
         return true;
     }
-
-    if (temp_pos)
-        delete temp_pos;
 
     switch (getPetType())
     {
         case SUMMON_PET:
             petlevel=owner->getLevel();
-            LoadCreatureAddon(true);
             RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY | UNIT_BYTE2_FLAG_PVP);
+            LoadCreatureAddon(true);
             break;
         case HUNTER_PET:
             SetByteFlag(UNIT_FIELD_BYTES_2, 2, fields[9].GetBool() ? UNIT_CAN_BE_ABANDONED : UNIT_CAN_BE_RENAMED | UNIT_CAN_BE_ABANDONED);
@@ -252,8 +241,8 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
             setPowerType(POWER_FOCUS);
             break;
         default:
-            LoadCreatureAddon(true);
             RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY | UNIT_BYTE2_FLAG_PVP);
+            LoadCreatureAddon(true);
             sLog.outError("Pet have incorrect type (%u) for pet loading.", getPetType());
             break;
     }
@@ -299,9 +288,10 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     // load action bar, if data broken will fill later by default spells.
     m_charmInfo->LoadPetActionBar(fields[13].GetCppString());
-    // since last save (in seconds)
 
+    // Finished use DB data
     delete result;
+
 
     //load spells/cooldowns/auras
     _LoadAuras(timediff);
@@ -310,6 +300,9 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
     InitLevelupSpellsForLevel();
     LearnPetPassives();
     _LoadSpellCooldowns();
+
+    GetMap()->Add((Creature*)this);
+    owner->SetPet(this);                                    // in DB stored only full controlled creature
 
     if (getPetType() == SUMMON_PET)
         CastPetAuras(true);
@@ -345,12 +338,7 @@ bool Pet::LoadPetFromDB( Player* owner, uint32 petentry, uint32 petnumber, bool 
 
     AIM_Initialize();
 
-    GetMap()->Add((Creature*)this);
-
-    owner->SetPet(this);                                    // in DB stored only full controlled creature
-
-    DEBUG_LOG("New pet (loaded from DB) has guid %u", GetGUIDLow());
-
+    DEBUG_LOG("Pet::LoadPetFromDB pet %s successfully loaded", GetObjectGuid().GetString().c_str());
     m_loading = false;
 
     if (owner->GetTypeId() == TYPEID_PLAYER)
@@ -584,7 +572,13 @@ void Pet::Update(uint32 update_diff, uint32 diff)
         {
             if (m_corpseDecayTimer <= update_diff)
             {
-                MANGOS_ASSERT(getPetType()!=SUMMON_PET && "Must be already removed.");
+                if (getPetType() != SUMMON_PET)
+                {
+                    sLog.outError("Pet::Update pet %s (owner %s) has CORPSE state, but not must (has type %u). Crush possible later.", 
+                        GetObjectGuid().GetString().c_str(), GetOwner() ? GetOwner()->GetObjectGuid().GetString().c_str() : "<none>", getPetType());
+                    RemoveCorpse();
+                    return;
+                };
                 Unsummon(PET_SAVE_NOT_IN_SLOT);             //hunters' pets never get removed because of death, NEVER!
                 return;
             }
@@ -2709,15 +2703,7 @@ bool Pet::Summon()
     if (!map)
         return false;
 
-    if (GetPetCounter() == 1)
-        SetPetFollowAngle(PET_FOLLOW_ANGLE*3);
-    else if (GetPetCounter() == 2)
-        SetPetFollowAngle(PET_FOLLOW_ANGLE*2);
-    else
-        SetPetFollowAngle(PET_FOLLOW_ANGLE);
-
-    if (getPetType() == MINI_PET)
-        SetPetFollowAngle(M_PI_F*1.25f);
+    SetPetFollowAngle(getPetType() == MINI_PET ? M_PI_F * 1.25f : PET_FOLLOW_ANGLE * (1 - GetPetCounter()));
 
     uint16 level = getLevel() ? getLevel() : owner->getLevel();;
 
@@ -2729,13 +2715,17 @@ bool Pet::Summon()
     else
         GetCharmInfo()->SetState(CHARM_STATE_REACT,REACT_DEFENSIVE);
 
+    if (!owner->GetTypeId() == TYPEID_PLAYER || !IsPermanentPetFor((Player*)owner))
+    {
+        GetCharmInfo()->InitCharmCreateSpells();
+        LoadCreatureAddon(true);
+    }
+
     switch (getPetType())
     {
         case GUARDIAN_PET:
         case PROTECTOR_PET:
         {
-            GetCharmInfo()->InitCharmCreateSpells();
-            LoadCreatureAddon(true);
             RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP | UNIT_BYTE2_FLAG_SANCTUARY | UNIT_BYTE2_FLAG_PVP);
             SetUInt32Value(UNIT_NPC_FLAGS, GetCreatureInfo()->npcflag);
             SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
@@ -2788,17 +2778,16 @@ bool Pet::Summon()
         {
             SelectLevel(GetCreatureInfo());
             SetUInt32Value(UNIT_NPC_FLAGS, GetCreatureInfo()->npcflag);
+            SetByteValue(UNIT_FIELD_BYTES_2, 1, 0);
             SetName("");
-            owner->SetMiniPet((Unit*)this);
+            SetNeedSave(false);
+            m_loading = false;
             InitPetCreateSpells();
             LoadCreatureAddon(true);
-            SetByteValue(UNIT_FIELD_BYTES_2, 1, 0);
-            AIM_Initialize();
-            SetNeedSave(false);
             map->Add((Creature*)this);
-            m_loading = false;
+            owner->SetMiniPet(this);
+            AIM_Initialize();
             return true;
-            break;
         }
         default:
         {
@@ -2812,14 +2801,17 @@ bool Pet::Summon()
 
     if(owner->IsFFAPvP())
         SetFFAPvP(true);
-
     SetCanModifyStats(true);
+
     InitStatsForLevel(level, owner);
     InitTalentForLevel();
     InitPetCreateSpells();
     SynchronizeLevelWithOwner();
     InitLevelupSpellsForLevel();
     LearnPetPassives();
+
+    map->Add((Creature*)this);
+
     CastPetAuras(true);
 
     if (owner->GetTypeId() == TYPEID_PLAYER)
@@ -2833,8 +2825,7 @@ bool Pet::Summon()
 
     AIM_Initialize();
 
-    map->Add((Creature*)this);
-
+    DEBUG_LOG("Pet::LoadPetFromDB pet %s successfully loaded", GetObjectGuid().GetString().c_str());
     m_loading = false;
 
     if (owner->GetTypeId() == TYPEID_PLAYER)

@@ -333,7 +333,7 @@ pAuraHandler AuraHandler[TOTAL_AURAS]=
     &Aura::HandleNULL,                                      //276 mod damage % mechanic?
     &Aura::HandleNoImmediateEffect,                         //277 SPELL_AURA_MOD_MAX_AFFECTED_TARGETS Use SpellClassMask for spell select
     &Aura::HandleAuraModDisarm,                             //278 SPELL_AURA_MOD_DISARM_RANGED disarm ranged weapon
-    &Aura::HandleNULL,                                      //279 visual effects? 58836 and 57507
+    &Aura::HandleInitializeImages,                          //279 aura for initialization mirror images (copy name)
     &Aura::HandleModTargetArmorPct,                         //280 SPELL_AURA_MOD_TARGET_ARMOR_PCT
     &Aura::HandleNoImmediateEffect,                         //281 SPELL_AURA_MOD_HONOR_GAIN             implemented in Player::RewardHonor
     &Aura::HandleAuraIncreaseBaseHealthPercent,             //282 SPELL_AURA_INCREASE_BASE_HEALTH_PERCENT
@@ -9823,9 +9823,19 @@ void Aura::PeriodicDummyTick()
         }
         case SPELLFAMILY_MAGE:
         {
-            // Mirror Image
-//            if (spell->Id == 55342)
-//                return;
+            switch (spell->Id)
+            {
+                // Mirror Image
+                case 55342:
+                {
+                    if (GetAuraTicks() != 1)
+                        return;
+                    if (Unit* pCaster = GetCaster())
+                        pCaster->CastSpell(pCaster, spell->EffectTriggerSpell[GetEffIndex()], true, NULL, this);
+                }
+                default:
+                    break;
+            }
             break;
         }
         case SPELLFAMILY_DRUID:
@@ -10163,7 +10173,7 @@ void Aura::HandleAuraControlVehicle(bool apply, bool Real)
 
         if (caster->GetVehicle() && caster->GetVehicle() == target->GetVehicleKit())
         {
-            if (m_removeMode == AURA_REMOVE_BY_STACK)
+            if (m_removeMode == AURA_REMOVE_BY_STACK || m_removeMode == AURA_REMOVE_BY_TRACKING)
                 caster->GetVehicle()->RemovePassenger(caster, false);
             else
                 caster->_ExitVehicle();
@@ -10193,7 +10203,7 @@ void Aura::HandleAuraLinked(bool apply, bool Real)
     if (apply)
     {
         if (pCaster && pCaster->GetTypeId() == TYPEID_PLAYER &&
-            pTarget->GetObjectGuid().IsVehicle() &&
+            pTarget->IsVehicle() &&
             spellInfo->HasAttribute(SPELL_ATTR_EX_HIDDEN_AURA) &&
             spellInfo->HasAttribute(SPELL_ATTR_HIDE_IN_COMBAT_LOG))
         {
@@ -12718,4 +12728,31 @@ bool Aura::IsAffectedByCrowdControlEffect(uint32 damage)
 
     m_modifier.m_baseamount -= damage;
     return true;
+}
+
+void Aura::HandleInitializeImages(bool apply, bool real)
+{
+    if (!real)
+        return;
+
+    Unit* caster = GetCaster();
+    Unit* target = GetTarget();
+
+    if (!caster || !target || !target->IsInWorld() || target->GetTypeId() != TYPEID_UNIT)
+        return;
+
+    if (apply)
+    {
+        target->SetName(caster->GetName());
+    }
+    else
+    {
+        CreatureInfo const* cinfo = ((Creature*)target)->GetCreatureInfo();
+        if (!cinfo)
+        {
+            sLog.outErrorDb("Aura::HandleInitializeImages try set name to unknown creature %s", target->GetObjectGuid().GetString().c_str());
+            return;
+        }
+        target->SetName(cinfo->Name);
+    }
 }

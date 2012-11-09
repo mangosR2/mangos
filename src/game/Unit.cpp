@@ -195,7 +195,6 @@ Unit::Unit() :
     movespline(new Movement::MoveSpline()),
     m_charmInfo(NULL),
     i_motionMaster(this),
-    m_vehicleInfo(NULL),
     m_ThreatManager(this),
     m_HostileRefManager(new HostileRefManager(this)),
     m_stateMgr(this)
@@ -330,7 +329,6 @@ Unit::~Unit()
         CleanupDeletedHolders(true);
 
         delete m_charmInfo;
-        delete m_vehicleInfo;
         delete movespline;
     }
     delete m_HostileRefManager;
@@ -399,6 +397,17 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     if (uint32 base_att = getAttackTimer(OFF_ATTACK))
     {
         setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+    }
+
+    if (IsVehicle())
+    {
+        // Initialize vehicle if not done
+        if (isAlive() && !GetVehicleKit()->IsInitialized())
+            GetVehicleKit()->Initialize();
+
+        // Update passenger positions if we are the first vehicle
+        if (!IsBoarded())
+            GetVehicleKit()->Update(update_diff);
     }
 
     // update abilities available only for fraction of time
@@ -520,71 +529,7 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     else if (turn)
         SetOrientation(orientation);
 
-    if ((relocate || turn) && GetVehicleKit())
-    {
-        if (m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
-        {
-            x += m_movementInfo.GetTransportPos()->x;
-            y += m_movementInfo.GetTransportPos()->y;
-            z += m_movementInfo.GetTransportPos()->z;
-            orientation += m_movementInfo.GetTransportPos()->o;
-        }
-        GetVehicleKit()->RelocatePassengers(x, y, z, orientation);
-    }
-
     return relocate || turn;
-}
-
-void Unit::SendMonsterMoveTransport(WorldObject *transport, SplineType type, SplineFlags flags, uint32 moveTime, ...)
-{
-    va_list vargs;
-    va_start(vargs, moveTime);
-
-    WorldPacket data(SMSG_MONSTER_MOVE_TRANSPORT, 60);
-    data << GetPackGUID();
-    data << transport->GetPackGUID();
-    data << uint8(m_movementInfo.GetTransportSeat());
-    data << uint8(GetTypeId() == TYPEID_PLAYER ? 1 : 0);       // bool, new in 3.1
-    data << float(transport->GetPositionX());
-    data << float(transport->GetPositionY());
-    data << float(transport->GetPositionZ());
-    data << uint32(WorldTimer::getMSTime());
-
-    data << uint8(type);                                    // spline type
-
-    switch(type)
-    {
-        case SPLINETYPE_NORMAL:                             // normal packet
-            break;
-        case SPLINETYPE_STOP:                               // stop packet (raw pos?)
-            va_end(vargs);
-            SendMessageToSet(&data, true);
-            return;
-        case SPLINETYPE_FACINGSPOT:                         // facing spot
-            data << float(va_arg(vargs,double));
-            data << float(va_arg(vargs,double));
-            data << float(va_arg(vargs,double));
-            break;
-        case SPLINETYPE_FACINGTARGET:
-            data << uint64(va_arg(vargs,uint64));
-            break;
-        case SPLINETYPE_FACINGANGLE:
-            data << float(va_arg(vargs,double));            // facing angle
-            break;
-    }
-
-    va_end(vargs);
-
-    data << uint32(flags);
-
-    data << uint32(moveTime);                               // Time in between points
-    data << uint32(1);                                      // 1 single waypoint
-
-    data << float(m_movementInfo.GetTransportPos()->x);
-    data << float(m_movementInfo.GetTransportPos()->y);
-    data << float(m_movementInfo.GetTransportPos()->z);
-
-    SendMessageToSet(&data, true);
 }
 
 void Unit::SendHeartBeat()
@@ -1310,7 +1255,7 @@ void Unit::JustKilledCreature(Creature* victim)
     }
 
     // if victim is vehicle and has passengers - remove his
-    if (victim->GetObjectGuid().IsVehicle())
+    if (victim->IsVehicle())
     {
         if (victim->GetVehicleKit())
             victim->GetVehicleKit()->RemoveAllPassengers();
@@ -4790,7 +4735,8 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
         {
             if (iter->second == holder)
             {
-                DEBUG_LOG("Unit::AddSpellAuraHolder cannot add SpellAuraHolder (spell %u), holder already added!", holder->GetId());
+                sLog.outError("Unit::AddSpellAuraHolder cannot add SpellAuraHolder %u, to %s due to holder already added!", 
+                    holder->GetId(),GetObjectGuid().GetString().c_str());
                 return false;
             }
         }
@@ -4809,9 +4755,11 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
 
     if (holder->GetTarget() != this)
     {
-        sLog.outError("Holder (spell %u) add to spell aura holder list of %s (lowguid: %u) but spell aura holder target is %s (lowguid: %u)",
-            holder->GetId(),(GetTypeId()==TYPEID_PLAYER?"player":"creature"),GetGUIDLow(),
-            (holder->GetTarget()->GetTypeId()==TYPEID_PLAYER?"player":"creature"),holder->GetTarget()->GetGUIDLow());
+        sLog.outError("Unit::AddSpellAuraHolder cannot add SpellAuraHolder %u, caster %s, to %s, due to different target (%s)!",
+            holder->GetId(),
+            holder->GetCaster() ? holder->GetCaster()->GetObjectGuid().GetString().c_str() : "<none>",
+            GetObjectGuid().GetString().c_str(),
+            holder->GetTarget() ? holder->GetTarget()->GetObjectGuid().GetString().c_str() : "<none>");
         return false;
     }
 
@@ -7304,12 +7252,16 @@ Pet* Unit::GetPet() const
         {
             if (Pet* pet = GetMap()->GetPet(pet_guid))
                 return pet;
+            else
+            {
+                sLog.outError("Unit::GetPet: %s not exist.", pet_guid.GetString().c_str());
+                const_cast<Unit*>(this)->SetPet(NULL);
+            }
         }
 
         sLog.outError("Unit::GetPet: %s not exist.", pet_guid.GetString().c_str());
-        const_cast<Unit*>(this)->SetPet(0);
+        const_cast<Unit*>(this)->SetPet(NULL);
     }
-
     return NULL;
 }
 
@@ -7376,7 +7328,8 @@ void Unit::SetPet(Pet* pet)
 {
     if (pet)
     {
-        SetPetGuid(pet->GetObjectGuid()) ;  //Using last pet guid for player
+        if (!pet->GetPetCounter())
+            SetPetGuid(pet->GetObjectGuid()) ;  //Using last pet guid for player
         AddPetToList(pet);
     }
     else
@@ -9436,7 +9389,7 @@ void Unit::Mount(uint32 mount, uint32 spellId, uint32 vehicleId, uint32 creature
             SetVehicleId(vehicleId);
             GetVehicleKit()->Reset();
             if (GetTypeId() != TYPEID_UNIT)
-                GetVehicleKit()->InstallAllAccessories(creatureEntry);
+                GetVehicleKit()->Initialize(creatureEntry);
         }
 
         WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, GetPackGUID().size() + 4 + 4);
@@ -9465,6 +9418,12 @@ void Unit::Unmount(bool from_aura)
         SendMessageToSet(&data, true);
     }
 
+    if (GetVehicleKit())
+    {
+        GetVehicleKit()->Reset();
+        SetVehicleId(0);
+    }
+
     // only resummon old pet if the player is already added to a map
     // this prevents adding a pet to a not created map which would otherwise cause a crash
     // (it could probably happen when logging in after a previous crash)
@@ -9484,9 +9443,6 @@ void Unit::Unmount(bool from_aura)
         else
             ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
     }
-
-    if (GetVehicleKit())
-        SetVehicleId(0);
 }
 
 void Unit::SetInCombatWith(Unit* enemy)
@@ -10202,7 +10158,7 @@ void Unit::SetDeathState(DeathState s)
 {
     if (s != ALIVE && s!= JUST_ALIVED)
     {
-        ExitVehicle();
+        ExitVehicle(true);
         CombatStop();
         DeleteThreatList();
         ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
@@ -10221,15 +10177,15 @@ void Unit::SetDeathState(DeathState s)
         GetUnitStateMgr().InitDefaults(false);
         StopMoving();
 
+        if (GetVehicleKit())
+            GetVehicleKit()->RemoveAllPassengers();
+
         ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
         ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, false);
         // remove aurastates allowing special moves
         ClearAllReactives();
         ClearDiminishings();
         ProcDamageAndSpell(this, PROC_FLAG_NONE, PROC_FLAG_ON_DEATH, PROC_EX_NONE, 0);
-
-        if (GetVehicleKit())
-            GetVehicleKit()->RemoveAllPassengers();
     }
     else if (s == JUST_ALIVED)
     {
@@ -11058,15 +11014,6 @@ void Unit::SetLevel(uint32 lvl)
         ((Player*)this)->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_LEVEL);
 }
 
-
-uint8 Unit::getRace() const
-{
-    return GetTypeId() == TYPEID_UNIT ?
-        ((Creature*)this)->getRace() :
-        GetByteValue(UNIT_FIELD_BYTES_0, 0);
-}
-
-
 void Unit::SetHealth(uint32 val)
 {
     uint32 maxHealth = GetMaxHealth();
@@ -11296,7 +11243,7 @@ void Unit::CleanupsBeforeDelete()
     if (m_uint32Values)                                      // only for fully created object
     {
         if (GetVehicle())
-            ExitVehicle();
+            ExitVehicle(true);
         if (GetVehicleKit())
             RemoveVehicleKit();
         InterruptNonMeleeSpells(true);
@@ -12972,7 +12919,7 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
         ((Player*)this)->TeleportTo(GetMapId(), x, y, z, orientation, TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NOT_LEAVE_COMBAT | TELE_TO_NOT_UNSUMMON_PET | (casting ? TELE_TO_SPELL : 0));
     else
     {
-        ExitVehicle();
+        ExitVehicle(true);
         GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
         SendHeartBeat();
     }
@@ -13014,7 +12961,7 @@ void Unit::RemoveVehicleKit()
     if (!m_pVehicleKit)
         return;
 
-    m_pVehicleKit->RemoveAllPassengers();
+    m_pVehicleKit->Reset();
 
     m_pVehicleKit = VehicleKitPtr(NULL);
 
@@ -13123,20 +13070,41 @@ void Unit::EnterVehicle(Unit* vehicleBase, int8 seatId)
     DEBUG_LOG("Unit::EnterVehicle: unit %s enter vehicle %s with control aura %u", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str(),spellInfo->Id);
 }
 
-void Unit::ExitVehicle()
+void Unit::ExitVehicle(bool forceDismount)
 {
     if (!GetVehicle())
         return;
+
     Unit* vehicleBase = GetVehicle()->GetBase();
 
-    if (!vehicleBase)
+    if (!vehicleBase || !vehicleBase->IsInWorld())
+    {
+        sLog.outError("Unit::ExitVehicle: %s try leave vehicle, but no vehicle base in world!", GetObjectGuid().GetString().c_str());
+        _ExitVehicle();
         return;
+    }
+
+    if (forceDismount)
+        GetVehicle()->DisableDismount(this);
+
+    bool dismiss = false;
+
+    if (vehicleBase->GetObjectGuid().IsAnyTypeCreature())
+    {
+        if (!(vehicleBase->GetVehicleInfo()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY))
+            && ((Creature*)vehicleBase)->IsTemporarySummon())
+            dismiss = true;
+    }
 
     if (!vehicleBase->RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, GetObjectGuid()))
     {
-        _ExitVehicle();
+        _ExitVehicle(forceDismount);
         sLog.outDetail("Unit::ExitVehicle: unit %s leave vehicle %s but no control aura!", GetObjectGuid().GetString().c_str(), vehicleBase->GetObjectGuid().GetString().c_str());
     }
+
+    // While dismount process unit may lost VehicleKit
+    if (dismiss && !vehicleBase->HasAuraType(SPELL_AURA_CONTROL_VEHICLE))
+        ((Creature*)vehicleBase)->ForcedDespawn(1000);
 }
 
 void Unit::ChangeSeat(int8 seatId, bool next)
@@ -13144,21 +13112,25 @@ void Unit::ChangeSeat(int8 seatId, bool next)
     if (!GetVehicle())
         return;
 
+    Unit* vehicleBase = GetVehicle()->GetBase();
+
+    if (!vehicleBase || !vehicleBase->IsInWorld())
+    {
+        sLog.outError("Unit::ChangeSeat %s try change seat on vehicle, but no vehicle base in world!", GetObjectGuid().GetString().c_str());
+        _ExitVehicle();
+        return;
+    }
+
     if (seatId < 0)
     {
-        seatId = m_pVehicle->GetNextEmptySeatWithFlag(m_movementInfo.GetTransportSeat(), next);
+        seatId = GetVehicle()->GetNextEmptySeatWithFlag(m_movementInfo.GetTransportSeat(), next);
         if (seatId < 0)
             return;
     }
-    else if (seatId == m_movementInfo.GetTransportSeat() || !m_pVehicle->HasEmptySeat(seatId))
-        return;
 
-    if (GetVehicle()->GetPassenger(seatId) &&
-       (!GetVehicle()->GetPassenger(seatId)->GetObjectGuid().IsVehicle() || !GetVehicle()->GetSeatInfo(GetVehicle()->GetPassenger(seatId))))
-        return;
-
-    GetVehicle()->RemovePassenger(this);
-    GetVehicle()->AddPassenger(this, seatId);
+    DEBUG_LOG("Unit::ChangeSeat player %s try change seat on vehicle %s (to %u).", GetObjectGuid().GetString().c_str(),GetVehicle()->GetBase()->GetObjectGuid().GetString().c_str(), seatId);
+    ExitVehicle(true);
+    EnterVehicle(vehicleBase, seatId);
 }
 
 void Unit::_EnterVehicle(VehicleKitPtr vehicle, int8 seatId)
@@ -13221,12 +13193,18 @@ void Unit::_EnterVehicle(VehicleKitPtr vehicle, int8 seatId)
     }
 }
 
-void Unit::_ExitVehicle()
+void Unit::_ExitVehicle(bool forceDismount)
 {
     if (!GetVehicle())
         return;
 
-    GetVehicle()->RemovePassenger(this, true);
+    if (GetVehicle()->GetBase() && GetVehicle()->GetBase()->IsInWorld())
+        GetVehicle()->RemovePassenger(this, !forceDismount);
+    else
+    {
+        m_movementInfo.ClearTransportData();
+        m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
+    }
 
     m_pVehicle = VehicleKitPtr(NULL);
     clearUnitState(UNIT_STAT_ON_VEHICLE);
@@ -13589,7 +13567,10 @@ ObjectGuid const& Unit::GetCreatorGuid() const
     {
         case HIGHGUID_VEHICLE:
             {
-                if (!(const_cast<Unit*>(this)->GetVehicleInfo()->GetEntry()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY)))
+                if (!IsVehicle())
+                    return ObjectGuid::Null;
+
+                if (!(const_cast<Unit*>(this)->GetVehicleInfo()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY)))
                     if (GetOwner())
                         return GetOwner()->GetObjectGuid();
             }
@@ -13615,25 +13596,17 @@ ObjectGuid const& Unit::GetCreatorGuid() const
 
 void Unit::SetVehicleId(uint32 entry)
 {
-    delete m_vehicleInfo;
-
     if (entry)
     {
         VehicleEntry const* ventry = sVehicleStore.LookupEntry(entry);
         MANGOS_ASSERT(ventry != NULL);
 
-        m_vehicleInfo = new VehicleInfo(ventry);
         m_updateFlag |= UPDATEFLAG_VEHICLE;
 
-        if (!m_pVehicleKit)
-            m_pVehicleKit = VehicleKitPtr(new VehicleKit(this));
+        m_pVehicleKit = VehicleKitPtr(new VehicleKit(this, ventry));
     }
     else
-    {
-        m_vehicleInfo = NULL;
-        m_updateFlag &= ~UPDATEFLAG_VEHICLE;
-        m_pVehicleKit = VehicleKitPtr(NULL);
-    }
+        RemoveVehicleKit();
 
     if (GetTypeId() == TYPEID_PLAYER)
     {
@@ -13648,6 +13621,11 @@ void Unit::SetVehicleId(uint32 entry)
             ((Player*)this)->GetSession()->SendPacket(&data);
         }
     }
+}
+
+VehicleEntry const* Unit::GetVehicleInfo() const
+{
+    return GetVehicleKit() ? GetVehicleKit()->GetEntry() : NULL; 
 }
 
 uint32 Unit::CalculateAuraPeriodicTimeWithHaste(SpellEntry const* spellProto, uint32 oldPeriodicTime)
@@ -13708,7 +13686,7 @@ uint32 Unit::CalculateSpellDurationWithHaste(SpellEntry const* spellProto, uint3
     return duration;
 }
 
-bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* spellInfo) const
+bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* spellInfo, WorldLocation const* location) const
 {
     bool no_stealth = false;
     switch (spellInfo->SpellFamilyName)
@@ -13736,10 +13714,24 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
         return isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, true, false, true);
 
     // spell can't hit stealth/invisible targets
-    if (no_stealth && caster->isType(TYPEMASK_UNIT) && !isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false))
+    if (no_stealth && caster->isType(TYPEMASK_UNIT) && !isVisibleForOrDetect(static_cast<Unit const*>(caster), caster, false, false, true, true))
         return false;
 
-    return spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) ? true : IsWithinLOSInMap(caster);
+    if (spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS))
+        return true;
+
+    if (location && location->HasMap()) // check only for fully initialized WorldLocation
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Unit::IsVisibleTargetForSpell check LOS for spell %u, caster %s, location %f %f %f, target %s", 
+            spellInfo->Id, caster->GetObjectGuid().GetString().c_str(), location->x, location->y, location->z, GetObjectGuid().GetString().c_str());
+        return ((GetMapId() == location->mapid) && IsWithinLOS(location->x, location->y, location->z));
+    }
+    else
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Unit::IsVisibleTargetForSpell check LOS for spell %u, caster %s, target %s", 
+            spellInfo->Id, caster->GetObjectGuid().GetString().c_str(), GetObjectGuid().GetString().c_str());
+        return IsWithinLOSInMap(caster);
+    }
 }
 
 uint32 Unit::GetModelForForm(SpellShapeshiftFormEntry const* ssEntry) const
@@ -13852,7 +13844,10 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
         m_movesplineTimer.Reset(POSITION_UPDATE_DELAY);
         Movement::Location loc = movespline->ComputePosition();
 
-        SetPosition(loc.x,loc.y,loc.z,loc.orientation);
+        if (IsBoarded())
+            GetTransportInfo()->SetLocalPosition(loc.x, loc.y, loc.z, loc.orientation);
+        else
+            SetPosition(loc.x,loc.y,loc.z,loc.orientation);
     }
 }
 
