@@ -1888,8 +1888,11 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                 else
                     map = sMapMgr.CreateMap(loc.mapid, this);
 
-                sLog.outError("Player::TeleportTo player %s cannot find or load map %u instance %u!", GetName(), loc.mapid, loc.instance);
-                return false;
+                if (!map)
+                {
+                    sLog.outError("Player::TeleportTo player %s cannot find or load map %u instance %u!", GetName(), loc.mapid, loc.instance);
+                    return false;
+                }
             }
 
             // try preload grid, targeted for teleport
