@@ -146,8 +146,10 @@ void EjectMovementGenerator::Finalize(Unit &unit)
 
     unit.clearUnitState(UNIT_STAT_ON_VEHICLE);
     unit.m_movementInfo.ClearTransportData();
-    unit.m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
 
     if (unit.GetTypeId() == TYPEID_PLAYER)
         ((Player&)unit).SetMover(&unit);
+
+    unit.m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+    unit.StopMoving();
 }

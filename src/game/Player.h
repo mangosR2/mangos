@@ -799,6 +799,7 @@ enum TeleportToOptions
     TELE_TO_NOT_UNSUMMON_PET    = 0x08,
     TELE_TO_SPELL               = 0x10,
     TELE_TO_CHECKED             = 0x1000,
+    TELE_TO_NODELAY             = 0x2000,
 };
 
 /// Type of environmental damages

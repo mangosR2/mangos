@@ -200,7 +200,7 @@ void BattleGroundDS::HandleKillPlayer(Player* player, Player* killer)
 
 bool BattleGroundDS::HandlePlayerUnderMap(Player* player)
 {
-    player->TeleportTo(GetMapId(),1299.046f,784.825f,9.338f,player->GetOrientation(),false);
+    player->TeleportTo(GetMapId(),1299.046f,784.825f,9.338f,player->GetOrientation());
     return true;
 }
 
@@ -212,7 +212,7 @@ void BattleGroundDS::HandleAreaTrigger(Player* source, uint32 trigger)
     switch (trigger)
     {
         case 5326:
-            source->TeleportTo(GetMapId(),1299.046f, 784.825f, 9.338f, source->GetOrientation(),false);
+            source->TeleportTo(GetMapId(),1299.046f, 784.825f, 9.338f, source->GetOrientation());
             break;
         case 5347:
         case 5348:

@@ -289,11 +289,10 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         {
             m_pBase->SetRoot(true);
         }
-        else if (passenger->m_movementInfo.GetMovementFlags() & MOVEFLAG_WALK_MODE)
-            ((Creature*)m_pBase)->SetWalk(true);
-        else
-            ((Creature*)m_pBase)->SetWalk(false);
-
+        else if (passenger->IsWalking() && !GetBase()->IsWalking())
+            ((Creature*)m_pBase)->SetWalk(true, true);
+        else if (!passenger->IsWalking() && GetBase()->IsWalking())
+            ((Creature*)m_pBase)->SetWalk(false, true);
     }
     else if ((seatInfo->m_flags & SEAT_FLAG_FREE_ACTION) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
     {

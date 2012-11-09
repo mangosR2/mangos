@@ -1067,37 +1067,37 @@ void BattleGroundSA::TeleportPlayerToCorrectLoc(Player *plr, bool resetBattle)
         if (plr->GetTeam() != GetDefender())
         {
             if (urand(0,1))
-                plr->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f, 0);
+                plr->TeleportTo(607, 2682.936f, -830.368f, 15.0f, 2.895f);
             else
-                plr->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f, 0);
+                plr->TeleportTo(607, 2577.003f, 980.261f, 15.0f, 0.807f);
 
         }
         else
-            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
+            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f);
     }
     else if (GetStartTime() < (2 * MINUTE * IN_MILLISECONDS))
     {
         if (plr->GetTeam() != GetDefender())
         {
             if (urand(0,1))
-                plr->TeleportTo(607, 1804.10f, -168.46f, 60.55f, 2.65f, 0);
+                plr->TeleportTo(607, 1804.10f, -168.46f, 60.55f, 2.65f);
             else
-                plr->TeleportTo(607, 1803.71f, 118.61f, 59.83f, 3.56f, 0);
+                plr->TeleportTo(607, 1803.71f, 118.61f, 59.83f, 3.56f);
         }
         else
-            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
+            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f);
     }
     else
     {
         if (plr->GetTeam() != GetDefender())
         {
             if (urand(0,1))
-                plr->TeleportTo(607, 1597.64f, -106.35f, 8.89f, 4.13f, 0);
+                plr->TeleportTo(607, 1597.64f, -106.35f, 8.89f, 4.13f);
             else
-                plr->TeleportTo(607, 1606.61f, 50.13f, 7.58f, 2.39f, 0);
+                plr->TeleportTo(607, 1606.61f, 50.13f, 7.58f, 2.39f);
         }
         else
-            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f, 0);
+            plr->TeleportTo(607, 1209.7f, -65.16f, 70.1f, 0.0f);
     }
     // AddPlayer is called before SetupShips, so this check is needed for the 1st round to prevent console spam
     if (shipsSpawned)

@@ -207,7 +207,7 @@ protected:
         tick();
 		tickWithNoTarget();
 
-        assertActions(">S:stay>S:stay");
+        assertActions(">S:stay>S:check mount state");
     }
 
     void movementStrategies()

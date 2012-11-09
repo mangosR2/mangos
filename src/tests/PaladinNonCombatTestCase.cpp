@@ -75,7 +75,7 @@ protected:
     void cureMagic()
     {
         cureKind(DISPEL_MAGIC);
-        assertActions(">S:cleanse>P:cleanse magic on party>P:blessing of kings on party");
+        assertActions(">S:cleanse>P:cleanse magic on party>P:blessing of kings on party>S:check mount state");
     }
 
     void cureKind(DispelType type)

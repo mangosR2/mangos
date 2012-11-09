@@ -1772,7 +1772,8 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
     if (!InBattleGround() && mEntry->IsBattleGroundOrArena())
         return false;
 
-    // client without expansion support
+    if (!GetMap())
+        options |= TELE_TO_NODELAY;
 
     if (Group* grp = GetGroup())
         grp->SetPlayerMap(GetObjectGuid(), loc.mapid);
@@ -1807,7 +1808,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
         SetSemaphoreTeleportFar(false);
 
         // try preload grid, targeted for teleport
-        if (!GetMap()->PreloadGrid(loc.coord_x, loc.coord_y))
+        if (!(options & TELE_TO_NODELAY) && !GetMap()->PreloadGrid(loc.coord_x, loc.coord_y))
         {
             // If loading grid not finished, delay teleport on one update tick
             AddEvent(new TeleportDelayEvent(*this, loc, options),
@@ -1885,7 +1886,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             }
 
             // try preload grid, targeted for teleport
-            if (!map->PreloadGrid(loc.coord_x, loc.coord_y))
+            if (!(options & TELE_TO_NODELAY) && !map->PreloadGrid(loc.coord_x, loc.coord_y))
             {
                 // If loading grid not finished, delay teleport 5 map update ticks
                 AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation, loc.mapid, map->GetInstanceId(), sWorld.getConfig(CONFIG_UINT32_REALMID)), options),
@@ -16514,8 +16515,8 @@ void Player::_LoadAuras(QueryResult *result, uint32 timediff)
             if (!holder->IsEmptyHolder())
             {
                 // reset stolen single target auras
-                if (caster_guid != GetObjectGuid() && holder->IsSingleTarget())
-                    holder->SetIsSingleTarget(false);
+                if (caster_guid != GetObjectGuid() && holder->GetTrackedAuraType() == TRACK_AURA_TYPE_SINGLE_TARGET)
+                    holder->SetTrackedAuraType(TRACK_AURA_TYPE_NOT_TRACKED);
 
                 AddSpellAuraHolder(holder);
                 DETAIL_LOG("Added auras from spellid %u", spellproto->Id);
@@ -18010,9 +18011,12 @@ void Player::_SaveAuras()
 
     for (SpellAuraHolderMap::const_iterator itr = auraHolders.begin(); itr != auraHolders.end(); ++itr)
     {
-        //skip all holders from spells that are passive or channeled
-        //do not save single target holders (unless they were cast by the player)
-        if (itr->second && !itr->second->IsDeleted() && !itr->second->IsPassive() && !IsChanneledSpell(itr->second->GetSpellProto()) && (itr->second->GetCasterGuid() == GetObjectGuid() || !itr->second->IsSingleTarget()) && !IsChanneledSpell(itr->second->GetSpellProto()))
+        // skip all holders from spells that are passive or channeled
+        // save singleTarget auras if self cast.
+        bool selfCastHolder = itr->second->GetCasterGuid() == GetObjectGuid();
+        TrackedAuraType trackedType = itr->second->GetTrackedAuraType();
+        if (!itr->second->IsPassive() && !IsChanneledSpell(itr->second->GetSpellProto()) &&
+               (trackedType == TRACK_AURA_TYPE_NOT_TRACKED || (trackedType == TRACK_AURA_TYPE_SINGLE_TARGET && selfCastHolder)))
         {
             int32  damage[MAX_EFFECT_INDEX];
             uint32 periodicTime[MAX_EFFECT_INDEX];

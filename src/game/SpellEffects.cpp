@@ -9890,6 +9890,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->GetMotionMaster()->MoveFollow(unitTarget, PET_FOLLOW_DIST, unitTarget->GetAngle(m_caster));
                     break;
                 }
+                case 62705:                                 // Auto-repair (Ulduar: RX-214)
+                {
+                    if (!unitTarget || !unitTarget->GetObjectGuid().IsVehicle())
+                        return;
+
+                    unitTarget->SetHealthPercent(m_spellInfo->CalculateSimpleValue(eff_idx));
+                    break;
+                }
                 case 62707:                                 // Grab (Ulduar: Ignis)
                 case 63535:                                 // Grab heroic
                 {

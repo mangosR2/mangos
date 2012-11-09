@@ -70,10 +70,7 @@ bool OpenLootAction::DoLoot(LootObject& lootObject)
     if (creature)
     {
         SkillType skill = creature->GetCreatureInfo()->GetRequiredLootSkill();
-        int32 skillValue = bot->GetSkillValue(skill);
-        int32 TargetLevel = creature->getLevel();
-        int32 ReqValue = (skillValue < 100 ? (TargetLevel-10) * 10 : TargetLevel * 5);
-        if (!CanOpenLock(skill, ReqValue))
+        if (!CanOpenLock(skill, lootObject.reqSkillValue))
             return false;
 
         bot->GetMotionMaster()->Clear();

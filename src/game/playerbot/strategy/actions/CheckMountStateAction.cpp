@@ -8,10 +8,6 @@ uint64 extractGuid(WorldPacket& packet);
 
 bool CheckMountStateAction::Execute(Event event)
 {
-    WorldPacket p(event.getPacket());
-    p.rpos(0);
-    uint64 guid = extractGuid(p);
-
     if (!bot->GetGroup())
         return false;
 

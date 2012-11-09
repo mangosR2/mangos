@@ -810,7 +810,7 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         // normal delayed teleport protection not applied (and this correct) for this case (Player object just created)
         AreaTrigger const* at = sObjectMgr.GetGoBackTrigger(pCurrChar->GetMapId());
         // TODO Send something to client?
-        if (!at || !pCurrChar->TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, pCurrChar->GetOrientation()))
+        if (!at || !pCurrChar->TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, pCurrChar->GetOrientation(), TELE_TO_NODELAY))
             pCurrChar->TeleportToHomebind();
     }
 

@@ -267,7 +267,6 @@ BattleGround::BattleGround()
     m_StartTime         = 0;
     m_Events            = 0;
     m_IsRated           = false;
-    m_BuffChange        = false;
     m_IsRandom          = false;
     m_Name              = "";
     m_LevelMin          = 0;
@@ -330,10 +329,6 @@ BattleGround::~BattleGround()
 {
     // remove objects and creatures
     // (this is done automatically in mapmanager update, when the instance is reset after the reset time)
-
-    int size = m_BgObjects.size();
-    for (int i = 0; i < size; ++i)
-        DelObject(i);
 
     sBattleGroundMgr.RemoveBattleGround(GetInstanceID(), GetTypeID());
 
@@ -1945,45 +1940,7 @@ void BattleGround::HandleTriggerBuff(ObjectGuid go_guid)
     if (!obj || obj->GetGoType() != GAMEOBJECT_TYPE_TRAP || !obj->isSpawned())
         return;
 
-    // static buffs are already handled just by database and don't need
-    // battleground code
-    if (!m_BuffChange)
-    {
-        obj->SetLootState(GO_JUST_DEACTIVATED);             // can be despawned or destroyed
-        return;
-    }
-
-    // change buff type, when buff is used:
-    // TODO this can be done when poolsystem works for instances
-    int32 index = m_BgObjects.size() - 1;
-    while (index >= 0 && m_BgObjects[index] != go_guid)
-        --index;
-    if (index < 0)
-    {
-        sLog.outError("BattleGround (Type: %u) has buff trigger %s GOType: %u but it hasn't that object in its internal data",
-                      GetTypeID(), go_guid.GetString().c_str(), obj->GetGoType());
-        return;
-    }
-
-    // randomly select new buff
-    uint8 buff = urand(0, 2);
-    uint32 entry = obj->GetEntry();
-    if (m_BuffChange && entry != Buff_Entries[buff])
-    {
-        // despawn current buff
-        SpawnBGObject(m_BgObjects[index], RESPAWN_ONE_DAY);
-        // set index for new one
-        for (uint8 currBuffTypeIndex = 0; currBuffTypeIndex < 3; ++currBuffTypeIndex)
-        {
-            if (entry == Buff_Entries[currBuffTypeIndex])
-            {
-                index -= currBuffTypeIndex;
-                index += buff;
-            }
-        }
-    }
-
-    SpawnBGObject(m_BgObjects[index], BUFF_RESPAWN_TIME);
+    obj->SetLootState(GO_JUST_DEACTIVATED);             // can be despawned or destroyed
 }
 
 void BattleGround::HandleKillPlayer(Player* player, Player* killer)
