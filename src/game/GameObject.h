@@ -513,17 +513,6 @@ struct GameObjectInfo
             default: return 0;
         }
     }
-
-    uint32 GetEventScriptId() const
-    {
-        switch (type)
-        {
-            case GAMEOBJECT_TYPE_GOOBER:        return goober.eventId;
-            case GAMEOBJECT_TYPE_CHEST:         return chest.eventId;
-            case GAMEOBJECT_TYPE_CAMERA:        return camera.eventID;
-            default: return 0;
-        }
-    }
 };
 
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
@@ -790,9 +779,10 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         GridReference<GameObject>& GetGridRef() { return m_gridRef; }
 
         bool IsInRange(float x, float y, float z, float radius) const;
-        void DamageTaken(Unit *pDoneBy, uint32 uiDamage, uint32 spellId = 0);
-        void Rebuild(Unit *pWho);
 
+        void DealGameObjectDamage(uint32 damage, uint32 spell, Unit* caster);
+        void DamageTaken(Unit* pWho, int32 uiDamage, uint32 spellId = 0);
+        void Rebuild(Unit* pWho, uint32 spellId = 0);
         uint32 GetHealth() const { return m_health; }
         uint32 GetMaxHealth() const { return m_goInfo->destructibleBuilding.intactNumHits + m_goInfo->destructibleBuilding.damagedNumHits; }
 

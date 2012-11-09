@@ -1161,10 +1161,8 @@ void GameObject::Use(Unit* user)
             // TODO: possible must be moved to loot release (in different from linked triggering)
             if (GetGOInfo()->chest.eventId)
             {
-                DEBUG_LOG("Chest ScriptStart id %u for GO %u", GetGOInfo()->chest.eventId, GetGUIDLow());
-
-                if (!sScriptMgr.OnProcessEvent(GetGOInfo()->chest.eventId, user, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->chest.eventId, user, this);
+                DEBUG_LOG("Chest ScriptStart id %u for %s (opened by %s)", GetGOInfo()->chest.eventId, GetGuidStr().c_str(), user->GetGuidStr().c_str());
+                StartEvents_Event(GetMap(), GetGOInfo()->chest.eventId, user, this);
             }
 
             return;
@@ -1314,11 +1312,10 @@ void GameObject::Use(Unit* user)
 
                 if (info->goober.eventId)
                 {
-                    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Goober ScriptStart id %u for GO entry %u (GUID %u).", info->goober.eventId, GetEntry(), GetGUIDLow());
+                    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Goober ScriptStart id %u for %s (Used by %s).", info->goober.eventId, GetGuidStr().c_str(), player->GetGuidStr().c_str());
+                    StartEvents_Event(GetMap(), info->goober.eventId, player, this);
 
-                    if (!sScriptMgr.OnProcessEvent(info->goober.eventId, player, this, true))
-                        GetMap()->ScriptsStart(sEventScripts, info->goober.eventId, player, this);
-
+                    // FIXME: hack for SOTA, need use regular scripts.
                     if (player->CanUseBattleGroundObject())
                     {
                         if (BattleGround *bg = player->GetBattleGround())
@@ -1387,10 +1384,7 @@ void GameObject::Use(Unit* user)
                 player->SendCinematicStart(info->camera.cinematicId);
 
             if (info->camera.eventID)
-            {
-                if (!sScriptMgr.OnProcessEvent(info->camera.eventID, player, this, true))
-                    GetMap()->ScriptsStart(sEventScripts, info->camera.eventID, player, this);
-            }
+                StartEvents_Event(GetMap(), info->camera.eventID, player, this);
 
             return;
         }
@@ -1788,42 +1782,116 @@ bool GameObject::IsInRange(float x, float y, float z, float radius) const
         && dz < info->maxZ + radius && dz > info->minZ - radius;
 }
 
-void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+//                              Destructible GO handling
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+void GameObject::DealGameObjectDamage(uint32 damage, uint32 spellId, Unit* caster)
 {
-    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING || !m_health)
-        return;
-
-    if (IsFriendlyTo(pDoneBy))
-        return;
-
-    Player* pWho = pDoneBy->GetCharmerOrOwnerPlayerOrPlayerItself();
-
-    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken  damage taken: %u to health %u", damage, m_health);
-
-    if (m_health > damage)
+    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING
+        || !caster
+        || !sSpellStore.LookupEntry(spellId))
     {
-        m_health -= damage;
-        if (pWho)
-        {
-            if (BattleGround* bg = pWho->GetBattleGround())
-                bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
-            else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(pWho->GetCachedZoneId()))
-                outdoorPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damageEvent, spellId);
-        }
+        sLog.outError("GameObject::DealGameObjectDamage not valid damage method for %s, spell %u, damage %u, caster %s", 
+            GetObjectGuid().GetString().c_str(),spellId, damage, caster ? caster->GetObjectGuid().GetString().c_str() : "<none>");
+        return;
     }
 
-    else
-        m_health = 0;
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DealGameObjectDamage, spell ID %u, object %s, damage %u", spellId, GetObjectGuid().GetString().c_str(), damage);
 
-    if (HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED)) // from damaged to destroyed
+    if (!damage)
+        return;
+
+    WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, 8+8+8+4+4);
+    data << GetPackGUID();
+    data << caster->GetPackGUID();
+    data << caster->GetCharmerOrOwnerOrSelf()->GetPackGUID();
+    data << uint32(damage);
+    data << uint32(spellId);
+    SendMessageToSet(&data, false);
+}
+
+void GameObject::DamageTaken(Unit* pDoneBy, int32 damage, uint32 spellId)
+{
+    if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING || (GetHealth() == 0 && damage > 0))
+        return;
+
+    if (damage > 0 && IsFriendlyTo(pDoneBy))
+        return;
+
+    Player* pWho = pDoneBy ? pDoneBy->GetCharmerOrOwnerPlayerOrPlayerItself() : NULL;
+
+    DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken  damage taken: %i to health %u", damage, m_health);
+
+    uint32 realDamage = 0;
+
+    if (damage > 0)
+    {
+        if (GetHealth() > damage)
+        {
+            m_health -= damage;
+            realDamage = damage;
+            if (pWho)
+            {
+                if (BattleGround* bg = pWho->GetBattleGround())
+                    bg->EventPlayerDamageGO(pWho, this, GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+                else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(pWho->GetCachedZoneId()))
+                    outdoorPvP->EventPlayerDamageGO(pWho,this,GetGOInfo()->destructibleBuilding.damageEvent, spellId);
+            }
+        }
+        else
+        {
+            realDamage = GetHealth();
+            m_health = 0;
+        }
+    }
+    else
+    {
+        if ((GetHealth() - damage) < GetMaxHealth())
+            m_health -= damage;
+        else
+            m_health = GetMaxHealth();
+    }
+
+    uint32 newDisplayId = 0;
+    DestructibleModelDataEntry const* destructibleInfo = sDestructibleModelDataStore.LookupEntry(m_goInfo->destructibleBuilding.destructibleData);
+
+    if (HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED) && m_health == GetMaxHealth())                  // intact event (from damaged to intact)
+    {
+        RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_UNK_9 | GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
+        newDisplayId = GetGOInfo()->displayId;
+
+        // Start Event if exist
+        if (pWho && GetGOInfo()->destructibleBuilding.intactEvent)
+            StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.intactEvent, this, pWho);
+
+        SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
+        DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain INTACT state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
+    }
+    else if (HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED))               // from damaged to destroyed
     {
         // Destroyed
-        if (!m_health)
+        if (GetHealth() == 0)
         {
-            RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
+            RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_UNK_9 |GO_FLAG_DAMAGED);
             SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DESTROYED);
-            SetDisplayId(GetGOInfo()->destructibleBuilding.destroyedDisplayId);
-            GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.destroyedEvent, pDoneBy, this);
+
+            // Get destroyed DisplayId
+            if ((!GetGOInfo()->destructibleBuilding.destroyedDisplayId || GetGOInfo()->destructibleBuilding.destroyedDisplayId == 1) && destructibleInfo)
+                newDisplayId = destructibleInfo->destroyedDisplayId;
+            else
+                newDisplayId = GetGOInfo()->destructibleBuilding.destroyedDisplayId;
+            if (!newDisplayId)                              // No proper destroyed display ID exists, fetch damaged
+            {
+                if ((!GetGOInfo()->destructibleBuilding.damagedDisplayId || GetGOInfo()->destructibleBuilding.damagedDisplayId == 1) && destructibleInfo)
+                    newDisplayId = destructibleInfo->damagedDisplayId;
+                else
+                    newDisplayId = GetGOInfo()->destructibleBuilding.damagedDisplayId;
+            }
+
+            if (pWho && GetGOInfo()->destructibleBuilding.destroyedEvent);
+                StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.destroyedEvent, this, pWho);
+
             if (pWho)
             {
                 if (BattleGround* bg = pWho->GetBattleGround())
@@ -1834,19 +1902,27 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DESTROY);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DESTROY state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
         }
+        DealGameObjectDamage(realDamage, spellId, pDoneBy);
     }
-    else                                            // from intact to damaged
+    else if (!HasFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED))                // from intact to damaged
     {
-        if (m_health <= GetGOInfo()->destructibleBuilding.damagedNumHits)
+        if (GetHealth() <= GetGOInfo()->destructibleBuilding.damagedNumHits)
         {
             SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED);
-            SetDisplayId(GetGOInfo()->destructibleBuilding.damagedDisplayId);
-            GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.damageEvent, pDoneBy, this);
+
+            if ((!GetGOInfo()->destructibleBuilding.damagedDisplayId || GetGOInfo()->destructibleBuilding.damagedDisplayId == 1) && destructibleInfo)
+                newDisplayId = destructibleInfo->damagedDisplayId;
+            else
+                newDisplayId = GetGOInfo()->destructibleBuilding.damagedDisplayId;
+
+            if (pWho && GetGOInfo()->destructibleBuilding.damageEvent);
+                StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.damageEvent, this, pWho);
+
             // if we have a "dead" display we can "kill" the building after its damaged
             if (GetGOInfo()->destructibleBuilding.destroyedDisplayId)
             {
                 m_health = GetGOInfo()->destructibleBuilding.damagedNumHits;
-                if (!m_health)
+                if (GetHealth() == 0)
                     m_health = 1;
             }
             // otherwise we just handle it as "destroyed"
@@ -1863,11 +1939,16 @@ void GameObject::DamageTaken(Unit* pDoneBy, uint32 damage, uint32 spellId)
             SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_DAMAGE);
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::DamageTaken %s gain DAMAGED state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
          }
+        DealGameObjectDamage(realDamage, spellId, pDoneBy);
     }
-    SetGoAnimProgress(m_health * 255 / GetMaxHealth());
+    // Set display Id
+    if (newDisplayId && newDisplayId != GetDisplayId())
+        SetDisplayId(newDisplayId);
+
+    SetGoAnimProgress(GetHealth() * 255 / GetMaxHealth());
 }
 
-void GameObject::Rebuild(Unit* pWho)
+void GameObject::Rebuild(Unit* pCaster, uint32 spellId)
 {
     if (GetGoType() != GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
         return;
@@ -1875,17 +1956,21 @@ void GameObject::Rebuild(Unit* pWho)
     RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_DAMAGED | GO_FLAG_DESTROYED);
     SetDisplayId(GetGOInfo()->displayId);
     m_health = GetMaxHealth();
-    GetMap()->ScriptsStart(sEventScripts, GetGOInfo()->destructibleBuilding.rebuildingEvent, pWho, this);
-    if (pWho)
+
+    if (pCaster && GetGOInfo()->destructibleBuilding.rebuildingEvent)
+        StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.rebuildingEvent, this, pCaster->GetCharmerOrOwnerOrSelf());
+
+    if (pCaster)
     {
-        if (Player* ppWho = pWho->GetCharmerOrOwnerPlayerOrPlayerItself())
+        if (Player* ppWho = pCaster->GetCharmerOrOwnerPlayerOrPlayerItself())
         {
             if (BattleGround* bg = ppWho->GetBattleGround())
-                bg->EventPlayerDamageGO(ppWho, this, GetGOInfo()->destructibleBuilding.rebuildingEvent, 0);
+                bg->EventPlayerDamageGO(ppWho, this, GetGOInfo()->destructibleBuilding.rebuildingEvent, spellId);
             else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
-                outdoorPvP->EventPlayerDamageGO(ppWho,this,GetGOInfo()->destructibleBuilding.rebuildingEvent,0);
+                outdoorPvP->EventPlayerDamageGO(ppWho,this,GetGOInfo()->destructibleBuilding.rebuildingEvent, spellId);
         }
     }
+
     SetLinkedWorldState(OBJECT_STATE_LAST_INDEX - (GetTeamIndex(GetTeam()) + 1)*OBJECT_STATE_PERIOD + OBJECT_STATE_INTACT);
 
     DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "GameObject::Rebuild %s gain INTACT state, team %u", GetObjectGuid().GetString().c_str(),GetTeam());
@@ -2589,25 +2674,12 @@ void GameObject::TickCapturePoint()
                 players.insert(*itr);
         }
 
-        // Notify the battleground or outdoor pvp script
-        if (BattleGround* bg = (*capturingPlayers.begin())->GetBattleGround())
-        {
-            // Allow only certain events to be handled by other script engines
-            bg->HandleEvent(eventId, this);
-        }
-        else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript((*capturingPlayers.begin())->GetCachedZoneId()))
-        {
-            // Allow only certain events to be handled by other script engines
-            outdoorPvP->HandleEvent(eventId, this);
-        }
-
-        // Send script event to SD2 and database as well - this can be used for summoning creatures, casting specific spells or spawning GOs
-        if (!sScriptMgr.OnProcessEvent(eventId, this, this, true))
-            GetMap()->ScriptsStart(sEventScripts, eventId, this, this);
 
         DEBUG_LOG("GameObject::TickCapturePoint gameobject %s send event %u to faction %u, players group size %u, new state %u",
             GetObjectGuid().GetString().c_str(),
             eventId, progressFaction, players.size(), m_captureState);
+
+        StartEvents_Event(GetMap(), eventId, this, this, true, *capturingPlayers.begin());
     }
 }
 

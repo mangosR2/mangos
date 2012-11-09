@@ -57,7 +57,7 @@ void BattleGroundRV::Update(uint32 diff)
                 if (plr && plr->GetPositionZ() < 27)
                     plr->TeleportTo(618, plr->GetPositionX(), plr->GetPositionY(), 29, plr->GetOrientation(), false);
                 if (plr && plr->GetPositionZ() < 27)
-                    plr->TeleportTo(618, plr->GetPositionX(), plr->GetPositionY(), 29, plr->GetOrientation(), false);
+                    plr->TeleportTo(618, plr->GetPositionX(), plr->GetPositionY(), 29, plr->GetOrientation());
             }
             m_uiTeleport = 1000;
         }
@@ -153,7 +153,7 @@ void BattleGroundRV::HandleKillPlayer(Player* player, Player* killer)
 
 bool BattleGroundRV::HandlePlayerUnderMap(Player* player)
 {
-    player->TeleportTo(GetMapId(), 763.5f, -284, 28.276f, player->GetOrientation(), false);
+    player->TeleportTo(GetMapId(), 763.5f, -284, 28.276f, player->GetOrientation());
     return true;
 }
 

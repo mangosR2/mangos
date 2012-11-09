@@ -139,15 +139,26 @@ bool EjectMovementGenerator::Update(Unit &unit, const uint32 &)
     return !unit.movespline->Finalized();
 }
 
+void EjectMovementGenerator::Initialize(Unit &unit)
+{
+    if (unit.GetTypeId() == TYPEID_PLAYER)
+        ((Player&)unit).SetMover(&unit);
+}
+
 void EjectMovementGenerator::Finalize(Unit &unit)
 {
     if (unit.GetTypeId() == TYPEID_UNIT && ((Creature&)unit).AI() && unit.movespline->Finalized())
         ((Creature&)unit).AI()->MovementInform(EFFECT_MOTION_TYPE, m_Id);
 
-    unit.clearUnitState(UNIT_STAT_ON_VEHICLE);
-    unit.m_movementInfo.ClearTransportData();
-    unit.m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
+    if (unit.hasUnitState(UNIT_STAT_ON_VEHICLE))
+    {
+        unit.clearUnitState(UNIT_STAT_ON_VEHICLE);
+        unit.m_movementInfo.ClearTransportData();
 
-    if (unit.GetTypeId() == TYPEID_PLAYER)
-        ((Player&)unit).SetMover(&unit);
+        if (unit.GetTypeId() == TYPEID_PLAYER)
+            ((Player&)unit).SetMover(&unit);
+    }
+
+    unit.m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+    unit.StopMoving();
 }

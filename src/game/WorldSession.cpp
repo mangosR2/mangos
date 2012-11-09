@@ -524,24 +524,7 @@ void WorldSession::LogoutPlayer(bool Save)
         GetPlayer()->InterruptNonMeleeSpells(true);
 
         if (VehicleKitPtr vehicle = GetPlayer()->GetVehicle())
-        {
-            if (Creature* base = ((Creature*)vehicle->GetBase()))
-            {
-                bool dismiss = true;
-                if (!base->IsTemporarySummon() ||
-                    (base->GetVehicleInfo()->GetEntry()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY)))
-                    dismiss = false;
-
-                if (!base->RemoveSpellsCausingAuraByCaster(SPELL_AURA_CONTROL_VEHICLE, GetPlayer()->GetObjectGuid()))
-                    GetPlayer()->ExitVehicle();
-
-                if (base->HasAuraType(SPELL_AURA_CONTROL_VEHICLE))
-                    dismiss = false;
-
-                if (dismiss)
-                    base->ForcedDespawn(1000);
-            }
-        }
+            GetPlayer()->ExitVehicle();
 
         ///- empty buyback items and save the player in the database
         // some save parts only correctly work in case player present in map/player_lists (pets, etc)
@@ -1090,7 +1073,7 @@ void WorldSession::ExecuteOpcode( OpcodeHandler const& opHandle, WorldPacket* pa
         //we should execute delayed teleports only for alive(!) players
         //because we don't want player's ghost teleported from graveyard
         if (_player->IsHasDelayedTeleport())
-            _player->TeleportTo(_player->m_teleport_dest, _player->m_teleport_options);
+            _player->TeleportTo(_player->m_teleport_dest, _player->m_teleport_options | TELE_TO_NODELAY);
     }
 
     if (packet->rpos() < packet->wpos() && sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))

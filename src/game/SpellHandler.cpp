@@ -392,7 +392,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         mover = _mover;
 
     // casting own spells on some vehicles
-    if (mover->GetObjectGuid().IsVehicle() && mover->GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (mover->IsVehicle() && mover->GetCharmerOrOwnerPlayerOrPlayerItself())
     {
         Player *plr = mover->GetCharmerOrOwnerPlayerOrPlayerItself();
         if (mover->GetVehicleKit()->GetSeatInfo(plr) &&
@@ -647,11 +647,11 @@ void WorldSession::HandleSpellClick( WorldPacket & recv_data )
     ObjectGuid guid;
     recv_data >> guid;
 
-    Creature *unit = _player->GetMap()->GetAnyTypeCreature(guid);
+    Creature* unit = _player->GetMap()->GetAnyTypeCreature(guid);
     if (!unit)
         return;
 
-    if (_player->isInCombat() && !guid.IsVehicle())                              // client prevent click and set different icon at combat state
+    if (_player->isInCombat() && !unit->IsVehicle())                              // client prevent click and set different icon at combat state
         return;
 
     SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(unit->GetEntry());
@@ -713,7 +713,6 @@ void WorldSession::HandleUpdateProjectilePosition(WorldPacket& recvPacket)
 
 void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
 {
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_GET_MIRRORIMAGE_DATA");
 
     ObjectGuid guid;
     recv_data >> guid;
@@ -730,11 +729,16 @@ void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
 
     Unit* pCaster = images.front()->GetCaster();
 
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WorldSession::HandleGetMirrorimageData CMSG_GET_MIRRORIMAGE_DATA creature %s aura %u caster %s",
+        guid.GetString().c_str(),
+        images.front()->GetId(),
+        pCaster ? pCaster->GetObjectGuid().GetString().c_str() : "<none>");
+
     WorldPacket data(SMSG_MIRRORIMAGE_DATA, 68);
 
     data << guid;
-    data << (uint32)pCreature->GetDisplayId();
 
+    data << (uint32)pCreature->GetDisplayId();
     data << (uint8)pCreature->getRace();
     data << (uint8)pCreature->getGender();
     data << (uint8)pCreature->getClass();

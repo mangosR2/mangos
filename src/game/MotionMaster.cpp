@@ -358,6 +358,19 @@ void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horiz
     Mutate(new EjectMovementGenerator(0), UNIT_ACTION_EFFECT);
 }
 
+void MotionMaster::MoveBoardVehicle(float x, float y, float z, float o, float horizontalSpeed, float max_height)
+{
+    Movement::MoveSplineInit init(*m_owner);
+    init.MoveTo(x,y,z,false, true);
+    init.SetParabolic(max_height, 0);
+    init.SetVelocity(horizontalSpeed);
+    init.SetFacing(o);
+    init.SetBoardVehicle();
+    init.Launch();
+    // Currently no real unit action in this method, only visual effect
+    //Mutate(new EffectMovementGenerator(0), UNIT_ACTION_EFFECT);
+}
+
 void MotionMaster::MoveWithSpeed(float x, float y, float z, float speed, bool generatePath, bool forceDestination)
 {
     Movement::MoveSplineInit init(*m_owner);

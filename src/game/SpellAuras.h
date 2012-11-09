@@ -34,6 +34,7 @@ enum AuraRemoveMode
     AURA_REMOVE_BY_DELETE,                                  // use for speedup and prevent unexpected effects at player logout/pet unsummon (must be used _only_ after save), delete.
     AURA_REMOVE_BY_SHIELD_BREAK,                            // when absorb shield is removed by damage, heal absorb debuf
     AURA_REMOVE_BY_EXPIRE,                                  // at duration end
+    AURA_REMOVE_BY_TRACKING,                                // aura is removed because of a conflicting tracked aura
 
 };
 
@@ -140,9 +141,9 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         void Update(uint32 diff);
         void RefreshHolder();
 
-        bool IsSingleTarget() const { return m_isSingleTarget; }
-        void SetIsSingleTarget(bool val) { m_isSingleTarget = val; }
-        void UnregisterSingleCastHolder();
+        TrackedAuraType GetTrackedAuraType() const { return m_trackedAuraType; }
+        void SetTrackedAuraType(TrackedAuraType val) { m_trackedAuraType = val; }
+        void UnregisterAndCleanupTrackedAuras();
 
         int32 GetAuraMaxDuration() const { return m_maxDuration; }
         void SetAuraMaxDuration(int32 duration);
@@ -217,6 +218,7 @@ class MANGOS_DLL_SPEC SpellAuraHolder
 
         AuraRemoveMode m_removeMode:8;                      // Store info for know remove aura reason
         DiminishingGroup m_AuraDRGroup:8;                   // Diminishing
+        TrackedAuraType m_trackedAuraType: 8;               // store if the caster tracks the aura - can change at spell steal for example
 
         AuraStorage       m_aurasStorage;                   // Auras storage
 
@@ -420,6 +422,7 @@ class MANGOS_DLL_SPEC Aura
         void HandleAuraSetVehicle(bool apply, bool Real);
         void HandleAuraFactionChange(bool apply, bool real);
         void HandleAuraStopNaturalManaRegen(bool apply, bool Real);
+        void HandleInitializeImages(bool apply, bool Real);
 
         virtual ~Aura();
 

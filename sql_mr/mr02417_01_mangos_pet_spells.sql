@@ -16,10 +16,10 @@ VALUES
 
 DELETE FROM `event_scripts` WHERE `id` IN (14859,14858);
 INSERT INTO `event_scripts`
-    (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`)
+    (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `x`, `y`, `z`, `o`, `comments`)
 VALUES
-    (14858, 1, 15, 33663, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 'Summon greater Earth elemental'),
-    (14859, 1, 15, 32982, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 'Summon greater Fire  elemental');
+    (14858, 1, 15, 33663, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 'Summon greater Earth elemental'),
+    (14859, 1, 15, 32982, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 'Summon greater Fire  elemental');
 
 DELETE FROM `creature_template_addon` WHERE `entry` IN ('15438','15352');
 INSERT INTO `creature_template_addon`(`entry`, `auras`)
@@ -28,3 +28,10 @@ INSERT INTO `creature_template_addon`(`entry`, `auras`)
 -- Valkyr guardian
 UPDATE `creature_template` SET `minmana` = '6500', `maxmana` = '6500', `spell1` = '71841' WHERE `entry` =38391;
 REPLACE INTO `creature_spell` (`guid`,`spell`,`index`) VALUES (38391, 71841, 0);
+
+-- Mirror Image
+UPDATE `creature_template` SET `speed_walk` = 2.5, `modelid_1` = 11686, `modelid_3` = 11686, `minlevel` = 80, `maxlevel` = 80, `AIName` = '', `equipment_id` = 0, `ScriptName`='' WHERE `entry` = 31216;
+DELETE FROM `creature_spell` WHERE `guid` IN (31216);
+INSERT INTO `creature_spell` (`guid`, `spell`, `index`) VALUES
+(31216, 59637, 0),
+(31216, 59638, 1);

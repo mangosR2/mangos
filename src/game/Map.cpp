@@ -1702,7 +1702,7 @@ void BattleGroundMap::UnloadAll(bool pForce)
     {
         if(Player * plr = m_mapRefManager.getFirst()->getSource())
         {
-            plr->TeleportTo(plr->GetBattleGroundEntryPoint());
+            plr->TeleportTo(plr->GetBattleGroundEntryPoint(), TELE_TO_NODELAY);
             // TeleportTo removes the player from this map (if the map exists) -> calls BattleGroundMap::Remove -> invalidates the iterator.
             // just in case, remove the player from the list explicitly here as well to prevent a possible infinite loop
             // note that this remove is not needed if the code works well in other places
@@ -2223,7 +2223,7 @@ void Map::ForcedUnload()
         {
             WorldLocation old_loc;
             player->GetPosition(old_loc);
-            if (!player->TeleportTo(old_loc))
+            if (!player->TeleportTo(old_loc, TELE_TO_NODELAY))
             {
                 DETAIL_LOG("Map::ForcedUnload: %s is in teleport state, cannot be ported to his previous place, teleporting him to his homebind place...",
                     player->GetGuidStr().c_str());
