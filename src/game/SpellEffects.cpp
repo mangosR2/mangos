@@ -371,16 +371,6 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                             damage = m_caster->GetMaxPower(POWER_MANA);
                         break;
                     }
-                    case 28375:     // Decimate (Gluth encounter)
-                    {
-                        // leave only 5% HP
-                        if (unitTarget)
-                        {
-                            // damage of this spell is very odd so we're setting HP manually
-                            damage = 0;
-                            unitTarget->SetHealthPercent(5.0f);
-                        }
-                    }
                     // percent max target health
                     case 29142:                             // Eyesore Blaster
                     case 35139:                             // Throw Boom's Doom
