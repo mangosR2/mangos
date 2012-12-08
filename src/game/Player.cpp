@@ -604,7 +604,10 @@ Player::~Player ()
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
     {
         if (m_items[i])
+        {
+            m_items[i]->RemoveFromWorld(true);
             delete m_items[i];
+        }
     }
     CleanupChannels();
 
@@ -613,7 +616,13 @@ Player::~Player ()
         delete *itr;
 
     for (ItemMap::const_iterator iter = mMitems.begin(); iter != mMitems.end(); ++iter)
+    {
+        if (!iter->second)
+            continue;
+
+        iter->second->RemoveFromWorld(true);
         delete iter->second;                                //if item is duplicated... then server may crash ... but that item should be deallocated
+    }
 
     delete PlayerTalkClass;
 
@@ -657,10 +666,10 @@ void Player::CleanupsBeforeDelete()
     {
         TradeCancel(false);
         DuelComplete(DUEL_INTERRUPTED);
-    }
 
-    // notify zone scripts for player logout
-    sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
+        // notify zone scripts for player logout
+        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
+    }
 
     Unit::CleanupsBeforeDelete();
 }
@@ -1843,7 +1852,9 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             CombatStop();
 
         InterruptSpell(CURRENT_CHANNELED_SPELL);
-        RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED);
+
+        if (!IsWithinDist3d(loc.x, loc.y, loc.z, GetMap()->GetVisibilityDistance()))
+            RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED);
 
         // this will be used instead of the current location in SaveToDB
         m_teleport_dest = loc;
@@ -1926,6 +1937,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
 
             InterruptSpell(CURRENT_CHANNELED_SPELL);
             RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED);
+            UnsummonAllTotems();
 
             ResetContestedPvP();
 
@@ -2106,14 +2118,19 @@ void Player::AddToWorld()
         if (m_items[i])
             m_items[i]->AddToWorld();
     }
+    SetViewPoint(NULL);
 }
 
-void Player::RemoveFromWorld()
+void Player::RemoveFromWorld(bool remove)
 {
     for (int i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; ++i)
     {
         if (m_items[i])
-            m_items[i]->RemoveFromWorld();
+        {
+            m_items[i]->RemoveFromWorld(true);
+            // possible need delete Item structure in this place? Need recheck
+            //delete m_items[i];
+        }
     }
 
     ///- Do not add/remove the player from the object storage
@@ -2122,7 +2139,7 @@ void Player::RemoveFromWorld()
     if (IsInWorld() && GetCamera())
         GetCamera()->ResetView();
 
-    Unit::RemoveFromWorld();
+    Unit::RemoveFromWorld(remove);
 }
 
 void Player::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)
@@ -8801,12 +8818,13 @@ void Player::SendUpdateWorldState(uint32 Field, uint32 Value)
 
 void Player::_SendUpdateWorldState(uint32 Field, uint32 Value)
 {
-    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 8);
-    data << Field;
-    data << Value;
+    if (!IsInWorld() || !GetSession())
+        return;
 
-    if (IsInWorld() && GetSession())
-        GetSession()->SendPacket(&data);
+    WorldPacket data(SMSG_UPDATE_WORLD_STATE, 8);
+    data << uint32(Field);
+    data << uint32(Value);
+    GetSession()->SendPacket(&data);
 }
 
 void Player::UpdateWorldState(uint32 state, uint32 value)
@@ -8824,15 +8842,15 @@ void Player::SendUpdatedWorldStates(bool force)
     if (IsBeingTeleported() || GetLastWorldStateUpdateTime() == time(NULL))
         return;
 
-    WorldStateSet wsSet = sWorldStateMgr.GetUpdatedWorldStatesFor(this, force ? 0 : GetLastWorldStateUpdateTime());
-
-    if (wsSet.empty())
-        return;
-
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    if (WorldStateSet* wsSet = sWorldStateMgr.GetUpdatedWorldStatesFor(this, force ? 0 : GetLastWorldStateUpdateTime()))
     {
-        //DEBUG_LOG("Player::SendUpdatedWorldStates send state %u instance %u value %u to %s",(*itr)->GetId(), (*itr)->GetInstance(),(*itr)->GetValue(),GetObjectGuid().GetString().c_str());
-        _SendUpdateWorldState((*itr)->GetId(), (*itr)->GetValue());
+        for (uint8 i = 0; i < wsSet->count(); ++i)
+        {
+            //DEBUG_LOG("Player::SendUpdatedWorldStates send state %u instance %u value %u to %s",(*itr)->GetId(), (*itr)->GetInstance(),(*itr)->GetValue(),GetObjectGuid().GetString().c_str());
+            WorldState* ws = (*wsSet)[i];
+            _SendUpdateWorldState(ws->GetId(), ws->GetValue());
+        }
+        delete wsSet;
     }
 
     SetLastWorldStateUpdateTime(time(NULL));
@@ -8842,29 +8860,30 @@ void Player::SendInitWorldStates(uint32 zoneid, uint32 areaid)
 {
     // data depends on zoneid/mapid...
     // Get worldstates (initial set)
-    WorldStateSet wsSet = sWorldStateMgr.GetInitWorldStates(GetMapId(),GetInstanceId(),zoneid,areaid);
-    uint16 count = wsSet.size();
-    if (count == 0)
+    WorldStateSet* wsSet = sWorldStateMgr.GetInitWorldStates(GetMapId(), GetInstanceId(), zoneid, areaid);
+    if (!wsSet)
     {
-        sLog.outError("Player::SendInitWorldStates initial states list for player %s are empty!",GetObjectGuid().GetString().c_str());
+        sLog.outError("Player::SendInitWorldStates initial states list for player %s are empty!", GetGuidStr().c_str());
         return;
     }
 
-    DEBUG_LOG("Player::SendInitWorldStates sending SMSG_INIT_WORLD_STATES to Map:%u (instance %u), zone: %u, area %u, WorldStates count %u", GetMapId(), GetInstanceId(), zoneid, areaid, count);
+    DEBUG_LOG("Player::SendInitWorldStates sending SMSG_INIT_WORLD_STATES to Map:%u (instance %u), zone: %u, area %u, WorldStates count %u", GetMapId(), GetInstanceId(), zoneid, areaid, wsSet->count());
 
-    WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+4+2+count*8));
+    WorldPacket data(SMSG_INIT_WORLD_STATES, (4+4+4+2+wsSet->count()*8));
 
     data << uint32(GetMapId());                             // mapid
     data << uint32(zoneid);                                 // zone id
     data << uint32(areaid);                                 // area id, new 2.1.0
 
-    data << uint16(count);
+    data << uint16(wsSet->count());
 
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    for (uint8 i = 0; i < wsSet->count(); ++i)
     {
-        data << (*itr)->GetId();
-        data << (*itr)->GetValue();
+        WorldState* ws = (*wsSet)[i];
+        data << uint32(ws->GetId());
+        data << uint32(ws->GetValue());
     }
+    delete wsSet;
 
     GetSession()->SendPacket(&data);
 }
@@ -9366,6 +9385,7 @@ Item* Player::GetItemByGuid(ObjectGuid guid) const
                     if (pItem->GetObjectGuid() == guid)
                         return pItem;
 
+
     return NULL;
 }
 
@@ -9383,7 +9403,7 @@ Item* Player::GetItemByPos(uint8 bag, uint8 slot) const
     else if ((bag >= INVENTORY_SLOT_BAG_START && bag < INVENTORY_SLOT_BAG_END)
         || (bag >= BANK_SLOT_BAG_START && bag < BANK_SLOT_BAG_END))
     {
-        Bag *pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
+        Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
         if (pBag)
             return pBag->GetItemByPos(slot);
     }
@@ -11362,7 +11382,7 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
             // delete item (it not in any slot currently)
             if (IsInWorld() && update)
             {
-                pItem->RemoveFromWorld();
+                pItem->RemoveFromWorld(false);
                 pItem->DestroyForPlayer(this);
             }
 
@@ -11478,7 +11498,7 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
         //pItem->DeleteFromDB();
         if (IsInWorld() && update)
         {
-            pItem->RemoveFromWorld();
+            pItem->RemoveFromWorld(false);
             pItem->DestroyForPlayer(this);
         }
 
@@ -11578,7 +11598,7 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
     // note2: if removeitem is to be used for delinking
     // the item must be removed from the player's updatequeue
 
-    if (Item *pItem = GetItemByPos(bag, slot))
+    if (Item* pItem = GetItemByPos(bag, slot))
     {
         DEBUG_LOG("STORAGE: RemoveItem bag = %u, slot = %u, item = %u", bag, slot, pItem->GetEntry());
 
@@ -11643,9 +11663,12 @@ void Player::RemoveItem(uint8 bag, uint8 slot, bool update)
         }
         else
         {
-            Bag *pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
+            Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
             if (pBag)
+            {
                 pBag->RemoveItem(slot, update);
+                pBag->SetState(ITEM_CHANGED, this);
+            }
         }
         pItem->SetGuidValue(ITEM_FIELD_CONTAINED, ObjectGuid());
         // pItem->SetGuidValue(ITEM_FIELD_OWNER, ObjectGuid()); not clear owner at remove (it will be set at store). This used in mail and auction code
@@ -11675,7 +11698,7 @@ void Player::MoveItemFromInventory(uint8 bag, uint8 slot, bool update)
         it->RemoveFromUpdateQueueOf(this);
         if (it->IsInWorld())
         {
-            it->RemoveFromWorld();
+            it->RemoveFromWorld(false);
             it->DestroyForPlayer(this);
         }
     }
@@ -11787,7 +11810,7 @@ void Player::DestroyItem(uint8 bag, uint8 slot, bool update)
 
         if (IsInWorld() && update)
         {
-            pItem->RemoveFromWorld();
+            pItem->RemoveFromWorld(false);
             pItem->DestroyForPlayer(this);
         }
 
@@ -12538,10 +12561,10 @@ void Player::RemoveItemFromBuyBackSlot(uint32 slot, bool del)
     DEBUG_LOG("STORAGE: RemoveItemFromBuyBackSlot slot = %u", slot);
     if (slot >= BUYBACK_SLOT_START && slot < BUYBACK_SLOT_END)
     {
-        Item *pItem = m_items[slot];
+        Item* pItem = m_items[slot];
         if (pItem)
         {
-            pItem->RemoveFromWorld();
+            pItem->RemoveFromWorld(false);
             if (del)
                 pItem->SetState(ITEM_REMOVED, this);
         }
@@ -13241,8 +13264,6 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
     if (pMenuItemBounds.first == pMenuItemBounds.second && canSeeQuests)
         pMenuItemBounds = sObjectMgr.GetGossipMenuItemsMapBounds(0);
 
-    bool canTalkToCredit = pSource->GetTypeId() == TYPEID_UNIT;
-
     for (GossipMenuItemsMap::const_iterator itr = pMenuItemBounds.first; itr != pMenuItemBounds.second; ++itr)
     {
         bool hasMenuItem = true;
@@ -13269,8 +13290,6 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
             switch(itr->second.option_id)
             {
                 case GOSSIP_OPTION_GOSSIP:
-                    if (itr->second.action_menu_id != 0)    // has sub menu (or close gossip), so do not "talk" with this NPC yet
-                        canTalkToCredit = false;
                     break;
                 case GOSSIP_OPTION_QUESTGIVER:
                     hasMenuItem = false;
@@ -13390,12 +13409,6 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
 
     if (canSeeQuests)
         PrepareQuestMenu(pSource->GetObjectGuid());
-
-    if (canTalkToCredit)
-    {
-        if (pSource->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP) && !(((Creature*)pSource)->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_NO_TALKTO_CREDIT))
-            TalkedToCreature(pSource->GetEntry(), pSource->GetObjectGuid());
-    }
 
     // some gossips aren't handled in normal way ... so we need to do it this way .. TODO: handle it in normal way ;-)
     /*if (pMenu->Empty())
@@ -20670,7 +20683,7 @@ inline void UpdateVisibilityOf_helper(GuidSet& s64, GameObject* target)
 }
 
 template<class T>
-void Player::UpdateVisibilityOf(WorldObject const* viewPoint, T* target, UpdateData& data, std::set<WorldObject*>& visibleNow)
+void Player::UpdateVisibilityOf(WorldObject const* viewPoint, T* target, UpdateData& data, WorldObjectSet& visibleNow)
 {
     if (HaveAtClient(target))
     {
@@ -20699,11 +20712,11 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, T* target, UpdateD
     }
 }
 
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Player*        target, UpdateData& data, std::set<WorldObject*>& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Creature*      target, UpdateData& data, std::set<WorldObject*>& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Corpse*        target, UpdateData& data, std::set<WorldObject*>& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, GameObject*    target, UpdateData& data, std::set<WorldObject*>& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, DynamicObject* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
+template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Player*        target, UpdateData& data, WorldObjectSet& visibleNow);
+template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Creature*      target, UpdateData& data, WorldObjectSet& visibleNow);
+template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Corpse*        target, UpdateData& data, WorldObjectSet& visibleNow);
+template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, GameObject*    target, UpdateData& data, WorldObjectSet& visibleNow);
+template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, DynamicObject* target, UpdateData& data, WorldObjectSet& visibleNow);
 
 void Player::SetPhaseMask(uint32 newPhaseMask, bool update)
 {
@@ -21097,12 +21110,10 @@ void Player::SendAurasForTarget(Unit *target)
     data << target->GetPackGUID();
 
     Unit::VisibleAuraMap const& visibleAuras = target->GetVisibleAuras();
-    for (Unit::VisibleAuraMap::const_iterator itr = visibleAuras.begin(); itr != visibleAuras.end(); ++itr)
+    for (size_t i = 0; i < MAX_AURAS && i < visibleAuras.size() ; ++i)
     {
-        if (!itr->second)
-            continue;
-
-        itr->second->BuildUpdatePacket(data);
+        if (visibleAuras[i])
+            visibleAuras[i]->BuildUpdatePacket(data);
     }
 
     GetSession()->SendPacket(&data);
@@ -24808,6 +24819,29 @@ void Player::InterruptTaxiFlying()
     // save only in non-flight case
     else
         SaveRecallPosition();
+}
+
+Object* Player::GetDependentObject(ObjectGuid const& guid)
+{
+    // Currently only items dependent from player.
+    if (guid.IsEmpty() || !guid.IsItem())
+        return NULL;
+    return (Object*)GetItemByGuid(guid);
+}
+
+void Player::AddUpdateObject(ObjectGuid const& guid)
+{
+    i_objectsToClientUpdate.insert(guid);
+
+    // Not need add owner to update queue if owner already marked for update.
+    if (!IsMarkedForClientUpdate() && GetMap())
+        GetMap()->AddUpdateObject(GetObjectGuid());
+}
+
+void Player::RemoveUpdateObject(ObjectGuid const& guid)
+{
+    // possible required remove player from update queue also.
+    i_objectsToClientUpdate.erase(guid);
 }
 
 void Player::AddItemWithTimeCheck(uint32 lowGuid)

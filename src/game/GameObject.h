@@ -230,6 +230,8 @@ struct GameObjectInfo
             uint32 transportPhysics;                        //5
             uint32 mapID;                                   //6
             uint32 worldState1;                             //7
+            uint32 defaultState;                            //8
+            uint32 difficultyMask;                          //9 custom data, not be found in cache.
         } moTransport;
         //16 GAMEOBJECT_TYPE_DUELFLAG - empty
         //17 GAMEOBJECT_TYPE_FISHINGNODE - empty
@@ -623,7 +625,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         ~GameObject();
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove) override;
 
         bool Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang,
                     QuaternionData rotation = QuaternionData(), uint8 animprogress = GO_ANIMPROGRESS_DEFAULT, GOState go_state = GO_STATE_READY);
@@ -632,7 +634,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         bool IsTransport() const;
         bool IsDynTransport() const;
-        void SetActiveObjectState(bool on);
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
 

@@ -778,9 +778,9 @@ class World
         mutable ObjectLockType   i_lock[MAP_LOCK_TYPE_MAX];
 
         // reset duel system
-        std::set<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
+        UNORDERED_SET<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
         // Disable dungeons for LFG system
-        std::set<uint32> disabledMapIdForDungeonFinder; // set of MapIds which are disabled for DungeonFinder
+        UNORDERED_SET<uint32> disabledMapIdForDungeonFinder; // set of MapIds which are disabled for DungeonFinder
 
 };
 

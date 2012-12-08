@@ -1745,7 +1745,7 @@ Item* Guild::_StoreItem(uint8 tab, uint8 slot, Item* pItem, uint32 count, bool c
 
         if (!clone)
         {
-            pItem->RemoveFromWorld();
+            pItem->RemoveFromWorld(true);
             pItem->DeleteFromDB();
             delete pItem;
         }
@@ -2403,7 +2403,7 @@ void Guild::DeleteGuildBankItems(bool alsoInDB /*= false*/)
         {
             if (Item* pItem = m_TabListMap[i]->Slots[j])
             {
-                pItem->RemoveFromWorld();
+                pItem->RemoveFromWorld(true);
 
                 if (alsoInDB)
                     pItem->DeleteFromDB();

@@ -122,13 +122,13 @@ Object::~Object( )
     if (IsInWorld())
     {
         ///- Do NOT call RemoveFromWorld here, if the object is a player it will crash
-        sLog.outError("Object::~Object (GUID: %u TypeId: %u) deleted but still in world!!", GetGUIDLow(), GetTypeId());
+        sLog.outError("Object::~Object (%s type %u) deleted but still in world!!", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>", GetTypeId());
         MANGOS_ASSERT(false);
     }
 
     if (m_objectUpdated)
     {
-        sLog.outError("Object::~Object (GUID: %u TypeId: %u) deleted but still have updated status!!", GetGUIDLow(), GetTypeId());
+        sLog.outError("Object::~Object ((%s type %u) deleted but still have updated status!!", GetObjectGuid() ? GetObjectGuid().GetString().c_str() : "<none>", GetTypeId());
         MANGOS_ASSERT(false);
     }
 
@@ -180,8 +180,15 @@ void Object::SendForcedObjectUpdate()
     WorldPacket packet;                                     // here we allocate a std::vector with a size of 0x10000
     for(UpdateDataMapType::iterator iter = update_players.begin(); iter != update_players.end(); ++iter)
     {
+        if (!iter->first || !iter->first.IsPlayer())
+            continue;
+
+        Player* pPlayer = ObjectAccessor::FindPlayer(iter->first);
+        if (!pPlayer)
+            continue;
+
         iter->second.BuildPacket(&packet);
-        iter->first->GetSession()->SendPacket(&packet);
+        pPlayer->GetSession()->SendPacket(&packet);
         packet.clear();                                     // clean the string
     }
 }
@@ -248,7 +255,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) c
 
     //DEBUG_LOG("BuildCreateUpdate: update-type: %u, object-type: %u got updateFlags: %X", updatetype, m_objectTypeId, updateFlags);
 
-    ByteBuffer buf(500);
+    ByteBuffer buf;
     buf << uint8(updatetype);
     buf << GetPackGUID();
     buf << uint8(m_objectTypeId);
@@ -1033,18 +1040,14 @@ bool Object::PrintEntryError(char const* descr) const
 }
 
 
-void Object::BuildUpdateDataForPlayer(Player* pl, UpdateDataMapType& update_players)
+void Object::BuildUpdateDataForPlayer(Player* player, UpdateDataMapType& update_players)
 {
-    UpdateDataMapType::iterator iter = update_players.find(pl);
+    if (!player)
+        return;
 
-    if (iter == update_players.end())
-    {
-        std::pair<UpdateDataMapType::iterator, bool> p = update_players.insert( UpdateDataMapType::value_type(pl, UpdateData()) );
-        MANGOS_ASSERT(p.second);
-        iter = p.first;
-    }
+    UpdateData& data = update_players[player->GetObjectGuid()];
 
-    BuildValuesUpdateBlockForPlayer(&iter->second, iter->first);
+    BuildValuesUpdateBlockForPlayer(&data, player);
 }
 
 void Object::AddToClientUpdateList()
@@ -1086,13 +1089,37 @@ WorldObject::WorldObject()
 
 void WorldObject::CleanupsBeforeDelete()
 {
-    RemoveFromWorld();
+    RemoveFromWorld(false);
+    ClearUpdateMask(true);
 }
 
 void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
 {
     Object::_Create(guid);
     m_phaseMask = phaseMask;
+}
+
+void WorldObject::AddToWorld()
+{
+    MANGOS_ASSERT(m_currMap);
+    if (!IsInWorld())
+        Object::AddToWorld();
+
+    // Possible inserted object, already exists in object store. Not must cause any problem, but need check.
+    GetMap()->InsertObject(this);
+    GetMap()->AddUpdateObject(GetObjectGuid());
+}
+
+void WorldObject::RemoveFromWorld(bool remove)
+{
+    MANGOS_ASSERT(m_currMap);
+
+    if (IsInWorld())
+        Object::RemoveFromWorld(remove);
+
+    GetMap()->RemoveUpdateObject(GetObjectGuid());
+    if (remove)
+        GetMap()->EraseObject(GetObjectGuid());
 }
 
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
@@ -1453,9 +1480,9 @@ void WorldObject::GetRandomPoint( float x, float y, float z, float distance, flo
 
 void WorldObject::UpdateGroundPositionZ(float x, float y, float &z) const
 {
-    float new_z = GetMap()->GetHeight(GetPhaseMask(),x,y,z,true);
+    float new_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z);
     if (new_z > INVALID_HEIGHT)
-        z = new_z+ 0.05f;                                   // just to be sure that we are not a few pixel under the surface
+        z = new_z + 0.05f;                                   // just to be sure that we are not a few pixel under the surface
 }
 
 void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
@@ -1471,15 +1498,21 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
                 if (fabs(GetPositionZ() - pVictim->GetPositionZ()) < 5.0f)
                     return;
             }
+
+            if (((Creature const*)this)->IsLevitating())
+            {
+                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z);
+                z  = ground_z + ((Creature const*)this)->GetFloatValue(UNIT_FIELD_HOVERHEIGHT) + GetObjectBoundingRadius() * GetObjectScale();
+            }
             // non fly unit don't must be in air
             // non swim unit must be at ground (mostly speedup, because it don't must be in water and water level check less fast
-            if (!((Creature const*)this)->CanFly())
+            else if (!((Creature const*)this)->CanFly())
             {
                 bool canSwim = ((Creature const*)this)->CanSwim();
                 float ground_z = z;
                 float max_z = canSwim
                     ? GetTerrain()->GetWaterOrGroundLevel(x, y, z, &ground_z, !((Unit const*)this)->HasAuraType(SPELL_AURA_WATER_WALK))
-                    : ((ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true)));
+                    : ((ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z)));
                 if (max_z > INVALID_HEIGHT)
                 {
                     if (z > max_z)
@@ -1490,7 +1523,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             }
             else
             {
-                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
+                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z);
                 if (z < ground_z)
                     z = ground_z;
             }
@@ -1498,7 +1531,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
         }
         case TYPEID_PLAYER:
         {
-            // for server controlled moves playr work same as creature (but it can always swim)
+            // for server controlled moves player work same as creature (but it can always swim)
             if (!((Player const*)this)->CanFly())
             {
                 float ground_z = z;
@@ -1513,7 +1546,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             }
             else
             {
-                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
+                float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z);
                 if (z < ground_z)
                     z = ground_z;
             }
@@ -1521,7 +1554,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
         }
         default:
         {
-            float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z, true);
+            float ground_z = GetMap()->GetHeight(GetPhaseMask(), x, y, z);
             if (ground_z > INVALID_HEIGHT)
                 z = ground_z;
             break;
@@ -2084,12 +2117,12 @@ void WorldObject::UpdateObjectVisibility()
 
 void WorldObject::AddToClientUpdateList()
 {
-    GetMap()->AddUpdateObject(this);
+    GetMap()->AddUpdateObject(GetObjectGuid());
 }
 
 void WorldObject::RemoveFromClientUpdateList()
 {
-    GetMap()->RemoveUpdateObject(this);
+    GetMap()->RemoveUpdateObject(GetObjectGuid());
 }
 
 struct WorldObjectChangeAccumulator
@@ -2109,7 +2142,7 @@ struct WorldObjectChangeAccumulator
         for(CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
         {
             Player* owner = iter->getSource()->GetOwner();
-            if (owner != &i_object && owner->HaveAtClient(&i_object))
+            if (owner && owner != &i_object && owner->HaveAtClient(&i_object))
                 i_object.BuildUpdateDataForPlayer(owner, i_updateDatas);
         }
     }

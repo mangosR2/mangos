@@ -40,27 +40,12 @@ DynamicObject::DynamicObject() : WorldObject()
 
 void DynamicObject::AddToWorld()
 {
-    ///- Register the dynamicObject for guid lookup
-    if (!IsInWorld())
-    {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().insert<DynamicObject>(GetObjectGuid(), (DynamicObject*)this);
-    }
-
-    Object::AddToWorld();
+    WorldObject::AddToWorld();
 }
 
-void DynamicObject::RemoveFromWorld()
+void DynamicObject::RemoveFromWorld(bool remove)
 {
-    ///- Remove the dynamicObject from the accessor
-    if (IsInWorld())
-    {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().erase<DynamicObject>(GetObjectGuid(), (DynamicObject*)NULL);
-        GetViewPoint().Event_RemovedFromWorld();
-    }
-
-    Object::RemoveFromWorld();
+    WorldObject::RemoveFromWorld(remove);
 }
 
 bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEffectIndex effIndex, float x, float y, float z, int32 duration, float radius, DynamicObjectType type)

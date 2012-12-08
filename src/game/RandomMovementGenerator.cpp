@@ -46,6 +46,17 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
 
     float destX,destY,destZ;
     creature.GetNearPoint(&creature, destX, destY, destZ, creature.GetObjectBoundingRadius(), range, angle);
+    creature.UpdateAllowedPositionZ(destX, destY, destZ);
+
+    float dx = i_x - destX;
+    float dy = i_y - destY;
+    // TODO: Limitation creatutre travel range.
+    if (sqrt((dx*dx) + (dy*dy)) > i_radius)
+    {
+        destX = i_x;
+        destY = i_y;
+        destZ = i_z;
+    }
 
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 

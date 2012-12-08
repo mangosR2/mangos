@@ -4930,7 +4930,7 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
 
     if (pool_id > sPoolMgr.GetMaxPoolId())
     {
-        PSendSysMessage("Pool %u not found", pool_id);
+        PSendSysMessage(LANG_POOL_ENTRY_LOWER_MAX_POOL, pool_id, sPoolMgr.GetMaxPoolId());
         return true;
     }
 
@@ -5688,28 +5688,31 @@ bool ChatHandler::HandleWorldStateCommand(char* args)
 
 bool ChatHandler::HandleWorldStateListCommand(char* args)
 {
-    WorldStateSet wsSet = sWorldStateMgr.GetWorldStatesFor(m_session->GetPlayer());
-
-    if (wsSet.empty())
+    WorldStateSet* wsSet = sWorldStateMgr.GetWorldStatesFor(m_session->GetPlayer());
+    if (!wsSet)
         return false;
 
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    for (uint8 i = 0; i < wsSet->count(); ++i)
     {
-        PSendSysMessage(LANG_WORLDSTATE_LIST,(*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+        WorldState* ws = (*wsSet)[i];
+		PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
+    delete wsSet;
     return true;
 }
 
 bool ChatHandler::HandleWorldStateListAllCommand(char* args)
 {
-    WorldStateSet wsSet = sWorldStateMgr.GetWorldStates(UINT32_MAX);
-    if (wsSet.empty())
+    WorldStateSet* wsSet = sWorldStateMgr.GetWorldStates(UINT32_MAX);
+    if (!wsSet)
         return false;
 
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    for (uint8 i = 0; i < wsSet->count(); ++i)
     {
-        PSendSysMessage(LANG_WORLDSTATE_LIST_FULL, (*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+        WorldState* ws = (*wsSet)[i];
+        PSendSysMessage(LANG_WORLDSTATE_LIST_FULL, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
+    delete wsSet;
     return true;
 }
 

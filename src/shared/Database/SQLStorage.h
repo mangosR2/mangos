@@ -179,7 +179,7 @@ class SQLMultiStorage : public SQLStorageBase
     template<typename T> friend class SQLMSIteratorBounds;
 
     private:
-        typedef std::multimap<uint32/*recordId*/, char* /*record*/> RecordMultiMap;
+        typedef UNORDERED_MULTIMAP<uint32/*recordId*/, char* /*record*/> RecordMultiMap;
 
     public:
         SQLMultiStorage(const char* fmt, const char * _entry_field, const char * sqlname);

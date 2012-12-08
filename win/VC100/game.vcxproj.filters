@@ -938,6 +938,7 @@
     <ClInclude Include="..\..\src\game\AchievementMgr.h" />
     <ClInclude Include="..\..\src\game\AccountMgr.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\priest\HolyPriestStrategy.h" />
+    <ClInclude Include="..\..\src\game\WorldLocation.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\game\Player.h.orig" />

@@ -1515,11 +1515,11 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading Scripts text locales..." );    // must be after Load*Scripts calls
     sScriptMgr.LoadDbScriptStrings();
 
-    sLog.outString( "Loading CreatureEventAI Texts...");
-    sEventAIMgr.LoadCreatureEventAI_Texts(false);       // false, will checked in LoadCreatureEventAI_Scripts
+    sLog.outString("Loading CreatureEventAI Texts...");
+    sEventAIMgr.LoadCreatureEventAI_Texts(false);           // false, will checked in LoadCreatureEventAI_Scripts
 
-    sLog.outString( "Loading CreatureEventAI Summons...");
-    sEventAIMgr.LoadCreatureEventAI_Summons(false);     // false, will checked in LoadCreatureEventAI_Scripts
+    sLog.outString("Loading CreatureEventAI Summons...");
+    sEventAIMgr.LoadCreatureEventAI_Summons(false);         // false, will checked in LoadCreatureEventAI_Scripts
 
     sLog.outString( "Loading CreatureEventAI Scripts...");
     sEventAIMgr.LoadCreatureEventAI_Scripts();

@@ -459,7 +459,7 @@ class Spell
         bool CheckTargetBeforeLimitation(Unit* target, SpellEffectIndex eff);
         SpellCastResult CanAutoCast(Unit* target);
 
-        static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result);
+        static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result, bool isPetCastResult = false);
         void SendCastResult(SpellCastResult result);
         void SendSpellStart();
         void SendSpellGo();
@@ -769,6 +769,8 @@ namespace MaNGOS
         {
             if (!i_originalCaster)
                 i_originalCaster = i_spell.GetAffectiveCasterObject();
+            if (!i_castingObject)
+                i_castingObject = i_spell.m_caster;
             i_playerControlled = i_originalCaster  ? i_originalCaster->IsControlledByPlayer() : false;
 
             switch(i_push_type)
@@ -795,7 +797,7 @@ namespace MaNGOS
                     else
                         i_spell.m_targets.getDestination(i_centerX, i_centerY, i_centerZ);
 
-                    i_center =  WorldLocation(i_castingObject->GetMapId(), i_centerX, i_centerY, i_centerZ);
+                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
 
                     break;
                 }
@@ -822,7 +824,7 @@ namespace MaNGOS
                         i_centerZ = i_spell.m_targets.m_destZ;
                     }
 
-                    i_center =  WorldLocation(i_castingObject->GetMapId(), i_centerX, i_centerY, i_centerZ);
+                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
 
                     break;
                 }

@@ -1288,6 +1288,7 @@
     <ClInclude Include="..\..\src\game\WaypointMovementGenerator.h" />
     <ClInclude Include="..\..\src\game\Weather.h" />
     <ClInclude Include="..\..\src\game\World.h" />
+    <ClInclude Include="..\..\src\game\WorldLocation.h" />
     <ClInclude Include="..\..\src\game\WorldObjectEvents.h" />
     <ClInclude Include="..\..\src\game\WorldSession.h" />
     <ClInclude Include="..\..\src\game\WorldSocket.h" />

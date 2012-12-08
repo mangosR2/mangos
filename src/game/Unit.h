@@ -36,7 +36,6 @@
 #include "WorldPacket.h"
 #include "SpellAuras.h"
 #include "Timer.h"
-#include "LockedVector.h"
 #include <list>
 #include "StateMgr.h"
 
@@ -517,7 +516,7 @@ enum UnitVisibility
     VISIBILITY_GROUP_STEALTH      = 2,                      // detect chance, seen and can see group members
     VISIBILITY_GROUP_INVISIBILITY = 3,                      // invisibility, can see and can be seen only another invisible unit or invisible detection unit, set only if not stealthed, and in checks not used (mask used instead)
     VISIBILITY_GROUP_NO_DETECT    = 4,                      // state just at stealth apply for update Grid state. Don't remove, otherwise stealth spells will break
-    VISIBILITY_RESPAWN            = 5                       // special totally not detectable visibility for force delete object at respawn command
+    VISIBILITY_REMOVE_CORPSE      = 5                       // special totally not detectable visibility for force delete object while removing a corpse
 };
 
 // Value masks for UNIT_FIELD_FLAGS
@@ -1270,23 +1269,23 @@ class  VehicleKit;
 class MANGOS_DLL_SPEC Unit : public WorldObject
 {
     public:
-        typedef std::multimap<uint32 /*spellId*/, SpellAuraHolderPtr> SpellAuraHolderMap;
+        typedef UNORDERED_MULTIMAP<uint32 /*spellId*/, SpellAuraHolderPtr> SpellAuraHolderMap;
         typedef std::pair<SpellAuraHolderMap::iterator, SpellAuraHolderMap::iterator> SpellAuraHolderBounds;
         typedef std::pair<SpellAuraHolderMap::const_iterator, SpellAuraHolderMap::const_iterator> SpellAuraHolderConstBounds;
         typedef std::queue<SpellAuraHolderPtr> SpellAuraHolderQueue;
         typedef std::list<AuraPair> AuraList;
         typedef std::list<DiminishingReturn> Diminishing;
-        typedef std::set<ObjectGuid> ComboPointHolderSet;
-        typedef ACE_Based::LockedMap<uint8, SpellAuraHolderPtr> VisibleAuraMap;
-        typedef std::map<SpellEntry const*, ObjectGuid /*targetGuid*/> TrackedAuraTargetMap;
-        typedef std::set<uint32> SpellIdSet;
+        typedef UNORDERED_SET<ObjectGuid> ComboPointHolderSet;
+        typedef std::vector<SpellAuraHolderPtr> VisibleAuraMap;
+        typedef UNORDERED_MAP<SpellEntry const*, ObjectGuid /*targetGuid*/> TrackedAuraTargetMap;
+        typedef UNORDERED_SET<uint32> SpellIdSet;
 
         virtual ~Unit ( );
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove);
 
-        void CleanupsBeforeDelete();                        // used in ~Creature/~Player (or before mass creature delete to remove cross-references to already deleted units)
+        virtual void CleanupsBeforeDelete();                // used in ~Creature/~Player (or before mass creature delete to remove cross-references to already deleted units)
 
         float GetObjectBoundingRadius() const               // overwrite WorldObject version
         {
@@ -1489,6 +1488,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         SpellMissInfo MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell);
         SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool canReflect = false);
         SpellMissInfo SpellResistResult(Unit* pVictim, SpellEntry const* spell);
+        uint32 CalculateBaseSpellHitChance(Unit* pVictim);
 
         float GetUnitDodgeChance()    const;
         float GetUnitParryChance()    const;
@@ -1919,7 +1919,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         SpellAuraHolderPtr GetVisibleAura(uint8 slot) const;
         void SetVisibleAura(uint8 slot, SpellAuraHolderPtr holder);
         VisibleAuraMap const& GetVisibleAuras() const { return m_visibleAuras; }
-        uint8 GetVisibleAurasCount() const { return m_visibleAuras.size(); }
+        uint8 GetVisibleAurasCount() const;
 
         Aura* GetAura(uint32 spellId, SpellEffectIndex effindex);
         Aura* GetAura(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid = ObjectGuid());
@@ -2132,9 +2132,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void ClearComboPoints();
 
         ///----------Pet responses methods-----------------
-        void SendPetCastFail(uint32 spellid, SpellCastResult msg);
-        void SendPetActionFeedback (uint8 msg);
-        void SendPetTalk (uint32 pettalk);
+        void SendPetActionFeedback(uint8 msg);
+        void SendPetTalk(uint32 pettalk);
         void SendPetAIReaction();
         ///----------End of Pet responses methods----------
         void DoPetAction(Player* owner, uint8 flag, uint32 spellid, ObjectGuid petGuid, ObjectGuid targetGuid);

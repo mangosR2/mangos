@@ -72,7 +72,7 @@ struct SpellClickInfo
     bool IsFitToRequirements(Player const* player) const;
 };
 
-typedef std::multimap<uint32, SpellClickInfo> SpellClickInfoMap;
+typedef UNORDERED_MULTIMAP<uint32, SpellClickInfo> SpellClickInfoMap;
 typedef std::pair<SpellClickInfoMap::const_iterator,SpellClickInfoMap::const_iterator> SpellClickInfoMapBounds;
 
 struct AreaTrigger
@@ -154,6 +154,8 @@ typedef UNORDERED_MAP<uint32/*(mapid,spawnMode) pair*/,CellObjectGuidsMap> MapOb
 #define MIN_CREATURE_AI_TEXT_STRING_ID (-1)                 // 'creature_ai_texts'
 #define MAX_CREATURE_AI_TEXT_STRING_ID (-1000000)
 
+static_assert(MAX_DB_SCRIPT_STRING_ID < ACE_INT32_MAX, "Must scope with int32 range");
+
 struct MangosStringLocale
 {
     std::vector<std::string> Content;                       // 0 -> default, i -> i-1 locale index
@@ -216,9 +218,9 @@ typedef UNORDERED_MAP<uint32,GossipMenuItemsLocale> GossipMenuItemsLocaleMap;
 typedef UNORDERED_MAP<uint32,PointOfInterestLocale> PointOfInterestLocaleMap;
 typedef UNORDERED_MAP<uint32,uint32> ItemConvertMap;
 
-typedef std::multimap<int32, uint32> ExclusiveQuestGroupsMap;
-typedef std::multimap<uint32, ItemRequiredTarget> ItemRequiredTargetMap;
-typedef std::multimap<uint32, uint32> QuestRelationsMap;
+typedef UNORDERED_MULTIMAP<int32, uint32> ExclusiveQuestGroupsMap;
+typedef UNORDERED_MULTIMAP<uint32, ItemRequiredTarget> ItemRequiredTargetMap;
+typedef UNORDERED_MULTIMAP<uint32, uint32> QuestRelationsMap;
 typedef std::pair<ExclusiveQuestGroupsMap::const_iterator, ExclusiveQuestGroupsMap::const_iterator> ExclusiveQuestGroupsMapBounds;
 typedef std::pair<ItemRequiredTargetMap::const_iterator, ItemRequiredTargetMap::const_iterator> ItemRequiredTargetMapBounds;
 typedef std::pair<QuestRelationsMap::const_iterator, QuestRelationsMap::const_iterator> QuestRelationsMapBounds;
@@ -305,7 +307,7 @@ struct AntiCheatConfig
     float  checkFloatParam[ANTICHEAT_CHECK_PARAMETERS];
     uint32 actionType[ANTICHEAT_ACTIONS];
     uint32 actionParam[ANTICHEAT_ACTIONS];
-    std::set<uint32> disabledZones;
+    UNORDERED_SET<uint32> disabledZones;
     std::string description;
 
 };
@@ -842,6 +844,8 @@ class ObjectMgr
 
         void LoadVehicleAccessory();
 
+        void LoadTransports(Map* map);
+
         std::string GeneratePetName(uint32 entry);
         uint32 GetBaseXP(uint32 level) const;
         uint32 GetXPForLevel(uint32 level) const;
@@ -1239,10 +1243,10 @@ class ObjectMgr
 
         typedef UNORDERED_MAP<uint32, GossipText> GossipTextMap;
         typedef UNORDERED_MAP<uint32, uint32> QuestAreaTriggerMap;
-        typedef std::set<uint32> TavernAreaTriggerSet;
-        typedef std::set<uint32> GameObjectForQuestSet;
+        typedef UNORDERED_SET<uint32> TavernAreaTriggerSet;
+        typedef UNORDERED_SET<uint32> GameObjectForQuestSet;
 
-        typedef std::multimap<uint32, CreatureModelRace> CreatureModelRaceMap;
+        typedef UNORDERED_MULTIMAP<uint32, CreatureModelRace> CreatureModelRaceMap;
         typedef std::pair<CreatureModelRaceMap::const_iterator, CreatureModelRaceMap::const_iterator> CreatureModelRaceMapBounds;
 
         GroupMap            mGroupMap;
@@ -1267,7 +1271,7 @@ class ObjectMgr
         WeatherZoneMap      mWeatherZoneMap;
 
         //character reserved names
-        typedef std::set<std::wstring> ReservedNamesMap;
+        typedef UNORDERED_SET<std::wstring> ReservedNamesMap;
         ReservedNamesMap    m_ReservedNames;
 
         typedef UNORDERED_MAP<uint32, uint32> SpellDisabledMap;

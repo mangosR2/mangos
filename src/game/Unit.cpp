@@ -307,7 +307,7 @@ Unit::Unit() :
 Unit::~Unit()
 {
     if (IsInWorld())
-        Object::RemoveFromWorld();
+        WorldObject::RemoveFromWorld(true);
 
     ResetMap();
 
@@ -518,8 +518,6 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
     if (relocate)
     {
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
-        if (m_movementInfo.HasMovementFlag(MOVEFLAG_HOVER))
-            z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
         if (GetTypeId() == TYPEID_PLAYER)
             GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
@@ -2178,7 +2176,9 @@ void Unit::CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo,
     // Magic damage, check for resists
     if (!(damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL) &&
         !damageInfo->IsMeleeDamage() &&
-        !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES))
+        !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES) &&
+        !IsBinaryResistedSpell(damageInfo->GetSpellProto())
+        )
     {
         // Get base resistance for schoolmask
         float tmpvalue2 = (float)GetResistance(damageInfo->SchoolMask());
@@ -3503,15 +3503,13 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell)
     int32 leveldif = int32(pVictim->GetLevelForTarget(this)) - int32(GetLevelForTarget(pVictim));
 
     // Base hit chance from attacker and victim levels
-    int32 modHitChance;
-    if (leveldif < 3)
-        modHitChance = 96 - leveldif;
-    else
-        modHitChance = 94 - (leveldif - 2) * lchance;
+    int32 modHitChance =  CalculateBaseSpellHitChance(pVictim);
 
     // Spellmod from SPELLMOD_RESIST_MISS_CHANCE
-    if (Player* modOwner = GetSpellModOwner())
-        modOwner->ApplySpellMod(spell->Id, SPELLMOD_RESIST_MISS_CHANCE, modHitChance);
+    if (!IsBinaryResistedSpell(spell))
+        if (Player* modOwner = GetSpellModOwner())
+            modOwner->ApplySpellMod(spell->Id, SPELLMOD_RESIST_MISS_CHANCE, modHitChance);
+
     // Increase from attacker SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT auras
     modHitChance += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT, schoolMask);
     // Chance hit from victim SPELL_AURA_MOD_ATTACKER_SPELL_HIT_CHANCE auras
@@ -3579,7 +3577,15 @@ SpellMissInfo Unit::SpellResistResult(Unit* pVictim, SpellEntry const* spell)
     if (!IsNonPositiveSpell(spell) && IsFriendlyTo(pVictim))
         return SPELL_MISS_NONE;
 
-    int32 modResistChance = 100;
+    // Calculate binary resist chance part 1 - base (by level) resistance + chance modifications.
+    // Source of formulas - http://www.wowwiki.com/Formulas:Magical_resistance
+    int32 modBaseResistChance = CalculateBaseSpellHitChance(pVictim); // "negative" chance == "Not resist chance"
+
+    // Spellmod from SPELLMOD_RESIST_MISS_CHANCE
+    if (Player* modOwner = GetSpellModOwner())
+        modOwner->ApplySpellMod(spell->Id, SPELLMOD_RESIST_MISS_CHANCE, modBaseResistChance);
+
+    int32 modResistChance = modBaseResistChance;
 
     // Reduce spell hit chance for dispel mechanic spells from victim SPELL_AURA_MOD_DISPEL_RESIST
     if (IsDispelSpell(spell))
@@ -3600,12 +3606,13 @@ SpellMissInfo Unit::SpellResistResult(Unit* pVictim, SpellEntry const* spell)
 
             // crowd control effect, base resistance chance 5%
             // to be confirmed: is there really base resistance to CC mechanics ?
-            if ((1 << effect_mech) & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK)
-                resist_mech += 5;
+            // if ((1 << effect_mech) & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK && resist_mech < 5)
+            //    resist_mech = 5;
         }
 
-        if (spell->Effect[eff] == SPELL_EFFECT_APPLY_AURA && IsCrowdControlAura(AuraType(spell->EffectApplyAuraName[eff])) && resist_mech < 5)
-            resist_mech = 5;
+        // Need additional confirmation for next: 
+        // if (spell->Effect[eff] == SPELL_EFFECT_APPLY_AURA && IsCrowdControlAura(AuraType(spell->EffectApplyAuraName[eff])))
+        //     resist_mech = 5;
     }
 
     // Apply mod
@@ -3615,9 +3622,14 @@ SpellMissInfo Unit::SpellResistResult(Unit* pVictim, SpellEntry const* spell)
     if (spell->HasAttribute(SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR))
         modResistChance -= pVictim->GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spell->Dispel));
 
-    // Possible nned calculate plain resistance chances here... not implemented currently, FIXME
-    //modResistChance -= GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, spell->SchoolMask);
-    //modResistChance += GetTotalAuraModifier(SPELL_AURA_MOD_IGNORE_TARGET_RESIST);
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Unit::SpellResistResult  calculation part 1 (base - binary/hit resist chance): caster %s, target %s, spell %u, base:%i, mechanic:%i mod:%i",
+        GetObjectGuid().GetString().c_str(),
+        pVictim->GetObjectGuid().GetString().c_str(),
+        spell->Id,
+        modBaseResistChance,
+        resist_mech,
+        modResistChance
+        );
 
     if (modResistChance <  0) 
         modResistChance =  0;
@@ -3629,7 +3641,105 @@ SpellMissInfo Unit::SpellResistResult(Unit* pVictim, SpellEntry const* spell)
     if (rand > modResistChance)
         return SPELL_MISS_RESIST;
 
+    // Part 2 not applyed to holy and melee spells.
+    if (spell->SchoolMask & (SPELL_SCHOOL_MASK_NORMAL | SPELL_SCHOOL_MASK_HOLY))
+        return SPELL_MISS_NONE;
+
+    // Calculate plain resistance chances (binary resistances part 2, formula from http://www.wowwiki.com/Resistance)
+    // http://www.wowwiki.com/Resistance - "Resistance reduces the chance for the binary spell to land by a certain percentage. 
+    // Spell hit will not reduce this chance. It is assumed that this percentage is exactly the damage reduction percentage given above."
+
+    // Get base resistance values
+    uint32 targetResistance = pVictim->GetResistance(SpellSchoolMask(spell->SchoolMask));
+
+    uint32 ignoreTargetResistance = GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_TARGET_RESISTANCE, spell->SchoolMask);
+    if (targetResistance < ignoreTargetResistance)
+        targetResistance = 0;
+    else
+        targetResistance -= ignoreTargetResistance;
+
+    uint32 spellPenetration = (GetTypeId() == TYPEID_PLAYER) ? ((Player*)this)->GetSpellPenetrationItemMod() : 0;
+
+    uint32 effectiveRR = targetResistance + std::max(((int)pVictim->GetLevelForTarget(this) - (int)GetLevelForTarget(pVictim)) * 5, 0) - std::min(targetResistance, spellPenetration);
+    uint32 drp = uint32(100.0f * ((float)effectiveRR / (((pVictim->GetLevelForTarget(this) > 80) ? 510.0f : 400.0f) + (float)effectiveRR)));
+
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Unit::SpellResistResult  calculation part 2 (damage reduction percentage): caster %s, target %s, spell %u, targetResistance:%i, penetration:%u, effectiveRR:%u, DRP:%u",
+        GetObjectGuid().GetString().c_str(),
+        pVictim->GetObjectGuid().GetString().c_str(),
+        spell->Id,
+        targetResistance,
+        spellPenetration,
+        effectiveRR,
+        drp);
+
+    // http://www.wowwiki.com/Formulas:Magical_resistance - "Average resistance may be no higher than 75%." 
+    if (drp >  75) 
+        drp =  75;
+
+    modResistChance = 100 - drp;
+
+    rand = irand(0,100);
+
+    if (rand > modResistChance)
+        return SPELL_MISS_RESIST;
+
     return SPELL_MISS_NONE;
+}
+
+uint32 Unit::CalculateBaseSpellHitChance(Unit* pVictim)
+{
+    uint32 result = 0;
+
+    if (!pVictim)
+        return result;
+
+    // Source of formula: http://www.wowwiki.com/Formulas:Magical_resistance (for binary resisted spells only)
+    //                    http://www.wowwiki.com/Spell_hit (for all spells)
+
+    bool isPvP = IsCharmerOrOwnerPlayerOrPlayerItself() && pVictim->IsCharmerOrOwnerPlayerOrPlayerItself();
+
+    int32 levelDiff = int32(pVictim->GetLevelForTarget(this)) - int32(GetLevelForTarget(pVictim));
+    uint32 levelDiffChance = 0;
+
+    switch (levelDiff)
+    {
+        case -4:
+            levelDiffChance = isPvP ? 0 : 0;
+            break;
+        case -3:
+            levelDiffChance = isPvP ? 1 : 1;
+            break;
+        case -2:
+            levelDiffChance = isPvP ? 2 : 2;
+            break;
+        case -1:
+            levelDiffChance = isPvP ? 3 : 3;
+            break;
+        case 0:
+            levelDiffChance = isPvP ? 4 : 4;
+            break;
+        case 1:
+            levelDiffChance = isPvP ? 5 : 5;
+            break;
+        case 2:
+            levelDiffChance = isPvP ? 6 : 6;
+            break;
+        case 3:
+            levelDiffChance = isPvP ? 13 : 17;
+            break;
+        case 4:
+            levelDiffChance = isPvP ? 20 : 28;
+            break;
+        default:
+            levelDiffChance = levelDiff < 0 ? 0 :
+                    (isPvP ? 20 + (levelDiff - 4) * 7 : 28 + (levelDiff - 4) * 11);
+            break;
+    }
+
+    // Base hit chance from attacker and victim levels
+    result = (levelDiffChance > 100) ? 0 : 100 - levelDiffChance;
+
+    return result;
 }
 
 // Calculate spell hit result can be:
@@ -5852,7 +5962,7 @@ void Unit::HandleArenaPreparation(bool apply)
                                                                 // don't remove stances, shadowform, pally/hunter auras
                 !iter->second->IsPassive() &&                   // don't remove passive auras
                 (iter->second->GetAuraMaxDuration() > 0 &&
-                iter->second->GetAuraDuration() <= sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS)) ||
+                iter->second->GetAuraDuration() <= int32(sWorld.getConfig(CONFIG_UINT32_ARENA_AURAS_DURATION) * IN_MILLISECONDS))) ||
                 iter->second->GetSpellProto()->HasAttribute(SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA))
             {
                 RemoveSpellAuraHolder(iter->second, AURA_REMOVE_BY_CANCEL);
@@ -6141,18 +6251,32 @@ bool Unit::HasAuraOfDifficulty(uint32 spellId) const
 
 SpellAuraHolderPtr Unit::GetVisibleAura(uint8 slot) const
 {
-    VisibleAuraMap::const_iterator itr = m_visibleAuras.find(slot);
-    if (itr != m_visibleAuras.end())
-        return itr->second;
-    return SpellAuraHolderPtr();
+    if (slot >= m_visibleAuras.size() || slot >= MAX_AURAS)
+        return SpellAuraHolderPtr();
+
+    return m_visibleAuras[(size_t)slot];
 }
 
 void Unit::SetVisibleAura(uint8 slot, SpellAuraHolderPtr holder)
 {
-    if (!holder)
-        m_visibleAuras.erase(slot);
+    if (slot >= MAX_AURAS || slot > m_visibleAuras.size())
+        return;
+    else if (slot == m_visibleAuras.size())
+        m_visibleAuras.push_back(holder);
     else
         m_visibleAuras[slot] = holder;
+}
+
+uint8 Unit::GetVisibleAurasCount() const
+{
+    uint8 result = 0;
+    VisibleAuraMap const& visibleAuras = GetVisibleAuras();
+    for (size_t i = 0; i < MAX_AURAS && i < visibleAuras.size() ; ++i)
+    {
+        if (visibleAuras[i])
+            ++result;
+    }
+    return result;
 }
 
 void Unit::AddDynObject(DynamicObject* dynObj)
@@ -6857,7 +6981,7 @@ Unit* Unit::getAttackerForHelper()
     if (!IsInCombat())
         return NULL;
 
-    GuidSet attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
     if (!attackers.empty())
     {
         for(GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
@@ -7086,15 +7210,16 @@ void Unit::RemoveAllAttackers()
     if (!GetMap())
         return;
 
-    GuidSet attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
 
-    for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end(); ++itr)
+    for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end();)
     {
-        Unit* attacker = GetMap()->GetUnit(*itr);
+        ObjectGuid guid = *itr++;
+        Unit* attacker = GetMap()->GetUnit(guid);
         if(!attacker || !attacker->AttackStop())
         {
             sLog.outError("WORLD: Unit has an attacker that isn't attacking it!");
-            GetMap()->RemoveAttackerFor(GetObjectGuid(),*itr);
+            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid);
         }
     }
     GetMap()->RemoveAllAttackersFor(GetObjectGuid());
@@ -7134,14 +7259,21 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
             SetFlag(UNIT_FIELD_AURASTATE, 1<<(flag-1));
             if (GetTypeId() == TYPEID_PLAYER)
             {
-                const PlayerSpellMap& sp_list = ((Player*)this)->GetSpellMap();
-                for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
+                PlayerSpellMap const& sp_list = ((Player*)this)->GetSpellMap();
+                if (!sp_list.empty())
                 {
-                    if (itr->second.state == PLAYERSPELL_REMOVED) continue;
-                    SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
-                    if (!spellInfo || !IsPassiveSpell(spellInfo)) continue;
-                    if (AuraState(spellInfo->CasterAuraState) == flag)
-                        CastSpell(this, itr->first, true, NULL);
+                    for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
+                    {
+                        if (itr->second.state == PLAYERSPELL_REMOVED)
+                            continue;
+
+                        SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);
+                        if (!spellInfo || !IsPassiveSpell(spellInfo))
+                            continue;
+
+                        if (AuraState(spellInfo->CasterAuraState) == flag)
+                            CastSpell(this, spellInfo, true, NULL);
+                    }
                 }
             }
         }
@@ -7154,19 +7286,26 @@ void Unit::ModifyAuraState(AuraState flag, bool apply)
 
             if (flag != AURA_STATE_ENRAGE)                  // enrage aura state triggering continues auras
             {
-                Unit::SpellAuraHolderMap& tAuras = GetSpellAuraHolderMap();
-                for (Unit::SpellAuraHolderMap::iterator itr = tAuras.begin(); itr != tAuras.end();)
+                SpellAuraHolderQueue holdersToRemove;
+                Unit::SpellAuraHolderMap const& tAuras = GetSpellAuraHolderMap();
+                for (Unit::SpellAuraHolderMap::const_iterator itr = tAuras.begin(); itr != tAuras.end(); ++itr)
                 {
-                    SpellEntry const* spellProto = (*itr).second->GetSpellProto();
+                    if (!itr->second || itr->second->IsDeleted())
+                        continue;
+
+                    SpellEntry const* spellProto = itr->second->GetSpellProto();
                     if (AuraState(spellProto->CasterAuraState) == flag)
-                    {
-                        RemoveSpellAuraHolder(itr->second);
-                        itr = tAuras.begin();
-                    }
-                    else
-                        ++itr;
+                        holdersToRemove.push(itr->second);
+                }
+
+                while (!holdersToRemove.empty())
+                {
+                    if (holdersToRemove.front() && !holdersToRemove.front()->IsDeleted())
+                        RemoveSpellAuraHolder(holdersToRemove.front());
+                    holdersToRemove.pop();
                 }
             }
+
         }
     }
 }
@@ -9644,8 +9783,8 @@ bool Unit::isVisibleForOrDetect(Unit const* u, WorldObject const* viewPoint, boo
     if(!at_same_transport && (!IsInWorld() || !u->IsInWorld()))
         return false;
 
-    // forbidden to seen (at GM respawn command)
-    if (m_Visibility==VISIBILITY_RESPAWN)
+    // forbidden to seen (while Removing corpse)
+    if (m_Visibility == VISIBILITY_REMOVE_CORPSE)
         return false;
 
     Map& _map = *u->GetMap();
@@ -10452,9 +10591,9 @@ bool Unit::SelectHostileTarget(bool withEvade)
     // Note: creature not have targeted movement generator but have attacker in this case
     if (!IsInUnitState(UNIT_ACTION_CHASE))
     {
-        GuidSet attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+        GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
 
-        for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end(); ++itr)
+        for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end(); ++itr)
         {
             Unit* attacker = GetMap()->GetUnit(*itr);
             if (attacker && attacker->IsInMap(this) && attacker->isTargetableForAttack() && attacker->isInAccessablePlaceFor(this))
@@ -11212,11 +11351,11 @@ uint32 Unit::GetCreatePowers( Powers power ) const
 
 void Unit::AddToWorld()
 {
-    Object::AddToWorld();
+    WorldObject::AddToWorld();
     ScheduleAINotify(0);
 }
 
-void Unit::RemoveFromWorld()
+void Unit::RemoveFromWorld(bool remove)
 {
     // cleanup
     if (IsInWorld())
@@ -11232,14 +11371,17 @@ void Unit::RemoveFromWorld()
             MAPLOCK_WRITE(this,MAP_LOCK_TYPE_AURAS);
             CleanupDeletedHolders(true);
         }
-        GetViewPoint().Event_RemovedFromWorld();
     }
+    GetViewPoint().Event_RemovedFromWorld();
 
-    Object::RemoveFromWorld();
+    WorldObject::RemoveFromWorld(remove);
 }
 
 void Unit::CleanupsBeforeDelete()
 {
+    if (!IsInWorld())
+        return;
+
     if (m_uint32Values)                                      // only for fully created object
     {
         if (GetVehicle())
@@ -11248,11 +11390,11 @@ void Unit::CleanupsBeforeDelete()
             RemoveVehicleKit();
         InterruptNonMeleeSpells(true);
         KillAllEvents(false);                      // non-delatable (currently casted spells) will not deleted now but it will deleted at call in Map::RemoveAllObjectsInRemoveList
-        if (IsInWorld())
-            CombatStop();
+        CombatStop();
         ClearComboPointHolders();
-        DeleteThreatList();
-        if (GetTypeId()==TYPEID_PLAYER)
+        if (CanHaveThreatList())
+            DeleteThreatList();
+        if (GetTypeId() == TYPEID_PLAYER)
             getHostileRefManager().setOnlineOfflineState(false);
         else
             getHostileRefManager().deleteReferences();
@@ -11710,7 +11852,7 @@ void Unit::DoPetCastSpell(Unit* target, uint32 spellId)
 
 }
 
-void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* targets, SpellEntry const* spellInfo )
+void Unit::DoPetCastSpell(Player* owner, uint8 cast_count, SpellCastTargets* targets, SpellEntry const* spellInfo )
 {
     if (!IsInWorld())
         return;
@@ -11851,10 +11993,8 @@ void Unit::DoPetCastSpell(Player *owner, uint8 cast_count, SpellCastTargets* tar
     }
     else if (pet)
     {
-        if (owner && HasAuraType(SPELL_AURA_MOD_POSSESS))
-            Spell::SendCastResult(owner,spellInfo,0,result);
-        else
-            SendPetCastFail(spellInfo->Id, result);
+        if (owner)
+            Spell::SendCastResult(owner,spellInfo,0,result, true);
 
         if (owner && !((Creature*)this)->HasSpellCooldown(spellInfo->Id) && !triggered)
             owner->SendClearCooldown(spellInfo->Id, pet);
@@ -12153,34 +12293,7 @@ Player* Unit::GetSpellModOwner() const
 }
 
 ///----------Pet responses methods-----------------
-void Unit::SendPetCastFail(uint32 spellid, SpellCastResult msg)
-{
-    if (msg == SPELL_CAST_OK)
-        return;
-
-    Unit *owner = GetCharmerOrOwner();
-    if(!owner || owner->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    WorldPacket data(SMSG_PET_CAST_FAILED, 1 + 4 + 1);
-    data << uint8(0);                                       // cast count?
-    data << uint32(spellid);
-    data << uint8(msg);
-
-    // More cases exist, see Spell::SendCastResult (can possibly be unified)
-    switch(msg)
-    {
-        case SPELL_FAILED_NOT_READY:
-            data << uint32(0);                              // unknown
-            break;
-        default:
-            break;
-    }
-
-    ((Player*)owner)->GetSession()->SendPacket(&data);
-}
-
-void Unit::SendPetActionFeedback (uint8 msg)
+void Unit::SendPetActionFeedback(uint8 msg)
 {
     Unit* owner = GetOwner();
     if(!owner || owner->GetTypeId() != TYPEID_PLAYER)
@@ -13379,19 +13492,20 @@ void Unit::StopAttackFaction(uint32 faction_id)
         }
     }
 
-    GuidSet attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
 
-    for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end(); ++itr)
+    for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end();)
     {
-        Unit* attacker = GetMap()->GetUnit(*itr);
+        ObjectGuid guid = *itr++;
+        Unit* attacker = GetMap()->GetUnit(guid);
 
-        if (attacker)
+        if (attacker && attacker->IsInWorld())
         {
             if (attacker->getFactionTemplateEntry()->faction == faction_id)
                 attacker->AttackStop();
         }
         else
-            GetMap()->RemoveAttackerFor(GetObjectGuid(),*itr);
+            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid);
     }
 
     getHostileRefManager().deleteReferencesForFaction(faction_id);
@@ -13859,18 +13973,21 @@ void Unit::DisableSpline()
 
 uint32 Unit::GetResistance(SpellSchoolMask schoolMask) const
 {
-    uint32 resistance = 0;
+    int32 resistance = 0;
 
     for (int i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
     {
         if (schoolMask & (1 << i))
         {
-            if (resistance < GetResistance(SpellSchools(i)))
-                resistance = GetResistance(SpellSchools(i));
-                // by some sources, may be resistance += GetResistance(SpellSchools(i)), but i not sure (/dev/rsa)
+            int32 schoolRes = (GetObjectGuid().IsPlayer() || (GetObjectGuid().IsPet() && GetOwner() && GetOwner()->GetObjectGuid().IsPlayer())) ?
+                              GetResistance(SpellSchools(i)) : 
+                              floor(GetResistanceBuffMods(SpellSchools(i), true) - GetResistanceBuffMods(SpellSchools(i), false));
+            if (resistance < schoolRes)
+                resistance = schoolRes;
+            // Use maximal resistance from mask (not lower then 0)
         }
     }
-    return resistance;
+    return (resistance >= 0) ? (uint32)resistance : 0;
 }
 
 void Unit::SendSpellDamageResist(Unit* target, uint32 spellId)

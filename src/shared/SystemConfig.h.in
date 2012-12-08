@@ -27,7 +27,7 @@
 
 #ifndef _VERSION
 #if PLATFORM == PLATFORM_WINDOWS
-# define _VERSION(REVN) "0.17.0-DEV" " (Revision " REVN ")"
+# define _VERSION(REVD,REVT,REVN,REVH) "0.17" " (" REVD " " REVT " Revision " REVN " - " REVH ")"
 #else
 # define _VERSION(REVN) "${MANGOS_VERSION}" " (Revision " REVN ")"
 #endif

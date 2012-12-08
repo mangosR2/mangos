@@ -389,19 +389,21 @@ INSERT INTO npc_spellclick_spells VALUES
 
 -- chopper
 UPDATE creature_template SET IconName = 'vehichleCursor', PowerType = 3,
-spell1 = 62974, spell2 = 62286, spell3 = 62299, spell4 = 64660, AIName = 'NullAI'
+AIName = 'NullAI'
 WHERE entry IN (33062);
 
 -- Siege engine
 UPDATE creature_template SET IconName = 'VehicleCursor',  PowerType = 3,
-spell1 = 62345, spell2 = 62522, spell3 = 62346, AIName = 'NullAI'
+AIName = 'NullAI'
 WHERE entry IN (33060);
+REPLACE INTO `creature_template_spells` SET `entry` = 33060, `spell1` = 62345, `spell2` = 62522, `spell3` = 62346;
 UPDATE creature_template SET IconName = 'Gunner', AIName = 'NullAI' WHERE entry IN (33067);
 
 -- demolisher
 UPDATE creature_template SET IconName = 'vehichleCursor', PowerType = 3,
-spell1 = 62306, spell2 = 62490, spell3 = 62308, spell4 =  62324, AIName = 'NullAI'
+AIName = 'NullAI'
 WHERE entry IN (33109);
+REPLACE INTO `creature_template_spells` SET `entry` = 33109, `spell1` = 62306, `spell2` = 62490, `spell3` = 62308, `spell4` = 62324;
 
 -- Salvaged Siege Turret by traponinet
 UPDATE `creature_template` SET `PowerType`=3 WHERE `entry` = 33067;
@@ -466,7 +468,8 @@ INSERT IGNORE INTO spell_script_target VALUES (52264, 1, 28653);
 
 -- From Lanc
 -- quest 12953
-UPDATE `creature_template` SET `spell1` = 55812, `vehicle_id` = 213 WHERE entry IN (30066);
+UPDATE `creature_template` SET `vehicle_id` = 213 WHERE entry IN (30066);
+REPLACE INTO `creature_template_spells` SET `entry` = 30066, `spell1` = 55812;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (30066);
 INSERT INTO npc_spellclick_spells VALUES
@@ -475,7 +478,7 @@ INSERT INTO npc_spellclick_spells VALUES
 
 -- From lanc
 /* 7th Legion Chain Gun */
-UPDATE `creature_template` SET `IconName` = 'Gunner',`spell1` = 49190,`spell2` = 49550, `vehicle_id` = 68 WHERE `entry` IN (27714);
+UPDATE `creature_template` SET `IconName` = 'Gunner', `vehicle_id` = 68 WHERE `entry` IN (27714);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27714);
 INSERT INTO npc_spellclick_spells VALUES
@@ -500,7 +503,7 @@ DELETE FROM `spell_script_target` WHERE `entry` IN (48610);
 INSERT INTO `spell_script_target` VALUES (48610, 1, 27423), (48610, 1, 27371);
 
 /* Forsaken Blight Spreader */
-UPDATE creature_template SET `IconName` = 'vehichleCursor', `spell1` = 48211, `vehicle_id` = 36 WHERE entry IN (26523);
+UPDATE creature_template SET `IconName` = 'vehichleCursor', `vehicle_id` = 36 WHERE entry IN (26523);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (26523);
 INSERT INTO npc_spellclick_spells VALUES
@@ -541,7 +544,8 @@ DELETE FROM creature WHERE id IN (33844,33845);
 UPDATE creature_template SET speed_run = '1.5', unit_flags = 8 WHERE entry IN (33844,33845);
 
 -- Quest vehicles Support: Going Bearback (12851)
-UPDATE `creature_template` SET `spell1` = 54897, `spell2` = 54907, `vehicle_id` = 308 WHERE entry IN (29598);
+UPDATE `creature_template` SET `vehicle_id` = 308 WHERE entry IN (29598);
+REPLACE INTO `creature_template_spells` SET `entry` = 29598, `spell1` = 54897, `spell2` = 54907;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (29598);
 INSERT INTO npc_spellclick_spells VALUES
@@ -550,7 +554,8 @@ INSERT INTO npc_spellclick_spells VALUES
 -- INSERT IGNORE INTO spell_script_target VALUES (54897, 1, 29358); --listed for TargetEntry 29358 does not have any implicit target TARGET_SCRIPT(38) or TARGET_SCRIPT_COORDINATES (46) or TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT (40).
 
 /* Frostbrood Vanquisher */
-UPDATE creature_template SET `spell1` = 53114, `spell2` = 53110, `vehicle_id` = 156 WHERE entry IN (28670);
+UPDATE creature_template SET `vehicle_id` = 156 WHERE entry IN (28670);
+REPLACE INTO `creature_template_spells` SET `entry` = 28670, `spell1` = 53114, `spell2` = 53110;
 
 UPDATE creature_template SET maxhealth = 133525, minhealth = 133525, maxmana = 51360, minmana = 51360, InhabitType = 3 WHERE entry = 28670;
 
@@ -559,7 +564,7 @@ REPLACE INTO creature_template_addon (entry, mount, bytes1, b2_0_sheath, emote, 
 
 -- from lanc
 -- Infected Kodo fix quest (11690)
-UPDATE `creature_template` SET `spell1` = 45877, `vehicle_id` = 29 WHERE entry IN (25596);
+UPDATE `creature_template` SET `vehicle_id` = 29 WHERE entry IN (25596);
 
 INSERT IGNORE INTO `spell_script_target` VALUES (45877, 1, 25596);
 
@@ -600,14 +605,14 @@ INSERT INTO npc_spellclick_spells VALUES (27061, 47920, 0, 0, 0, 1);
 REPLACE INTO spell_script_target VALUES (47939, 0, 188539);
 
 -- Argent Cannon (quest 13086)
-UPDATE `creature_template` SET `spell1` = 57485, `spell2` = 57412, `vehicle_id` = 244 WHERE `entry` IN (30236);
+UPDATE `creature_template` SET `vehicle_id` = 244 WHERE `entry` IN (30236);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (30236);
 INSERT INTO npc_spellclick_spells VALUES
 (30236, 57573, 13086, 1, 13086, 1);
 
 -- Wyrmrest Vanquisher (quest 12498)
-UPDATE `creature_template` SET `spell1` = 55987, `spell2` = 50348, `spell3` = 50430, `vehicle_id` = 99 WHERE `entry` IN (27996);
+UPDATE `creature_template` SET `vehicle_id` = 99 WHERE `entry` IN (27996);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27996);
 INSERT INTO npc_spellclick_spells VALUES
@@ -617,7 +622,7 @@ REPLACE INTO creature_template_addon (entry, auras) VALUES (27996, '53112');
 
 -- from me
 -- Quest Reclamation (12546)
-UPDATE creature_template SET spell1 = 50978,spell2 = 50980,spell3 = 50983,spell4 = 50985,
+UPDATE creature_template SET
 vehicle_id = 111
 WHERE  entry = 28222;
 
@@ -629,7 +634,7 @@ INSERT INTO npc_spellclick_spells (npc_entry, spell_id, quest_start, quest_start
 (28670, 52196, 0, 0, 0, 1);
 
 -- Quest 12996
-UPDATE creature_template SET spell1 = 54459,spell2 = 54458,spell3 = 54460,vehicle_id = 208 WHERE  creature_template.entry = 29918;
+UPDATE creature_template SET vehicle_id = 208 WHERE entry = 29918;
 
 -- Quest 13236 Gift of the Lich King
 REPLACE INTO spell_script_target VALUES (58916,2,31254);
@@ -637,13 +642,11 @@ REPLACE INTO spell_script_target VALUES (58917,1,31276);
 
 -- from traponinet
 -- Quest: No Fly Zone (12815)
-UPDATE creature_template SET spell1=48766, spell2=54469, spell3=54467, spell4=55214, InhabitType=3 WHERE entry=29414;
+UPDATE creature_template SET InhabitType=3 WHERE entry=29414;
 REPLACE INTO creature_template_addon (entry,auras) VALUES (29414,'57403');
 
 -- Quest: Defending Wyrmrest Temple (12372)
-DELETE FROM gossip_scripts WHERE id=9568;
-REPLACE INTO gossip_scripts (id,command,datalong,datalong2,comments) VALUES (9568,15,49256,3,'');
-REPLACE INTO `gossip_menu_option` (`menu_id`, `id`, `option_icon`, `option_text`, `option_id`, `npc_option_npcflag`, `action_menu_id`, `action_poi_id`, `action_script_id`, `box_coded`, `box_money`, `box_text`, `cond_1`, `cond_1_val_1`, `cond_1_val_2`, `cond_2`, `cond_2_val_1`, `cond_2_val_2`, `cond_3`, `cond_3_val_1`, `cond_3_val_2`, `condition_id`) values('9568','0','0','We need to get into the fight. Are you ready?','1','1','-1','0','9568','0','0',NULL,'9','12372','0','0','0','0','0','0','0','0');
+UPDATE `dbscripts_on_gossip` SET `datalong2` = 3;
 
 UPDATE `creature_template` SET `unit_flags` = 0,`InhabitType` = 3 WHERE `entry` = 27629;
 DELETE FROM `creature_spell` WHERE `guid` = 27629;
@@ -660,19 +663,18 @@ UPDATE creature_template SET AIName='EventAI' WHERE entry=27698;
 REPLACE INTO spell_script_target VALUES (49370,1,27698),(49367,1,27698);
 
 -- Wintergarde Gryphon
-UPDATE creature_template SET spell1 = 48363, spell2 = 48397, spell3 = 54170 WHERE entry = 27258;
 DELETE FROM npc_spellclick_spells WHERE npc_entry = 27258;
 INSERT INTO npc_spellclick_spells VALUES 
 (27258, 48365, 12237, 1, 12237, 1),
 (27258, 48365, 12237, 1, 12237, 3);
 
 -- Quest King of the Mountain (13280)
-UPDATE creature_template SET spell1 = 4338, spell2 = 4342, spell3 = 4336, vehicle_id = 282 WHERE entry = 31784;
+UPDATE creature_template SET vehicle_id = 282 WHERE entry = 31784;
 DELETE FROM npc_spellclick_spells WHERE npc_entry = 31736;
 INSERT INTO npc_spellclick_spells VALUES (31736, 59592, 13280, 1, 0, 3);
 
 -- Njorndar Proto-Drake
-UPDATE creature_template SET spell1 = 57493, spell2 = 7769, vehicle_id = 228 WHERE entry = 30272;
+UPDATE creature_template SET vehicle_id = 228 WHERE entry = 30272;
 DELETE FROM npc_spellclick_spells WHERE npc_entry = 30272;
 INSERT INTO npc_spellclick_spells VALUES (30272, 57401, 13071, 1, 13071, 1);
 
@@ -820,7 +822,8 @@ INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `f
 (33845, 62863, 5, 0, 0, 0),
 (33845, 63034, 6, 0, 0, 0);
 
-UPDATE `creature_template` SET `spell1` = 55982, `spell2` = 55980, `vehicle_id` = 30 WHERE `entry` = 30021;
+UPDATE `creature_template` SET `vehicle_id` = 30 WHERE `entry` = 30021;
+REPLACE INTO `creature_template_spells` SET `entry` = 30021, `spell1` = 55982, `spell2` = 55980;
 UPDATE `creature_template` SET `vehicle_id` = 529 WHERE `entry` = 33782;
 
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (30021, 33782);
