@@ -371,16 +371,6 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                             damage = m_caster->GetMaxPower(POWER_MANA);
                         break;
                     }
-                    case 28375:     // Decimate (Gluth encounter)
-                    {
-                        // leave only 5% HP
-                        if (unitTarget)
-                        {
-                            // damage of this spell is very odd so we're setting HP manually
-                            damage = 0;
-                            unitTarget->SetHealthPercent(5.0f);
-                        }
-                    }
                     // percent max target health
                     case 29142:                             // Eyesore Blaster
                     case 35139:                             // Throw Boom's Doom
@@ -3358,6 +3348,23 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                   unitTarget->CastSpell(unitTarget, 62295, true);
                   return;
                 }
+                case 63820:                                 // Summon Scrap Bot Trigger (Ulduar - Mimiron) for Scrap Bots
+                case 64425:                                 // Summon Scrap Bot Trigger (Ulduar - Mimiron) for Assault Bots
+                case 64620:                                 // Summon Fire Bot Trigger  (Ulduar - Mimiron) for Fire Bots
+                {
+                    if (!unitTarget)
+                        return;
+
+                    uint32 triggerSpell = 0;
+                    switch (m_spellInfo->Id)
+                    {
+                        case 63820: triggerSpell = 64398; break;
+                        case 64425: triggerSpell = 64426; break;
+                        case 64620: triggerSpell = 64621; break;
+                    }
+                    unitTarget->CastSpell(unitTarget, triggerSpell, false);
+                    return;
+                }
                 case 63984:                                 // Hate to Zero (Ulduar - Yogg Saron)
                 {
                     if (!unitTarget)
@@ -4252,7 +4259,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         ihit->effectMask &= ~(1<<1);
 
                     // not empty (checked), copy
-                    GuidSet attackers = friendTarget->GetMap()->GetAttackersFor(friendTarget->GetObjectGuid());
+                    GuidSet& attackers = friendTarget->GetMap()->GetAttackersFor(friendTarget->GetObjectGuid());
                     if (!attackers.empty())
                     {
                         // selected from list 3
@@ -6357,7 +6364,7 @@ void Spell::DoSummonGroupPets(SpellEffectIndex eff_idx)
     }
 
     // Pet not found in database
-    for (uint32 count = 0; count < abs(amount); ++count)
+    for (uint32 count = 0; count < uint32(amount); ++count)
     {
         Pet* pet = new Pet(SUMMON_PET);
         pet->SetPetCounter(amount - count - 1);
@@ -6432,16 +6439,15 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
             m_caster->CastSpell(spawnCreature, 530, true);
 
         DEBUG_LOG("New possessed creature (%s) summoned. Owner is %s ", spawnCreature->GetObjectGuid().GetString().c_str(), m_caster->GetObjectGuid().GetString().c_str());
+
+        // Notify original caster if not done already
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
+
+        SendEffectLogExecute(eff_idx, spawnCreature->GetObjectGuid());
     }
     else
         sLog.outError("New possessed creature (entry %d) NOT summoned. Owner is %s ", creature_entry, m_caster->GetObjectGuid().GetString().c_str());
-
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-        ((Creature*)m_caster)->AI()->JustSummoned((Creature*)spawnCreature);
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
-        ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
-
-    SendEffectLogExecute(eff_idx, spawnCreature->GetObjectGuid());
 }
 
 void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
@@ -6755,8 +6761,6 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
                 summon->setFaction(forceFaction);
 
             // Notify original caster if not done already
-            if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-                ((Creature*)m_caster)->AI()->JustSummoned((Creature*)summon);
             if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
                 ((Creature*)m_originalCaster)->AI()->JustSummoned(summon);
 
@@ -6954,9 +6958,7 @@ void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
         m_caster->CastSpell(vehicle, m_mountspell, true);
         DEBUG_LOG("Caster (guidlow %d) summon vehicle (guidlow %d, entry %d) and mounted with spell %d ", m_caster->GetGUIDLow(), vehicle->GetGUIDLow(), vehicle->GetEntry(), m_mountspell->Id);
 
-        // Notify Summoner
-        if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-            ((Creature*)m_caster)->AI()->JustSummoned(vehicle);
+        // Notify original caster if not done already
         if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
             ((Creature*)m_originalCaster)->AI()->JustSummoned(vehicle);
 
@@ -7437,27 +7439,11 @@ void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
 
 void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget)
+    if (!unitTarget || unitTarget->GetTypeId() == TYPEID_PLAYER)
         return;
 
-    // this effect use before aura Taunt apply for prevent taunt already attacking target
-    // for spell as marked "non effective at already attacking target"
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
-    {
-        if (unitTarget->getVictim()==m_caster)
-        {
-            SendCastResult(SPELL_FAILED_DONT_REPORT);
-            return;
-        }
-    }
-
-    // if target immune to taunt don't change threat
-    if (unitTarget->GetDiminishing(DIMINISHING_TAUNT) == DIMINISHING_LEVEL_IMMUNE)
-        return;
-
-    // Also use this effect to set the taunter's threat to the taunted creature's highest value
-    if (unitTarget->CanHaveThreatList() && unitTarget->getThreatManager().getCurrentVictim())
-        unitTarget->getThreatManager().addThreat(m_caster,unitTarget->getThreatManager().getCurrentVictim()->getThreat());
+    if (!unitTarget->TauntApply(m_caster, true))
+        SendCastResult(SPELL_FAILED_DONT_REPORT);
 }
 
 void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)
@@ -8972,7 +8958,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     // "escort" aura not present, so let nothing happen
                     if (!m_caster->HasAura(m_spellInfo->CalculateSimpleValue(eff_idx)))
                         return;
-                    // "escort" aura is present so break; and let DB table spell_scripts be used and process further.
+                    // "escort" aura is present so break; and let DB table dbscripts_on_spell be used and process further.
                     else
                         break;
                 }
@@ -9430,6 +9416,12 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 54522, true);
                     break;
                 }
+                case 52124:                                 // Sky Darkener Assault
+                {
+                    if (unitTarget && unitTarget != m_caster)
+                        m_caster->CastSpell(unitTarget, 52125, false);
+                    break;
+                }
                 case 52357:                                 // Into the realm of shadows
                 {
                     if (!unitTarget)
@@ -9440,18 +9432,23 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 }
                 case 52479:                                 // The Gift That Keeps On Giving
                 {
-                    if (!m_caster || !unitTarget)
+                    if (m_caster->GetTypeId() != TYPEID_PLAYER || !unitTarget)
                         return;
 
-                    m_caster->CastSpell(m_caster, roll_chance_i(75) ? 52505 : m_spellInfo->CalculateSimpleValue(eff_idx), true);
-                    ((Creature*)unitTarget)->ForcedDespawn();
-                    break;
+                    // Each ghoul casts 52500 onto player, so use number of auras as check
+                    Unit::SpellAuraHolderConstBounds bounds = m_caster->GetSpellAuraHolderBounds(52500);
+                    uint32 summonedGhouls = std::distance(bounds.first, bounds.second);
+
+                    m_caster->CastSpell(unitTarget->GetPositionX(), unitTarget->GetPositionY(), unitTarget->GetPositionZ(), urand(0, 2) || summonedGhouls >= 5 ? 52505 : m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    return;
                 }
-                case 52124:                                 // Sky Darkener Assault
+                case 52555:                                 // Dispel Scarlet Ghoul Credit Counter
                 {
-                    if (unitTarget && unitTarget != m_caster)
-                        m_caster->CastSpell(unitTarget, 52125, false);
-                    break;
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->RemoveAurasByCasterSpell(m_spellInfo->CalculateSimpleValue(eff_idx), m_caster->GetObjectGuid());
+                    return;
                 }
                 case 52694:                                 // Recall Eye of Acherus
                 {
@@ -11829,6 +11826,12 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
         ((Creature*)unitTarget)->StopMoving();
 
     float speed = m_spellInfo->speed ? m_spellInfo->speed : BASE_CHARGE_SPEED;
+
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell::EffectCharge spell %u caster %s target %s speed %f dest. point %f %f %f",
+             m_spellInfo->Id, 
+             m_caster ? m_caster->GetObjectGuid().GetString().c_str() : "<none>", 
+             unitTarget ? unitTarget->GetObjectGuid().GetString().c_str() : "<none>", 
+             speed, z, y, z);
 
     if (m_caster->IsFalling())
         m_caster->MonsterMoveWithSpeed(x, y, z, speed, false, false);

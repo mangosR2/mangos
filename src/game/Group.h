@@ -236,7 +236,7 @@ class MANGOS_DLL_SPEC Group
         typedef UNORDERED_MAP< uint32 /*mapId*/, InstanceGroupBind> BoundInstancesMap;
 
     protected:
-        typedef std::set<Player*> InvitesList;
+        typedef UNORDERED_SET<Player*> InvitesList;
         typedef std::vector<Roll*> Rolls;
 
     public:

@@ -267,7 +267,7 @@ int32 Quest::GetRewOrReqMoney() const
 
 uint32 Quest::GetRewMoneyMaxLevel() const
 {
-    if (RewMoneyMaxLevel < abs(RewOrReqMoney))
+    if ((int32)RewMoneyMaxLevel < RewOrReqMoney)
         return uint32(RewOrReqMoney * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));
 
     return uint32(RewMoneyMaxLevel * sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_MONEY));

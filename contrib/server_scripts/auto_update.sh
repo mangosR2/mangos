@@ -26,7 +26,7 @@ function db_run()
 
 function db_config_extract()
 {
-    echo `cat $1|grep "^"$2 |sed 's/^.*=\t*//'|sed 's/\"//g' |sed 's/\<//'|sed 's/\>//'|sed 's/\;/ /g'`
+    echo `cat $1|grep "^"$2 |sed 's/^.*=\t*//'|sed 's/\"//g' |sed 's/\<//'|sed 's/\>//'|sed 's/\;/ /g'|sed 's/\r/ /g'`
 }
 
 ###############################################################################
@@ -160,7 +160,7 @@ do
             break;
     fi;
 
-    updateFile=`find "$ytdbsearchDir" -maxdepth 1 -name "$YTDBnewVer"_mangos_FIX*.sql  |sort -n`
+    updateFile=`find "$ytdbsearchDir" -maxdepth 1 -name "$YTDBnewVer"_updatepack_mangos*.sql  |sort -n`
     if [ -z "$updateFile" ]; 
         then
             break;

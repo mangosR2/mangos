@@ -768,8 +768,9 @@ void BattleGroundQueue::Update(BattleGroundTypeId bgTypeId, BattleGroundBracketI
     // battleground with free slot for player should be always in the beggining of the queue
     // maybe it would be better to create bgfreeslotqueue for each bracket_id
     BGFreeSlotQueueType::iterator itr, next;
-    for (itr = sBattleGroundMgr.BGFreeSlotQueue[bgTypeId].begin(); itr != sBattleGroundMgr.BGFreeSlotQueue[bgTypeId].end(); itr = next)
+    for (itr = sBattleGroundMgr.BGFreeSlotQueue[bgTypeId].begin(); itr != sBattleGroundMgr.BGFreeSlotQueue[bgTypeId].end() && !sBattleGroundMgr.BGFreeSlotQueue[bgTypeId].empty(); itr = next)
     {
+
         next = itr;
         ++next;
         // DO NOT allow queue manager to invite new player to arena

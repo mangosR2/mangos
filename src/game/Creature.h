@@ -53,7 +53,6 @@ enum CreatureFlagsExtra
     CREATURE_FLAG_EXTRA_NOT_TAUNTABLE   = 0x00000100,       // creature is immune to taunt auras and effect attack me
     CREATURE_FLAG_EXTRA_AGGRO_ZONE      = 0x00000200,       // creature sets itself in combat with zone on aggro
     CREATURE_FLAG_EXTRA_GUARD           = 0x00000400,       // creature is a guard
-    CREATURE_FLAG_EXTRA_NO_TALKTO_CREDIT = 0x00000800,      // creature doesn't give quest-credits when talked to (temporarily flag)
     CREATURE_FLAG_EXTRA_KEEP_AI         = 0x00001000,       // creature keeps ScriptedAI even after being charmed / controlled (instead of getting PetAI)
     CREATURE_FLAG_EXTRA_TAUNT_DIMINISHING = 0x00002000,     // creature will only have Taunt diminishing returns if they have been specifically flagged (http://eu.battle.net/wow/en/game/patch-notes/3-3-0)
 };
@@ -458,6 +457,9 @@ enum TemporaryFactionFlags                                  // Used at real fact
     TEMPFACTION_RESTORE_RESPAWN         = 0x01,             // Default faction will be restored at respawn
     TEMPFACTION_RESTORE_COMBAT_STOP     = 0x02,             // ... at CombatStop() (happens at creature death, at evade or custom scripte among others)
     TEMPFACTION_RESTORE_REACH_HOME      = 0x04,             // ... at reaching home in home movement (evade), if not already done at CombatStop()
+    TEMPFACTION_TOGGLE_NON_ATTACKABLE   = 0x08,             // Remove UNIT_FLAG_NON_ATTACKABLE(0x02) when faction is changed (reapply when temp-faction is removed)
+    TEMPFACTION_TOGGLE_OOC_NOT_ATTACK   = 0x10,             // Remove UNIT_FLAG_OOC_NOT_ATTACKABLE(0x100) when faction is changed (reapply when temp-faction is removed)
+    TEMPFACTION_TOGGLE_PASSIVE          = 0x20,             // Remove UNIT_FLAG_PASSIVE(0x200) when faction is changed (reapply when temp-faction is removed)
     TEMPFACTION_ALL,
 };
 
@@ -471,7 +473,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         virtual ~Creature();
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove) override;
 
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, Team team = TEAM_NONE, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
         bool LoadCreatureAddon(bool reload = false);
@@ -480,7 +482,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         bool HasStaticDBSpawnData() const;                  // listed in `creature` table and have fixed in DB guid
 
-        char const* GetSubName() const { return GetCreatureInfo()->SubName; }
+        char const* GetSubName() const { return m_creatureInfo->SubName; }
 
         void Update(uint32 update_diff, uint32 time) override;  // overwrite Unit::Update
 
@@ -543,7 +545,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         CreatureAI* AI() { return i_AI; }
 
         void SetWalk(bool enable, bool asDefault = true);
-        void SetLevitate(bool enable);
+        void SetLevitate(bool enable, float altitude = 1.0f);
         void SetRoot(bool enable) override;
         void SetWaterWalk(bool enable) override;
 

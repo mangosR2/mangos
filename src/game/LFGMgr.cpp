@@ -2216,8 +2216,8 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
         return;
     DEBUG_LOG("LFGMgr::SetRoles set roles for rolesmap size = %u",uint8(rolesMap->size()));
 
-    LFGRoleMask oldRoles;
-    LFGRoleMask newRole;
+    LFGRoleMask oldRoles = LFG_ROLE_MASK_NONE;
+    LFGRoleMask newRole  = LFG_ROLE_MASK_NONE;
     ObjectGuid  tankGuid;
     ObjectGuid  healGuid;
 

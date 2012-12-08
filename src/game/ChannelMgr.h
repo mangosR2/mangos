@@ -28,7 +28,7 @@
 class ChannelMgr
 {
     public:
-        typedef std::map<std::wstring, Channel*> ChannelMap;
+        typedef UNORDERED_MAP<std::wstring, Channel*> ChannelMap;
         ChannelMgr() {}
         ~ChannelMgr();
 

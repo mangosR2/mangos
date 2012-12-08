@@ -20,7 +20,9 @@
 #ifndef _WORLDLOCATION_H
 #define _WORLDLOCATION_H
 
-struct Position
+#include "Common.h"
+
+struct MANGOS_DLL_SPEC Position
 {
     Position() : x(0.0f), y(0.0f), z(0.0f), o(0.0f) {}
     Position(float _x, float _y, float _z, float _o) : x(_x), y(_y), z(_z), o(_o) {}
@@ -56,7 +58,9 @@ struct Position
     }
 };
 
-struct WorldLocation : public Position
+class WorldObject;
+
+struct MANGOS_DLL_SPEC WorldLocation : public Position
 {
     // mapid = -1 for not initialized WorldLocation
     int32     mapid;

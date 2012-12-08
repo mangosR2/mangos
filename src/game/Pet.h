@@ -156,9 +156,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         explicit Pet(PetType type = MAX_PET_TYPE);
         virtual ~Pet();
 
-        void AddToWorld();
-        void RemoveFromWorld();
-
         PetType getPetType() const { return m_petType; }
         void setPetType(PetType type) { m_petType = type; }
         bool isControlled() const { return getPetType()==SUMMON_PET || getPetType()==HUNTER_PET; }

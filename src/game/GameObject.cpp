@@ -59,7 +59,7 @@ GameObject::GameObject() : WorldObject(),
     m_valuesCount = GAMEOBJECT_END;
     m_respawnTime = 0;
     m_respawnDelayTime = 25;
-    m_lootState = GO_NOT_READY;
+    m_lootState = GO_READY;
     m_spawnedByDefault = true;
     m_useTimes = 0;
     m_spellId = 0;
@@ -83,22 +83,16 @@ GameObject::~GameObject()
 
 void GameObject::AddToWorld()
 {
-    ///- Register the gameobject for guid lookup
-    if(!IsInWorld())
-    {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().insert<GameObject>(GetObjectGuid(), (GameObject*)this);
-    }
+    WorldObject::AddToWorld();
 
     if (m_model)
         GetMap()->InsertGameObjectModel(*m_model);
 
     EnableCollision(CalculateCurrentCollisionState());
 
-    Object::AddToWorld();
 }
 
-void GameObject::RemoveFromWorld()
+void GameObject::RemoveFromWorld(bool remove)
 {
     // store the slider value for non instance, non locked capture points
     if (!GetMap()->IsBattleGroundOrArena())
@@ -121,11 +115,6 @@ void GameObject::RemoveFromWorld()
                               GetGuidStr().c_str(), m_spellId, GetGOInfo()->GetLinkedGameObjectEntry(), owner_guid.GetString().c_str());
             }
         }
-
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-
-        GetMap()->GetObjectsStore().erase<GameObject>(GetObjectGuid(), (GameObject*)NULL);
-
         EnableCollision(false);
     }
 
@@ -133,7 +122,7 @@ void GameObject::RemoveFromWorld()
         if (GetMap()->ContainsGameObjectModel(*m_model))
             GetMap()->RemoveGameObjectModel(*m_model);
 
-    Object::RemoveFromWorld();
+    WorldObject::RemoveFromWorld(remove);
 }
 
 bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang, QuaternionData rotation, uint8 animprogress, GOState go_state)
@@ -188,21 +177,14 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
     SetGoArtKit(0);                                         // unknown what this is
     SetGoAnimProgress(animprogress);
 
-    // Notify the map's instance data.
-    // Only works if you create the object in it, not if it is moves to that map.
-    // Normally non-players do not teleport to other maps.
-    if (InstanceData* iData = map->GetInstanceData())
-        iData->OnObjectCreate(this);
-
-    // Notify the battleground/OPvP scripts
-    if (map->IsBattleGroundOrArena())
-        ((BattleGroundMap*)map)->GetBG()->HandleGameObjectCreate(this);
-    // Notify the outdoor pvp script
-    else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
-        outdoorPvP->HandleGameObjectCreate(this);
-
     switch (goinfo->type)
     {
+        case GAMEOBJECT_TYPE_TRAP:
+        case GAMEOBJECT_TYPE_FISHINGNODE:
+        {
+            m_lootState = GO_NOT_READY;
+            break;
+        }
         case GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING:
         {
             m_health = GetMaxHealth();
@@ -237,6 +219,19 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
             break;
     }
 
+    // Notify the map's instance data.
+    // Only works if you create the object in it, not if it is moves to that map.
+    // Normally non-players do not teleport to other maps.
+    if (InstanceData* iData = map->GetInstanceData())
+        iData->OnObjectCreate(this);
+
+    // Notify the battleground/OPvP scripts
+    if (map->IsBattleGroundOrArena())
+        ((BattleGroundMap*)map)->GetBG()->HandleGameObjectCreate(this);
+    // Notify the outdoor pvp script
+    else if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
+        outdoorPvP->HandleGameObjectCreate(this);
+
     return true;
 }
 
@@ -244,7 +239,8 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 {
     if (GetObjectGuid().IsMOTransport())
     {
-        //((Transport*)this)->Update(p_time);
+        //GetTransportKit()->Update(update_diff, diff);
+        //DEBUG_LOG("Transport::Update %s", GetObjectGuid().GetString().c_str());
         return;
     }
 
@@ -254,19 +250,20 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
         {
             switch (GetGoType())
             {
-                case GAMEOBJECT_TYPE_TRAP:
+                case GAMEOBJECT_TYPE_TRAP:                  // Initialized delayed to be able to use GetOwner()
                 {
                     // Arming Time for GAMEOBJECT_TYPE_TRAP (6)
                     Unit* owner = GetOwner();
-                    if ((owner && ((Player*)owner)->isInCombat())
-                        || GetEntry() == 190752 // SoTA Seaforium Charges
-                        || GetEntry() == 195331 // IoC Huge Seaforium Charges
-                        || GetEntry() == 195235) // IoC Seaforium Charges
+                    if ((owner && owner->isInCombat())
+                                                     // FIXME - need remove this hacks on some objects
+                        || GetEntry() == 190752      // SoTA Seaforium Charges
+                        || GetEntry() == 195331      // IoC Huge Seaforium Charges
+                        || GetEntry() == 195235)     // IoC Seaforium Charges
                         m_cooldownTime = time(NULL) + GetGOInfo()->trap.startDelay;
                     m_lootState = GO_READY;
                     break;
                 }
-                case GAMEOBJECT_TYPE_FISHINGNODE:
+                case GAMEOBJECT_TYPE_FISHINGNODE:           // Keep not ready for some delay
                 {
                     // fishing code (bobber ready)
                     if (time(NULL) > m_respawnTime - FISHING_BOBBER_READY_TIME)
@@ -285,13 +282,12 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
 
                         m_lootState = GO_READY;             // can be successfully open with some chance
                     }
-                    return;
+                    break;
                 }
                 default:
-                    m_lootState = GO_READY;                 // for other GO is same switched without delay to GO_READY
                     break;
             }
-            // NO BREAK for switch (m_lootState)
+            break;
         }
         /* no break */
         case GO_READY:
@@ -372,6 +368,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         }
                     }
 
+                    // FIXME - need remove hacks fot this GO
                     // SoTA Seaforium Charge || IoC Seaforium Charge
                     if (GetEntry() == 190752 || GetEntry() == 195331 || GetEntry() == 195235)
                     {
@@ -379,7 +376,8 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     // Note: this hack with search required until GO casting not implemented
                     // search unfriendly creature
-                    else if (owner && goInfo->trap.charges > 0)  // hunter trap
+                    // Should trap trigger?
+                    else if (owner)                              // We have an owner, trigger if there is any unfriendly nearby
                     {
                         MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, owner, radius);
                         MaNGOS::UnitSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> checker(ok, u_check);
@@ -387,21 +385,20 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         if (!ok)
                             Cell::VisitWorldObjects(this, checker, radius);
                     }
-                    else                                    // environmental trap
+                    else                                    // Environmental traps
                     {
-                        // environmental damage spells already have around enemies targeting but this not help in case nonexistent GO casting support
-
-                        // affect only players
-                        Player* p_ok = NULL;
-                        MaNGOS::AnyPlayerInObjectRangeCheck p_check(this, radius);
-                        MaNGOS::PlayerSearcher<MaNGOS::AnyPlayerInObjectRangeCheck>  checker(p_ok, p_check);
-                        Cell::VisitWorldObjects(this, checker, radius);
-                        ok = p_ok;
+                        Unit* u_ok = NULL;
+                        MaNGOS::NearestAttackableUnitInObjectRangeCheck u_check(this, radius);
+                        MaNGOS::UnitLastSearcher<MaNGOS::NearestAttackableUnitInObjectRangeCheck> checker(u_ok, u_check);
+                        Cell::VisitAllObjects(this, checker, radius);
+                        ok = u_ok;
                     }
 
                     if (ok)
                     {
                         Unit* caster =  owner ? owner : ok;
+
+                        // Code below should be refactored into GO::Use, but not clear how to handle caster/victim for non AoE spells
 
                         caster->CastSpell(ok, goInfo->trap.spellId, true, NULL, NULL, GetObjectGuid());
                         // use template cooldown if provided
@@ -1388,6 +1385,21 @@ void GameObject::Use(Unit* user)
 
             return;
         }
+        case GAMEOBJECT_TYPE_MO_TRANSPORT:                   // 15
+        {
+            if (GetGoState() == GO_STATE_READY)
+            {
+                SetGoState(GO_STATE_ACTIVE);
+                SetActiveObjectState(false);
+            }
+            else
+            {
+                SetGoState(GO_STATE_READY);
+                SetActiveObjectState(true);
+            }
+
+            return;
+        }
         case GAMEOBJECT_TYPE_FISHINGNODE:                   // 17 fishing bobber
         {
             if (user->GetTypeId() != TYPEID_PLAYER)
@@ -1827,7 +1839,7 @@ void GameObject::DamageTaken(Unit* pDoneBy, int32 damage, uint32 spellId)
 
     if (damage > 0)
     {
-        if (GetHealth() > damage)
+        if (GetHealth() > (uint32)damage)
         {
             m_health -= damage;
             realDamage = damage;
@@ -1889,7 +1901,7 @@ void GameObject::DamageTaken(Unit* pDoneBy, int32 damage, uint32 spellId)
                     newDisplayId = GetGOInfo()->destructibleBuilding.damagedDisplayId;
             }
 
-            if (pWho && GetGOInfo()->destructibleBuilding.destroyedEvent);
+            if (pWho && GetGOInfo()->destructibleBuilding.destroyedEvent)
                 StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.destroyedEvent, this, pWho);
 
             if (pWho)
@@ -1915,7 +1927,7 @@ void GameObject::DamageTaken(Unit* pDoneBy, int32 damage, uint32 spellId)
             else
                 newDisplayId = GetGOInfo()->destructibleBuilding.damagedDisplayId;
 
-            if (pWho && GetGOInfo()->destructibleBuilding.damageEvent);
+            if (pWho && GetGOInfo()->destructibleBuilding.damageEvent)
                 StartEvents_Event(GetMap(), GetGOInfo()->destructibleBuilding.damageEvent, this, pWho);
 
             // if we have a "dead" display we can "kill" the building after its damaged
@@ -2210,7 +2222,7 @@ bool GameObject::CalculateCurrentCollisionState() const
         return false;
 
     bool startOpen;
-    bool result;
+    bool result = false;
 
     switch (GetGoType())
     {
@@ -2444,11 +2456,6 @@ float GameObject::GetDeterminativeSize(bool b_priorityZ) const
     float dz = info->maxZ - info->minZ;
 
     return b_priorityZ ? dz : sqrt(dx*dx + dy*dy +dz*dz);
-}
-
-void GameObject::SetActiveObjectState(bool active)
-{
-    WorldObject::SetActiveObjectState(active);
 }
 
 void GameObject::SetCapturePointSlider(int8 value)
@@ -2851,4 +2858,3 @@ bool GameObject::SetTeam(Team team)
     }
     return false;
 }
-

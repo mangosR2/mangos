@@ -123,6 +123,8 @@ namespace VMAP
     {
         if (iBasePath.length() > 0 && (iBasePath[iBasePath.length() - 1] != '/' && iBasePath[iBasePath.length() - 1] != '\\'))
             iBasePath.append("/");
+        iLoadedTiles.clear();
+        iLoadedSpawns.clear();
     }
 
     //=========================================================
@@ -449,7 +451,7 @@ namespace VMAP
                         uint32 referencedNode;
 
                         fread(&referencedNode, sizeof(uint32), 1, tf);
-                        if (!iLoadedSpawns.count(referencedNode))
+                        if (iLoadedSpawns.empty() || iLoadedSpawns.count(referencedNode) == 0)
                         {
                             ERROR_LOG("Trying to unload non-referenced model '%s' (ID:%u)", spawn.name.c_str(), spawn.ID);
                         }

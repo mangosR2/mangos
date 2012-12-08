@@ -601,7 +601,7 @@ ItemPrototype const* Item::GetProto() const
 
 Player* Item::GetOwner() const
 {
-    return sObjectMgr.GetPlayer(GetOwnerGuid());
+    return sObjectMgr.GetPlayer(GetOwnerGuid(), false);
 }
 
 uint32 Item::GetSkill()
@@ -1229,14 +1229,14 @@ bool Item::IsBindedNotWith(Player const* player) const
 
 void Item::AddToClientUpdateList()
 {
-    if (Player* pl = GetOwner())
-        pl->GetMap()->AddUpdateObject(this);
+    if (Player* pPlayer = GetOwner())
+        pPlayer->AddUpdateObject(GetObjectGuid());
 }
 
 void Item::RemoveFromClientUpdateList()
 {
-    if (Player* pl = GetOwner())
-        pl->GetMap()->RemoveUpdateObject(this);
+    if (Player* pPlayer = GetOwner())
+        pPlayer->RemoveUpdateObject(GetObjectGuid());
 }
 
 void Item::BuildUpdateData(UpdateDataMapType& update_players)
@@ -1619,4 +1619,14 @@ bool Item::CheckSoulboundTradeExpire(Player* owner)
     }
 
     return false;
+}
+
+void Item::AddToWorld()
+{
+    Object::AddToWorld();
+}
+
+void Item::RemoveFromWorld(bool remove)
+{
+    Object::RemoveFromWorld(remove);
 }

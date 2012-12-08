@@ -48,6 +48,7 @@
 #include "Config/Config.h"
 #include "Mail.h"
 #include "Util.h"
+#include "Transports.h"
 #include "ItemEnchantmentMgr.h"
 #include "BattleGround/BattleGroundMgr.h"
 #include "MapPersistentStateMgr.h"
@@ -302,12 +303,12 @@ bool ChatHandler::HandleReloadAllScriptsCommand(char* /*args*/)
     }
 
     sLog.outString("Re-Loading Scripts...");
-    HandleReloadGameObjectScriptsCommand((char*)"a");
-    HandleReloadGossipScriptsCommand((char*)"a");
-    HandleReloadEventScriptsCommand((char*)"a");
-    HandleReloadQuestEndScriptsCommand((char*)"a");
-    HandleReloadQuestStartScriptsCommand((char*)"a");
-    HandleReloadSpellScriptsCommand((char*)"a");
+    HandleReloadDBScriptsOnGoUseCommand((char*)"a");
+    HandleReloadDBScriptsOnGossipCommand((char*)"a");
+    HandleReloadDBScriptsOnEventCommand((char*)"a");
+    HandleReloadDBScriptsOnQuestEndCommand((char*)"a");
+    HandleReloadDBScriptsOnQuestStartCommand((char*)"a");
+    HandleReloadDBScriptsOnSpellCommand((char*)"a");
     SendGlobalSysMessage("DB tables `*_scripts` reloaded.");
     HandleReloadDbScriptStringCommand((char*)"a");
     return true;
@@ -344,7 +345,7 @@ bool ChatHandler::HandleReloadAllSpellCommand(char* /*args*/)
 bool ChatHandler::HandleReloadAllGossipsCommand(char* args)
 {
     if (*args != 'a')                                       // already reload from all_scripts
-        HandleReloadGossipScriptsCommand((char*)"a");
+        HandleReloadDBScriptsOnGossipCommand((char*)"a");
     HandleReloadGossipMenuCommand((char*)"a");
     HandleReloadPointsOfInterestCommand((char*)"a");
     return true;
@@ -449,26 +450,6 @@ bool ChatHandler::HandleReloadGossipMenuCommand(char* /*args*/)
 {
     sObjectMgr.LoadGossipMenus();
     SendGlobalSysMessage("DB tables `gossip_menu` and `gossip_menu_option` reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleReloadGossipScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `gossip_scripts`...");
-
-    sScriptMgr.LoadGossipScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `gossip_scripts` reloaded.");
-
     return true;
 }
 
@@ -865,47 +846,6 @@ bool ChatHandler::HandleReloadBattleEventCommand(char* /*args*/)
     return true;
 }
 
-bool ChatHandler::HandleReloadGameObjectScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `gameobject_[template]_scripts`...");
-
-    sScriptMgr.LoadGameObjectScripts();
-    sScriptMgr.LoadGameObjectTemplateScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `gameobject_[template]_scripts` reloaded.");
-
-    return true;
-}
-
-bool ChatHandler::HandleReloadEventScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `event_scripts`...");
-
-    sScriptMgr.LoadEventScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `event_scripts` reloaded.");
-
-    return true;
-}
-
 bool ChatHandler::HandleReloadEventAITextsCommand(char* /*args*/)
 {
 
@@ -931,71 +871,132 @@ bool ChatHandler::HandleReloadEventAIScriptsCommand(char* /*args*/)
     return true;
 }
 
-bool ChatHandler::HandleReloadQuestEndScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `quest_end_scripts`...");
-
-    sScriptMgr.LoadQuestEndScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `quest_end_scripts` reloaded.");
-
-    return true;
-}
-
-bool ChatHandler::HandleReloadQuestStartScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `quest_start_scripts`...");
-
-    sScriptMgr.LoadQuestStartScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `quest_start_scripts` reloaded.");
-
-    return true;
-}
-
-bool ChatHandler::HandleReloadSpellScriptsCommand(char* args)
-{
-    if (sScriptMgr.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*args != 'a')
-        sLog.outString("Re-Loading Scripts from `spell_scripts`...");
-
-    sScriptMgr.LoadSpellScripts();
-
-    if (*args != 'a')
-        SendGlobalSysMessage("DB table `spell_scripts` reloaded.");
-
-    return true;
-}
-
 bool ChatHandler::HandleReloadDbScriptStringCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Script strings from `db_script_string`...");
     sScriptMgr.LoadDbScriptStrings();
     SendGlobalSysMessage("DB table `db_script_string` reloaded.");
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnGossipCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_gossip`...");
+
+    sScriptMgr.LoadGossipScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_gossip` reloaded.");
+
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnSpellCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_spell`...");
+
+    sScriptMgr.LoadSpellScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_spell` reloaded.");
+
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnQuestStartCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_quest_start`...");
+
+    sScriptMgr.LoadQuestStartScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_quest_start` reloaded.");
+
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnQuestEndCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_quest_end`...");
+
+    sScriptMgr.LoadQuestEndScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_quest_end` reloaded.");
+
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnEventCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_event`...");
+
+    sScriptMgr.LoadEventScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_event` reloaded.");
+
+    return true;
+}
+
+bool ChatHandler::HandleReloadDBScriptsOnGoUseCommand(char* args)
+{
+    if (sScriptMgr.IsScriptScheduled())
+    {
+        SendSysMessage("DB scripts used currently, please attempt reload later.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    if (*args != 'a')
+        sLog.outString("Re-Loading Scripts from `dbscripts_on_go[_template]_use`...");
+
+    sScriptMgr.LoadGameObjectScripts();
+    sScriptMgr.LoadGameObjectTemplateScripts();
+
+    if (*args != 'a')
+        SendGlobalSysMessage("DB table `dbscripts_on_go[_template]_use` reloaded.");
+
     return true;
 }
 
@@ -7388,5 +7389,377 @@ bool ChatHandler::HandleMmapTestArea(char* args)
         PSendSysMessage("No creatures in %f yard range.", radius);
     }
 
+    return true;
+}
+
+bool ChatHandler::HandleTransportListCommand(char* args)
+{
+    uint32 mapID;
+    if (!ExtractOptUInt32(&args, mapID, m_session->GetPlayer()->GetMapId()))
+        return false;
+
+    Map* map = sMapMgr.CreateMap(mapID, m_session->GetPlayer());
+    if (!map)
+        return false;
+
+    QueryResult *result = WorldDatabase.PQuery("SELECT entry, name, period FROM transports");
+    if (!result)
+        return false;
+
+    do
+    {
+        Field *fields       = result->Fetch();
+        uint32 entry        = fields[0].GetUInt32();
+        std::string name    = fields[1].GetCppString();
+        uint32 period       = fields[2].GetUInt32();
+
+        ObjectGuid guid = ObjectGuid(HIGHGUID_MO_TRANSPORT, entry);
+        Transport* transport  = map->GetTransport(guid);
+
+        if (!transport)
+            continue;
+
+        GameObjectInfo const* gInfo = ObjectMgr::GetGameObjectInfo(entry);
+
+        if (!gInfo)
+            continue;
+
+        PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, current coords %f %f %f",
+            transport->GetObjectGuid().GetString().c_str(), 
+            mapID,
+            name.c_str(),
+            transport->isActiveObject() ? "active" : "passive",
+            transport->GetPassengers().size(),
+            transport->GetPositionX(),
+            transport->GetPositionY(),
+            transport->GetPositionZ()
+            );
+    } while (result->NextRow());
+
+    delete result;
+    return true;
+}
+
+bool ChatHandler::HandleTransportCurrentCommand(char* args)
+{
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = player->m_movementInfo.GetTransportGuid();
+    if (!guid)
+    {
+        PSendSysMessage("Player not on Transport!");
+        return true;
+    }
+
+    Map* map = player->GetMap();
+
+    Transport* transport  = NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        PSendSysMessage("Player not on same map with binded transport!");
+        uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+        if (currentMap == UINT32_MAX || currentMap == player->GetMapId())
+            currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap, player);
+
+        if (!map)
+            return true;
+
+        transport  = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Binded transport not in world!!");
+            return true;
+        }
+    }
+
+    GameObjectInfo const* goInfo = transport->GetGOInfo();
+
+    if (!goInfo)
+    {
+        PSendSysMessage(LANG_GAMEOBJECT_NOT_EXIST,guid.GetCounter());
+        return true;
+    }
+
+    PSendSysMessage(LANG_GAMEOBJECT_DETAIL, 
+        guid.GetCounter(),
+        goInfo->name,
+        guid.GetCounter(),
+        0,
+        transport->GetPositionX(),
+        transport->GetPositionY(),
+        transport->GetPositionZ(),
+        transport->GetMap()->GetId(),
+        transport->GetOrientation());
+
+    PSendSysMessage("Player position: %f %f %f (offset %f %f %f) delta %f %f %f",
+                player->m_movementInfo.GetPos()->x,
+                player->m_movementInfo.GetPos()->y,
+                player->m_movementInfo.GetPos()->z,
+                player->m_movementInfo.GetTransportPos()->x,
+                player->m_movementInfo.GetTransportPos()->y,
+                player->m_movementInfo.GetTransportPos()->z,
+                player->m_movementInfo.GetPos()->x - transport->GetPositionX(),
+                player->m_movementInfo.GetPos()->y - transport->GetPositionY(),
+                player->m_movementInfo.GetPos()->z - transport->GetPositionZ()
+                );
+
+    return true;
+}
+
+bool ChatHandler::HandleTransportPathCommand(char* args)
+{
+    uint32 transportEntry;
+    if (!ExtractOptUInt32(&args, transportEntry, 0))
+        return false;
+
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = transportEntry ? ObjectGuid(HIGHGUID_MO_TRANSPORT, transportEntry) :
+                                        player->m_movementInfo.GetTransportGuid();
+    if (!guid)
+    {
+        PSendSysMessage("Bad transport guid!");
+        return true;
+    }
+
+    uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+
+    Map* map = NULL;
+    if (currentMap != UINT32_MAX)
+        map = sMapMgr.CreateMap(currentMap, player);
+
+    Transport* transport  =  NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        uint32 currentMap2 = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap2 != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap2, player);
+
+        if (map)
+            transport = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Transport %u not in world! Checked maps %u %u",guid.GetCounter(), currentMap, currentMap2);
+            return true;
+        }
+    }
+    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, current time %u (map %u xyz %f %f %f)",
+            transport->GetObjectGuid().GetString().c_str(), 
+            map->GetId(),
+            transport->GetName(),
+            transport->isActiveObject() ? "active" : "passive",
+            transport->GetPassengers().size(),
+            transport->GetCurrent()->first,
+            transport->GetCurrent()->second.x,
+            transport->GetCurrent()->second.y,
+            transport->GetCurrent()->second.z
+        );
+    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, next time %u (map %u xyz %f %f %f)",
+            transport->GetObjectGuid().GetString().c_str(), 
+            map->GetId(),
+            transport->GetName(),
+            transport->isActiveObject() ? "active" : "passive",
+            transport->GetPassengers().size(),
+            transport->GetNext()->first,
+            transport->GetNext()->second.mapid,
+            transport->GetNext()->second.x,
+            transport->GetNext()->second.y,
+            transport->GetNext()->second.z
+        );
+
+    return true;
+}
+
+bool ChatHandler::HandleTransportCommand(char* args)
+{
+    uint32 transportEntry;
+    if (!ExtractOptUInt32(&args, transportEntry,0))
+        return false;
+
+    if (!transportEntry)
+        return false;
+
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = ObjectGuid(HIGHGUID_MO_TRANSPORT, transportEntry);
+    uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+
+    Map* map = NULL;
+    if (currentMap != UINT32_MAX)
+        map = sMapMgr.CreateMap(currentMap, player);
+
+    Transport* transport  =  NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        uint32 currentMap2 = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap2 != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap2, player);
+
+        if (map)
+            transport = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Transport %u not in world! Checked maps %u %u",guid.GetCounter(), currentMap, currentMap2);
+            return true;
+        }
+    }
+
+    PSendSysMessage("Transport: %s on map %u (%s), %s, passengers %u, current coords %f %f %f",
+            transport->GetObjectGuid().GetString().c_str(), 
+            map->GetId(),
+            transport->GetName(),
+            transport->isActiveObject() ? "active" : "passive",
+            transport->GetPassengers().size(),
+            transport->GetPositionX(),
+            transport->GetPositionY(),
+            transport->GetPositionZ()
+        );
+
+    return true;
+}
+
+bool ChatHandler::HandleTransportGoCommand(char* args)
+{
+    uint32 transportEntry;
+    if (!ExtractOptUInt32(&args, transportEntry,0))
+        return false;
+
+    if (!transportEntry)
+        return false;
+
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = ObjectGuid(HIGHGUID_MO_TRANSPORT, transportEntry);
+    uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+
+    Map* map = NULL;
+    if (currentMap != UINT32_MAX)
+        map = sMapMgr.CreateMap(currentMap, player);
+
+    Transport* transport  =  NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        uint32 currentMap2 = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap2 != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap2, player);
+
+        if (map)
+            transport = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Transport %u not in world! Checked maps %u %u",guid.GetCounter(), currentMap, currentMap2);
+            return true;
+        }
+    }
+    float z = transport->GetPositionZ() +2.0f;
+    HandleGoHelper(player, transport->GetMap()->GetId(), transport->GetPositionX(), transport->GetPositionY(), &z);
+    transport->AddPassenger(player);
+
+    return true;
+}
+
+bool ChatHandler::HandleTransportStartCommand(char* args)
+{
+    uint32 transportEntry;
+    if (!ExtractOptUInt32(&args, transportEntry,0))
+        return false;
+
+    if (!transportEntry)
+        return false;
+
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = ObjectGuid(HIGHGUID_MO_TRANSPORT, transportEntry);
+    uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+
+    Map* map = NULL;
+    if (currentMap != UINT32_MAX)
+        map = sMapMgr.CreateMap(currentMap, player);
+
+    Transport* transport  =  NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        uint32 currentMap2 = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap2 != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap2, player);
+
+        if (map)
+            transport = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Transport %u not in world! Checked maps %u %u",guid.GetCounter(), currentMap, currentMap2);
+            return true;
+        }
+    }
+    transport->Start();
+    return true;
+}
+
+bool ChatHandler::HandleTransportStopCommand(char* args)
+{
+    uint32 transportEntry;
+    if (!ExtractOptUInt32(&args, transportEntry,0))
+        return false;
+
+    if (!transportEntry)
+        return false;
+
+    Player* player = m_session->GetPlayer();
+
+    ObjectGuid guid = ObjectGuid(HIGHGUID_MO_TRANSPORT, transportEntry);
+    uint32 currentMap = Transport::GetPossibleMapByEntry(guid.GetCounter(), true);
+
+    Map* map = NULL;
+    if (currentMap != UINT32_MAX)
+        map = sMapMgr.CreateMap(currentMap, player);
+
+    Transport* transport  =  NULL;
+
+    if (map)
+        transport = map->GetTransport(guid);
+
+    if (!transport)
+    {
+        uint32 currentMap2 = Transport::GetPossibleMapByEntry(guid.GetCounter(), false);
+        if (currentMap2 != UINT32_MAX)
+            map = sMapMgr.CreateMap(currentMap2, player);
+
+        if (map)
+            transport = map->GetTransport(guid);
+
+        if (!transport)
+        {
+            PSendSysMessage("Transport %u not in world! Checked maps %u %u",guid.GetCounter(), currentMap, currentMap2);
+            return true;
+        }
+    }
+    transport->Stop();
     return true;
 }

@@ -203,19 +203,12 @@ enum BattleGroundType
 };
 
 
-enum VehicleFactions
+enum BattleGroundSpawnFactions
 {
-    VEHICLE_FACTION_NEUTRAL = 35,
-    VEHICLE_FACTION_ALLIANCE = 3,
-    VEHICLE_FACTION_HORDE = 6
-};
-
-enum VehicleTypes
-{
-    VEHICLE_UNK = 0,
-    VEHICLE_BG_DEMOLISHER = 1,
-    VEHICLE_SA_CANNON = 2,
-    VEHICLE_IC_CATAPULT = 3,
+    SPAWN_FACTION_UNCHANGED = 0,
+    SPAWN_FACTION_ALLIANCE = 3,
+    SPAWN_FACTION_HORDE = 6,
+    SPAWN_FACTION_NEUTRAL = 35,
 };
 
 enum BattleGroundStartingEvents
@@ -333,7 +326,10 @@ class BattleGround
         // Strand of the Ancients related
         virtual Team   GetDefender()                    const   { return TEAM_NONE; }
         virtual uint8  GetGydController(uint8 /*gyd*/)  const   { return false; }
-        virtual uint32 GetVehicleFaction(uint8 vehicleType) const { return 35; }
+
+        // Method for change BG creatures faction after spawn (by new event)
+        virtual BattleGroundSpawnFactions GetSpawnFactionFor(ObjectGuid const& guid) const;
+        virtual Team GetSpawnTeamFor(ObjectGuid const& guid) const { return TEAM_NONE; }
 
         // Set methods:
         void SetName(char const* Name)      { m_Name = Name; }

@@ -20,6 +20,7 @@
 #define TRANSPORTS_H
 
 #include "GameObject.h"
+#include "DBCEnums.h"
 
 #include <map>
 #include <set>
@@ -30,11 +31,17 @@ class Transport : public GameObject
     public:
         explicit Transport();
 
+        static uint32 GetPossibleMapByEntry(uint32 entry, bool start = true);
+        static bool   IsSpawnedAtDifficulty(uint32 entry, Difficulty difficulty);
+
         bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress, uint16 dynamicHighValue);
         bool GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids);
         void Update(uint32 update_diff, uint32 p_time) override;
         bool AddPassenger(Player* passenger);
         bool RemovePassenger(Player* passenger);
+
+        void Start();
+        void Stop();
 
         void BuildStartMovePacket(Map const *targetMap);
         void BuildStopMovePacket(Map const *targetMap);
@@ -75,10 +82,17 @@ class Transport : public GameObject
         uint32 m_nextNodeTime;
         uint32 m_period;
 
+        WayPointMap::const_iterator GetCurrent() { return m_curr; }
+        WayPointMap::const_iterator GetNext()    { return m_next; }
+
     private:
         void TeleportTransport(uint32 newMapid, float x, float y, float z);
         void UpdateForMap(Map const* map);
         void DoEventIfAny(WayPointMap::value_type const& node, bool departure);
         void MoveToNextWayPoint();                          // move m_next/m_cur to next points
+
+        void SetPeriod(uint32 time) { SetUInt32Value(GAMEOBJECT_LEVEL, time);}
+        uint32 GetPeriod() const { return GetUInt32Value(GAMEOBJECT_LEVEL);}
+
 };
 #endif

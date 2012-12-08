@@ -971,7 +971,8 @@ enum MangosStrings
     LANG_NPC_EVENTAI_PHASE              = 1506,
     LANG_NPC_EVENTAI_MOVE               = 1507,
     LANG_NPC_EVENTAI_COMBAT             = 1508,
-    // Room for more Level 2              1509-1549 not used
+    LANG_POOL_ENTRY_LOWER_MAX_POOL      = 1509,
+    // Room for more Level 2              1510-1599 not used
 
     // Level 2 (worldstate operations)
     LANG_WORLDSTATE_LIST                = 1550,

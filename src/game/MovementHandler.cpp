@@ -324,7 +324,7 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
     recv_data >> movementInfo;
     recv_data >> newspeed;
 
-    DEBUG_LOG("WORLD: Recvd %s (%u, 0x%X) opcode, unit %s new speed %u ", LookupOpcodeName(opcode), opcode, opcode,
+    DEBUG_LOG("WORLD: Recvd %s (%u, 0x%X) opcode, unit %s new speed %f ", LookupOpcodeName(opcode), opcode, opcode,
         guid ? guid.GetString().c_str() : "<none>", newspeed);
 
     // now can skip not our packet

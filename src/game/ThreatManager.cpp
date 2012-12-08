@@ -414,8 +414,8 @@ HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, Hostile
 //=================== ThreatManager ==========================
 //============================================================
 
-ThreatManager::ThreatManager(Unit* owner)
-: iCurrentVictim(NULL), iOwner(owner), iUpdateTimer(THREAT_UPDATE_INTERVAL), iUpdateNeed(false)
+ThreatManager::ThreatManager(Unit& _owner)
+: iCurrentVictim(NULL), owner(_owner), iUpdateTimer(THREAT_UPDATE_INTERVAL), iUpdateNeed(false)
 {
 }
 
@@ -453,7 +453,7 @@ void ThreatManager::addThreat(Unit* pVictim, float pThreat, bool crit, SpellScho
 
     MANGOS_ASSERT(getOwner()->GetTypeId()== TYPEID_UNIT);
 
-    float threat = ThreatCalcHelper::CalcThreat(pVictim, iOwner, pThreat, crit, schoolMask, pThreatSpell);
+    float threat = ThreatCalcHelper::CalcThreat(pVictim, getOwner(), pThreat, crit, schoolMask, pThreatSpell);
 
     if (threat > M_NULL_F)
     {
@@ -569,7 +569,7 @@ void ThreatManager::setCurrentVictim(HostileReference* pHostileReference)
         return;
 
     if (pHostileReference)
-        iOwner->SendHighestThreatUpdate(pHostileReference);
+        getOwner()->SendHighestThreatUpdate(pHostileReference);
 
     iCurrentVictim = pHostileReference;
     iUpdateNeed = true;
@@ -600,16 +600,15 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                if (getOwner() && getOwner()->IsInWorld())
-                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
-                        getOwner()->SendThreatRemove(hostileReference);
+                if (isOwnerOnline())
+                    getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
                 iThreatOfflineContainer.addReference(hostileReference);
             }
             else
             {
-                if(getCurrentVictim() && hostileReference->getThreat() > (1.1f * getCurrentVictim()->getThreat()))
+                if (getCurrentVictim() && hostileReference->getThreat() > (1.1f * getCurrentVictim()->getThreat()))
                     setDirty(true);
                 iThreatContainer.addReference(hostileReference);
                 iUpdateNeed = true;
@@ -622,11 +621,11 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                 setCurrentVictim(NULL);
                 setDirty(true);
             }
+
             if(hostileReference->isOnline())
             {
-                if (getOwner() && getOwner()->IsInWorld())
-                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
-                        getOwner()->SendThreatRemove(hostileReference);
+                if (isOwnerOnline())
+                    getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
             }
@@ -644,8 +643,19 @@ void ThreatManager::UpdateForClient(uint32 diff)
     iUpdateTimer.Update(diff);
     if (iUpdateTimer.Passed())
     {
-        iOwner->SendThreatUpdate();
+        getOwner()->SendThreatUpdate();
         iUpdateTimer.Reset(THREAT_UPDATE_INTERVAL);
         iUpdateNeed = false;
     }
+}
+
+bool ThreatManager::isOwnerOnline() const
+{
+    if (!owner.IsInWorld())
+        return false;
+
+    if (!owner.GetTypeId() == TYPEID_PLAYER)
+        return ((Player const*)&owner)->GetSession() && !((Player const*)&owner)->GetSession()->PlayerLogout();
+
+    return true;
 }

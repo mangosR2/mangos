@@ -538,7 +538,35 @@ inline bool HasInterruptSpellEffect(SpellEntry const *spellInfo)
     return false;
 }
 
-inline bool IsDispelSpell(SpellEntry const *spellInfo)
+inline bool IsOnlySelfTargeting(SpellEntry const* spellInfo)
+{
+    for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
+    {
+        if (!spellInfo->Effect[i])
+            return true;
+
+        switch (spellInfo->EffectImplicitTargetA[i])
+        {
+            case TARGET_SELF:
+            case TARGET_SELF2:
+                break;
+            default:
+                return false;
+        }
+        switch (spellInfo->EffectImplicitTargetB[i])
+        {
+            case TARGET_SELF:
+            case TARGET_SELF2:
+            case TARGET_NONE:
+                break;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
+inline bool IsDispelSpell(SpellEntry const* spellInfo)
 {
     return IsSpellHaveEffect(spellInfo, SPELL_EFFECT_DISPEL);
 }
@@ -902,7 +930,7 @@ struct SpellTargetEntry
     uint32 targetEntry;
 };
 
-typedef std::multimap<uint32,SpellTargetEntry> SpellScriptTarget;
+typedef UNORDERED_MULTIMAP<uint32,SpellTargetEntry> SpellScriptTarget;
 typedef std::pair<SpellScriptTarget::const_iterator,SpellScriptTarget::const_iterator> SpellScriptTargetBounds;
 
 // coordinates for spells (accessed using SpellMgr functions)
@@ -942,9 +970,9 @@ struct SpellLinkedEntry
     uint32 effectMask;
 };
 
-typedef std::multimap<uint32, SpellLinkedEntry>  SpellLinkedMap;
+typedef UNORDERED_MULTIMAP<uint32, SpellLinkedEntry>  SpellLinkedMap;
 typedef std::pair<SpellLinkedMap::const_iterator,SpellLinkedMap::const_iterator> SpellLinkedMapBounds;
-typedef std::set<uint32>  SpellLinkedSet;
+typedef UNORDERED_SET<uint32>  SpellLinkedSet;
 
 // Spell pet auras
 class PetAura
@@ -1016,10 +1044,10 @@ struct SpellArea
     bool IsFitToRequirements(Player const* player, uint32 newZone, uint32 newArea) const;
 };
 
-typedef std::multimap<uint32,SpellArea> SpellAreaMap;
-typedef std::multimap<uint32,SpellArea const*> SpellAreaForQuestMap;
-typedef std::multimap<uint32,SpellArea const*> SpellAreaForAuraMap;
-typedef std::multimap<uint32,SpellArea const*> SpellAreaForAreaMap;
+typedef UNORDERED_MULTIMAP<uint32,SpellArea> SpellAreaMap;
+typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForQuestMap;
+typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForAuraMap;
+typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForAreaMap;
 typedef std::pair<SpellAreaMap::const_iterator,SpellAreaMap::const_iterator> SpellAreaMapBounds;
 typedef std::pair<SpellAreaForQuestMap::const_iterator,SpellAreaForQuestMap::const_iterator> SpellAreaForQuestMapBounds;
 typedef std::pair<SpellAreaForAuraMap::const_iterator, SpellAreaForAuraMap::const_iterator>  SpellAreaForAuraMapBounds;
@@ -1047,7 +1075,7 @@ struct SpellLearnSkillNode
     uint16 maxvalue;                                        // 0  - max skill value for player level
 };
 
-typedef std::map<uint32, SpellLearnSkillNode> SpellLearnSkillMap;
+typedef UNORDERED_MAP<uint32, SpellLearnSkillNode> SpellLearnSkillMap;
 
 struct SpellLearnSpellNode
 {
@@ -1056,13 +1084,13 @@ struct SpellLearnSpellNode
     bool autoLearned;
 };
 
-typedef std::multimap<uint32, SpellLearnSpellNode> SpellLearnSpellMap;
+typedef UNORDERED_MULTIMAP<uint32, SpellLearnSpellNode> SpellLearnSpellMap;
 typedef std::pair<SpellLearnSpellMap::const_iterator,SpellLearnSpellMap::const_iterator> SpellLearnSpellMapBounds;
 
-typedef std::multimap<uint32, SkillLineAbilityEntry const*> SkillLineAbilityMap;
+typedef UNORDERED_MULTIMAP<uint32, SkillLineAbilityEntry const*> SkillLineAbilityMap;
 typedef std::pair<SkillLineAbilityMap::const_iterator,SkillLineAbilityMap::const_iterator> SkillLineAbilityMapBounds;
 
-typedef std::multimap<uint32, SkillRaceClassInfoEntry const*> SkillRaceClassInfoMap;
+typedef UNORDERED_MULTIMAP<uint32, SkillRaceClassInfoEntry const*> SkillRaceClassInfoMap;
 typedef std::pair<SkillRaceClassInfoMap::const_iterator,SkillRaceClassInfoMap::const_iterator> SkillRaceClassInfoMapBounds;
 
 struct SkillDiscoveryEntry
@@ -1103,7 +1131,7 @@ struct SkillExtraItemEntry
 typedef std::map<uint32,SkillExtraItemEntry> SkillExtraItemMap;
 
 typedef std::multimap<uint32, uint32> PetLevelupSpellSet;
-typedef std::map<uint32, PetLevelupSpellSet> PetLevelupSpellMap;
+typedef UNORDERED_MAP<uint32, PetLevelupSpellSet> PetLevelupSpellMap;
 
 struct PetDefaultSpellsEntry
 {

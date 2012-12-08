@@ -183,6 +183,14 @@ enum BG_SA_Phase
     SA_ROUND_TWO = 2,
 };
 
+enum CreaturesEntrySA
+{
+    VEHICLE_SA_DEMOLISHER   = 28781,
+    VEHICLE_SA_DEMOLISHER_1 = 32796,
+    VEHICLE_SA_CANNON       = 27894,
+    VEHICLE_SA_CANNON_1     = 32795,
+};
+
 struct BG_SA_RoundScore
 {
     Team winner;
@@ -250,9 +258,10 @@ class BattleGroundSA : public BattleGround
         void SendTransportsRemove(Player * player);
         /* For SendWarningToAll */
         void SendWarningToAllSA(BG_SA_Events gyd, Team team, bool isDoor = false, BG_SA_GoType door = BG_SA_GO_GATES_T_NONE, bool destroyed = false);
+
         /* For vehicle's faction*/
-        uint32 GetVehicleFaction(uint8 vehicleType) const { return GetCorrectFactionSA(vehicleType); }
-        uint32 GetCorrectFactionSA(uint8 vehicleType) const;
+        virtual Team GetSpawnTeamFor(ObjectGuid const& guid) const override;
+
         /* This teleports player to correct loc in function of BG status and it resurects player if necesary */
         void TeleportPlayerToCorrectLoc(Player *player, bool resetBattle = false);
         // for achievement - win with all walls

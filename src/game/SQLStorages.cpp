@@ -18,7 +18,7 @@
 
 #include "SQLStorages.h"
 
-const char CreatureInfosrcfmt[] = "iiiiiiiiiisssiiiiibiiiiiifffiffiifiiiiiiiiiiffiiiiiiiiiiiixxxxiiisiiffliiiiiiiliiiiiis";
+const char CreatureInfosrcfmt[] = "iiiiiiiiiisssiiiiibiiiiiifffiffiifiiiiiiiiiiffiiiiiiiiiiiiiiisiiffliiiiiiiliiiiiis";
 const char CreatureInfodstfmt[] = "iiiiiiiiiisssiiiiibiiiiiifffiffiifiiiiiiiiiiffiiiiiiiiiiiiiiisiiffliiiiiiiliiiiiii";
 const char CreatureDataAddonInfofmt[] = "iiibbiis";
 const char CreatureModelfmt[] = "iffbii";
@@ -60,7 +60,7 @@ SQLStorage sConditionStorage(ConditionsSrcFmt, ConditionsDstFmt, "condition_entr
 
 SQLHashStorage sGameObjectDataAddonStorage(GameObjectInfoAddonInfofmt, "guid", "gameobject_addon");
 SQLHashStorage sSpellDbcTemplate(SpellDbcTemplatesrcfmt, SpellDbcTemplatedstfmt, "Id", "spell_dbc");
-SQLMultiStorage sVehicleAccessoryStorage(VehicleAccessorySrcFmt, VehicleAccessoryDstFmt, "entry", "vehicle_accessory");
+SQLMultiStorage sVehicleAccessoryStorage(VehicleAccessorySrcFmt, VehicleAccessoryDstFmt, "vehicle_entry", "vehicle_accessory");
 SQLHashStorage sGOStorage(GameObjectInfosrcfmt, GameObjectInfodstfmt, "entry", "gameobject_template");
 SQLHashStorage sSpellTemplate(SpellTemplatesrcfmt, SpellTemplatedstfmt, "id", "spell_template");
 //SQLHashStorage sCreatureTemplateSpellsStorage(CreatureTemplateSpellsFmt, "entry", "creature_template_spells");
