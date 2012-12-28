@@ -461,10 +461,18 @@ void World::LoadConfigSettings(bool reload)
 
     ///- Read the player limit and the Message of the day from the config file
     SetPlayerLimit( sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true );
-    SetMotd( sConfig.GetStringDefault("Motd", "Welcome to the Massive Network Game Object Server." ) );
+    SetMotd( sConfig.GetStringDefault("Motd", "Welcome to the MangosR2 game server." ) );
 
     // VMSS system
     setConfig(CONFIG_BOOL_VMSS_ENABLE,                "VMSS.Enable", false);
+#ifdef MANGOSR2_SINGLE_THREAD
+    if (getConfig(CONFIG_BOOL_VMSS_ENABLE))
+    {
+        sLog.outError(" Your OS (%s) not support VMSS! resetted to off", MANGOSR2_SINGLE_THREAD);
+        setConfig(CONFIG_BOOL_VMSS_ENABLE, "fakeString", false);
+    }
+#endif
+ 
     setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
     setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
@@ -569,6 +577,14 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_UINT32_NUMTHREADS, "MapUpdate.Threads", 3);
     setConfig(CONFIG_BOOL_THREADS_DYNAMIC,"MapUpdate.DynamicThreadsCount", false);
+
+#ifdef MANGOSR2_SINGLE_THREAD
+    if (getConfig(CONFIG_UINT32_NUMTHREADS) > 1)
+    {
+        sLog.outError(" Your OS (%s) not support set MapUpdate.Threads > 1! Resetted to 1", MANGOSR2_SINGLE_THREAD);
+        setConfig(CONFIG_UINT32_NUMTHREADS, "fakeString", 1);
+    }
+#endif
 
     setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_HIGHVALUE, "MapUpdate.LoadBalanceHighValue", 0.8f, 0.5f, 1.0f);
     setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_LOWVALUE, "MapUpdate.LoadBalanceLowValue", 0.2f, 0.0f, 0.5f);

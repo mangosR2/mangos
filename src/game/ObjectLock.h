@@ -34,7 +34,7 @@ enum MapLockType
     MAP_LOCK_TYPE_MAX,
 };
 
-typedef   ACE_RW_Thread_Mutex                ObjectLockType;
+typedef   MANGOSR2_MUTEX_MODEL               ObjectLockType;
 typedef   ACE_Read_Guard<ObjectLockType>     ReadGuard;
 typedef   ACE_Write_Guard<ObjectLockType>    WriteGuard;
 

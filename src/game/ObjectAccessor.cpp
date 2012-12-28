@@ -134,9 +134,7 @@ ObjectAccessor::RemoveCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     Player2CorpsesMapType::iterator iter = i_player2corpse.find(corpse->GetOwnerGuid());
     if( iter == i_player2corpse.end() )
@@ -159,9 +157,7 @@ ObjectAccessor::AddCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     MANGOS_ASSERT(i_player2corpse.find(corpse->GetOwnerGuid()) == i_player2corpse.end());
     i_player2corpse[corpse->GetOwnerGuid()] = corpse;
@@ -177,9 +173,7 @@ void
 ObjectAccessor::AddCorpsesToGrid(GridPair const& gridpair,GridType& grid,Map* map)
 {
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::ReadGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     for(Player2CorpsesMapType::iterator iter = i_player2corpse.begin(); iter != i_player2corpse.end(); ++iter)
         if(iter->second->GetGrid() == gridpair)
@@ -284,7 +278,7 @@ void ObjectAccessor::RemoveOldCorpses()
 /// Define the static member of HashMapHolder
 
 template <class T> typename HashMapHolder<T>::MapType HashMapHolder<T>::m_objectMap;
-template <class T> ACE_RW_Thread_Mutex HashMapHolder<T>::i_lock;
+template <class T> MANGOSR2_MUTEX_MODEL HashMapHolder<T>::i_lock;
 
 /// Global definitions for the hashmap storage
 
