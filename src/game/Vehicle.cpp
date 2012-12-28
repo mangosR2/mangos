@@ -74,8 +74,11 @@ VehicleKit::VehicleKit(Unit* base, VehicleEntry const* entry)
 
 VehicleKit::~VehicleKit()
 {
-    Reset();
-    GetBase()->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
+    if (GetBase() && GetBase()->IsInitialized())
+    {
+        Reset();
+        GetBase()->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
+    }
 }
 
 void VehicleKit::Initialize(uint32 creatureEntry)
@@ -461,7 +464,7 @@ void VehicleKit::InstallAccessory(VehicleAccessory const* accessory)
 
     if (Creature* summoned = GetBase()->SummonCreature(accessory->passengerEntry,
         GetBase()->GetPositionX() + accessory->m_offsetX, GetBase()->GetPositionY() + accessory->m_offsetY, GetBase()->GetPositionZ() + accessory->m_offsetZ, GetBase()->GetOrientation() + accessory->m_offsetX,
-        TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30000))
+        TEMPSUMMON_DEAD_DESPAWN, 0))
     {
         summoned->SetCreatorGuid(ObjectGuid());
         summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);

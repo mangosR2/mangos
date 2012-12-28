@@ -28,9 +28,6 @@ CREATE INDEX `idx_skinloot`       ON `creature_template` (`skinloot`);
 CREATE INDEX `idx_pickpocketloot` ON `creature_template` (`pickpocketloot`);
 CREATE INDEX `idx_factionA`       ON `creature_template` (`faction_A`);
 CREATE INDEX `idx_factionH`       ON `creature_template` (`faction_H`);
-CREATE INDEX `idx_spell1`         ON `creature_template` (`spell1`);
-CREATE INDEX `idx_spell2`         ON `creature_template` (`spell2`);
-CREATE INDEX `idx_spell3`         ON `creature_template` (`spell3`);
 
 -- Trainer
 CREATE INDEX `idx_spell`          ON `npc_trainer`       (`spell`);

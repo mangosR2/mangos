@@ -83,6 +83,9 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
 
         GuidSet const& GetAllyGuids() { return m_AllySet; };
 
+        bool  SetPrimaryTarget(ObjectGuid const& guid);
+        Unit* GetPrimaryTarget();
+
     private:
         bool _isVisible(Unit *) const;
         bool _needToStop(void) const;
@@ -95,6 +98,7 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         bool inCombat;
 
         GuidSet m_AllySet;
+        ObjectGuid m_primaryTargetGuid;
 
         IntervalTimer   m_updateAlliesTimer;
         IntervalTimer   m_attackDistanceRecheckTimer;

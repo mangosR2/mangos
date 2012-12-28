@@ -158,7 +158,7 @@ class MANGOS_DLL_SPEC ThreatContainer
 
         bool IsSecondChoiceTarget(Creature* pAttacker, Unit* pTarget, bool bCheckThreatArea, bool bCheckMeleeRange);
 
-        HostileReference* selectNextVictim(Creature* pAttacker, HostileReference* pCurrentVictim);
+        HostileReference* selectNextVictim(Unit* pAttacker, HostileReference* pCurrentVictim);
 
         void setDirty(bool pDirty) { iDirty = pDirty; }
 

@@ -42,6 +42,8 @@ Map::~Map()
 {
     UnloadAll(true);
 
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+
     if(!m_scriptSchedule.empty())
         sScriptMgr.DecreaseScheduledScriptCount(m_scriptSchedule.size());
 
@@ -64,7 +66,7 @@ Map::~Map()
 
 void Map::LoadMapAndVMap(int gx,int gy)
 {
-    if(m_bLoadedGrids[gx][gx])
+    if (m_bLoadedGrids[gx][gy])
         return;
 
     GridMap * pInfo = m_TerrainData->Load(gx, gy);
@@ -229,10 +231,13 @@ void Map::setUnitCell(Creature* obj)
 void
 Map::EnsureGridCreated(const GridPair &p)
 {
-    if(!getNGrid(p.x_coord, p.y_coord))
+    if (!getNGrid(p.x_coord, p.y_coord))
     {
-        setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
-            p.x_coord, p.y_coord);
+        {
+            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
+                p.x_coord, p.y_coord);
+        }
 
         // build a linkage between this map and NGridType
         buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
@@ -243,7 +248,7 @@ Map::EnsureGridCreated(const GridPair &p)
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
         int gy = (MAX_NUMBER_OF_GRIDS - 1) - p.y_coord;
 
-        if(!m_bLoadedGrids[gx][gy])
+        if (!m_bLoadedGrids[gx][gy])
             LoadMapAndVMap(gx,gy);
     }
 }
@@ -384,7 +389,7 @@ Map::Add(T *obj)
     else
         EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
 
-    NGridType *grid = getNGrid(cell.GridX(), cell.GridY());
+    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
     MANGOS_ASSERT( grid != NULL );
 
     AddToGrid(obj,grid,cell);
@@ -399,7 +404,7 @@ Map::Add(T *obj)
     UpdateObjectVisibility(obj,cell,p);
 }
 
-void Map::MessageBroadcast(Player *player, WorldPacket *msg, bool to_self)
+void Map::MessageBroadcast(Player* player, WorldPacket *msg, bool to_self)
 {
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
 
@@ -412,7 +417,9 @@ void Map::MessageBroadcast(Player *player, WorldPacket *msg, bool to_self)
     Cell cell(p);
     cell.SetNoCreate();
 
-    if( !loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)) )
+    EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
+
+    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
         return;
 
     MaNGOS::MessageDeliverer post_man(*player, msg, to_self);
@@ -420,7 +427,7 @@ void Map::MessageBroadcast(Player *player, WorldPacket *msg, bool to_self)
     cell.Visit(p, message, *this, *player, GetVisibilityDistance());
 }
 
-void Map::MessageBroadcast(WorldObject *obj, WorldPacket *msg)
+void Map::MessageBroadcast(WorldObject* obj, WorldPacket* msg)
 {
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
 
@@ -433,7 +440,7 @@ void Map::MessageBroadcast(WorldObject *obj, WorldPacket *msg)
     Cell cell(p);
     cell.SetNoCreate();
 
-    if( !loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)) )
+    if (!loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)))
         return;
 
     //TODO: currently on continents when Visibility.Distance.InFlight > Visibility.Distance.Continents
@@ -443,7 +450,7 @@ void Map::MessageBroadcast(WorldObject *obj, WorldPacket *msg)
     cell.Visit(p, message, *this, *obj, GetVisibilityDistance(obj));
 }
 
-void Map::MessageDistBroadcast(Player *player, WorldPacket *msg, float dist, bool to_self, bool own_team_only)
+void Map::MessageDistBroadcast(Player* player, WorldPacket *msg, float dist, bool to_self, bool own_team_only)
 {
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
 
@@ -456,6 +463,8 @@ void Map::MessageDistBroadcast(Player *player, WorldPacket *msg, float dist, boo
     Cell cell(p);
     cell.SetNoCreate();
 
+    EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
+
     if( !loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)) )
         return;
 
@@ -464,7 +473,7 @@ void Map::MessageDistBroadcast(Player *player, WorldPacket *msg, float dist, boo
     cell.Visit(p, message, *this, *player, dist);
 }
 
-void Map::MessageDistBroadcast(WorldObject *obj, WorldPacket *msg, float dist)
+void Map::MessageDistBroadcast(WorldObject* obj, WorldPacket *msg, float dist)
 {
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
 
@@ -494,12 +503,17 @@ bool Map::loaded(GridPair const& p) const
 void Map::Update(const uint32 &t_diff)
 {
     m_dyn_tree.update(t_diff);
-    uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
 
+    // Load all objects in begin of update diff (loading objects count limited by time)
+    uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
     BattleGround* bg = this->IsBattleGroundOrArena() ? ((BattleGroundMap*)this)->GetBG() : NULL;
-    while(!i_loadingObjectQueue.empty())
+    while (WorldTimer::getMSTimeDiff(loadingObjectToGridUpdateTime, WorldTimer::getMSTime()) < sWorld.getConfig(CONFIG_UINT32_OBJECTLOADINGSPLITTER_ALLOWEDTIME)
+        && !IsLoadingObjectsQueueEmpty())
     {
-        LoadingObjectQueueMember* loadingObject = i_loadingObjectQueue.top();
+        LoadingObjectQueueMember* loadingObject = GetNextLoadingObject();
+        if (!loadingObject)
+            continue;
+
         switch(loadingObject->objectTypeID)
         {
             case TYPEID_UNIT:
@@ -516,11 +530,7 @@ void Map::Update(const uint32 &t_diff)
                 sLog.outError("loadingObject->guid = %u, loadingObject.objectTypeID = %u", loadingObject->guid, loadingObject->objectTypeID);
                 break;
         }
-
-        i_loadingObjectQueue.pop();
         delete loadingObject;
-        if (WorldTimer::getMSTimeDiff(loadingObjectToGridUpdateTime, WorldTimer::getMSTime()) > sWorld.getConfig(CONFIG_UINT32_OBJECTLOADINGSPLITTER_ALLOWEDTIME))
-            break;
     }
 
     UpdateEvents(t_diff);
@@ -692,34 +702,32 @@ void Map::Remove(Player* player, bool remove)
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
         // invalid coordinates
-        if (remove)
-            DeleteFromWorld(player);
-        else
-            player->TeleportToHomebind();
-
+        sLog.outError("Map::Remove() player %s invalid cellPair x:%d, y:%d", player->GetObjectGuid().GetString().c_str(), p.x_coord,p.y_coord);
+        remove ? DeleteFromWorld(player) :  (void)player->TeleportToHomebind();
         return;
     }
 
     Cell cell(p);
-
-    if( !getNGrid(cell.data.Part.grid_x, cell.data.Part.grid_y) )
+    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    if (!grid)
     {
-        sLog.outError("Map::Remove() i_grids was NULL x:%d, y:%d",cell.data.Part.grid_x,cell.data.Part.grid_y);
+        // invalid coordinates
+        sLog.outError("Map::Remove() player %s i_grids was NULL x:%d, y:%d",player->GetObjectGuid().GetString().c_str(),cell.data.Part.grid_x,cell.data.Part.grid_y);
+        remove ? DeleteFromWorld(player) :  (void)player->TeleportToHomebind();
         return;
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
-    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT(grid != NULL);
+    DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Map::Remove() Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
 
     RemoveFromGrid(player,grid,cell);
 
     SendRemoveTransports(player);
     UpdateObjectVisibility(player,cell,p);
 
-    if (!remove && !player->GetPlayerbotAI())
+    if (!player->GetPlayerbotAI())
         player->ResetMap();
 
+    // if remove - player be deleted (removed from storage already, in RemoveFromWorld()
     if (!remove)
         EraseObject(player->GetObjectGuid());
     else
@@ -728,7 +736,7 @@ void Map::Remove(Player* player, bool remove)
 
 template<class T>
 void
-Map::Remove(T *obj, bool remove)
+Map::Remove(T* obj, bool remove)
 {
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
@@ -770,8 +778,15 @@ Map::Remove(T *obj, bool remove)
     }
 }
 
-void
-Map::PlayerRelocation(Player *player, float x, float y, float z, float orientation)
+template<class T>
+void Map::Relocation(T* obj, float x, float y, float z, float orientation)
+{
+    sLog.outError("Map::Relocation unhandled relocation call (object %s)!", obj ? obj->GetObjectGuid().GetString().c_str() : "<none>");
+    MANGOS_ASSERT(false);
+};
+
+template<>
+void Map::Relocation(Player* player, float x, float y, float z, float orientation)
 {
     MANGOS_ASSERT(player);
 
@@ -807,9 +822,10 @@ Map::PlayerRelocation(Player *player, float x, float y, float z, float orientati
         ResetGridExpiry(*newGrid, 0.1f);
         newGrid->SetGridState(GRID_STATE_ACTIVE);
     }
-}
+};
 
-void Map::CreatureRelocation(Creature *creature, float x, float y, float z, float ang)
+template<>
+void Map::Relocation(Creature* creature, float x, float y, float z, float orientation)
 {
     MANGOS_ASSERT(CheckGridIntegrity(creature,false));
 
@@ -820,7 +836,7 @@ void Map::CreatureRelocation(Creature *creature, float x, float y, float z, floa
     if (CreatureCellRelocation(creature,new_cell))
     {
         // update pos
-        creature->Relocate(x, y, z, ang);
+        creature->Relocate(x, y, z, orientation);
         creature->OnRelocated();
     }
     // if creature can't be move in new cell/grid (not loaded) move it to repawn cell/grid
@@ -832,7 +848,49 @@ void Map::CreatureRelocation(Creature *creature, float x, float y, float z, floa
     }
 
     MANGOS_ASSERT(CheckGridIntegrity(creature,true));
-}
+};
+
+template<>
+void Map::Relocation(GameObject* go, float x, float y, float z, float orientation)
+{
+    MANGOS_ASSERT(go);
+
+    CellPair old_val = MaNGOS::ComputeCellPair(go->GetPositionX(), go->GetPositionY());
+    CellPair new_val = MaNGOS::ComputeCellPair(x, y);
+
+    Cell old_cell(old_val);
+    Cell new_cell(new_val);
+    bool same_cell = (new_cell == old_cell);
+
+    go->Relocate(x, y, z, orientation);
+
+    if (old_cell != new_cell)
+    {
+        NGridType* oldGrid = getNGrid(old_cell.GridX(), old_cell.GridY());
+        RemoveFromGrid(go, oldGrid,old_cell);
+        if (!old_cell.DiffGrid(new_cell) )
+            AddToGrid(go, oldGrid, new_cell);
+        else
+            EnsureGridLoadedAtEnter(new_cell);
+
+        NGridType* newGrid = getNGrid(new_cell.GridX(), new_cell.GridY());
+        go->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
+
+        if (newGrid->GetGridState() != GRID_STATE_ACTIVE)
+        {
+            ResetGridExpiry(*newGrid, 0.1f);
+            newGrid->SetGridState(GRID_STATE_ACTIVE);
+        }
+    }
+
+    go->UpdateObjectVisibility();
+    //go->OnRelocated();
+};
+
+void Map::CreatureRelocation(Creature* object, float x, float y, float z, float orientation)
+{
+    Relocation(object, x, y, z, orientation);
+};
 
 bool Map::CreatureCellRelocation(Creature *c, Cell new_cell)
 {
@@ -887,13 +945,13 @@ bool Map::CreatureRespawnRelocation(Creature *c)
 bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
 {
     NGridType* grid = getNGrid(x, y);
-    MANGOS_ASSERT( grid != NULL);
 
+    if (grid != NULL)
     {
         if (!pForce && ActiveObjectsNearGrid(x, y))
             return false;
 
-        DEBUG_LOG("Unloading grid[%u,%u] for map %u", x,y, i_id);
+        DEBUG_LOG("Map::UnloadGrid Unloading grid[%u,%u] for map %u", x,y, GetId());
 
         SetGridObjectDataLoaded(false, grid);
         ObjectGridUnloader unloader(*grid);
@@ -909,9 +967,13 @@ bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
         RemoveAllObjectsInRemoveList();
 
         unloader.UnloadN();
+
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
         delete getNGrid(x, y);
         setNGrid(NULL, x, y);
     }
+    else
+        sLog.outError("Map::UnloadGrid trying unload grid[%u,%u] for map %u, but grid not created!", x,y, GetId());
 
     int gx = (MAX_NUMBER_OF_GRIDS - 1) - x;
     int gy = (MAX_NUMBER_OF_GRIDS - 1) - y;
@@ -923,18 +985,15 @@ bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
         m_bLoadedGrids[gx][gy] = false;
         m_TerrainData->Unload(gx, gy);
     }
-
-    DEBUG_LOG("Unloading grid[%u,%u] for map %u finished", x,y, i_id);
     return true;
 }
 
 void Map::UnloadAll(bool pForce)
 {
-    while (!i_loadingObjectQueue.empty())
+    while (!IsLoadingObjectsQueueEmpty())
     {
-        LoadingObjectQueueMember* member = i_loadingObjectQueue.top();
-        i_loadingObjectQueue.pop();
-        delete member;
+        if (LoadingObjectQueueMember* member = GetNextLoadingObject())
+            delete member;
     }
 
     for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end(); )
@@ -943,6 +1002,24 @@ void Map::UnloadAll(bool pForce)
         ++i;
         UnloadGrid(grid.getX(), grid.getY(), pForce);       // deletes the grid and removes it from the GridRefManager
     }
+}
+
+void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    i_loadingObjectQueue.push(obj);
+}
+
+LoadingObjectQueueMember* Map::GetNextLoadingObject()
+{
+    LoadingObjectQueueMember* loadingObject = NULL;
+    if (!IsLoadingObjectsQueueEmpty())
+    {
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        loadingObject = i_loadingObjectQueue.top();
+        i_loadingObjectQueue.pop();
+    }
+    return loadingObject;
 }
 
 MapDifficultyEntry const* Map::GetMapDifficulty() const
@@ -1734,8 +1811,10 @@ void BattleGroundMap::UnloadAll(bool pForce)
 }
 
 /// Put scripts in the execution queue
-bool Map::ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target)
+bool Map::ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams /*=SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET*/)
 {
+    MANGOS_ASSERT(source);
+
     ///- Find the script map
     ScriptMapMap::const_iterator s = scripts.second.find(id);
     if (s == scripts.second.end())
@@ -1745,6 +1824,20 @@ bool Map::ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* sourc
     ObjectGuid sourceGuid = source->GetObjectGuid();
     ObjectGuid targetGuid = target ? target->GetObjectGuid() : ObjectGuid();
     ObjectGuid ownerGuid  = source->isType(TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : ObjectGuid();
+
+    if (execParams)                                         // Check if the execution should be uniquely
+    {
+        for (ScriptScheduleMap::const_iterator searchItr = m_scriptSchedule.begin(); searchItr != m_scriptSchedule.end(); ++searchItr)
+        {
+            if (searchItr->second.IsSameScript(scripts.first, id,
+                    execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE ? sourceGuid : ObjectGuid(),
+                    execParams & SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET ? targetGuid : ObjectGuid(), ownerGuid))
+            {
+                DEBUG_LOG("DB-SCRIPTS: Process table `%s` id %u. Skip script as script already started for source %s, target %s - ScriptsStartParams %u", scripts.first, id, sourceGuid.GetString().c_str(), targetGuid.GetString().c_str(), execParams);
+                return true;
+            }
+        }
+    }
 
     ///- Schedule script execution for all scripts in the script map
     ScriptMap const *s2 = &(s->second);
@@ -1787,12 +1880,33 @@ void Map::ScriptsProcess()
     // ok as multimap is a *sorted* associative container
     while (!m_scriptSchedule.empty() && (iter->first <= sWorld.GetGameTime()))
     {
-        iter->second.HandleScriptStep();
+        if (iter->second.HandleScriptStep())
+        {
+            // Terminate following script steps of this script
+            const char* tableName = iter->second.GetTableName();
+            uint32 id = iter->second.GetId();
+            ObjectGuid sourceGuid = iter->second.GetSourceGuid();
+            ObjectGuid targetGuid = iter->second.GetTargetGuid();
+            ObjectGuid ownerGuid = iter->second.GetOwnerGuid();
 
-        m_scriptSchedule.erase(iter);
+            for (ScriptScheduleMap::iterator rmItr = m_scriptSchedule.begin(); rmItr != m_scriptSchedule.end();)
+            {
+                if (rmItr->second.IsSameScript(tableName, id, sourceGuid, targetGuid, ownerGuid))
+                {
+                    m_scriptSchedule.erase(rmItr++);
+                    sScriptMgr.DecreaseScheduledScriptCount();
+                }
+                else
+                    ++rmItr;
+            }
+        }
+        else
+        {
+            m_scriptSchedule.erase(iter);
+
+            sScriptMgr.DecreaseScheduledScriptCount();
+        }
         iter = m_scriptSchedule.begin();
-
-        sScriptMgr.DecreaseScheduledScriptCount();
     }
 }
 

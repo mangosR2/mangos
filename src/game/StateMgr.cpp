@@ -568,6 +568,14 @@ ActionInfo* UnitStateMgr::GetAction(UnitActionPtr _action)
     return NULL;
 }
 
+ActionInfo* UnitStateMgr::GetAction(UnitActionId actionId)
+{
+    for (UnitActionStorage::reverse_iterator itr = m_actions.rbegin(); itr != m_actions.rend(); ++itr)
+        if (itr->second.Id == actionId)
+            return &itr->second;
+    return NULL;
+}
+
 UnitActionPtr UnitStateMgr::CurrentAction()
 {
     ActionInfo* action = CurrentState();

@@ -88,7 +88,7 @@ namespace MMAP
             uint32 getLoadedTilesCount() const { return loadedTiles; }
             uint32 getLoadedMapsCount() const { return loadedMMaps.size(); }
 
-            ObjectLockType& GetLock(uint32 mapId, MapLockType _lockType = MAP_LOCK_TYPE_MMAP);
+            ObjectLockType& GetLock(uint32 mapId, MapLockType _lockType = MAP_LOCK_TYPE_MAPOBJECTS);
 
         private:
             bool loadMapData(uint32 mapId);

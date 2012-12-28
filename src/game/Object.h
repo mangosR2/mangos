@@ -29,6 +29,7 @@
 #include "SharedDefines.h"
 #include "WorldObjectEvents.h"
 #include "WorldLocation.h"
+#include "LootMgr.h"
 
 #include <set>
 #include <string>
@@ -619,6 +620,9 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         Creature* SummonCreature(uint32 id, float x, float y, float z, float ang,TempSummonType spwtype,uint32 despwtime, bool asActiveObject = false);
 
         GameObject* SummonGameobject(uint32 id, float x, float y, float z, float angle, uint32 despwtime);
+
+        // Loot System
+        Loot loot;
 
         void StartGroupLoot(Group* group, uint32 timer);
         void StopGroupLoot();

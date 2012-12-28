@@ -131,7 +131,7 @@ bool TargetedMovementGeneratorMedium<T, D>::Update(T& owner, const uint32& time_
     if (!i_target.isValid() || !i_target->IsInWorld())
         return false;
 
-    if (owner.hasUnitState(UNIT_STAT_NOT_MOVE))
+    if (owner.hasUnitState(UNIT_STAT_NOT_MOVE) || (owner.IsInUnitState(UNIT_ACTION_CHASE) && owner.hasUnitState(UNIT_STAT_NO_COMBAT_MOVEMENT)))
     {
         D::_clearUnitStateMove(owner);
         return true;
@@ -274,8 +274,6 @@ template<class T>
 void ChaseMovementGenerator<T>::Finalize(T& owner)
 {
     owner.clearUnitState(UNIT_STAT_CHASE | UNIT_STAT_CHASE_MOVE);
-    if (owner.GetTypeId() == TYPEID_UNIT && owner.isAlive() && !owner.IsInEvadeMode())
-        owner.AddEvent(new EvadeDelayEvent(owner), EVADE_TIME_DELAY);
 }
 
 template<class T>

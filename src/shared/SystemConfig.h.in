@@ -23,6 +23,7 @@
 #define _PACKAGENAME "SPP-Emu"
 #endif
 
+#include "config.h"
 #include "Platform/Define.h"
 
 #ifndef _VERSION
@@ -99,6 +100,22 @@
 
 #define _FULLVERSION(REVN) _PACKAGENAME "/" _VERSION(REVN)
 #define _R2FULLVERSION(REVD,REVT,REVN,REVH) _R2VERSION(REVD,REVT,REVN,REVH) " for " _ENDIAN_PLATFORM
+
+#define EXPECTED_MANGOSD_CLIENT_BUILD {${CLIENT_VERSION}, 0}
+
+#define CLIENT_VERSION ${CLIENT_VERSION}
+
+#if CLIENT_VERSION >= 16057
+    #define MAX_EXPANSION 4
+#elif CLIENT_VERSION >= 13623
+    #define MAX_EXPANSION 3
+#elif CLIENT_VERSION > 8606
+    #define MAX_EXPANSION 2
+#elif CLIENT_VERSION > 6005
+    #define MAX_EXPANSION 1
+#else
+    #define MAX_EXPANSION 0
+#endif
 
 #define DEFAULT_PLAYER_LIMIT 100
 #define DEFAULT_WORLDSERVER_PORT 8085                       //8129

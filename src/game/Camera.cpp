@@ -30,9 +30,13 @@ Camera::Camera(Player& player) : m_owner(player), m_sourceGuid(ObjectGuid())
 
 Camera::~Camera()
 {
+    // Don't cleanup/log for not fully created Player object.
+    if (!GetOwner()->IsInitialized())
+        return;
+
     // view of camera should be already reseted to owner (RemoveFromWorld -> Event_RemovedFromWorld -> ResetView)
-    if (m_sourceGuid != GetOwner()->GetObjectGuid())
-        sLog.outError("Camera destuctor called: camera for %s not reseted (setted to %s)", 
+    if (!m_sourceGuid.IsEmpty() && m_sourceGuid != GetOwner()->GetObjectGuid())
+        sLog.outError("Camera destuctor called: camera for %s not reseted (setted to %s)",
             GetOwner()->GetObjectGuid().GetString().c_str(), m_sourceGuid.IsEmpty() ? "<none>" : m_sourceGuid.GetString().c_str());
 
     // for symmetry with constructor and way to make viewpoint's list empty

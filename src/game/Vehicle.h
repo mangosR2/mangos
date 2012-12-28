@@ -54,8 +54,8 @@ enum AcccessoryFlags
 struct VehicleAccessory
 {
     uint32   vehicleEntry;
-    uint32   passengerEntry;
     int32    seatId;
+    uint32   passengerEntry;
     uint32   m_flags;
     float    m_offsetX;
     float    m_offsetY;

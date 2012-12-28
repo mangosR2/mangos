@@ -35,6 +35,7 @@
 #include "WorldPacket.h"
 #include "SharedDefines.h"
 #include "ByteBuffer.h"
+#include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "Database/DatabaseEnv.h"
 #include "Auth/Sha1.h"
@@ -164,10 +165,17 @@ int WorldSocket::SendPacket(const WorldPacket& pct)
     if (closing_)
         return -1;
 
+    uint16 realOpcode = sObjectMgr.GetOpcodeValue(pct.GetOpcode());
+    if (realOpcode == 0)
+    {
+        DEBUG_LOG("WorldSocket::SendPacket try send packet with unhandled opcode %u (%s)", pct.GetOpcode(), LookupOpcodeName(pct.GetOpcode()));
+        return 0;
+    }
+
     // Dump outgoing packet.
     sLog.outWorldPacketDump(uint32(get_handle()), pct.GetOpcode(), LookupOpcodeName(pct.GetOpcode()), &pct, false);
 
-    ServerPktHeader header(pct.size()+2, pct.GetOpcode());
+    ServerPktHeader header(pct.size()+2, realOpcode);
     m_Crypt.EncryptSend((uint8*)header.header, header.getHeaderLength());
 
     if (m_OutBuffer->space() >= pct.size() + header.getHeaderLength() && msg_queue()->is_empty())
@@ -488,7 +496,15 @@ int WorldSocket::handle_input_header(void)
 
     header.size -= 4;
 
-    ACE_NEW_RETURN(m_RecvWPct, WorldPacket((uint16) header.cmd, header.size), -1);
+    Opcodes internalOpcode = sObjectMgr.GetOpcode(header.cmd);
+    if (internalOpcode == MSG_NULL_ACTION)
+    {
+        DEBUG_LOG("WorldSocket::handle_input_header received unhandled opcode %u", header.cmd);
+        errno = EINVAL;
+        return -1;
+    }
+
+    ACE_NEW_RETURN(m_RecvWPct, WorldPacket(internalOpcode, header.size), -1);
 
     if (header.size > 0)
     {

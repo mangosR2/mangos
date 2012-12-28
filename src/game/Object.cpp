@@ -1081,7 +1081,7 @@ void Object::MarkForClientUpdate()
 }
 
 WorldObject::WorldObject()
-    : m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL),
+    : m_groupLootTimer(0), loot(this), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL),
     m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_phaseMask(PHASEMASK_NORMAL), m_viewPoint(*this), m_isActiveObject(false),
     m_LastUpdateTime(WorldTimer::getMSTime())
 {
@@ -1112,14 +1112,19 @@ void WorldObject::AddToWorld()
 
 void WorldObject::RemoveFromWorld(bool remove)
 {
-    MANGOS_ASSERT(m_currMap);
+    Map* map = GetMap();
+    MANGOS_ASSERT(map);
 
     if (IsInWorld())
         Object::RemoveFromWorld(remove);
 
-    GetMap()->RemoveUpdateObject(GetObjectGuid());
+    map->RemoveUpdateObject(GetObjectGuid());
+
     if (remove)
-        GetMap()->EraseObject(GetObjectGuid());
+    {
+        ResetMap();
+        map->EraseObject(GetObjectGuid());
+    }
 }
 
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)

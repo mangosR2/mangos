@@ -28,7 +28,7 @@ namespace G3D
 }
 class GameObjectModel;
 
-class DynamicMapTree
+class MANGOS_DLL_SPEC DynamicMapTree
 {
 public:
     DynamicMapTree();

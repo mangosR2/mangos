@@ -299,8 +299,8 @@ BattleGround::BattleGround()
     m_ArenaTeamRatingChanges[TEAM_INDEX_ALLIANCE]   = 0;
     m_ArenaTeamRatingChanges[TEAM_INDEX_HORDE]      = 0;
 
-    m_BgRaids[TEAM_INDEX_ALLIANCE]          = NULL;
-    m_BgRaids[TEAM_INDEX_HORDE]             = NULL;
+    m_BgRaids[TEAM_INDEX_ALLIANCE]          = ObjectGuid();
+    m_BgRaids[TEAM_INDEX_HORDE]             = ObjectGuid();
 
     m_PlayersCount[TEAM_INDEX_ALLIANCE]     = 0;
     m_PlayersCount[TEAM_INDEX_HORDE]        = 0;
@@ -1468,9 +1468,22 @@ void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_gu
     }
     else                                                    // first player joined
     {
-        group = new Group;
-        SetBgRaid(team, group);
-        group->Create(plr_guid, plr->GetName());
+        group = new Group();
+
+        // Need first set BG type for group, even his be wrong type
+        group->SetBattlegroundGroup(this);
+
+        if (group->Create(plr_guid, plr->GetName()))
+        {
+            sObjectMgr.AddGroup(group);
+            SetBgRaid(team, group);
+        }
+        else
+        {
+            delete group;
+            return;
+        }
+
     }
 }
 
@@ -2065,17 +2078,25 @@ void BattleGround::CheckArenaWinConditions()
         EndBattleGround(ALLIANCE);
 }
 
+Group* BattleGround::GetBgRaid(Team team)
+{
+    return sObjectMgr.GetGroup(m_BgRaids[GetTeamIndex(team)]);
+}
+
 void BattleGround::SetBgRaid(Team team, Group* bg_raid)
 {
-    Group*& old_raid = m_BgRaids[GetTeamIndex(team)];
+    Group* old_raid = GetBgRaid(team);
 
     if (old_raid)
         old_raid->SetBattlegroundGroup(NULL);
 
     if (bg_raid)
+    {
         bg_raid->SetBattlegroundGroup(this);
-
-    old_raid = bg_raid;
+        m_BgRaids[GetTeamIndex(team)] = bg_raid->GetObjectGuid();
+    }
+    else
+        m_BgRaids[GetTeamIndex(team)] = ObjectGuid();
 }
 
 WorldSafeLocsEntry const* BattleGround::GetClosestGraveYard(Player* player)

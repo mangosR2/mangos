@@ -116,6 +116,10 @@ Group::~Group()
         for (BoundInstancesMap::iterator itr2 = m_boundInstances[i].begin(); itr2 != m_boundInstances[i].end(); ++itr2)
             itr2->second.state->RemoveGroup(this);
 
+    // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
+    if (!GetObjectGuid().IsEmpty())
+        sObjectMgr.RemoveGroup(this);
+
     // Sub group counters clean up
     if (m_subGroupsCounts)
         delete[] m_subGroupsCounts;
@@ -850,7 +854,7 @@ void Group::StartLootRoll(WorldObject* lootTarget, LootMethod method, Loot* loot
         if (!playerToRoll || !playerToRoll->GetSession())
             continue;
 
-        if (lootItem.AllowedForPlayer(playerToRoll))
+        if (lootItem.AllowedForPlayer(playerToRoll, lootTarget))
         {
             if (playerToRoll->IsWithinDistInMap(lootTarget, sWorld.getConfig(CONFIG_FLOAT_GROUP_XP_DISTANCE), false))
             {
@@ -1018,8 +1022,8 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                     roll->getLoot()->NotifyItemRemoved(roll->itemSlot);
                     --roll->getLoot()->unlootedCount;
 
-                    ItemPrototype const *pProto = ObjectMgr::GetItemPrototype(roll->itemid);
-                    player->AutoStoreLoot(pProto->DisenchantID, LootTemplates_Disenchant, true);
+                    ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(roll->itemid);
+                    player->AutoStoreLoot(roll->getLoot()->GetLootTarget(), pProto->DisenchantID, LootTemplates_Disenchant, true);
                 }
             }
         }

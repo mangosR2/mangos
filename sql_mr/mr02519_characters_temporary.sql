@@ -5,7 +5,7 @@
 -- ===================================== --
 
 -- ---------- --
--- 2012-11-28 --
+-- 2012-12-12 --
 -- ---------- --
--- DK Gargoyle mr2481
-UPDATE `creature_template` SET `ScriptName` = '' WHERE `entry` = '27829';
+-- mr2519
+UPDATE `guild_eventlog` SET `PlayerGuid2` = 0 WHERE `PlayerGuid2` NOT IN (SELECT `guid` FROM `characters`);

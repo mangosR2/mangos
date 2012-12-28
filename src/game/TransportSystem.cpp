@@ -93,10 +93,10 @@ void TransportBase::UpdateGlobalPositionOf(WorldObject* passenger, float lx, flo
     {
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
-            m_owner->GetMap()->PlayerRelocation((Player*)passenger, gx, gy, gz, go);
+            m_owner->GetMap()->Relocation((Player*)passenger, gx, gy, gz, go);
         }
         else
-            m_owner->GetMap()->CreatureRelocation((Creature*)passenger, gx, gy, gz, go);
+            m_owner->GetMap()->Relocation((Creature*)passenger, gx, gy, gz, go);
 
         // If passenger is vehicle
         if (((Unit*)passenger)->IsVehicle())

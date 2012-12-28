@@ -446,7 +446,7 @@ class BattleGround
         void SendYell2ToAll(int32 entry, uint32 language, ObjectGuid guid, int32 arg1, int32 arg2);
 
         /* Raid Group */
-        Group* GetBgRaid(Team team) const { return m_BgRaids[GetTeamIndex(team)]; }
+        Group* GetBgRaid(Team team);
         void SetBgRaid(Team team, Group* bg_raid);
 
         virtual void UpdatePlayerScore(Player* Source, uint32 type, uint32 value);
@@ -616,7 +616,7 @@ class BattleGround
         uint32 m_InvitedHorde;
 
         /* Raid Group */
-        Group* m_BgRaids[PVP_TEAM_COUNT];                   // 0 - alliance, 1 - horde
+        ObjectGuid m_BgRaids[PVP_TEAM_COUNT];                   // 0 - alliance, 1 - horde
 
         /* Players count by team */
         uint32 m_PlayersCount[PVP_TEAM_COUNT];

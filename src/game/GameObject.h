@@ -22,7 +22,6 @@
 #include "Common.h"
 #include "SharedDefines.h"
 #include "Object.h"
-#include "LootMgr.h"
 #include "Database/DatabaseEnv.h"
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
@@ -743,20 +742,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         void SaveRespawnTime();
 
-        // Loot System
-        Loot loot;
-        void getFishLoot(Loot* loot, Player* loot_owner);
-        void StartGroupLoot(Group* group, uint32 timer);
-
-        ObjectGuid GetLootRecipientGuid() const { return m_lootRecipientGuid; }
-        uint32 GetLootGroupRecipientId() const { return m_lootGroupRecipientId; }
-        Player* GetLootRecipient() const;                   // use group cases as prefered
-        Group* GetGroupLootRecipient() const;
-        bool HasLootRecipient() const { return m_lootGroupRecipientId || !m_lootRecipientGuid.IsEmpty(); }
-        bool IsGroupLootRecipient() const { return m_lootGroupRecipientId; }
-        void SetLootRecipient(Unit* pUnit);
-        Player* GetOriginalLootRecipient() const;           // ignore group changes/etc, not for looting
-
         bool HasQuest(uint32 quest_id) const;
         bool HasInvolvedQuest(uint32 quest_id) const;
         bool ActivateToQuest(Player* pTarget) const;
@@ -823,13 +808,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         GameObjectDisplayInfoEntry const* m_displayInfo;
         int64 m_packedRotation;
         QuaternionData m_worldRotation;
-
-        // Loot System
-        uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
-        uint32 m_groupLootId;                               // used to find group which is looting
-        void StopGroupLoot();
-        ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
-        uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
 
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);

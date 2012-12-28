@@ -25,6 +25,7 @@
 #include "ObjectAccessor.h"
 #include "UnitEvents.h"
 #include "SpellMgr.h"
+#include "Vehicle.h"
 
 //==============================================================
 //================= ThreatCalcHelper ===========================
@@ -312,8 +313,9 @@ bool ThreatContainer::IsSecondChoiceTarget(Creature* pAttacker, Unit* pTarget, b
 // return the next best victim
 // could be the current victim
 
-HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, HostileReference* pCurrentVictim)
+HostileReference* ThreatContainer::selectNextVictim(Unit* pUnitAttacker, HostileReference* pCurrentVictim)
 {
+    Creature* pAttacker = (Creature*)pUnitAttacker;
     HostileReference* pCurrentRef = NULL;
     bool found = false;
     bool onlySecondChoiceTargetsFound = false;
@@ -329,6 +331,13 @@ HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, Hostile
         Unit* pTarget = pCurrentRef->getTarget();
 
 //        MANGOS_ASSERT(pTarget);                             // if the ref has status online the target must be there!
+
+        if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER && !((Player*)pTarget)->isGameMaster() && pTarget->GetVehicle())
+        {
+            Unit* vehicleBase = pTarget->GetVehicle()->GetBase();
+            if (pUnitAttacker->IsHostileTo(vehicleBase))
+                pTarget = vehicleBase;
+        }
 
         if (!pTarget)
             continue;
@@ -513,9 +522,19 @@ void ThreatManager::modifyThreatPercent(Unit *pVictim, int32 pPercent)
 Unit* ThreatManager::getHostileTarget()
 {
     iThreatContainer.update();
-    HostileReference* nextVictim = iThreatContainer.selectNextVictim((Creature*) getOwner(), getCurrentVictim());
+    HostileReference* nextVictim = iThreatContainer.selectNextVictim(getOwner(), getCurrentVictim());
     setCurrentVictim(nextVictim);
-    return getCurrentVictim() != NULL ? getCurrentVictim()->getTarget() : NULL;
+    if (!getCurrentVictim())
+        return NULL;
+
+    Unit* pTarget = getCurrentVictim()->getTarget();
+    if (!pTarget)
+        return NULL;
+
+    if (pTarget->GetTypeId() == TYPEID_PLAYER && pTarget->GetVehicle())
+        pTarget = pTarget->GetVehicle()->GetBase();
+
+    return pTarget;
 }
 
 //============================================================
@@ -651,10 +670,15 @@ void ThreatManager::UpdateForClient(uint32 diff)
 
 bool ThreatManager::isOwnerOnline() const
 {
-    if (!owner.IsInWorld())
+    if (!owner.IsInWorld() || !owner.GetMap())
         return false;
 
-    if (!owner.GetTypeId() == TYPEID_PLAYER)
+    // Check for map valid - some object pointers removed after removing map :)
+    Map* map = sMapMgr.FindMap(owner.GetMapId(), owner.GetInstanceId());
+    if (map != owner.GetMap())
+        return false;
+
+    if (owner.GetTypeId() == TYPEID_PLAYER)
         return ((Player const*)&owner)->GetSession() && !((Player const*)&owner)->GetSession()->PlayerLogout();
 
     return true;

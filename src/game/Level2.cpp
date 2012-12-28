@@ -1505,8 +1505,7 @@ bool ChatHandler::HandleModifyRepCommand(char* args)
     if (!*args)
         return false;
 
-    Player* target = NULL;
-    target = getSelectedPlayer();
+    Player* target = getSelectedPlayer();
 
     if (!target)
     {
@@ -1977,7 +1976,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
             const_cast<CreatureData*>(data)->posZ = z;
             const_cast<CreatureData*>(data)->orientation = o;
         }
-        pCreature->GetMap()->CreatureRelocation(pCreature, x, y, z, o);
+        pCreature->GetMap()->Relocation(pCreature, x, y, z, o);
         pCreature->GetMotionMaster()->Initialize();
         if (pCreature->isAlive())                           // dead creature will reset movement generator at respawn
         {
