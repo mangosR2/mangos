@@ -195,7 +195,7 @@ Unit::Unit() :
     movespline(new Movement::MoveSpline()),
     m_charmInfo(NULL),
     i_motionMaster(this),
-    m_ThreatManager(this),
+    m_ThreatManager(*this),
     m_HostileRefManager(new HostileRefManager(this)),
     m_stateMgr(this)
 {
@@ -399,7 +399,7 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
         setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
     }
 
-    if (IsVehicle())
+    if (IsVehicle() && !IsInEvadeMode())
     {
         // Initialize vehicle if not done
         if (isAlive() && !GetVehicleKit()->IsInitialized())
@@ -520,9 +520,9 @@ bool Unit::SetPosition(float x, float y, float z, float orientation, bool telepo
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
 
         if (GetTypeId() == TYPEID_PLAYER)
-            GetMap()->PlayerRelocation((Player*)this, x, y, z, orientation);
+            GetMap()->Relocation((Player*)this, x, y, z, orientation);
         else
-            GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
+            GetMap()->Relocation((Creature*)this, x, y, z, orientation);
     }
     else if (turn)
         SetOrientation(orientation);
@@ -1664,7 +1664,7 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
     if (damageInfo->damage > 0)
     {
         // physical damage => armor
-        if (damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL)
+        if ((damageInfo->SchoolMask() & SPELL_SCHOOL_MASK_NORMAL) && !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
         {
             uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
             damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
@@ -3015,17 +3015,16 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst (const Unit *pVictim, WeaponAttack
     int32 victimDefenseSkill = pVictim->GetDefenseSkillValue(this);
 
     // bonus from skills is 0.04%
-    int32    skillBonus  = 4 * ( attackerWeaponSkill - victimMaxSkillValueForLevel );
-    int32    sum = 0, tmp = 0;
-    int32    roll = urand (0, 10000);
+    int32 skillBonus  = 4 * (attackerWeaponSkill - victimMaxSkillValueForLevel);
+    int32 sum = 0;
+    int32 roll = urand(0, 10000);
+    int32 tmp = miss_chance;
 
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "RollMeleeOutcomeAgainst: skill bonus of %d for attacker", skillBonus);
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "RollMeleeOutcomeAgainst: rolled %d, miss %d, dodge %d, parry %d, block %d, crit %d",
         roll, miss_chance, dodge_chance, parry_chance, block_chance, crit_chance);
 
-    tmp = miss_chance;
-
-    if (tmp > 0 && roll < (sum += tmp ))
+    if (tmp > 0 && roll < (sum += tmp))
     {
         DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "RollMeleeOutcomeAgainst: MISS");
         return MELEE_HIT_MISS;
@@ -3499,8 +3498,8 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell)
 
     SpellSchoolMask schoolMask = GetSpellSchoolMask(spell);
     // PvP - PvE spell misschances per leveldif > 2
-    int32 lchance = pVictim->GetTypeId() == TYPEID_PLAYER ? 7 : 11;
-    int32 leveldif = int32(pVictim->GetLevelForTarget(this)) - int32(GetLevelForTarget(pVictim));
+    // int32 lchance = pVictim->GetTypeId() == TYPEID_PLAYER ? 7 : 11;
+    // int32 leveldif = int32(pVictim->GetLevelForTarget(this)) - int32(GetLevelForTarget(pVictim));
 
     // Base hit chance from attacker and victim levels
     int32 modHitChance =  CalculateBaseSpellHitChance(pVictim);
@@ -3570,7 +3569,7 @@ SpellMissInfo Unit::SpellResistResult(Unit* pVictim, SpellEntry const* spell)
         return SPELL_MISS_NONE;
 
     // Spell this type can't be resisted
-    if ((spell->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) && spell->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
+    if ((spell->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) || spell->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
         return SPELL_MISS_NONE;
 
     // Impossible resist friendly spells
@@ -5063,6 +5062,8 @@ bool Unit::AddSpellAuraHolder(SpellAuraHolderPtr holder)
                     // no break here, track other controlled
                 case TRACK_AURA_TYPE_SINGLE_TARGET:         // Register spell holder single target
                     scTargets[aurSpellInfo] = GetObjectGuid();
+                    break;
+                default:
                     break;
             }
         }
@@ -9667,10 +9668,12 @@ void Unit::ClearInCombat()
     // Player's state will be cleared in Player::UpdateContestedPvP
     if (GetTypeId() == TYPEID_UNIT)
     {
-        if (isCharmed() || ((Creature*)this)->IsPet())
+        Creature* cThis = static_cast<Creature*>(this);
+
+        if (isCharmed() || cThis->IsPet())
             RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
 
-        if (((Creature*)this)->GetCreatureInfo()->unit_flags & UNIT_FLAG_OOC_NOT_ATTACKABLE)
+        if (cThis->GetCreatureInfo()->unit_flags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !(cThis->GetTemporaryFactionFlags() & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK))
             SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
 
         clearUnitState(UNIT_STAT_ATTACK_PLAYER);
@@ -10248,7 +10251,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate, bool forced)
         m_speed_rate[mtype] = rate;
         propagateSpeedChange();
 
-        const uint16 SetSpeed2Opc_table[MAX_MOVE_TYPE][2]=
+        const Opcodes SetSpeed2Opc_table[MAX_MOVE_TYPE][2]=
         {
             {MSG_MOVE_SET_WALK_SPEED,       SMSG_FORCE_WALK_SPEED_CHANGE},
             {MSG_MOVE_SET_RUN_SPEED,        SMSG_FORCE_RUN_SPEED_CHANGE},
@@ -10417,20 +10420,28 @@ void Unit::DeleteThreatList()
 
 //======================================================================
 
-void Unit::TauntApply(Unit* taunter)
+bool Unit::TauntApply(Unit* taunter, bool isSingleEffect)
 {
     MANGOS_ASSERT(GetTypeId() == TYPEID_UNIT);
 
-    if (!taunter || (taunter->GetTypeId() == TYPEID_PLAYER && ((Player*)taunter)->isGameMaster()))
-        return;
+    if (!taunter 
+        || (taunter->GetTypeId() == TYPEID_PLAYER && ((Player*)taunter)->isGameMaster())
+        // FIXME - this checks really needed?
+        //|| !taunter->isVisibleForOrDetect(this,this,true)
+        //|| IsFriendlyTo(taunter)
+        )
+        return false;
+
+    Unit* target = getVictim();
+    if (target && target == taunter)
+        return false;
 
     if (!CanHaveThreatList())
-        return;
+        return false;
 
-    Unit *target = getVictim();
-
-    if (target && target == taunter)
-        return;
+    // if target immune to taunt don't change threat
+    if (GetDiminishing(DIMINISHING_TAUNT) == DIMINISHING_LEVEL_IMMUNE)
+        return false;
 
     // Only attack taunter if this is a valid target
     if (!hasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_DIED) && !IsSecondChoiceTarget(taunter, true))
@@ -10441,7 +10452,13 @@ void Unit::TauntApply(Unit* taunter)
             ((Creature*)this)->AI()->AttackStart(taunter);
     }
 
-    m_ThreatManager.tauntApply(taunter);
+    if (isSingleEffect)
+        getThreatManager().addThreat(taunter, getThreatManager().getCurrentVictim() ? 
+                                              getThreatManager().getCurrentVictim()->getThreat() : 1.0f);
+    else
+        getThreatManager().tauntApply(taunter);
+
+    return true;
 }
 
 //======================================================================
@@ -12670,7 +12687,7 @@ Unit* Unit::SelectRandomUnfriendlyTarget(Unit* except /*= NULL*/, float radius /
 {
     std::list<Unit *> targets;
 
-    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, this, radius);
+    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, radius);
     MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> searcher(targets, u_check);
     Cell::VisitAllObjects(this, searcher, radius);
 
@@ -13033,7 +13050,7 @@ void Unit::NearTeleportTo( float x, float y, float z, float orientation, bool ca
     else
     {
         ExitVehicle(true);
-        GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
+        GetMap()->Relocation((Creature*)this, x, y, z, orientation);
         SendHeartBeat();
     }
 }
@@ -13173,10 +13190,10 @@ void Unit::EnterVehicle(Unit* vehicleBase, int8 seatId)
                 bp[i] = seatId + 1;
             }
             else
-                bp[i] = NULL;
+                bp[i] = 0;
         }
         else
-            bp[i] = NULL;
+            bp[i] = 0;
     }
 
     caster->CastCustomSpell(target,spellInfo,&bp[EFFECT_INDEX_0],&bp[EFFECT_INDEX_1],&bp[EFFECT_INDEX_2],true,NULL,NULL,caster->GetObjectGuid());
@@ -13190,7 +13207,7 @@ void Unit::ExitVehicle(bool forceDismount)
 
     Unit* vehicleBase = GetVehicle()->GetBase();
 
-    if (!vehicleBase || !vehicleBase->IsInWorld())
+    if (!vehicleBase || !vehicleBase->IsInWorld() || !vehicleBase->IsInitialized())
     {
         sLog.outError("Unit::ExitVehicle: %s try leave vehicle, but no vehicle base in world!", GetObjectGuid().GetString().c_str());
         _ExitVehicle();
@@ -13204,7 +13221,7 @@ void Unit::ExitVehicle(bool forceDismount)
 
     if (vehicleBase->GetObjectGuid().IsAnyTypeCreature())
     {
-        if (!(vehicleBase->GetVehicleInfo()->m_flags & (VEHICLE_FLAG_NOT_DISMISS | VEHICLE_FLAG_ACCESSORY))
+        if (!vehicleBase->GetVehicle() && !(vehicleBase->GetVehicleInfo()->m_flags & VEHICLE_FLAG_NOT_DISMISS)
             && ((Creature*)vehicleBase)->IsTemporarySummon())
             dismiss = true;
     }

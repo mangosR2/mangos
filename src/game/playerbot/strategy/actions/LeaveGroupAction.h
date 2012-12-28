@@ -32,9 +32,8 @@ namespace ai
             p.rpos(0);
             uint32 operation;
             string member;
-            uint32 result;
 
-            p >> operation >> member >> result;
+            p >> operation >> member;
 
             if (operation != PARTY_OP_LEAVE)
                 return false;

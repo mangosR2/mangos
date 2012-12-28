@@ -41,11 +41,11 @@ INSERT INTO mangos_string (entry, content_default, content_loc6, content_loc7, c
 -- IOC vehicles
 
 -- Alliance Gunship Cannon
-UPDATE creature_template SET vehicle_id = 452, iconName = 'Gunner', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry = 34929;
+UPDATE creature_template SET vehicle_id = 452, iconName = 'Gunner', AIName = 'NullAI', faction_A = 3, faction_H = 3, ScriptName = '' WHERE entry = 34929;
 -- Horde Gunship Cannon
-UPDATE creature_template SET vehicle_id = 453, iconName = 'Gunner', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry = 34935;
+UPDATE creature_template SET vehicle_id = 453, iconName = 'Gunner', AIName = 'NullAI', faction_A = 6, faction_H = 6, ScriptName = '' WHERE entry = 34935;
 -- Keep Cannon
-UPDATE creature_template SET ScriptName = 'npc_ic_cannon' WHERE entry = 34944;
+UPDATE creature_template SET ScriptName = '', AIName = 'NullAI' WHERE entry IN (34944, 35429);
 UPDATE creature_template SET vehicle_id = 160, iconName = 'Gunner', faction_A = 35, faction_H = 35, unit_flags = unit_flags | 4 WHERE entry IN (34944, 35429);
 
 UPDATE creature_template SET mechanic_immune_mask = mechanic_immune_mask|1|2|8|16|32|64|128|1024|2048|4096|8192|131072|262144|8388608|16777216|67108864 WHERE entry IN (34944, 35429, 34793, 35413, 34775, 35415, 34776, 35431, 35069, 35433, 34802, 35419, 35273, 35421);

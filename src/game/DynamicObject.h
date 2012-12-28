@@ -55,8 +55,8 @@ class DynamicObject : public WorldObject
         void RemoveAffected(Unit* unit) { m_affected.erase(unit->GetObjectGuid()); }
         void Delay(int32 delaytime);
 
-        bool IsHostileTo(Unit const* unit) const;
-        bool IsFriendlyTo(Unit const* unit) const;
+        virtual bool IsHostileTo(Unit const* unit) const override;
+        virtual bool IsFriendlyTo(Unit const* unit) const override;
 
         float GetObjectBoundingRadius() const               // overwrite WorldObject version
         {

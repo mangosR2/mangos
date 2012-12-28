@@ -277,12 +277,16 @@ void Log::ReloadConfigDefaults()
     InitColors(sConfig.GetStringDefault("LogColors", ""));
 
     m_logFilter = 0;
-    for(int i = 0; i < LOG_FILTER_COUNT; ++i)
+    for (int i = 0; i < LOG_FILTER_COUNT; ++i)
+    {
         if (*logFilterData[i].name)
+        {
             if (sConfig.GetBoolDefault(logFilterData[i].configName, logFilterData[i].defaultState))
                 m_logFilter |= (1 << i);
             else
                 m_logFilter &= ~(1 << i);
+        }
+    }
 
     // Char log settings
     m_charLog_Dump = sConfig.GetBoolDefault("CharLogDump", false);

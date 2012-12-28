@@ -4925,9 +4925,10 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
         float x,y,z;
         m_targets.getDestination(x, y, z);
 
+        Unit* target = unitTarget ? unitTarget : m_caster;
+
         MaNGOS::NormalizeMapCoord(x);
         MaNGOS::NormalizeMapCoord(y);
-        m_caster->UpdateAllowedPositionZ(x,y,z);
 
         DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell::EffectTriggerMissileSpell %s spell %u (eff %u): triggering spell %u with coords %f %f %f",
             m_CastItem ?  "Item" : "",
@@ -4936,7 +4937,7 @@ void Spell::EffectTriggerMissileSpell(SpellEffectIndex effect_idx)
             triggered_spell_id,
             x,y,z);
 
-        m_caster->CastSpell(x, y, z, spellInfo, true, m_CastItem, NULL, m_originalCasterGUID, m_spellInfo);
+        target->CastSpell(x, y, z, spellInfo, true, m_CastItem, NULL, m_originalCasterGUID, m_spellInfo);
     }
     else
     {
@@ -5749,7 +5750,7 @@ void Spell::EffectCreateItem2(SpellEffectIndex eff_idx)
         }
 
         // create some random items
-        player->AutoStoreLoot(m_spellInfo->Id, LootTemplates_Spell);
+        player->AutoStoreLoot(NULL, m_spellInfo->Id, LootTemplates_Spell);
     }
 }
 
@@ -5760,7 +5761,7 @@ void Spell::EffectCreateRandomItem(SpellEffectIndex /*eff_idx*/)
     Player* player = (Player*)m_caster;
 
     // create some random items
-    player->AutoStoreLoot(m_spellInfo->Id, LootTemplates_Spell);
+    player->AutoStoreLoot(NULL, m_spellInfo->Id, LootTemplates_Spell);
 }
 
 void Spell::EffectPersistentAA(SpellEffectIndex eff_idx)
@@ -6439,16 +6440,15 @@ void Spell::EffectSummonPossessed(SpellEffectIndex eff_idx)
             m_caster->CastSpell(spawnCreature, 530, true);
 
         DEBUG_LOG("New possessed creature (%s) summoned. Owner is %s ", spawnCreature->GetObjectGuid().GetString().c_str(), m_caster->GetObjectGuid().GetString().c_str());
+
+        // Notify original caster if not done already
+        if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
+            ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
+
+        SendEffectLogExecute(eff_idx, spawnCreature->GetObjectGuid());
     }
     else
         sLog.outError("New possessed creature (entry %d) NOT summoned. Owner is %s ", creature_entry, m_caster->GetObjectGuid().GetString().c_str());
-
-    if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-        ((Creature*)m_caster)->AI()->JustSummoned((Creature*)spawnCreature);
-    if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
-        ((Creature*)m_originalCaster)->AI()->JustSummoned((Creature*)spawnCreature);
-
-    SendEffectLogExecute(eff_idx, spawnCreature->GetObjectGuid());
 }
 
 void Spell::EffectLearnSpell(SpellEffectIndex eff_idx)
@@ -6762,8 +6762,6 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
                 summon->setFaction(forceFaction);
 
             // Notify original caster if not done already
-            if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-                ((Creature*)m_caster)->AI()->JustSummoned((Creature*)summon);
             if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
                 ((Creature*)m_originalCaster)->AI()->JustSummoned(summon);
 
@@ -6961,9 +6959,7 @@ void Spell::DoSummonVehicle(SpellEffectIndex eff_idx, uint32 forceFaction)
         m_caster->CastSpell(vehicle, m_mountspell, true);
         DEBUG_LOG("Caster (guidlow %d) summon vehicle (guidlow %d, entry %d) and mounted with spell %d ", m_caster->GetGUIDLow(), vehicle->GetGUIDLow(), vehicle->GetEntry(), m_mountspell->Id);
 
-        // Notify Summoner
-        if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
-            ((Creature*)m_caster)->AI()->JustSummoned(vehicle);
+        // Notify original caster if not done already
         if (m_originalCaster && m_originalCaster != m_caster && m_originalCaster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_originalCaster)->AI())
             ((Creature*)m_originalCaster)->AI()->JustSummoned(vehicle);
 
@@ -7444,27 +7440,11 @@ void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
 
 void Spell::EffectTaunt(SpellEffectIndex /*eff_idx*/)
 {
-    if (!unitTarget)
+    if (!unitTarget || unitTarget->GetTypeId() == TYPEID_PLAYER)
         return;
 
-    // this effect use before aura Taunt apply for prevent taunt already attacking target
-    // for spell as marked "non effective at already attacking target"
-    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
-    {
-        if (unitTarget->getVictim()==m_caster)
-        {
-            SendCastResult(SPELL_FAILED_DONT_REPORT);
-            return;
-        }
-    }
-
-    // if target immune to taunt don't change threat
-    if (unitTarget->GetDiminishing(DIMINISHING_TAUNT) == DIMINISHING_LEVEL_IMMUNE)
-        return;
-
-    // Also use this effect to set the taunter's threat to the taunted creature's highest value
-    if (unitTarget->CanHaveThreatList() && unitTarget->getThreatManager().getCurrentVictim())
-        unitTarget->getThreatManager().addThreat(m_caster,unitTarget->getThreatManager().getCurrentVictim()->getThreat());
+    if (!unitTarget->TauntApply(m_caster, true))
+        SendCastResult(SPELL_FAILED_DONT_REPORT);
 }
 
 void Spell::EffectWeaponDmg(SpellEffectIndex eff_idx)

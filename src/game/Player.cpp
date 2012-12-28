@@ -1763,7 +1763,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
     }
     else
     {
-        DEBUG_LOG("Player::TeleportTo %s is being near teleported to map %u", GetName(), loc.mapid, IsBeingTeleportedNear() ? "(stage 2)" : "");
+        DEBUG_LOG("Player::TeleportTo %s is being near teleported to map %u %s", GetName(), loc.mapid, IsBeingTeleportedNear() ? "(stage 2)" : "");
     }
 
     // preparing unsummon pet if lost (we must get pet before teleportation or will not find it later)
@@ -1812,7 +1812,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
     m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
     DisableSpline();
 
-    if (GetMapId() == loc.mapid && !m_transport)
+    if (GetMap() && GetMapId() == loc.mapid && !m_transport)
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -7075,7 +7075,14 @@ uint32 Player::GetLevelFromDB(ObjectGuid guid)
 
 void Player::UpdateArea(uint32 newArea)
 {
-    m_areaUpdateId    = newArea;
+    if (m_areaUpdateId != newArea)
+    {
+        // call this method in order to handle some scripted maps
+        if (InstanceData* mapInstance = GetInstanceData())
+            mapInstance->OnPlayerEnterArea(this, newArea, m_areaUpdateId);
+    }
+
+    m_areaUpdateId = newArea;
 
     AreaTableEntry const* area = GetAreaEntryByAreaID(newArea);
 
@@ -8448,85 +8455,68 @@ void Player::SendLoot(ObjectGuid guid, LootType loot_type)
             {
                 uint32 lootid =  go->GetGOInfo()->GetLootId();
                 if ((go->GetEntry() == BG_AV_OBJECTID_MINE_N || go->GetEntry() == BG_AV_OBJECTID_MINE_S))
-                    if (BattleGround *bg = GetBattleGround())
-                        if (bg->GetTypeID(true) == BATTLEGROUND_AV)
+                {
+                    if (BattleGround* bg = GetBattleGround())
+                        if (bg->GetTypeID() == BATTLEGROUND_AV)
                             if (!(((BattleGroundAV*)bg)->PlayerCanDoMineQuest(go->GetEntry(), GetTeam())))
                             {
                                 SendLootRelease(guid);
                                 return;
                             }
+                }
 
-                if (Group* group = this->GetGroup())
+                loot->clear();
+                switch (loot_type)
                 {
-                    if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST)
-                    {
-                        if (go->GetGOInfo()->chest.groupLootRules == 1  || sWorld.getConfig(CONFIG_BOOL_LOOT_CHESTS_IGNORE_DB))
+                    // Entry 0 in fishing loot template used for store junk fish loot at fishing fail it junk allowed by config option
+                    // this is overwrite fishinghole loot for example
+                    case LOOT_FISHING_FAIL:
+                        loot->FillLoot(0, LootTemplates_Fishing, this, true);
+                        break;
+                    case LOOT_FISHING:
+                        uint32 zone, subzone;
+                        go->GetZoneAndAreaId(zone, subzone);
+                        // if subzone loot exist use it
+                        if (!loot->FillLoot(subzone, LootTemplates_Fishing, this, true, (subzone != zone)) && subzone != zone)
+                            // else use zone loot (if zone diff. from subzone, must exist in like case)
+                            loot->FillLoot(zone, LootTemplates_Fishing, this, true);
+                        break;
+                    default:
+                        if (!lootid)
+                            break;
+                        DEBUG_LOG("       send normal GO loot");
+
+                        loot->FillLoot(lootid, LootTemplates_Gameobject, this, false);
+                        loot->generateMoneyLoot(go->GetGOInfo()->MinMoneyLoot, go->GetGOInfo()->MaxMoneyLoot);
+
+                        if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
                         {
-                            group->UpdateLooterGuid(go,true);
-                            switch (group->GetLootMethod())
+                            if (Group* group = go->GetGroupLootRecipient())
                             {
-                                case GROUP_LOOT:
-                                // GroupLoot delete items over threshold (threshold even not implemented), and roll them. Items with quality<threshold, round robin
-                                     group->GroupLoot(go, loot);
-                                     permission = GROUP_PERMISSION;
-                                     break;
-                                case NEED_BEFORE_GREED:
-                                     group->NeedBeforeGreed(go, loot);
-                                     permission = GROUP_PERMISSION;
-                                     break;
-                                case MASTER_LOOT:
-                                     group->MasterLoot(go, loot);
-                                     permission = MASTER_PERMISSION;
-                                     break;
-                                default:
-                                     break;
-                             }
-                         }
-                         else
-                             permission = GROUP_PERMISSION;
-                     }
-                 }
+                                group->UpdateLooterGuid(go, true);
 
-                // Entry 0 in fishing loot template used for store junk fish loot at fishing fail it junk allowed by config option
-                // this is overwrite fishinghole loot for example
-                if (loot_type == LOOT_FISHING_FAIL)
-                    loot->FillLoot(0, LootTemplates_Fishing, this, true);
-                else if (lootid)
-                {
-                    DEBUG_LOG("       if (lootid)");
-                    loot->clear();
-                    loot->FillLoot(lootid, LootTemplates_Gameobject, this, false);
-                    loot->generateMoneyLoot(go->GetGOInfo()->MinMoneyLoot, go->GetGOInfo()->MaxMoneyLoot);
-
-                    if (go->GetGoType() == GAMEOBJECT_TYPE_CHEST && go->GetGOInfo()->chest.groupLootRules)
-                    {
-                        if (Group* group = go->GetGroupLootRecipient())
-                        {
-                            group->UpdateLooterGuid(go, true);
-
-                            switch (group->GetLootMethod())
-                            {
-                                case GROUP_LOOT:
-                                    // GroupLoot delete items over threshold (threshold even not implemented), and roll them. Items with quality<threshold, round robin
-                                    group->GroupLoot(go, loot);
-                                    permission = GROUP_PERMISSION;
-                                    break;
-                                case NEED_BEFORE_GREED:
-                                    group->NeedBeforeGreed(go, loot);
-                                    permission = GROUP_PERMISSION;
-                                    break;
-                                case MASTER_LOOT:
-                                    group->MasterLoot(go, loot);
-                                    permission = MASTER_PERMISSION;
-                                    break;
-                                default:
-                                    break;
+                                switch (group->GetLootMethod())
+                                {
+                                    case GROUP_LOOT:
+                                        // GroupLoot delete items over threshold (threshold even not implemented), and roll them. Items with quality<threshold, round robin
+                                        group->GroupLoot(go, loot);
+                                        permission = GROUP_PERMISSION;
+                                        break;
+                                    case NEED_BEFORE_GREED:
+                                        group->NeedBeforeGreed(go, loot);
+                                        permission = GROUP_PERMISSION;
+                                        break;
+                                    case MASTER_LOOT:
+                                        group->MasterLoot(go, loot);
+                                        permission = MASTER_PERMISSION;
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                         }
-                    }
+                        break;
                 }
-                else if (loot_type == LOOT_FISHING)
-                    go->getFishLoot(loot,this);
 
                 go->SetLootState(GO_ACTIVATED);
             }
@@ -9266,7 +9256,10 @@ uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
         }
         for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
         {
-            Bag* pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i);
+            Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
+            if (pItem && pItem != skipItem && pItem->GetEntry() == item)
+                count += pItem->GetCount();
+            Bag* pBag = (Bag*)pItem;
             if (pBag)
                 count += pBag->GetItemCount(item,skipItem);
         }
@@ -9379,12 +9372,24 @@ Item* Player::GetItemByGuid(ObjectGuid guid) const
                 return pItem;
 
     for (int i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
-        if (Bag *pBag = (Bag*)GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-            for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
-                if (Item* pItem = pBag->GetItemByPos(j))
-                    if (pItem->GetObjectGuid() == guid)
-                        return pItem;
-
+    {
+        if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
+        {
+            if (pItem->GetObjectGuid() == guid)
+                return pItem;
+            if (Bag* pBag = (Bag*)pItem)
+            {
+                for (uint32 j = 0; j < pBag->GetBagSize(); ++j)
+                {
+                    if (Item* pItem = pBag->GetItemByPos(j))
+                    {
+                        if (pItem->GetObjectGuid() == guid)
+                            return pItem;
+                    }
+                }
+            }
+        }
+    }
 
     return NULL;
 }
@@ -12365,7 +12370,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
     }
 
     // impossible merge/fill, do real swap
-    InventoryResult msg;
+    InventoryResult msg = EQUIP_ERR_OK2;
 
     // check src->dest move possibility
     ItemPosCountVec sDest;
@@ -13270,7 +13275,7 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
 
         if (!isGameMaster())                                // Let GM always see menu items regardless of conditions
         {
-            if (itr->second.conditionId && !sObjectMgr.IsPlayerMeetToCondition(this, itr->second.conditionId))
+            if (itr->second.conditionId && !sObjectMgr.IsPlayerMeetToCondition(itr->second.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_OPTION))
             {
                 if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
                     canSeeQuests = false;
@@ -13592,9 +13597,9 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId, uint32 me
     if (pMenuData.m_gAction_script)
     {
         if (pSource->GetTypeId() == TYPEID_UNIT)
-            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, pSource, this);
+            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, pSource, this, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
         else if (pSource->GetTypeId() == TYPEID_GAMEOBJECT)
-            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, this, pSource);
+            GetMap()->ScriptsStart(sGossipScripts, pMenuData.m_gAction_script, this, pSource, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
     }
 }
 
@@ -13625,7 +13630,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* pSource)
         // Take the text that has the highest conditionId of all fitting
         // No condition and no text with condition found OR higher and fitting condition found
         if ((!itr->second.conditionId && !lastConditionId) ||
-                (itr->second.conditionId > lastConditionId && sObjectMgr.IsPlayerMeetToCondition(this, itr->second.conditionId)))
+                (itr->second.conditionId > lastConditionId && sObjectMgr.IsPlayerMeetToCondition(itr->second.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_MENU)))
         {
             lastConditionId = itr->second.conditionId;
             textId = itr->second.text_id;
@@ -13635,7 +13640,7 @@ uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* pSource)
 
     // Start related script
     if (scriptId)
-        GetMap()->ScriptsStart(sGossipScripts, scriptId, this, pSource);
+        GetMap()->ScriptsStart(sGossipScripts, scriptId, this, pSource, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET);
 
     return textId;
 }
@@ -14150,7 +14155,7 @@ void Player::AddQuest(Quest const *pQuest, Object *questGiver)
 
         // starting initial DB quest script
         if (pQuest->GetQuestStartScript() != 0)
-            GetMap()->ScriptsStart(sQuestStartScripts, pQuest->GetQuestStartScript(), questGiver, this);
+            GetMap()->ScriptsStart(sQuestStartScripts, pQuest->GetQuestStartScript(), questGiver, this, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
     }
 
     // remove start item if not need
@@ -14374,8 +14379,8 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
         }
     }
 
-    if (!handled && questGiver && pQuest->GetQuestCompleteScript() != 0)
-        GetMap()->ScriptsStart(sQuestEndScripts, pQuest->GetQuestCompleteScript(), questGiver, this);
+    if (!handled && pQuest->GetQuestCompleteScript() != 0)
+        GetMap()->ScriptsStart(sQuestEndScripts, pQuest->GetQuestCompleteScript(), questGiver, this, Map::SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE);
 
     // cast spells after mark quest complete (some spells have quest completed state reqyurements in spell_area data)
     if (pQuest->GetRewSpellCast() > 0)
@@ -16684,7 +16689,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         uint8  slot       = fields[3].GetUInt8();
 
         bool success = true;
-        bool arenaitem = false;
+        //bool arenaitem = false;
 
         // the item/bag is not in a bag
         if (!bagLowGuid)
@@ -18248,7 +18253,7 @@ void Player::_SaveMail()
             stmt.addUInt32(m->messageID);
             stmt.Execute();
 
-            if (m->removedItems.size())
+            if (!m->removedItems.empty())
             {
                 stmt = CharacterDatabase.CreateStatement(deleteMailItems, "DELETE FROM mail_items WHERE item_guid = ?");
 
@@ -19236,7 +19241,7 @@ void Player::RemovePetActionBar()
 void Player::AddSpellMod(Aura* aura, bool apply)
 {
     Modifier const* mod = aura->GetModifier();
-    uint16 Opcode= (mod->m_auraname == SPELL_AURA_ADD_FLAT_MODIFIER) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
+    Opcodes opcode = (mod->m_auraname == SPELL_AURA_ADD_FLAT_MODIFIER) ? SMSG_SET_FLAT_SPELL_MODIFIER : SMSG_SET_PCT_SPELL_MODIFIER;
 
     for (uint8 eff = 0; eff < 96; ++eff)
     {
@@ -19255,7 +19260,7 @@ void Player::AddSpellMod(Aura* aura, bool apply)
             // Not need manually remove m_amount from total value - his already removed from calculation due to removed from SpellAuraHolder (IsEmpty() method)
             val += apply ? mod->m_amount : 0;
 
-            WorldPacket data(Opcode, (1+1+4));
+            WorldPacket data(opcode, (1+1+4));
             data << uint8(eff);
             data << uint8(mod->m_miscvalue);
             data << int32(val);
@@ -21106,6 +21111,9 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 
 void Player::SendAurasForTarget(Unit *target)
 {
+    if (!target)
+        return;
+
     WorldPacket data(SMSG_AURA_UPDATE_ALL);
     data << target->GetPackGUID();
 
@@ -22373,10 +22381,10 @@ bool Player::IsBaseRuneSlotsOnCooldown(RuneType runeType) const
     return true;
 }
 
-void Player::AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
+void Player::AutoStoreLoot(WorldObject const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast, uint8 bag, uint8 slot)
 {
-    Loot loot;
-    loot.FillLoot (loot_id, store, this, true);
+    Loot loot(lootTarget);
+    loot.FillLoot(loot_id, store, this, true);
 
     AutoStoreLoot(loot, broadcast, bag, slot);
 }
@@ -24269,7 +24277,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
         // ghost resurrected at enter attempt to dungeon with corpse (including fail enter cases)
         if (!isAlive() && targetMapEntry->IsDungeon())
         {
-            int32 corpseMapId = 0;
+            uint32 corpseMapId = 0;
             if (Corpse* corpse = GetCorpse())
                 corpseMapId = corpse->GetMapId();
 
@@ -25055,11 +25063,23 @@ void Player::SetViewPoint(WorldObject* target, bool immediate, bool update_far_s
             WorldPacket data(SMSG_CLEAR_FAR_SIGHT_IMMEDIATE, 0);
             GetSession()->SendPacket(&data);
         }
+
+        if (target->GetObjectGuid().IsUnit() && target->GetObjectGuid() != GetObjectGuid())
+        {
+            if (((Unit*)target)->IsLevitating() || (target->GetObjectGuid().IsPlayer() && ((Player*)target)->IsFlying()))
+            {
+                WorldPacket data;
+                data.Initialize(SMSG_MOVE_SET_CAN_FLY, 12);
+                data << target->GetPackGUID();
+                data << (uint32)(0);
+                target->SendMessageToSet(&data,false);
+            }
+        }
         GetCamera()->SetView(target, update_far_sight_field);
     }
     else
     {
-        if (immediate &&  HasExternalViewPoint())
+        if (immediate && HasExternalViewPoint())
         {
             WorldPacket data(SMSG_CLEAR_FAR_SIGHT_IMMEDIATE, 0);
             GetSession()->SendPacket(&data);

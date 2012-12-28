@@ -10,6 +10,8 @@ map<string, uint32> ChatHelper::tradeSubClasses;
 map<string, uint32> ChatHelper::itemQualities;
 map<string, uint32> ChatHelper::slots;
 map<string, ChatMsg> ChatHelper::chats;
+map<uint8, string> ChatHelper::classes;
+map<uint8, map<uint8, string> > ChatHelper::specs;
 
 template<class T>
 static bool substrContainsInMap(string searchTerm, map<string, T> searchIn)
@@ -87,6 +89,51 @@ ChatHelper::ChatHelper(PlayerbotAI* ai) : PlayerbotAIAware(ai)
     chats["r"] = CHAT_MSG_RAID;
     chats["whisper"] = CHAT_MSG_WHISPER;
     chats["w"] = CHAT_MSG_WHISPER;
+
+    classes[CLASS_DRUID] = "druid";
+    specs[CLASS_DRUID][0] = "balance";
+    specs[CLASS_DRUID][1] = "feral combat";
+    specs[CLASS_DRUID][2] = "restoration";
+
+    classes[CLASS_HUNTER] = "hunter";
+    specs[CLASS_HUNTER][0] = "beast mastery";
+    specs[CLASS_HUNTER][1] = "marksmanship";
+    specs[CLASS_HUNTER][2] = "survival";
+
+    classes[CLASS_MAGE] = "mage";
+    specs[CLASS_MAGE][0] = "arcane";
+    specs[CLASS_MAGE][1] = "fire";
+    specs[CLASS_MAGE][2] = "frost";
+
+    classes[CLASS_PALADIN] = "paladin";
+    specs[CLASS_PALADIN][0] = "holy";
+    specs[CLASS_PALADIN][1] = "protection";
+    specs[CLASS_PALADIN][2] = "retribution";
+
+    classes[CLASS_PRIEST] = "priest";
+    specs[CLASS_PRIEST][0] = "discipline";
+    specs[CLASS_PRIEST][1] = "holy";
+    specs[CLASS_PRIEST][2] = "shadow";
+
+    classes[CLASS_ROGUE] = "rogue";
+    specs[CLASS_ROGUE][0] = "assasination";
+    specs[CLASS_ROGUE][1] = "combat";
+    specs[CLASS_ROGUE][2] = "subtlety";
+
+    classes[CLASS_SHAMAN] = "shaman";
+    specs[CLASS_SHAMAN][0] = "elemental";
+    specs[CLASS_SHAMAN][1] = "enhancement";
+    specs[CLASS_SHAMAN][2] = "restoration";
+
+    classes[CLASS_WARLOCK] = "warlock";
+    specs[CLASS_WARLOCK][0] = "affliction";
+    specs[CLASS_WARLOCK][1] = "demonology";
+    specs[CLASS_WARLOCK][2] = "destruction";
+
+    classes[CLASS_WARRIOR] = "warrior";
+    specs[CLASS_WARRIOR][0] = "arms";
+    specs[CLASS_WARRIOR][1] = "fury";
+    specs[CLASS_WARRIOR][2] = "protection";
 }
 
 string ChatHelper::formatMoney(uint32 copper)
@@ -343,4 +390,11 @@ bool ChatHelper::parseable(string text)
             substrContainsInMap<uint32>(text, slots) ||
             substrContainsInMap<ChatMsg>(text, chats) ||
             parseMoney(text) > 0;
+}
+
+string ChatHelper::formatClass(uint8 cls, uint8 spec)
+{
+    ostringstream out;
+    out << specs[cls][spec] << " " << classes[cls];
+    return out.str();
 }

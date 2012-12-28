@@ -1644,7 +1644,7 @@ void Aura::TriggerSpell()
                             if (!creature->GetCreatureInfo()->SkinLootId)
                                 return;
 
-                            player->AutoStoreLoot(creature->GetCreatureInfo()->SkinLootId, LootTemplates_Skinning, true);
+                            player->AutoStoreLoot(creature, creature->GetCreatureInfo()->SkinLootId, LootTemplates_Skinning, true);
 
                             creature->ForcedDespawn();
                         }
@@ -5632,9 +5632,9 @@ void Aura::HandleModTaunt(bool apply, bool Real)
     if (!Real)
         return;
 
-    Unit *target = GetTarget();
+    Unit* target = GetTarget();
 
-    if (!target->isAlive() || !target->CanHaveThreatList())
+    if (!target || !target->isAlive() || target->GetTypeId() == TYPEID_PLAYER)
         return;
 
     Unit* caster = GetCaster();
@@ -5643,7 +5643,7 @@ void Aura::HandleModTaunt(bool apply, bool Real)
         return;
 
     if (apply)
-        target->TauntApply(caster);
+        target->TauntApply(caster, false);
     else
     {
         // When taunt aura fades out, mob will switch to previous target if current has less than 1.1 * secondthreat

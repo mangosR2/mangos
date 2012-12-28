@@ -186,7 +186,8 @@ class CharacterHandler
 
             // The bot's WorldSession is owned by the bot's Player object
             // The bot's WorldSession is deleted by PlayerbotMgr::LogoutPlayerBot
-            WorldSession *botSession = new WorldSession(lqh->GetAccountId(), NULL, SEC_PLAYER, masterSession->Expansion(), 0, masterSession->GetSessionDbcLocale());
+            uint32 botAccountId = lqh->GetAccountId();
+            WorldSession *botSession = new WorldSession(botAccountId, NULL, SEC_PLAYER, masterSession->Expansion(), 0, masterSession->GetSessionDbcLocale());
             botSession->m_Address = "bot";
             botSession->HandlePlayerLogin(lqh); // will delete lqh
             Player* bot = botSession->GetPlayer();
@@ -197,11 +198,11 @@ class CharacterHandler
             PlayerbotMgr* mgr = master->GetPlayerbotMgr();
 
             bool allowed = false;
-            if (lqh->GetAccountId() == masterAccount)
+            if (botAccountId == masterAccount)
                 allowed = true;
             else if (sPlayerbotAIConfig.allowGuildBots && bot->GetGuildId() == master->GetGuildId())
                 allowed = true;
-            else if (sPlayerbotAIConfig.IsInRandomAccountList(lqh->GetAccountId()))
+            else if (sPlayerbotAIConfig.IsInRandomAccountList(botAccountId))
                 allowed = true;
 
             if (allowed)
@@ -212,31 +213,6 @@ class CharacterHandler
                 ch.PSendSysMessage("You are not allowed to control bot %s...", bot->GetName());
                 mgr->LogoutPlayerBot(bot->GetObjectGuid().GetRawValue());
             }
-        }
-        // Playerbot mod: is different from the normal HandlePlayerLoginCallback in that it
-        // sets up the bot's world session and also stores the pointer to the bot player in the master's
-        // world session m_playerBots map
-        void HandlePlayerBotLoginCallback(QueryResult * /*dummy*/, SqlQueryHolder * holder, uint32 masterId)
-        {
-            if (!holder)
-                return;
-
-            LoginQueryHolder* lqh = (LoginQueryHolder*) holder;
-
-            WorldSession* masterSession = sWorld.FindSession(masterId);
-
-            if (! masterSession || sObjectMgr.GetPlayer(lqh->GetGuid()))
-            {
-                delete holder;
-                return;
-            }
-
-            // The bot's WorldSession is owned by the bot's Player object
-            // The bot's WorldSession is deleted by PlayerbotMgr::LogoutPlayerBot
-            WorldSession *botSession = new WorldSession(lqh->GetAccountId(), NULL, SEC_PLAYER, masterSession->Expansion(), 0, masterSession->GetSessionDbcLocale());
-            botSession->m_Address = "bot";
-            botSession->HandlePlayerLogin(lqh); // will delete lqh
-            masterSession->GetPlayer()->GetPlayerbotMgr()->OnBotLogin(botSession->GetPlayer());
         }
 } chrHandler;
 
@@ -1363,14 +1339,14 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
     CharacterDatabase.escape_string(newname);
     Player::Customize(guid, gender, skin, face, hairStyle, hairColor, facialHair);
     CharacterDatabase.BeginTransaction();
-    CharacterDatabase.PExecute("UPDATE characters set name = '%s', race = '%u', at_login = at_login & ~ %u WHERE guid ='%u'", newname.c_str(), race, uint32(used_loginFlag), guid.GetCounter());
+    CharacterDatabase.PExecute("UPDATE characters SET name = '%s', race = '%u', at_login = at_login & ~ %u WHERE guid ='%u'", newname.c_str(), race, uint32(used_loginFlag), guid.GetCounter());
     CharacterDatabase.PExecute("DELETE FROM character_declinedname WHERE guid ='%u'", guid.GetCounter());
     uint32 deletedGuild = 0;
 
     if (recv_data.GetOpcode() == CMSG_CHAR_FACTION_CHANGE)
     {
         // Delete all Flypaths
-        CharacterDatabase.PExecute("UPDATE characters set taxi_path = '' WHERE guid ='%u'", guid.GetCounter());
+        CharacterDatabase.PExecute("UPDATE characters SET taxi_path = '' WHERE guid ='%u'", guid.GetCounter());
         // Delete all current quests
         CharacterDatabase.PExecute("DELETE FROM `character_queststatus` WHERE `status` = 3 AND guid ='%u'", guid.GetCounter());
         // Reset guild
@@ -1468,7 +1444,7 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
         }
 
         // Item conversion
-        if(QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items"))
+        if (QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items"))
         {
             do
             {
@@ -1481,11 +1457,11 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 CharacterDatabase.PExecute("UPDATE IGNORE `item_instance` SET `data`=CONCAT(CAST(SUBSTRING_INDEX(`data`, ' ', 3) AS CHAR), ' ', '%u', ' ', CAST(SUBSTRING_INDEX(`data`, ' ', (3-64))AS CHAR)) WHERE CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`data`, ' ', 4), ' ', '-1') AS UNSIGNED) = '%u' AND owner_guid = '%u'",
                         team == TEAM_INDEX_ALLIANCE ? item_alliance : item_horde, team == TEAM_INDEX_ALLIANCE ? item_horde : item_alliance, guid.GetCounter());
             }
-            while( result2->NextRow() );
+            while (result2->NextRow());
         }
 
         // Spell conversion
-        if(QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_spells"))
+        if (QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_spells"))
         {
             do
             {
@@ -1495,11 +1471,11 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_spell` set spell = '%u' where spell = '%u' AND guid = '%u'",
                     team == TEAM_INDEX_ALLIANCE ? spell_alliance : spell_horde, team == TEAM_INDEX_ALLIANCE ? spell_horde : spell_alliance, guid.GetCounter());
             }
-            while( result2->NextRow() );
+            while (result2->NextRow());
         }
 
         // Reputation conversion
-        if(QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_reputations"))
+        if (QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_reputations"))
         {
             do
             {
@@ -1510,7 +1486,21 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
                 CharacterDatabase.PExecute("UPDATE IGNORE `character_reputation` set faction = '%u' where faction = '%u' AND guid = '%u'",
                     team == TEAM_INDEX_ALLIANCE ? reputation_alliance : reputation_horde, team == TEAM_INDEX_ALLIANCE ? reputation_horde : reputation_alliance, guid.GetCounter());
             }
-            while( result2->NextRow() );
+            while (result2->NextRow());
+        }
+
+        // Quest conversion
+        if (QueryResult *result2 = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_quests"))
+        {
+            do
+            {
+                Field *fields2 = result2->Fetch();
+                uint32 quest_alliance = fields2[0].GetUInt32();
+                uint32 quest_horde = fields2[1].GetUInt32();
+                CharacterDatabase.PExecute("UPDATE IGNORE `character_queststatus` SET quest = '%u' WHERE quest = '%u' AND guid = '%u'",
+                    team == TEAM_INDEX_ALLIANCE ? quest_alliance : quest_horde, team == TEAM_INDEX_ALLIANCE ? quest_horde : quest_alliance, guid.GetCounter());
+            }
+            while (result2->NextRow());
         }
     }
     CharacterDatabase.CommitTransaction();
@@ -1528,7 +1518,7 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
     std::string IP_str = GetRemoteAddress();
     sLog.outChar("Account: %d (IP: %s), Character guid: %u Change Race/Faction to: %s", GetAccountId(), IP_str.c_str(), guid.GetCounter(), newname.c_str());
 
-    WorldPacket data(SMSG_CHAR_FACTION_CHANGE, 1+8+(newname.size()+1)+7);
+    WorldPacket data(SMSG_CHAR_FACTION_CHANGE, 1 + 8 + (newname.size() + 1) + 7);
     data << uint8(RESPONSE_SUCCESS);
     data << ObjectGuid(guid);
     data << newname;

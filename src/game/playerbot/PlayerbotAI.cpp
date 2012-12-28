@@ -47,7 +47,8 @@ void PacketHandlingHelper::Handle(ExternalEventHelper &helper)
 
 void PacketHandlingHelper::AddPacket(const WorldPacket& packet)
 {
-    queue.push(packet);
+	if (handlers.find(packet.GetOpcode()) != handlers.end())
+        queue.push(WorldPacket(packet));
 }
 
 
@@ -196,11 +197,17 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
         text.find("CTRA") != wstring::npos)
         return;
 
+    if (IsOpposing(GetMaster()) && GetMaster()->GetSession()->GetSecurity() < SEC_ADMINISTRATOR)
+        return;
+
     if (fromPlayer.GetObjectGuid() != GetMaster()->GetObjectGuid())
     {
-        WorldPacket data(SMSG_MESSAGECHAT, 1024);
-        bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "I'm kind of busy now", LANG_UNIVERSAL);
-        GetMaster()->GetSession()->SendPacket(&data);
+        if (type == CHAT_MSG_WHISPER)
+        {
+            WorldPacket data(SMSG_MESSAGECHAT, 1024);
+            bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "I'm kind of busy now", LANG_UNIVERSAL);
+            GetMaster()->GetSession()->SendPacket(&data);
+        }
         return;
     }
 
@@ -212,11 +219,14 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     }
 
 
-    if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && !bot->GetGroup())
+    if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && !bot->GetGroup() && text.find("who") == string::npos)
     {
-        WorldPacket data(SMSG_MESSAGECHAT, 1024);
-        bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "Invite me to your group first", LANG_UNIVERSAL);
-        GetMaster()->GetSession()->SendPacket(&data);
+        if (type == CHAT_MSG_WHISPER)
+        {
+            WorldPacket data(SMSG_MESSAGECHAT, 1024);
+            bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "Invite me to your group first", LANG_UNIVERSAL);
+            GetMaster()->GetSession()->SendPacket(&data);
+        }
         return;
     }
 
@@ -391,7 +401,7 @@ void PlayerbotAI::ChangeEngine(BotState type)
 
 void PlayerbotAI::DoNextAction()
 {
-    if (bot->IsBeingTeleported())
+    if (bot->IsBeingTeleported() || GetMaster()->IsBeingTeleported())
         return;
 
     Player* master = GetMaster();

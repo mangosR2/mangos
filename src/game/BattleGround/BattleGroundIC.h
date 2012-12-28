@@ -257,6 +257,18 @@ enum BG_IC_Timers
     CLOSE_DOORS_TIME            = 20000
 };
 
+enum CreaturesEntryIC
+{
+    VEHICLE_IC_DEMOLISHER   = 34775,
+    VEHICLE_IC_DEMOLISHER_1 = 35415,
+    VEHICLE_IC_CATAPULT     = 34793,
+    VEHICLE_IC_CATAPULT_1   = 35413,
+    VEHICLE_IC_CANNON       = 34944,
+    VEHICLE_IC_CANNON_1     = 35429,
+    VEHICLE_IC_GLAIVE_A     = 34802,
+    VEHICLE_IC_GLAIVE_H     = 35273,
+};
+
 /*const float hordeGunshipPassengers[5][4] =
 {
     {-21.401f,  -31.343f,  34.173f,  4.62057f},
@@ -329,8 +341,7 @@ class BattleGroundIC : public BattleGround
         /* Scorekeeping */
         void UpdatePlayerScore(Player *Source, uint32 type, uint32 value, bool doAddHonor = true);
 
-        uint32 GetVehicleFaction(uint8 vehicleType) const { return GetCorrectFactionIC(vehicleType); }
-        uint32 GetCorrectFactionIC(uint8 vehicleType) const;
+        virtual Team GetSpawnTeamFor(ObjectGuid const& guid) const override;
 
         // for achievement Mine
         bool hasAllNodes(int8 team);

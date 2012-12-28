@@ -566,9 +566,20 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
 
             sChatLog.ChannelMsg(GetPlayer(), channel, msg);
 
+
+            // Playerbot mod: broadcast message to bot members
             if (ChannelMgr* cMgr = channelMgr(_player->GetTeam()))
+            {
                 if (Channel* chn = cMgr->GetChannel(channel, _player))
+                {
+                    if (_player->GetPlayerbotMgr() && chn->GetFlags() & 0x18)
+                    {
+                        _player->GetPlayerbotMgr()->HandleCommand(type, msg);
+                    }
                     chn->Say(_player->GetObjectGuid(), msg.c_str(), lang);
+                }
+            }
+            // END Playerbot mod
         } break;
 
         case CHAT_MSG_AFK:

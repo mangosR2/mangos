@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "SystemConfig.h"
 #include "DBCStores.h"
 #include "Policies/SingletonImp.h"
 #include "Log.h"
@@ -534,9 +535,10 @@ void LoadDBCStores(const std::string& dataPath)
         std::swap(*((uint32*)(&spell->SpellFamilyFlags)), *(((uint32*)(&spell->SpellFamilyFlags)) + 1));
 #endif
 
-        for (uint8 j = 0; i < MAX_EFFECT_INDEX; ++i)
+        for (uint8 j = 0; j < MAX_EFFECT_INDEX; ++j)
         {
-            sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = SpellEffectEntry(spell, SpellEffectIndex(i));
+            if (spell)
+                sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = SpellEffectEntry(spell, SpellEffectIndex(j));
         }
     }
 

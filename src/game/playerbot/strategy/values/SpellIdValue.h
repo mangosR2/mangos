@@ -4,12 +4,12 @@
 
 namespace ai
 {
-   
+
     class SpellIdValue : public CalculatedValue<uint32>, public Qualified
 	{
 	public:
-        SpellIdValue(PlayerbotAI* ai) : CalculatedValue<uint32>(ai) {}
-      
+        SpellIdValue(PlayerbotAI* ai);
+
     public:
         virtual uint32 Calculate();
 

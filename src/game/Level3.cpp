@@ -383,6 +383,14 @@ bool ChatHandler::HandleReloadConfigCommand(char* /*args*/)
     return true;
 }
 
+bool ChatHandler::HandleReloadOpcodesCommand(char* /*args*/)
+{
+    sLog.outString("Re-Loading opcodes...");
+    sObjectMgr.LoadOpcodes();
+    SendGlobalSysMessage("Opcodes reloaded.");
+    return true;
+}
+
 bool ChatHandler::HandleReloadAchievementCriteriaRequirementCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Additional Achievement Criteria Requirements Data...");
@@ -6063,8 +6071,7 @@ bool ChatHandler::HandleGMFlyCommand(char* args)
     if (!target)
         target = m_session->GetPlayer();
 
-    WorldPacket data(12);
-    data.SetOpcode(value ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY);
+    WorldPacket data(value ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY, 12);
     data << target->GetPackGUID();
     data << uint32(0);                                      // unknown
     target->SendMessageToSet(&data, true);

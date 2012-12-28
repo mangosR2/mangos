@@ -892,8 +892,8 @@ namespace MaNGOS
 
                         if (!itr->getSource()->IsVisibleTargetForSpell(i_originalCaster, i_spell.m_spellInfo, &i_center))
                             continue;
+                        break;
                     }
-                    break;
                     case SPELL_TARGETS_ALL:
                         break;
                     default: continue;

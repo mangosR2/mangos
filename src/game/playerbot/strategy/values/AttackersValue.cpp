@@ -50,7 +50,7 @@ void AttackersValue::AddAttackersOf(Player* player, set<Unit*>& targets)
         return;
 
 	list<Unit*> units;
-	MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(player, player, sPlayerbotAIConfig.sightDistance);
+	MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(player, sPlayerbotAIConfig.sightDistance);
     MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> searcher(units, u_check);
     Cell::VisitAllObjects(player, searcher, sPlayerbotAIConfig.sightDistance);
 	for (list<Unit*>::iterator i = units.begin(); i != units.end(); i++)

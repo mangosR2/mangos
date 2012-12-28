@@ -62,6 +62,7 @@ class ChatCommandTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( warning );
       CPPUNIT_TEST( position );
       CPPUNIT_TEST( summon );
+      CPPUNIT_TEST( who );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -400,6 +401,11 @@ protected:
     void summon()
     {
         assertParametrizedCommand("summon", "summon");
+    }
+
+    void who()
+    {
+        assertCommand("who", "who");
     }
 };
 

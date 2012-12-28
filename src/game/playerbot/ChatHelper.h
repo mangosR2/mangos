@@ -27,6 +27,8 @@ namespace ai
         static ChatMsg parseChat(string& text);
         static string formatChat(ChatMsg chat);
 
+        static string formatClass(uint8 cls, uint8 spec);
+
         static uint32 parseItemQuality(string text);
         static bool parseItemClass(string text, uint32 *itemClass, uint32 *itemSubClass);
         static uint32 parseSlot(string text);
@@ -39,5 +41,7 @@ namespace ai
         static map<string, uint32> itemQualities;
         static map<string, uint32> slots;
         static map<string, ChatMsg> chats;
+        static map<uint8, string> classes;
+        static map<uint8, map<uint8, string> > specs;
     };
 };

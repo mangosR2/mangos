@@ -1,14 +1,17 @@
 #include "../../../pchdef.h"
 #include "../../playerbot.h"
 #include "SpellIdValue.h"
+#include "../../PlayerbotAIConfig.h"
 
 using namespace ai;
 
+SpellIdValue::SpellIdValue(PlayerbotAI* ai) :
+        CalculatedValue<uint32>(ai, "spell id", 5)
+{
+}
+
 uint32 SpellIdValue::Calculate()
 {
-    
-    
-
     string namepart = qualifier;
     wstring wnamepart;
 
@@ -16,13 +19,15 @@ uint32 SpellIdValue::Calculate()
         return 0;
 
     wstrToLower(wnamepart);
+    char firstSymbol = tolower(qualifier[0]);
+    int spellLength = wnamepart.length();
 
     int loc = bot->GetSession()->GetSessionDbcLocale();
 
     uint32 foundSpellId = 0;
     bool foundMatchUsesNoReagents = false;
 
-    for (PlayerSpellMap::iterator itr = bot->GetSpellMap().begin(); itr != bot->GetSpellMap().end(); ++itr) 
+    for (PlayerSpellMap::iterator itr = bot->GetSpellMap().begin(); itr != bot->GetSpellMap().end(); ++itr)
     {
         uint32 spellId = itr->first;
 
@@ -36,8 +41,8 @@ uint32 SpellIdValue::Calculate()
         if (pSpellInfo->Effect[0] == SPELL_EFFECT_LEARN_SPELL)
             continue;
 
-        const string name = pSpellInfo->SpellName[loc];
-        if (name.empty() || name.length() != wnamepart.length() || !Utf8FitTo(name, wnamepart))
+        char* spellName = pSpellInfo->SpellName[loc];
+        if (tolower(spellName[0]) != firstSymbol || strlen(spellName) != spellLength || !Utf8FitTo(spellName, wnamepart))
             continue;
 
         bool usesNoReagents = (pSpellInfo->Reagent[0] <= 0);
@@ -72,8 +77,8 @@ uint32 SpellIdValue::Calculate()
             if (pSpellInfo->Effect[0] == SPELL_EFFECT_LEARN_SPELL)
                 continue;
 
-            const string name = pSpellInfo->SpellName[loc];
-            if (name.empty() || name.length() != wnamepart.length() || !Utf8FitTo(name, wnamepart))
+            char* spellName = pSpellInfo->SpellName[loc];
+            if (tolower(spellName[0]) != firstSymbol || strlen(spellName) != spellLength || !Utf8FitTo(spellName, wnamepart))
                 continue;
 
             foundSpellId = spellId;

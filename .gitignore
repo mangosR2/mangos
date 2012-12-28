@@ -55,6 +55,8 @@ patches-*
 bin/*
 *win32_Debug*
 *win32_Release*
+*x64_Debug*
+*x64_Release*
 win/*/*.log
 
 #

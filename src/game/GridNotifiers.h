@@ -845,18 +845,21 @@ namespace MaNGOS
     class AnyUnfriendlyUnitInObjectRangeCheck
     {
         public:
-            AnyUnfriendlyUnitInObjectRangeCheck(WorldObject const* obj, Unit const* funit, float range) : i_obj(obj), i_funit(funit), i_range(range) {}
+            AnyUnfriendlyUnitInObjectRangeCheck(WorldObject const* obj, float range) : i_obj(obj), i_range(range)
+            {
+                i_controlledByPlayer = obj->IsControlledByPlayer();
+            }
             WorldObject const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->isAlive() && i_obj->IsWithinDistInMap(u, i_range) && !i_funit->IsFriendlyTo(u) && u->isTargetableForAttack())
+                if (u->isAlive() && i_obj->IsWithinDistInMap(u, i_range) && (i_controlledByPlayer ? !i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u)))
                     return true;
                 else
                     return false;
             }
         private:
             WorldObject const* i_obj;
-            Unit const* i_funit;
+            bool i_controlledByPlayer;
             float i_range;
     };
 
@@ -917,12 +920,17 @@ namespace MaNGOS
     class NearestAttackableUnitInObjectRangeCheck
     {
         public:
-            NearestAttackableUnitInObjectRangeCheck(WorldObject const* obj, Unit const* funit, float range) : i_obj(obj), i_funit(funit), i_range(range) {}
+            NearestAttackableUnitInObjectRangeCheck(WorldObject const* obj, float range) : i_obj(obj), i_range(range) 
+            {
+                i_targetForPlayer = i_obj->IsControlledByPlayer();
+            }
             WorldObject const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->isTargetableForAttack() && i_obj->IsWithinDistInMap(u, i_range) &&
-                        !i_funit->IsFriendlyTo(u) && u->isVisibleForOrDetect(i_funit, i_funit, false))
+                if (u->isTargetableForAttack() 
+                    && i_obj->IsWithinDistInMap(u, i_range) 
+                    && (i_targetForPlayer ? !i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u))
+                    && (i_obj->GetTypeId() != TYPEID_UNIT || u->isVisibleForOrDetect((Unit*)i_obj, (Unit*)i_obj, false)))
                 {
                     i_range = i_obj->GetDistance(u);        // use found unit range as new range limit for next check
                     return true;
@@ -932,8 +940,8 @@ namespace MaNGOS
             }
         private:
             WorldObject const* i_obj;
-            Unit const* i_funit;
-            float i_range;
+            bool               i_targetForPlayer;
+            float              i_range;
 
             // prevent clone this object
             NearestAttackableUnitInObjectRangeCheck(NearestAttackableUnitInObjectRangeCheck const&);

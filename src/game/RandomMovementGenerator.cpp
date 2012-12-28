@@ -57,6 +57,8 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
         destY = i_y;
         destZ = i_z;
     }
+    else if (creature.IsLevitating())
+        destZ = i_z;
 
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 

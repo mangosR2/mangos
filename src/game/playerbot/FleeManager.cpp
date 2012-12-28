@@ -56,14 +56,13 @@ void FleeManager::calculatePossibleDestinations(list<FleePoint*> &points)
 	float botPosX = bot->GetPositionX();
 	float botPosY = bot->GetPositionY();
 	float botPosZ = bot->GetPositionZ();
-	Player* master = bot->GetPlayerbotAI()->GetMaster();
 
     for (float angle = -M_PI + followAngle; angle < M_PI + followAngle; angle += M_PI / 8)
     {
         float x = botPosX + cos(angle) * maxAllowedDistance;
         float y = botPosY + sin(angle) * maxAllowedDistance;
 
-        if (!bot->IsWithinLOS(x, y, botPosZ) || !master->IsWithinLOS(x, y, botPosZ))
+        if (!bot->IsWithinLOS(x, y, botPosZ))
             continue;
 
         FleePoint *point = new FleePoint(x, y, botPosZ);

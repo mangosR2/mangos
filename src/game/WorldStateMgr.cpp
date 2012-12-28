@@ -151,7 +151,7 @@ void WorldStateMgr::LoadTemplatesFromDBC()
 
         WorldStatesLinkedSet linkedList;
 
-        if (wsEntry->m_uiType == "CAPTUREPOINT")
+        if (!strcmp(wsEntry->m_uiType,"CAPTUREPOINT"))
         {
             type = WORLD_STATE_TYPE_CAPTURE_POINT;
             condition = 0;

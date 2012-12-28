@@ -60,6 +60,15 @@ void PlayerbotMgr::UpdateAIInternal(uint32 elapsed)
     SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
 }
 
+void PlayerbotMgr::HandleCommand(uint32 type, const string& text)
+{
+    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        bot->GetPlayerbotAI()->HandleCommand(type, text, *GetMaster());
+    }
+}
+
 void PlayerbotMgr::HandleMasterIncomingPacket(const WorldPacket& packet)
 {
     for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
@@ -121,7 +130,7 @@ void PlayerbotMgr::RandomizePlayerBot(uint64 guid, uint32 level, uint32 itemQual
         return;
 
     PlayerbotFactory factory(bot, level, itemQuality);
-    factory.Randomize();
+    factory.Randomize(false);
 }
 
 Player* PlayerbotMgr::GetPlayerBot(uint64 playerGuid) const

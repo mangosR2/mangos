@@ -1,4 +1,4 @@
-ALTER TABLE db_version CHANGE COLUMN required_12189_01_mangos_creature_template_spells required_12235_01_mangos_mangos_string bit;
+ALTER TABLE db_version CHANGE COLUMN required_12233_01_mangos_mangos_string required_12235_01_mangos_mangos_string bit;
 
 DELETE FROM `mangos_string` WHERE `entry`=175;
 INSERT INTO `mangos_string` (`entry`,`content_default`) VALUES

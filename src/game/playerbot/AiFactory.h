@@ -15,6 +15,6 @@ public:
     static void AddDefaultDeadStrategies(Player* player, PlayerbotAI* const facade, Engine* deadEngine);
     static void AddDefaultCombatStrategies(Player* player, PlayerbotAI* const facade, Engine* engine);
 
-private:
+public:
     static int GetPlayerSpecTab(Player* player);
 };

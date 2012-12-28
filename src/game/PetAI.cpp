@@ -45,6 +45,7 @@ PetAI::PetAI(Creature *c) : CreatureAI(c), inCombat(false)
 
 void PetAI::Reset()
 {
+    m_primaryTargetGuid.Clear();
     m_savedTargetGuid.Clear();
     m_attackDistanceRecheckTimer.SetInterval(TIME_INTERVAL_LOOK);
     m_attackDistanceRecheckTimer.Reset();
@@ -380,6 +381,9 @@ bool PetAI::_needToStop() const
         (owner && !m_creature->getVictim()->isVisibleForOrDetect(owner,owner,true)))
         return true;
 
+    if (!m_primaryTargetGuid.IsEmpty() && m_creature->getVictim()->GetObjectGuid() != m_primaryTargetGuid)
+        return true;
+
     return !m_creature->getVictim()->isTargetableForAttack();
 }
 
@@ -451,7 +455,7 @@ void PetAI::UpdateAI(const uint32 diff)
             m_creature->InterruptNonMeleeSpells(false);
             _stopAttack();
             return;
-        }
+         }
         else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && IsInCombat() && m_creature->getVictim() && m_creature->getVictim()->IsCrowdControlled())  // Stop attack if target under CC effect
         {
             m_savedTargetGuid = m_creature->getVictim()->GetObjectGuid();
@@ -509,6 +513,10 @@ void PetAI::UpdateAI(const uint32 diff)
             }
         }
     }
+    else if (Unit* target = GetPrimaryTarget())
+    {
+        AttackStart(target);
+    }
     else if (owner && owner->IsInCombat())
     {
         switch (m_creature->GetCharmState(CHARM_STATE_REACT))
@@ -517,7 +525,7 @@ void PetAI::UpdateAI(const uint32 diff)
             {
                 if (!m_creature->getVictim() 
                     || !m_creature->getVictim()->isAlive() 
-                    || (owner->getVictim() != m_creature->getVictim() && owner->getVictim()->isAlive()))
+                    || (m_primaryTargetGuid.IsEmpty() && owner->getVictim() != m_creature->getVictim() && owner->getVictim()->isAlive()))
                     AttackStart(owner->getAttackerForHelper());
                 break;
             }
@@ -901,4 +909,30 @@ uint32 PetAI::GetSpellType(PetAutoSpellType type)
 bool PetAI::IsInCombat() 
 {
     return (inCombat || m_creature->isInCombat());
+}
+
+bool  PetAI::SetPrimaryTarget(ObjectGuid const& guid)
+{
+    if (!guid || (m_primaryTargetGuid.IsEmpty() || !GetPrimaryTarget()))
+    {
+        m_primaryTargetGuid = guid;
+        return true;
+    }
+    return false;
+}
+
+Unit* PetAI::GetPrimaryTarget()
+{
+    if (m_primaryTargetGuid.IsEmpty() || !m_primaryTargetGuid.IsUnit())
+        return NULL;
+
+    Unit* target = m_creature->GetMap()->GetUnit(m_primaryTargetGuid);
+
+    if (!target || !target->isAlive() || !target->isTargetableForAttack() || !target->isInAccessablePlaceFor(m_creature))
+    {
+        m_primaryTargetGuid.Clear();
+        return NULL;
+    }
+
+    return target;
 }

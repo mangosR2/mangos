@@ -9,6 +9,7 @@
 #include "PlayerbotAI.h"
 #include "../Player.h"
 #include "RandomPlayerbotFactory.h"
+#include "SystemConfig.h"
 
 bool RandomPlayerbotFactory::CreateRandomBot()
 {
@@ -82,7 +83,7 @@ bool RandomPlayerbotFactory::CreateRandomBot()
     player->SetAtLoginFlag(AT_LOGIN_NONE);
     player->SaveToDB();
 
-    sLog.outBasic("Random bot created for account %d - name: \"%s\"; race: %u; class: %u; gender: %u; skin: %u; face: %u; hairStyle: %u; hairColor: %u; facialHair: %u; outfitId: %u",
+    sLog.outDetail("Random bot created for account %d - name: \"%s\"; race: %u; class: %u; gender: %u; skin: %u; face: %u; hairStyle: %u; hairColor: %u; facialHair: %u; outfitId: %u",
             accountId, name.c_str(), race, botClass, gender, skin, face, hairStyle, hairColor, facialHair, outfitId);
 
     return true;

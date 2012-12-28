@@ -8,7 +8,7 @@ namespace ai
     public:
         ExternalEventHelper(AiObjectContext* aiObjectContext) : aiObjectContext(aiObjectContext) {}
 
-        bool ParseChatCommand(string command) 
+        bool ParseChatCommand(string command)
         {
             if (HandleCommand(command, ""))
                 return true;
@@ -41,7 +41,7 @@ namespace ai
         void HandlePacket(map<uint16, string> &handlers, const WorldPacket &packet)
         {
             uint8 opcode = packet.GetOpcode();
-            string name = handlers[packet.GetOpcode()];
+            string name = handlers[opcode];
             if (name.empty())
                 return;
 

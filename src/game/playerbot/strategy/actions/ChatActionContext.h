@@ -46,6 +46,7 @@
 #include "PositionAction.h"
 #include "TellTargetAction.h"
 #include "UseMeetingStoneAction.h"
+#include "WhoAction.h"
 
 namespace ai
 {
@@ -106,9 +107,11 @@ namespace ai
             creators["position"] = &ChatActionContext::position;
             creators["tell target"] = &ChatActionContext::tell_target;
             creators["summon"] = &ChatActionContext::summon;
+            creators["who"] = &ChatActionContext::who;
         }
 
     private:
+        static Action* who(PlayerbotAI* ai) { return new WhoAction(ai); }
         static Action* summon(PlayerbotAI* ai) { return new SummonAction(ai); }
         static Action* tell_target(PlayerbotAI* ai) { return new TellTargetAction(ai); }
         static Action* position(PlayerbotAI* ai) { return new PositionAction(ai); }

@@ -42,8 +42,6 @@ void WorldSession::HandleDismissControlledVehicle(WorldPacket &recv_data)
     if(!GetPlayer()->GetVehicle())
         return;
 
-    bool dismiss = true;
-
     Creature* vehicle = GetPlayer()->GetMap()->GetAnyTypeCreature(guid);
 
     if (!vehicle || !vehicle->IsVehicle())

@@ -13,6 +13,7 @@
 #include "strategy/hunter/HunterAiObjectContext.h"
 #include "strategy/rogue/RogueAiObjectContext.h"
 #include "../Player.h"
+#include "PlayerbotAIConfig.h"
 
 
 AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* ai)
@@ -153,7 +154,9 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
     Player* master = facade->GetMaster();
     if (master->GetRandomPlayerbotMgr()->IsRandomBot(player) && !player->GetGroup())
     {
-        engine->addStrategies("grind", "dps", NULL);
+        engine->addStrategy("dps");
+        if (sPlayerbotAIConfig.randomBotGrinding)
+            engine->addStrategy("grind");
     }
 }
 

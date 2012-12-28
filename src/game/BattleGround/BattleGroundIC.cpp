@@ -610,7 +610,7 @@ void BattleGroundIC::EventPlayerDamageGO(Player *player, GameObject* target_obj,
     if (doneBy == 66672)
         player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CAST_SPELL, 68367);
 
-    uint32 type = NULL;
+    uint32 type = 0;
     switch (target_obj->GetEntry())
     {
         case BG_IC_GO_ALLIANCE_GATE_1:
@@ -861,32 +861,50 @@ void BattleGroundIC::HandleBuffs()
     }
 }
 
-uint32 BattleGroundIC::GetCorrectFactionIC(uint8 vehicleType) const
+Team BattleGroundIC::GetSpawnTeamFor(ObjectGuid const& guid) const
 {
-    switch (vehicleType)
+    if (guid.IsEmpty() || !guid.HasEntry())
+        return TEAM_NONE;
+
+    switch (guid.GetEntry())
     {
-        case VEHICLE_BG_DEMOLISHER:
+        case VEHICLE_IC_DEMOLISHER:
+        case VEHICLE_IC_DEMOLISHER_1:
         {
             if (m_Nodes[BG_IC_NODE_WORKSHOP] == BG_IC_NODE_STATUS_ALLY_OCCUPIED)
-                return VEHICLE_FACTION_ALLIANCE;
+                return ALLIANCE;
 
             else if (m_Nodes[BG_IC_NODE_WORKSHOP] == BG_IC_NODE_STATUS_HORDE_OCCUPIED)
-                return VEHICLE_FACTION_HORDE;
+                return HORDE;
             break;
         }
         case VEHICLE_IC_CATAPULT:
+        case VEHICLE_IC_CATAPULT_1:
         {
             if (m_Nodes[BG_IC_NODE_DOCKS] == BG_IC_NODE_STATUS_ALLY_OCCUPIED)
-                return VEHICLE_FACTION_ALLIANCE;
+                return ALLIANCE;
 
             else if (m_Nodes[BG_IC_NODE_DOCKS] == BG_IC_NODE_STATUS_HORDE_OCCUPIED)
-                return VEHICLE_FACTION_HORDE;
+                return HORDE;
             break;
         }
+        case VEHICLE_IC_CANNON:
+        case VEHICLE_IC_CANNON_1:
+        {
+            WorldObject const* obj = const_cast<BattleGroundIC*>(this)->GetBgMap()->GetWorldObject(guid);
+            if (obj)
+                // simplest way to determine factions Ive found
+                return (obj->GetPositionX() > 1000.0f) ? HORDE : ALLIANCE;
+            break;
+        }
+        case VEHICLE_IC_GLAIVE_A:
+            return ALLIANCE;
+        case VEHICLE_IC_GLAIVE_H:
+            return HORDE;
         default:
             break;
     }
-    return VEHICLE_FACTION_NEUTRAL;
+    return TEAM_INVALID;
 }
 
 bool BattleGroundIC::hasAllNodes(int8 team)

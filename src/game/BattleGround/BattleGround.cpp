@@ -299,8 +299,8 @@ BattleGround::BattleGround()
     m_ArenaTeamRatingChanges[TEAM_INDEX_ALLIANCE]   = 0;
     m_ArenaTeamRatingChanges[TEAM_INDEX_HORDE]      = 0;
 
-    m_BgRaids[TEAM_INDEX_ALLIANCE]          = NULL;
-    m_BgRaids[TEAM_INDEX_HORDE]             = NULL;
+    m_BgRaids[TEAM_INDEX_ALLIANCE]          = ObjectGuid();
+    m_BgRaids[TEAM_INDEX_HORDE]             = ObjectGuid();
 
     m_PlayersCount[TEAM_INDEX_ALLIANCE]     = 0;
     m_PlayersCount[TEAM_INDEX_HORDE]        = 0;
@@ -1468,9 +1468,22 @@ void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_gu
     }
     else                                                    // first player joined
     {
-        group = new Group;
-        SetBgRaid(team, group);
-        group->Create(plr_guid, plr->GetName());
+        group = new Group();
+
+        // Need first set BG type for group, even his be wrong type
+        group->SetBattlegroundGroup(this);
+
+        if (group->Create(plr_guid, plr->GetName()))
+        {
+            sObjectMgr.AddGroup(group);
+            SetBgRaid(team, group);
+        }
+        else
+        {
+            delete group;
+            return;
+        }
+
     }
 }
 
@@ -1675,6 +1688,9 @@ void BattleGround::OnObjectDBLoad(Creature* creature)
     m_EventObjects[MAKE_PAIR32(eventId.event1, eventId.event2)].creatures.push_back(creature->GetObjectGuid());
     if (!IsActiveEvent(eventId.event1, eventId.event2))
         SpawnBGCreature(creature->GetObjectGuid(), RESPAWN_ONE_DAY);
+
+    if (BattleGroundSpawnFactions faction = GetSpawnFactionFor(creature->GetObjectGuid()))
+        creature->setFaction(faction);
 }
 
 ObjectGuid BattleGround::GetSingleCreatureGuid(uint8 event1, uint8 event2)
@@ -1701,6 +1717,9 @@ void BattleGround::OnObjectDBLoad(GameObject* obj)
         if (GetStatus() >= STATUS_IN_PROGRESS && IsDoor(eventId.event1, eventId.event2))
             DoorOpen(obj->GetObjectGuid());
     }
+
+    if (Team team = GetSpawnTeamFor(obj->GetObjectGuid()))
+        obj->SetTeam(team);
 }
 
 bool BattleGround::IsDoor(uint8 event1, uint8 event2)
@@ -1791,6 +1810,8 @@ void BattleGround::SpawnBGObject(ObjectGuid guid, uint32 respawntime)
         if (obj->GetGOInfo()->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
             obj->Rebuild(NULL);
     }
+    if (Team team = GetSpawnTeamFor(obj->GetObjectGuid()))
+        obj->SetTeam(team);
 }
 
 void BattleGround::SpawnBGCreature(ObjectGuid guid, uint32 respawntime)
@@ -1827,6 +1848,25 @@ void BattleGround::SpawnBGCreature(ObjectGuid guid, uint32 respawntime)
         obj->GetRespawnCoord(x,y,z,&o);
         obj->NearTeleportTo(x,y,z,o);
     }
+    if (BattleGroundSpawnFactions faction = GetSpawnFactionFor(obj->GetObjectGuid()))
+        obj->setFaction(faction);
+}
+
+BattleGroundSpawnFactions BattleGround::GetSpawnFactionFor(ObjectGuid const& guid) const
+{
+    switch (GetSpawnTeamFor(guid))
+    {
+        case HORDE:
+            return SPAWN_FACTION_HORDE;
+        case ALLIANCE:
+            return SPAWN_FACTION_ALLIANCE;
+        case TEAM_INVALID:
+            return SPAWN_FACTION_NEUTRAL;
+        case TEAM_NONE:
+        default:
+            break;
+    }
+    return SPAWN_FACTION_UNCHANGED;
 }
 
 bool BattleGround::DelObject(uint32 type)
@@ -2038,17 +2078,25 @@ void BattleGround::CheckArenaWinConditions()
         EndBattleGround(ALLIANCE);
 }
 
+Group* BattleGround::GetBgRaid(Team team)
+{
+    return sObjectMgr.GetGroup(m_BgRaids[GetTeamIndex(team)]);
+}
+
 void BattleGround::SetBgRaid(Team team, Group* bg_raid)
 {
-    Group*& old_raid = m_BgRaids[GetTeamIndex(team)];
+    Group* old_raid = GetBgRaid(team);
 
     if (old_raid)
         old_raid->SetBattlegroundGroup(NULL);
 
     if (bg_raid)
+    {
         bg_raid->SetBattlegroundGroup(this);
-
-    old_raid = bg_raid;
+        m_BgRaids[GetTeamIndex(team)] = bg_raid->GetObjectGuid();
+    }
+    else
+        m_BgRaids[GetTeamIndex(team)] = ObjectGuid();
 }
 
 WorldSafeLocsEntry const* BattleGround::GetClosestGraveYard(Player* player)

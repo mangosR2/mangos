@@ -1385,5 +1385,19 @@ inline const char* LookupOpcodeName(uint16 id)
         return "Received unknown opcode, it's more than max!";
     return opcodeTable[id].name;
 }
+
+enum OpcodeLoadFlags
+{
+    OPCODE_LOAD_FLAGS_NONE           = 0x0,
+    OPCODE_LOAD_FLAGS_UNHANDLED      = 0x1,
+    OPCODE_LOAD_FLAGS_MAX            = 0x100,
+};
+
+HASH_NAMESPACE_START
+template<> class hash <Opcodes>
+{
+    public: size_t operator()(const Opcodes &__x) const { return (size_t)__x; }
+};
+HASH_NAMESPACE_END
 #endif
 /// @}

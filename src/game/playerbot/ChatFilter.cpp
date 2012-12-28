@@ -42,6 +42,26 @@ public:
     }
 };
 
+class LevelChatFilter : public ChatFilter
+{
+public:
+    LevelChatFilter(PlayerbotAI* ai) : ChatFilter(ai) {}
+
+    virtual string Filter(string message)
+    {
+        Player* bot = ai->GetBot();
+
+        if (message[0] != '@')
+            return message;
+
+		int level = atoi(message.substr(message.find("@") + 1, message.find(" ")).c_str());
+        if (bot->getLevel() == level)
+            return ChatFilter::Filter(message);
+
+        return message;
+    }
+};
+
 class CombatTypeChatFilter : public ChatFilter
 {
 public:
@@ -200,6 +220,7 @@ CompositeChatFilter::CompositeChatFilter(PlayerbotAI* ai) : ChatFilter(ai)
     filters.push_back(new ClassChatFilter(ai));
     filters.push_back(new RtiChatFilter(ai));
     filters.push_back(new CombatTypeChatFilter(ai));
+    filters.push_back(new LevelChatFilter(ai));
 }
 
 CompositeChatFilter::~CompositeChatFilter()

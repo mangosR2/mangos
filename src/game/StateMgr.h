@@ -112,6 +112,7 @@ public:
 
     ActionInfo* GetAction(UnitActionPriority priority);
     ActionInfo* GetAction(UnitActionPtr _action);
+    ActionInfo* GetAction(UnitActionId actionId);
 
     UnitActionStorage const& GetActions() { return m_actions; };
 

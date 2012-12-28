@@ -6,12 +6,27 @@
 #include "PlayerbotAIConfig.h"
 #include "../AccountMgr.h"
 #include "../../shared/Database/DBCStore.h"
+#include "../SharedDefines.h"
 
 using namespace ai;
 using namespace std;
 
-void PlayerbotFactory::Randomize()
+void PlayerbotFactory::Randomize(bool incremental)
 {
+    if (!itemQuality)
+    {
+        if (level <= 10)
+            itemQuality = urand(ITEM_QUALITY_NORMAL, ITEM_QUALITY_UNCOMMON);
+        else if (level <= 20)
+            itemQuality = urand(ITEM_QUALITY_UNCOMMON, ITEM_QUALITY_RARE);
+        else if (level <= 40)
+            itemQuality = urand(ITEM_QUALITY_UNCOMMON, ITEM_QUALITY_EPIC);
+        else if (level < 60)
+            itemQuality = urand(ITEM_QUALITY_UNCOMMON, ITEM_QUALITY_EPIC);
+        else
+            itemQuality = urand(ITEM_QUALITY_RARE, ITEM_QUALITY_EPIC);
+    }
+
     bot->ClearInCombat();
     bot->SetLevel(level);
     bot->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_HIDE_HELM);
@@ -25,7 +40,8 @@ void PlayerbotFactory::Randomize()
     InitSkills();
     InitQuests();
     InitAvailableSpells();
-    InitEquipment();
+    InitSpecialSpells();
+    InitEquipment(incremental);
     InitPet();
 
     // quest rewards boost bot level, so reduce back
@@ -38,6 +54,7 @@ void PlayerbotFactory::Randomize()
     InitMounts();
     InitPotions();
     InitSecondEquipmentSet();
+    bot->SaveToDB();
 }
 
 void PlayerbotFactory::InitPet()
@@ -395,10 +412,19 @@ bool PlayerbotFactory::CanEquipItem(ItemPrototype const* proto, uint32 desiredQu
             (!requiredLevel || requiredLevel > level || requiredLevel < level - 10))
         return false;
 
+    if (!requiredLevel)
+        return true;
+
+    for (uint32 gap = 60; gap <= 80; gap += 10)
+    {
+        if (level > gap && requiredLevel <= gap)
+            return false;
+    }
+
     return true;
 }
 
-void PlayerbotFactory::InitEquipment()
+void PlayerbotFactory::InitEquipment(bool incremental)
 {
     DestroyItemsVisitor visitor(bot);
     IterateItems(&visitor, ITERATE_ALL_ITEMS);
@@ -410,7 +436,7 @@ void PlayerbotFactory::InitEquipment()
             continue;
 
         uint32 desiredQuality = itemQuality;
-        while (urand(0, 100) < 100 * sPlayerbotAIConfig.randomGearLoweringChance && desiredQuality > ITEM_QUALITY_NORMAL) {
+        if (urand(0, 100) < 100 * sPlayerbotAIConfig.randomGearLoweringChance && desiredQuality > ITEM_QUALITY_NORMAL) {
             desiredQuality--;
         }
 
@@ -471,21 +497,43 @@ void PlayerbotFactory::InitEquipment()
         {
             uint32 index = urand(0, ids.size() - 1);
             uint32 newItemId = ids[index];
+            Item* oldItem = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+
+            if (incremental && !IsDesiredReplacement(oldItem)) {
+                continue;
+            }
 
             uint16 dest;
             if (!CanEquipUnseenItem(slot, dest, newItemId))
                 continue;
 
-            Item* newItem = bot->EquipNewItem(dest, newItemId, false);
+            if (oldItem)
+            {
+                bot->RemoveItem(INVENTORY_SLOT_BAG_0, slot, true);
+                oldItem->DestroyForPlayer(bot, false);
+            }
+
+            Item* newItem = bot->EquipNewItem(dest, newItemId, true);
             if (newItem)
             {
                 newItem->AddToWorld();
+                newItem->AddToUpdateQueueOf(bot);
                 bot->AutoUnequipOffhandIfNeed();
                 EnchantItem(newItem);
                 break;
             }
         }
     }
+}
+
+bool PlayerbotFactory::IsDesiredReplacement(Item* item)
+{
+    if (!item)
+        return true;
+
+    ItemPrototype const* proto = item->GetProto();
+    int delta = 1 + (80 - bot->getLevel()) / 10;
+    return (int)bot->getLevel() - (int)proto->RequiredLevel > delta;
 }
 
 void PlayerbotFactory::InitSecondEquipmentSet()
@@ -575,6 +623,7 @@ void PlayerbotFactory::InitSecondEquipmentSet()
             {
                 EnchantItem(newItem);
                 newItem->AddToWorld();
+                newItem->AddToUpdateQueueOf(bot);
                 break;
             }
         }
@@ -766,6 +815,15 @@ void PlayerbotFactory::InitAvailableSpells()
     }
 }
 
+void PlayerbotFactory::InitSpecialSpells()
+{
+    for (list<uint32>::iterator i = sPlayerbotAIConfig.randomBotSpellIds.begin(); i != sPlayerbotAIConfig.randomBotSpellIds.end(); ++i)
+    {
+        uint32 spellId = *i;
+        bot->learnSpell(spellId, false);
+    }
+}
+
 void PlayerbotFactory::InitTalents(uint32 specNo)
 {
     uint32 classMask = bot->getClassMask();
@@ -820,16 +878,24 @@ void PlayerbotFactory::InitTalents(uint32 specNo)
         }
 
         int attemptCount = 0;
-        while (!ids.empty() && freePoints - bot->GetFreeTalentPoints() < 5 && attemptCount++ < 3)
+        while (!ids.empty() && (int)freePoints - (int)bot->GetFreeTalentPoints() < 5 && attemptCount++ < 3 && bot->GetFreeTalentPoints())
         {
             int index = urand(0, ids.size() - 1);
             uint32 spellId = ids[index];
             ids.erase(ids.begin() + index);
-            bot->learnSpell(spellId, true);
+            bot->learnSpell(spellId, false);
             bot->UpdateFreeTalentPoints(false);
         }
 
         freePoints = bot->GetFreeTalentPoints();
+    }
+
+    for (uint32 i = 0; i < MAX_TALENT_SPEC_COUNT; ++i)
+    {
+        for (PlayerTalentMap::iterator itr = bot->GetTalentMap(i).begin(); itr != bot->GetTalentMap(i).end(); ++itr)
+        {
+            itr->second.state = PLAYERSPELL_CHANGED;
+        }
     }
 }
 
@@ -898,6 +964,9 @@ void PlayerbotFactory::InitQuests()
                     !bot->SatisfyQuestStatus(quest, false))
                 continue;
 
+            if (quest->IsDailyOrWeekly() || quest->IsRepeatable() || quest->IsMonthly())
+                continue;
+
             bot->SetQuestStatus(questId, QUEST_STATUS_COMPLETE);
             bot->RewardQuest(quest, 0, bot, false);
             ClearInventory();
@@ -945,7 +1014,11 @@ void PlayerbotFactory::InitAmmo()
     {
         uint32 entry = fields[0].GetUInt32();
         for (int i = 0; i < 5; i++)
-            bot->StoreNewItemInInventorySlot(entry, 1000);
+        {
+            Item* newItem = bot->StoreNewItemInInventorySlot(entry, 1000);
+            if (newItem)
+                newItem->AddToUpdateQueueOf(bot);
+        }
         bot->SetAmmo(entry);
     }
 
@@ -1042,7 +1115,9 @@ void PlayerbotFactory::InitPotions()
 
         uint32 itemId = ids[index];
         ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
-        bot->StoreNewItemInInventorySlot(itemId, urand(1, proto->GetMaxStackSize()));
+        Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, proto->GetMaxStackSize()));
+        if (newItem)
+            newItem->AddToUpdateQueueOf(bot);
    }
 }
 

@@ -172,7 +172,7 @@ void BattleGroundSA::EndBattleGround(Team winner)
     RewardHonorToTeam(GetBonusHonorFromKill(2), HORDE);
     RewardXpToTeam(0, 0.8f, ALLIANCE);
     RewardXpToTeam(0, 0.8f, HORDE);
-    
+
     BattleGround::EndBattleGround(winner);
 }
 
@@ -1134,28 +1134,23 @@ void BattleGroundSA::SendTransportsRemove(Player * player)
     }
 }
 
-uint32 BattleGroundSA::GetCorrectFactionSA(uint8 vehicleType) const
+Team BattleGroundSA::GetSpawnTeamFor(ObjectGuid const& guid) const
 {
-    switch(vehicleType)
+    if (guid.IsEmpty() || !guid.HasEntry())
+        return TEAM_NONE;
+
+    switch (guid.GetEntry())
     {
-        case VEHICLE_BG_DEMOLISHER:
-        {
-            if (GetDefender() == ALLIANCE)
-                return VEHICLE_FACTION_HORDE;
-            else
-                return VEHICLE_FACTION_ALLIANCE;
-        }
+        case VEHICLE_SA_DEMOLISHER:
+        case VEHICLE_SA_DEMOLISHER_1:
+            return GetDefender() == ALLIANCE ? HORDE : ALLIANCE;
         case VEHICLE_SA_CANNON:
-        {
-            if (GetDefender() == ALLIANCE)
-                return VEHICLE_FACTION_ALLIANCE;
-            else
-                return VEHICLE_FACTION_HORDE;
-        }
+        case VEHICLE_SA_CANNON_1:
+            return GetDefender() == ALLIANCE ? ALLIANCE : HORDE;
         default:
-            return VEHICLE_FACTION_NEUTRAL;
+            break;
     }
-    return VEHICLE_FACTION_NEUTRAL;
+    return TEAM_NONE;
 }
 
 bool BattleGroundSA::winSAwithAllWalls(Team team)

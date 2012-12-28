@@ -1144,6 +1144,9 @@ void World::SetInitialWorldSettings()
     DetectDBCLang();
     sObjectMgr.SetDBCLocaleIndex(GetDefaultDbcLocale());    // Get once for all the locale index of DBC language (console/broadcasts)
 
+    sLog.outString("Loading opcodes for realm (client build %u)...",CLIENT_VERSION);
+    sObjectMgr.LoadOpcodes();
+
     sLog.outString("Loading GameObject models...");
     LoadGameObjectModelList();
 

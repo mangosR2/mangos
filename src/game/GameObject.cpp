@@ -254,7 +254,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 {
                     // Arming Time for GAMEOBJECT_TYPE_TRAP (6)
                     Unit* owner = GetOwner();
-                    if (owner && owner->isInCombat()
+                    if ((owner && owner->isInCombat())
                                                      // FIXME - need remove this hacks on some objects
                         || GetEntry() == 190752      // SoTA Seaforium Charges
                         || GetEntry() == 195331      // IoC Huge Seaforium Charges
@@ -284,6 +284,8 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     break;
                 }
+                default:
+                    break;
             }
             break;
         }
@@ -366,6 +368,7 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         }
                     }
 
+                    // FIXME - need remove hacks fot this GO
                     // SoTA Seaforium Charge || IoC Seaforium Charge
                     if (GetEntry() == 190752 || GetEntry() == 195331 || GetEntry() == 195235)
                     {
@@ -373,29 +376,16 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     }
                     // Note: this hack with search required until GO casting not implemented
                     // search unfriendly creature
-                    else if (owner && goInfo->trap.charges > 0)  // hunter trap
-                    {
-                        MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, owner, radius);
-                        MaNGOS::UnitSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> checker(ok, u_check);
-                        Cell::VisitGridObjects(this, checker, radius);
-                        if (!ok)
-                            Cell::VisitWorldObjects(this, checker, radius);
-                    }
-                    else                                    // environmental trap
-                    {
-                        // environmental damage spells already have around enemies targeting but this not help in case nonexistent GO casting support
-
-                        // affect only players
-                        Player* p_ok = NULL;
-                        MaNGOS::AnyPlayerInObjectRangeCheck p_check(this, radius);
-                        MaNGOS::PlayerSearcher<MaNGOS::AnyPlayerInObjectRangeCheck>  checker(p_ok, p_check);
-                        Cell::VisitWorldObjects(this, checker, radius);
-                        ok = p_ok;
-                    }
+                    // Should trap trigger?
+                    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(this, radius);
+                    MaNGOS::UnitSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> checker(ok, u_check);
+                    Cell::VisitAllObjects(this, checker, radius);
 
                     if (ok)
                     {
                         Unit* caster =  owner ? owner : ok;
+
+                        // Code below should be refactored into GO::Use, but not clear how to handle caster/victim for non AoE spells
 
                         caster->CastSpell(ok, goInfo->trap.spellId, true, NULL, NULL, GetObjectGuid());
                         // use template cooldown if provided
@@ -594,19 +584,6 @@ void GameObject::Delete()
         sPoolMgr.UpdatePool<GameObject>(*GetMap()->GetPersistentState(), poolid, GetGUIDLow());
     else
         AddObjectToRemoveList();
-}
-
-void GameObject::getFishLoot(Loot* fishloot, Player* loot_owner)
-{
-    fishloot->clear();
-
-    uint32 zone, subzone;
-    GetZoneAndAreaId(zone, subzone);
-
-    // if subzone loot exist use it
-    if (!fishloot->FillLoot(subzone, LootTemplates_Fishing, loot_owner, true, (subzone != zone)) && subzone != zone)
-        // else use zone loot (if zone diff. from subzone, must exist in like case)
-        fishloot->FillLoot(zone, LootTemplates_Fishing, loot_owner, true);
 }
 
 void GameObject::SaveToDB()
@@ -2089,9 +2066,9 @@ bool GameObject::IsHostileTo(Unit const* unit) const
             return true;
     }
 
-    // for not set faction case (wild object) use hostile case
+    // for not set faction case: be hostile towards player, not hostile towards not-players
     if (!GetGOInfo()->faction)
-        return true;
+        return unit->IsControlledByPlayer();
 
     // faction base cases
     FactionTemplateEntry const* tester_faction = sFactionTemplateStore.LookupEntry(GetGOInfo()->faction);
@@ -2219,7 +2196,7 @@ bool GameObject::CalculateCurrentCollisionState() const
         return false;
 
     bool startOpen;
-    bool result;
+    bool result = false;
 
     switch (GetGoType())
     {
@@ -2256,87 +2233,6 @@ void GameObject::UpdateModel()
         GetMap()->InsertGameObjectModel(*m_model);
 
     EnableCollision(CalculateCurrentCollisionState());
-}
-
-void GameObject::StartGroupLoot(Group* group, uint32 timer)
-{
-    m_groupLootId = group->GetId();
-    m_groupLootTimer = timer;
-}
-
-void GameObject::StopGroupLoot()
-{
-    if (!m_groupLootId)
-        return;
-
-    Group* group = sObjectMgr.GetGroupById(m_groupLootId);
-    if (group)
-        group->EndRoll();
-
-    m_groupLootTimer = 0;
-    m_groupLootId = 0;
-}
-
-Player* GameObject::GetOriginalLootRecipient() const
-{
-    return m_lootRecipientGuid ? ObjectAccessor::FindPlayer(m_lootRecipientGuid) : NULL;
-}
-
-Group* GameObject::GetGroupLootRecipient() const
-{
-    // original recipient group if set and not disbanded
-    return m_lootGroupRecipientId ? sObjectMgr.GetGroupById(m_lootGroupRecipientId) : NULL;
-}
-
-Player* GameObject::GetLootRecipient() const
-{
-    // original recipient group if set and not disbanded
-    Group* group = GetGroupLootRecipient();
-
-    // original recipient player if online
-    Player* player = GetOriginalLootRecipient();
-
-    // if group not set or disbanded return original recipient player if any
-    if (!group)
-        return player;
-
-    // group case
-
-    // return player if it still be in original recipient group
-    if (player && player->GetGroup() == group)
-        return player;
-
-    // find any in group
-    for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-        if (Player* newPlayer = itr->getSource())
-            return newPlayer;
-
-    return NULL;
-}
-
-void GameObject::SetLootRecipient(Unit* pUnit)
-{
-    // set the player whose group should receive the right
-    // to loot the gameobject after its used
-    // should be set to NULL after the loot disappears
-
-    if (!pUnit)
-    {
-        m_lootRecipientGuid.Clear();
-        m_lootGroupRecipientId = 0;
-        return;
-    }
-
-    Player* player = pUnit->GetCharmerOrOwnerPlayerOrPlayerItself();
-    if (!player)                                            // normal creature, no player involved
-        return;
-
-    // set player for non group case or if group will disbanded
-    m_lootRecipientGuid = player->GetObjectGuid();
-
-    // set group for group existed case including if player will leave group at loot time
-    if (Group* group = player->GetGroup())
-        m_lootGroupRecipientId = group->GetId();
 }
 
 float GameObject::GetObjectBoundingRadius() const

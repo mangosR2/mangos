@@ -325,7 +325,7 @@ void Channel::SetMode(ObjectGuid p, const char* p2n, bool mod, bool set)
             return;
         }
 
-        PlayerInfo inf = m_players[newp->GetObjectGuid()];
+//        PlayerInfo inf = m_players[newp->GetObjectGuid()];
         if (p == m_ownerGuid && newp->GetObjectGuid() == m_ownerGuid && mod)
             return;
 

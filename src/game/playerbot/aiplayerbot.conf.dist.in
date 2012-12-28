@@ -5,141 +5,93 @@
 [AiPlayerbotConf]
 ConfVersion=2010102201
 
-###################################################################################################################
-# AI PLAYERBOT SETTINGS
-#
-#    AiPlayerbot.enabled
-#        General enable or disable Ai Playerbot
-#    Default 0 (Disabled)
-#
-#    AiPlayerbot.GlobalCooldown
-#        Delay in milliseconds after short bot actions, i.e. casting an instant spell. Increasing greayly improves performance
-#        but makes bots lazy
-#    Default 600 (0.6 sec)
-#
-#    AiPlayerbot.ReactDelay
-#        Delay in milliseconds after very short bot actions, i.e. response in chat. Increasing greayly improves performance
-#        but makes bots lazy
-#    Default 100 (0.1 sec)
-#
-#    AiPlayerbot.TeleportDelay
-#        Delay in milliseconds before bot is teleported (e.g. follow master in an instance)
-#    Default 10000 (10 secs)
-#
-#    AiPlayerbot.IterationsPerTickReactDelay
-#        Iterations count that ai engine computes per tick
-#    Default 10
-#
-#    AiPlayerbot.SightDistance
-#        Distance to game objects, targets, etc. bot can interact to
-#    Default 50
-#
-#    AiPlayerbot.SpellDistance
-#        Distance to target bot needs to maintain before casting a ranged spell
-#    Default 25
-#
-#    AiPlayerbot.MeleeDistance
-#        Distance to target when melee can be started
-#    Default 2.0
-#
-#    AiPlayerbot.FollowDistance
-#        Distance to target while following (not in melee combat)
-#    Default 2.0
-#
-#    AiPlayerbot.ReactDistance
-#        Maximim distance from master bot can react (does not affect chat)
-#    Default 100
-#
-#    AiPlayerbot.GrindDistance
-#        Distance to game objects, targets, etc. bot can interact to while grinding
-#    Default 75
-#
-#    AiPlayerbot.TooCloseDistance
-#        Distance when flee is necessary
-#    Default 10
-#
-#    AiPlayerbot.FleeDistance
-#        Distance to flee from or master when in danger
-#    Default 15
-#
-#    AiPlayerbot.RandomBotAccounts
-#        Comma-separated list of accounts where random bots are created
-#    Default <empty>
-#
-#    AiPlayerbot.CriticalHealth
-#        Health level when healing is essential (in percents)
-#        Takes effect if health is less or equal to AiPlayerbot.CriticalHealth
-#    Default 25
-#
-#    AiPlayerbot.LowHealth
-#        Health level when healing is required (in percents)
-#        Takes effect if health is between AiPlayerbot.LowHealth and AiPlayerbot.CriticalHealth
-#    Default 45
-#
-#    AiPlayerbot.MediumHealth
-#        Health level when healing is nice (in percents).
-#        Takes effect if health is between AiPlayerbot.MediumHealth and AiPlayerbot.LowHealth
-#    Default 65
-#
-#    AiPlayerbot.AlmostFullHealth
-#        Health level when healing over time is nice (in percents)
-#    Default 85
-#
-#    AiPlayerbot.LowMana
-#        Mana level when drink is required
-#    Default 15
-#
-#    AiPlayerbot.MediumMana
-#        Mana level when mana-cost spells are prohibited
-#    Default 40
-#
-#    AiPlayerbot.AllowGuildBots
-#        Allow use guild members as bots
-#    Default 1
-#
-#    AiPlayerbot.RandomGearQuality
-#        Gear qualify for .bot init <name> coommand
-#        0 - Poor, 1 - Common, 2 - Uncommon, 3 - Rare, 4 - Epic, etc.
-#    Default 3 (rare)
-#
-#    AiPlayerbot.PvpChance
-#        Allow opposing faction bots to summon themselves accidentaly near player and start PVP combat
-#        0 - Disabled
-#        1 and more - Enabled with chance higher with higher values
-#    Default 5
-#
-###################################################################################################################
+# Enable or disable AI Playerbot
+AiPlayerbot.Enabled = true
 
-AiPlayerbot.enabled=1
-AiPlayerbot.AllowGuildBots=1
-AiPlayerbot.RandomBotAccounts=11,12
+# Max AI iterations per tick
+AiPlayerbot.IterationsPerTick = 10
+
+# Allow/deny bots from your guild
+AiPlayerbot.AllowGuildBots = true
+
+# Delay between two short-time spells cast
+AiPlayerbot.GlobalCooldown = 500
+
+# Delay before following master to a dungeon portal
+AiPlayerbot.TeleportDelay = 10000
+
+# Delay between two bot actions
+AiPlayerbot.ReactDelay = 100
+
+# Distances
+AiPlayerbot.SightDistance = 50.0f
+AiPlayerbot.SpellDistance = 25.0f
+AiPlayerbot.ReactDistance = 100.0f
+AiPlayerbot.GrindDistance = 75.0f
+AiPlayerbot.LootDistance = 20.0f
+AiPlayerbot.FleeDistance = 15.0f
+AiPlayerbot.TooCloseDistance = 7.0f
+AiPlayerbot.MeleeDistance = 2.0f
+AiPlayerbot.FollowDistance = 2.0f
+
+# Health/Mana levels
+AiPlayerbot.CriticalHealth = 25
+AiPlayerbot.LowHealth = 45
+AiPlayerbot.MediumHealth = 65
+AiPlayerbot.AlmostFullHealth = 85
+AiPlayerbot.LowMana = 15
+AiPlayerbot.MediumMana = 40
+
+# Enable random bot system
+AiPlayerbot.RandomBotAutologin = false
+
+# Create random bot characters automatically
+AiPlayerbot.RandomBotAutoCreate = true
+
+# Random bot count
 AiPlayerbot.MinRandomBots = 1
 AiPlayerbot.MaxRandomBots = 10
+
+# Accounts to create for random bots
+AiPlayerbot.RandomBotAccountPrefix = "rndbot"
+AiPlayerbot.RandomBotAccountCount = 50
+
+# Delete all random bot accounts
+AiPlayerbot.DeleteRandomBotAccounts = 0
+
+# Maps to teleport random bots
+AiPlayerbot.RandomBotMaps = "0,1"
+
+# Change random bot has lower gear
+AiPlayerbot.RandomGearLoweringChance = 0.25
+
+# Chance random bot has max level on first randomize
+AiPlayerbot.RandomBotMaxLevelChance = 0.25
+
+# Quest items to leave (do not destroy)
+AiPlayerbot.RandomBotQuestItems = "6948,5175,5176,5177,5178"
+
+# Spells every random bot will learn on randomize (54197 - cold weather flying)
+AiPlayerbot.RandomBotSpellIds = 54197
+
+# Intervals
+AiPlayerbot.RandomBotUpdateInterval = 60
+AiPlayerbot.RandomBotCountChangeInterval = 5 * 24 * 3600
+AiPlayerbot.MinRandomBotInWorldTime = 2 * 3600
+AiPlayerbot.MaxRandomBotInWorldTime = 14 * 24 * 3600
+AiPlayerbot.MinRandomBotRandomizeTime = 2 * 3600
+AiPlayerbot.MaxRandomRandomizeTime = 14 * 24 * 3600
+AiPlayerbot.MinRandomBotPvpTime = 120
+AiPlayerbot.MaxRandomBotPvpTime = 3 * 3600
 AiPlayerbot.MinRandomBotsPerInterval = 1
 AiPlayerbot.MaxRandomBotsPerInterval = 5
-AiPlayerbot.RandomBotUpdateInterval=60
 
-AiPlayerbot.GlobalCooldown=600
-AiPlayerbot.ReactDelay=100
-AiPlayerbot.TeleportDelay=10000
+# How far random bots are teleported after death
+AiPlayerbot.RandomBotTeleportDistance = 400
 
-AiPlayerbot.IterationsPerTick=10
+# Enemy/Friend random bot percentage
+AiPlayerbot.RandomBotEnemyPercent = 30
 
-AiPlayerbot.SightDistance=50
-AiPlayerbot.SpellDistance=25
-AiPlayerbot.MeleeDistance=2
-AiPlayerbot.FollowDistance=2.0
-AiPlayerbot.ReactDistance=100
-AiPlayerbot.GrindDistance=75
-AiPlayerbot.FleeDistance=15
-AiPlayerbot.TooCloseDistance=7
+# Debug switches
+AiPlayerbot.SpellDump = false
 
-AiPlayerbot.CriticalHealth=25
-AiPlayerbot.LowHealth=45
-AiPlayerbot.MediumHealth=65
-AiPlayerbot.AlmostFullHealth=85
-
-AiPlayerbot.LowMana=15
-
-AiPlayerbot.PvpChance = 10
-AiPlayerbot.RandomGearQuality = 3

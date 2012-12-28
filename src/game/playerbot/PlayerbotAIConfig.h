@@ -24,11 +24,15 @@ public:
     uint32 lowMana, mediumMana;
 
     bool randomBotAutologin;
-    std::list<uint32> randomBotAccounts;
+    bool randomBotGrinding;
+    std::string randomBotMapsAsString;
     std::vector<uint32> randomBotMaps;
     std::list<uint32> randomBotQuestItems;
+    std::list<uint32> randomBotAccounts;
+    std::list<uint32> randomBotSpellIds;
     uint32 randomBotTeleportDistance;
     float randomGearLoweringChance;
+    float randomBotMaxLevelChance;
     uint32 minRandomBots, maxRandomBots;
     uint32 randomBotUpdateInterval, randomBotCountChangeInterval;
     uint32 minRandomBotInWorldTime, maxRandomBotInWorldTime;

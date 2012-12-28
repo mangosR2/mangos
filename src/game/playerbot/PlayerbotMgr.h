@@ -21,6 +21,7 @@ class MANGOS_DLL_SPEC PlayerbotMgr : public PlayerbotAIBase
         virtual void UpdateAIInternal(uint32 elapsed);
         void HandleMasterIncomingPacket(const WorldPacket& packet);
         void HandleMasterOutgoingPacket(const WorldPacket& packet);
+        void HandleCommand(uint32 type, const string& text);
 
         void AddPlayerBot(uint64 guid, WorldSession* session);
         void LogoutPlayerBot(uint64 guid);

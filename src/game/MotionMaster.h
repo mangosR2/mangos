@@ -64,6 +64,7 @@ class MANGOS_DLL_SPEC MotionMaster
         MovementGeneratorType GetCurrentMovementGeneratorType() const;
 
         void propagateSpeedChange();
+        uint32 getLastReachedWaypoint() const;
 
         class UnitStateMgr* GetUnitStateMgr();
         MovementGenerator*  CurrentMovementGenerator();

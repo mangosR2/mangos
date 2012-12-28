@@ -978,9 +978,10 @@ typedef UNORDERED_SET<uint32>  SpellLinkedSet;
 class PetAura
 {
     public:
-        PetAura()
+        PetAura() :
+            removeOnChangePet(false),
+            damage(0)
         {
-            auras.clear();
         }
 
         PetAura(uint32 petEntry, uint32 aura, bool _removeOnChangePet, int _damage) :
