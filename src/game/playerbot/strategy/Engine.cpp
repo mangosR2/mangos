@@ -351,6 +351,9 @@ void Engine::ProcessTriggers()
     for (list<TriggerNode*>::iterator i = triggers.begin(); i != triggers.end(); i++)
     {
         TriggerNode* node = *i;
+        if (!node)
+            continue;
+
         Trigger* trigger = node->getTrigger();
         if (!trigger)
         {
