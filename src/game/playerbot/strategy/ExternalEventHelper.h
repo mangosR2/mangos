@@ -40,7 +40,7 @@ namespace ai
 
         void HandlePacket(map<uint16, string> &handlers, const WorldPacket &packet)
         {
-            uint8 opcode = packet.GetOpcode();
+            uint16 opcode = packet.GetOpcode();
             string name = handlers[opcode];
             if (name.empty())
                 return;

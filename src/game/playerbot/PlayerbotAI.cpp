@@ -218,8 +218,11 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
             return;
     }
 
+    string filtered = chatFilter.Filter(trim((string&)text));
+    if (filtered.empty())
+        return;
 
-    if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && !bot->GetGroup() && text.find("who") == string::npos)
+    if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && !bot->GetGroup() && filtered != "who")
     {
         if (type == CHAT_MSG_WHISPER)
         {
@@ -230,15 +233,11 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
         return;
     }
 
-    if (type == CHAT_MSG_RAID_WARNING && text.find(bot->GetName()) != string::npos && text.find("award") == string::npos)
+    if (type == CHAT_MSG_RAID_WARNING && filtered.find(bot->GetName()) != string::npos && filtered.find("award") == string::npos)
     {
         chatCommands.push("warning");
         return;
     }
-
-	string filtered = chatFilter.Filter(trim((string&)text));
-	if (filtered.empty())
-	    return;
 
     if (filtered.size() > 2 && filtered.substr(0, 2) == "d " || filtered.size() > 3 && filtered.substr(0, 3) == "do ")
     {
