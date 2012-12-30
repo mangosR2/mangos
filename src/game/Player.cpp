@@ -34,6 +34,7 @@
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
 #include "InstanceData.h"
+#include "GameEventMgr.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
