@@ -38,9 +38,13 @@ namespace ai
             creators["ready check"] = &WorldPacketTriggerContext::ready_check;
             creators["ready check finished"] = &WorldPacketTriggerContext::ready_check_finished;
             creators["uninvite"] = &WorldPacketTriggerContext::uninvite;
+            creators["lfg update"] = &WorldPacketTriggerContext::lfg_update;
+            creators["lfg proposal"] = &WorldPacketTriggerContext::lfg_proposal;
         }
 
     private:
+        static Trigger* lfg_proposal(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "lfg proposal"); }
+        static Trigger* lfg_update(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "lfg update"); }
         static Trigger* uninvite(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "uninvite"); }
         static Trigger* ready_check_finished(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "ready check finished"); }
         static Trigger* ready_check(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "ready check"); }

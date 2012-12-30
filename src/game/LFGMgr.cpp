@@ -613,13 +613,6 @@ LFGJoinResult LFGMgr::GetPlayerJoinResult(Player* pPlayer)
 
     LFGDungeonSet const* dungeons = pPlayer->GetLFGPlayerState()->GetDungeons();
 
-
-    if (pPlayer->GetPlayerbotMgr() || pPlayer->GetPlayerbotAI())
-    {
-        DEBUG_LOG("LFGMgr::GetPlayerJoinResult: %u trying to join to dungeon finder, but has playerbots (or playerbot itself). Aborting.", pPlayer->GetObjectGuid().GetCounter());
-        return ERR_LFG_NO_SLOTS_PLAYER;
-    }
-
     // TODO - Check if all dungeons are valid
 
     // must be last check - ignored in party

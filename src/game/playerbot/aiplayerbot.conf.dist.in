@@ -74,6 +74,9 @@ AiPlayerbot.RandomBotQuestItems = "6948,5175,5176,5177,5178"
 # Spells every random bot will learn on randomize (54197 - cold weather flying)
 AiPlayerbot.RandomBotSpellIds = 54197
 
+# Enable LFG for random bots
+AiPlayerbot.RandomBotJoinLfg = 0
+
 # Intervals
 AiPlayerbot.RandomBotUpdateInterval = 60
 AiPlayerbot.RandomBotCountChangeInterval = 5 * 24 * 3600

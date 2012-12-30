@@ -20,6 +20,7 @@
 #include "TellCastFailedAction.h"
 #include "AcceptDuelAction.h"
 #include "ReadyCheckAction.h"
+#include "LfgUpdateAction.h"
 
 namespace ai
 {
@@ -55,9 +56,13 @@ namespace ai
             creators["ready check"] = &WorldPacketActionContext::ready_check;
             creators["ready check finished"] = &WorldPacketActionContext::ready_check_finished;
             creators["uninvite"] = &WorldPacketActionContext::uninvite;
+            creators["lfg update"] = &WorldPacketActionContext::lfg_update;
+            creators["lfg proposal"] = &WorldPacketActionContext::lfg_proposal;
         }
 
     private:
+        static Action* lfg_proposal(PlayerbotAI* ai) { return new LfgProposalAction(ai); }
+        static Action* lfg_update(PlayerbotAI* ai) { return new LfgUpdateAction(ai); }
         static Action* uninvite(PlayerbotAI* ai) { return new UninviteAction(ai); }
         static Action* ready_check_finished(PlayerbotAI* ai) { return new FinishReadyCheckAction(ai); }
         static Action* ready_check(PlayerbotAI* ai) { return new ReadyCheckAction(ai); }

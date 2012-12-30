@@ -535,6 +535,7 @@
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\HelpAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\InventoryAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\InventoryChangeFailureAction.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\actions\LfgUpdateAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\ListQuestsActions.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\ListSpellsAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\LogLevelAction.cpp" />
@@ -990,6 +991,7 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\InventoryChangeFailureAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\InviteToGroupAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\LeaveGroupAction.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\actions\LfgUpdateAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\ListQuestsActions.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\ListSpellsAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\LogLevelAction.h" />

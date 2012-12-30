@@ -32,6 +32,8 @@ class WorldPacketHandlerTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( taxi_done );
       CPPUNIT_TEST( ready_check );
       CPPUNIT_TEST( uninvite );
+      CPPUNIT_TEST( lfg_update );
+      CPPUNIT_TEST( lfg_proposal );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -215,6 +217,22 @@ protected:
         tick();
 
         assertActions(">S:uninvite");
+    }
+
+    void lfg_update()
+    {
+        trigger("lfg update");
+        tick();
+
+        assertActions(">S:lfg update");
+    }
+
+    void lfg_proposal()
+    {
+        trigger("lfg proposal");
+        tick();
+
+        assertActions(">S:lfg proposal");
     }
 
 };

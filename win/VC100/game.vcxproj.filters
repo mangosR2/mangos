@@ -436,6 +436,7 @@
     <ClCompile Include="..\..\src\game\playerbot\strategy\priest\HolyPriestStrategy.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\WhoAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\PlayerbotSecurity.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\actions\LfgUpdateAction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\ahbot\AhBot.h" />
@@ -943,6 +944,7 @@
     <ClInclude Include="..\..\src\game\WorldLocation.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\WhoAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotSecurity.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\actions\LfgUpdateAction.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\game\Player.h.orig" />

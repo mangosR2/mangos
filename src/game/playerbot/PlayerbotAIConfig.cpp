@@ -90,6 +90,7 @@ bool PlayerbotAIConfig::Initialize()
     minRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MinRandomBotsPerInterval", 1);
     maxRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MaxRandomBotsPerInterval", 5);
     randomBotEnemyPercent = config.GetIntDefault("AiPlayerbot.RandomBotEnemyPercent", 30);
+    randomBotJoinLfg = config.GetBoolDefault("AiPlayerbot.RandomBotJoinLfg", false);
 
     CreateRandomBots();
     sLog.outString("AI Playerbot configuration loaded");
