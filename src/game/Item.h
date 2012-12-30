@@ -411,6 +411,8 @@ class MANGOS_DLL_SPEC Item : public Object
         bool LoadSoulboundTradeableDataFromDB(Player* owner);
         bool CheckSoulboundTradeExpire(Player* owner);
     private:
+        void GetDataValuesStr(std::ostringstream& ss);
+
         bool IsRefundOrSoulboundTradeExpired(Player* owner) const;
 
         void DeleteLootFromDB();

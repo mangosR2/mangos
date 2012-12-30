@@ -2541,7 +2541,14 @@ struct VehicleSeatEntry
                                                             // 55       m_cameraEnteringZoom"
                                                             // 56       m_cameraSeatZoomMin
                                                             // 57       m_cameraSeatZoomMax
-    bool IsUsable() const { return ((m_flags & SEAT_FLAG_USABLE) || (m_flags & SEAT_FLAG_CAN_CONTROL)); }
+    bool IsUsable() const { return
+        (m_flags & SEAT_FLAG_USABLE) ||
+        (m_flags & SEAT_FLAG_CAN_CONTROL) ||
+        (m_flags & SEAT_FLAG_UNCONTROLLED) ||
+        (m_flagsB & VEHICLE_SEAT_FLAG_B_USABLE_FORCED) ||
+        (m_flagsB & VEHICLE_SEAT_FLAG_B_USABLE_FORCED_2) ||
+        (m_flagsB & VEHICLE_SEAT_FLAG_B_USABLE_FORCED_3) ||
+        (m_flagsB & VEHICLE_SEAT_FLAG_B_USABLE_FORCED_4); }
 };
 
 struct WMOAreaTableEntry

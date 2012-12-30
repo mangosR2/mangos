@@ -1489,7 +1489,7 @@ void GameObject::Use(Unit* user)
                     return;
 
                 // accept only use by player from same group as owner, excluding owner itself (unique use already added in spell effect)
-                if (player == (Player*)owner || (info->summoningRitual.castersGrouped && !player->IsInSameRaidWith(((Player*)owner))))
+                if ((player == (Player*)owner && !player->isGameMaster()) || (info->summoningRitual.castersGrouped && !player->IsInSameRaidWith(((Player*)owner))))
                     return;
 
                 // expect owner to already be channeling, so if not...
@@ -1526,7 +1526,7 @@ void GameObject::Use(Unit* user)
             }
 
             // full amount unique participants including original summoner, need more
-            if (GetUniqueUseCount() < info->summoningRitual.reqParticipants)
+            if (GetUniqueUseCount() < info->summoningRitual.reqParticipants && !player->isGameMaster())
                 return;
 
             // owner is first user for non-wild GO objects, if it offline value already set to current user

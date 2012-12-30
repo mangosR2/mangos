@@ -28,8 +28,8 @@
 #include "movement/MoveSpline.h"
 #include "SQLStorages.h"
 
-VehicleKit::VehicleKit(Unit* base, VehicleEntry const* entry) 
-    :  TransportBase(base), m_vehicleEntry(entry), m_uiNumFreeSeats(0), m_isInitialized(false)
+VehicleKit::VehicleKit(Unit* base, VehicleEntry const* entry)
+    : TransportBase(base), m_vehicleEntry(entry), m_uiNumFreeSeats(0), m_isInitialized(false)
 {
     for (uint32 i = 0; i < MAX_VEHICLE_SEAT; ++i)
     {
@@ -39,7 +39,7 @@ VehicleKit::VehicleKit(Unit* base, VehicleEntry const* entry)
             continue;
 
 
-        if (VehicleSeatEntry const *seatInfo = sVehicleSeatStore.LookupEntry(seatId))
+        if (VehicleSeatEntry const* seatInfo = sVehicleSeatStore.LookupEntry(seatId))
         {
             m_Seats.insert(std::make_pair(i, VehicleSeat(seatInfo)));
 
@@ -234,15 +234,17 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
 
     if (seat->second.IsProtectPassenger())
     {
+        // make passenger attackable in some vehicles and allow him to cast when sitting on vehicle
         switch (GetBase()->GetEntry())
         {
-            case 33651:                                     // VX 001
-            case 33432:                                     // Leviathan MX
-            case 33118:                                     // Ignis (Ulduar)
-            case 30234:                                     // Nexus Lord's Hover Disk (Eye of Eternity, Malygos Encounter)
-            case 30248:                                     // Scion's of Eternity Hover Disk (Eye of Eternity, Malygos Encounter)
+            case 30234:        // Nexus Lord's Hover Disk (Eye ofEternity, Malygos Encounter)
+            case 30248:        // Scion's of Eternity Hover Disk (Eye ofEternity, Malygos Encounter)
+            case 33118:        // Ignis (Ulduar)
+            case 33432:        // Leviathan MX
+            case 33651:        // VX 001
                 break;
-            case 28817:
+//            case 28817:        // Mine Car (quest Massacre At Light's Point)
+//            case 28864:        // Scourge Gryphon (quest Massacre At Light's Point)
             default:
                 passenger->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 break;
@@ -263,21 +265,22 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         GetBase()->SetCharmerGuid(passenger->GetObjectGuid());
         GetBase()->addUnitState(UNIT_STAT_CONTROLLED);
 
-        passenger->SetCharm(GetBase());
-
-        if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED))
+        if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) || ((Creature*)GetBase())->CanFly())
         {
-            WorldPacket data;
-            data.Initialize(SMSG_MOVE_SET_CAN_FLY, 12);
+            WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 8 + 4);
             data << GetBase()->GetPackGUID();
-            data << (uint32)(0);
-            GetBase()->SendMessageToSet(&data,false);
+            data << uint32(0);
+            GetBase()->SendMessageToSet(&data, false);
         }
 
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
             GetBase()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
+            if (GetBase()->GetMap() && !GetBase()->GetMap()->IsBattleGround())
+                GetBase()->setFaction(passenger->getFaction());
+
+            passenger->SetCharm(GetBase());
             if (CharmInfo* charmInfo = GetBase()->InitCharmInfo(GetBase()))
             {
                 charmInfo->SetState(CHARM_STATE_ACTION,ACTIONS_DISABLE);
@@ -290,13 +293,15 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
             player->VehicleSpellInitialize();
         }
 
-        if(!(((Creature*)GetBase())->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_KEEP_AI))
+        // Allow to keep AI of controlled vehicle with CREATURE_FLAG_EXTRA_KEEP_AI extra-flag
+        if (!(((Creature*)GetBase())->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_KEEP_AI))
             ((Creature*)GetBase())->AIM_Initialize();
 
         if (GetBase()->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         {
             GetBase()->SetRoot(true);
         }
+        // Set owner's speedrate to vehicle at board.
         else if (passenger->IsWalking() && !GetBase()->IsWalking())
             ((Creature*)GetBase())->SetWalk(true, true);
         else if (!passenger->IsWalking() && GetBase()->IsWalking())
@@ -305,10 +310,7 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
     else if ((seatInfo->m_flags & SEAT_FLAG_FREE_ACTION) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
     {
         if (passenger->GetTypeId() == TYPEID_PLAYER)
-        {
-            Player* player = (Player*)passenger;
-            player->SetClientControl(GetBase(), 0);
-        }
+            ((Player*)passenger)->SetClientControl(GetBase(), 0);
     }
 
     // need correct, position not normalized currently
@@ -326,21 +328,30 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         if (((Creature*)GetBase())->AI())
             ((Creature*)GetBase())->AI()->PassengerBoarded(passenger, seat->first, true);
     }
+
     if (passenger->GetTypeId() == TYPEID_UNIT)
     {
         if (((Creature*)passenger)->AI())
+        {
+            ((Creature*)passenger)->AI()->SetCombatMovement(false);
             ((Creature*)passenger)->AI()->EnteredVehicle(GetBase(), seat->first, true);
+        }
+
+        // Not entirely sure how this must be handled in relation to CONTROL
+        // But in any way this at least would require some changes in the movement system most likely
+        passenger->GetMotionMaster()->Clear(false, true);
+        passenger->GetMotionMaster()->MoveIdle();
     }
 
     if (b_dstSet && (seatInfo->m_flagsB & VEHICLE_SEAT_FLAG_B_EJECTABLE_FORCED))
     {
         uint32 delay = seatInfo->m_exitMaxDuration * IN_MILLISECONDS;
-        GetBase()->AddEvent(new PassengerEjectEvent(seatId,*GetBase()), delay);
-        DEBUG_LOG("Vehicle::AddPassenger eject event for %s added, delay %u",passenger->GetObjectGuid().GetString().c_str(), delay);
+        GetBase()->AddEvent(new PassengerEjectEvent(seatId, *GetBase()), delay);
+        DEBUG_LOG("Vehicle::AddPassenger eject event for %s added, delay %u", passenger->GetGuidStr().c_str(), delay);
     }
 
     DEBUG_LOG("VehicleKit::AddPassenger passenger %s boarded on %s, transport offset %f %f %f %f (parent - %s)",
-            passenger->GetObjectGuid().GetString().c_str(),
+            passenger->GetGuidStr().c_str(),
             passenger->m_movementInfo.GetTransportGuid().GetString().c_str(),
             passenger->m_movementInfo.GetTransportPos()->x,
             passenger->m_movementInfo.GetTransportPos()->y,
@@ -351,19 +362,22 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
     return true;
 }
 
-void VehicleKit::RemovePassenger(Unit* passenger, bool dismount)
+void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
 {
     SeatMap::iterator seat;
-
     for (seat = m_Seats.begin(); seat != m_Seats.end(); ++seat)
+    {
         if (seat->second.passenger == passenger->GetObjectGuid())
             break;
+    }
 
     if (seat == m_Seats.end())
         return;
 
     seat->second.passenger.Clear();
+
     passenger->clearUnitState(UNIT_STAT_ON_VEHICLE);
+    passenger->ClearOnVehicle();
 
     UnBoardPassenger(passenger);                            // Use TransportBase to remove the passenger from storage list
 
@@ -371,27 +385,30 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount)
     passenger->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
 
     if (seat->second.IsProtectPassenger())
+    {
         if (passenger->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE))
             passenger->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+    }
 
     if (seat->second.seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL)
     {
-
         passenger->SetCharm(NULL);
         passenger->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
 
-        GetBase()->SetCharmerGuid(ObjectGuid());
         GetBase()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
         GetBase()->clearUnitState(UNIT_STAT_CONTROLLED);
 
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
+            GetBase()->SetCharmerGuid(ObjectGuid());
+
             Player* player = (Player*)passenger;
             player->SetClientControl(GetBase(), 0);
             player->RemovePetActionBar();
         }
 
-        if(!(((Creature*)GetBase())->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_KEEP_AI))
+        // Allow to keep AI of controlled vehicle with CREATURE_FLAG_EXTRA_KEEP_AI extra-flag
+        if (!(((Creature*)GetBase())->GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_KEEP_AI))
             ((Creature*)GetBase())->AIM_Initialize();
     }
 
@@ -408,15 +425,16 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount)
         if ((GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)) &&
             (!player->HasAuraType(SPELL_AURA_FLY) && !player->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)))
         {
-            WorldPacket data;
-            data.Initialize(SMSG_MOVE_UNSET_CAN_FLY, 12);
-            data << player->GetPackGUID();
-            data << (uint32)(0);
-            GetBase()->SendMessageToSet(&data,false);
+            WorldPacket dataCF(SMSG_MOVE_UNSET_CAN_FLY, 8 + 4);
+            dataCF << player->GetPackGUID();
+            dataCF << uint32(0);
+            GetBase()->SendMessageToSet(&dataCF, false);
+
             player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_FLYING);
             player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_CAN_FLY);
         }
     }
+
     UpdateFreeSeatCount();
 
     if (GetBase()->GetTypeId() == TYPEID_UNIT)
@@ -424,17 +442,29 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount)
         if (((Creature*)GetBase())->AI())
             ((Creature*)GetBase())->AI()->PassengerBoarded(passenger, seat->first, false);
     }
+
     if (passenger->GetTypeId() == TYPEID_UNIT)
     {
         if (((Creature*)passenger)->AI())
+        {
             ((Creature*)passenger)->AI()->EnteredVehicle(GetBase(), seat->first, false);
+            ((Creature*)passenger)->AI()->SetCombatMovement(true, true);
+        }
     }
+
     if (dismount && seat->second.b_dismount)
     {
         Dismount(passenger, seat->second.seatInfo);
         // only for flyable vehicles
         if (GetBase()->m_movementInfo.HasMovementFlag(MOVEFLAG_FLYING))
             GetBase()->CastSpell(passenger, 45472, true);    // Parachute
+    }
+
+    if (passenger->GetTypeId() == TYPEID_UNIT)
+    {
+        // Reinitialize movement
+        if (!passenger->getVictim())
+            passenger->GetMotionMaster()->Initialize();
     }
 }
 
@@ -459,30 +489,49 @@ void VehicleKit::InstallAccessory(VehicleAccessory const* accessory)
         // already installed
         if (passenger->GetEntry() == accessory->passengerEntry)
             return;
+
         GetBase()->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE, passenger->GetObjectGuid());
     }
 
     if (Creature* summoned = GetBase()->SummonCreature(accessory->passengerEntry,
-        GetBase()->GetPositionX() + accessory->m_offsetX, GetBase()->GetPositionY() + accessory->m_offsetY, GetBase()->GetPositionZ() + accessory->m_offsetZ, GetBase()->GetOrientation() + accessory->m_offsetX,
+        GetBase()->GetPositionX() + accessory->m_offsetX, GetBase()->GetPositionY() + accessory->m_offsetY, GetBase()->GetPositionZ() + accessory->m_offsetZ, GetBase()->GetOrientation() + accessory->m_offsetO,
         TEMPSUMMON_DEAD_DESPAWN, 0))
     {
         summoned->SetCreatorGuid(ObjectGuid());
         summoned->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
+
+        bool hideAccessory = false;
+
+        SeatMap::const_iterator seat = m_Seats.find(accessory->seatId);
+        if (seat != m_Seats.end())
+        {
+            if (seat->second.seatInfo->m_flags & SEAT_FLAG_HIDE_PASSENGER)  // coommon case
+                hideAccessory = true;
+        }
+
+        if (!hideAccessory && (accessory->m_flags & ACCESSORY_FLAG_HIDE))
+            hideAccessory = true;
+
+        if (hideAccessory)
+            summoned->SetDisplayId(summoned->GetCreatureInfo()->ModelId[0]);
+                                                                     // ^ very importantly! in YTDB this is "hidden" model
+
+        SetDestination(accessory->m_offsetX, accessory->m_offsetY, accessory->m_offsetZ, accessory->m_offsetO, 0.0f, 0.0f);
         int32 seatId = accessory->seatId + 1;
-        SetDestination(accessory->m_offsetX,accessory->m_offsetY,accessory->m_offsetZ,accessory->m_offsetO,0.0f,0.0f);
         summoned->CastCustomSpell(GetBase(), SPELL_RIDE_VEHICLE_HARDCODED, &seatId, &seatId, NULL, true);
 
         SetDestination();
+
         if (summoned->GetVehicle())
-            DEBUG_LOG("Vehicle::InstallAccessory %s accessory added, seat %i (real %i) of %s",summoned->GetObjectGuid().GetString().c_str(), accessory->seatId, GetSeatId(summoned), GetBase()->GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Vehicle::InstallAccessory %s accessory added, seat %i (real %i) of %s", summoned->GetGuidStr().c_str(), accessory->seatId, GetSeatId(summoned), GetBase()->GetGuidStr().c_str());
         else
         {
-            sLog.outError("Vehicle::InstallAccessory cannot install %s to seat %u of %s",summoned->GetObjectGuid().GetString().c_str(), accessory->seatId, GetBase()->GetObjectGuid().GetString().c_str());
+            sLog.outError("Vehicle::InstallAccessory cannot install %s to seat %u of %s", summoned->GetGuidStr().c_str(), accessory->seatId, GetBase()->GetGuidStr().c_str());
             summoned->ForcedDespawn();
         }
     }
     else
-        sLog.outError("Vehicle::InstallAccessory cannot summon creature id %u (seat %u of %s)",accessory->passengerEntry, accessory->seatId,GetBase()->GetObjectGuid().GetString().c_str());
+        sLog.outError("Vehicle::InstallAccessory cannot summon creature id %u (seat %u of %s)", accessory->passengerEntry, accessory->seatId, GetBase()->GetGuidStr().c_str());
 }
 
 void VehicleKit::InstallAccessory(int8 seatID)
@@ -496,7 +545,7 @@ void VehicleKit::InstallAccessory(int8 seatID)
             return;
         }
     }
-    sLog.outError("Vehicle::InstallAccessory can not find accessory for seat %i of %s", seatID, GetBase()->GetObjectGuid().GetString().c_str());
+    sLog.outError("Vehicle::InstallAccessory can not find accessory for seat %i of %s", seatID, GetBase()->GetGuidStr().c_str());
 }
 
 void VehicleKit::UpdateFreeSeatCount()
@@ -525,9 +574,11 @@ VehicleSeatEntry const* VehicleKit::GetSeatInfo(Unit* passenger)
     for (SeatMap::const_iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
         ObjectGuid guid = itr->second.passenger;
-        if (Unit* _passenger = GetBase()->GetMap()->GetUnit(guid))
-            if (_passenger == passenger)
+        if (Unit* pPassenger = GetBase()->GetMap()->GetUnit(guid))
+        {
+            if (pPassenger == passenger)
                 return itr->second.seatInfo;
+        }
     }
     return NULL;
 }
@@ -536,8 +587,8 @@ int8 VehicleKit::GetSeatId(Unit* passenger)
 {
     for (SeatMap::iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
-        if (Unit* _passenger = GetBase()->GetMap()->GetUnit(itr->second.passenger))
-            if (_passenger == passenger)
+        if (Unit* pPassenger = GetBase()->GetMap()->GetUnit(itr->second.passenger))
+            if (pPassenger == passenger)
                 return itr->first;
     }
     return -1;
@@ -551,20 +602,21 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
     float ox, oy, oz/*, oo*/;
 
     Unit* base = GetBase()->GetVehicle() ? GetBase()->GetVehicle()->GetBase() : GetBase();
+
     base->GetPosition(ox, oy, oz);
     // oo = base->GetOrientation();
 
     if (b_dstSet)
     {
         // parabolic traectory (catapults, explode, other effects). mostly set destination in DummyEffect.
-        // destination Z not checked in this case! only limited on 8.0 delta. requred full correct set in spelleffects. 
+        // destination Z not checked in this case! only limited on 8.0 delta. requred full correct set in spelleffects.
         float speed = ((m_dst_speed > M_NULL_F) ? m_dst_speed : ((seatInfo && seatInfo->m_exitSpeed > M_NULL_F) ? seatInfo->m_exitSpeed : BASE_CHARGE_SPEED));
         float verticalSpeed = speed * sin(m_dst_elevation);
         float horisontalSpeed = speed * cos(m_dst_elevation);
         float moveTimeHalf =  verticalSpeed / ((seatInfo && seatInfo->m_exitGravity > 0.0f) ? seatInfo->m_exitGravity : Movement::gravity);
-        float max_height = - Movement::computeFallElevation(moveTimeHalf,false,-verticalSpeed);
+        float max_height = - Movement::computeFallElevation(moveTimeHalf, false, -verticalSpeed);
 
-        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x,m_dst_y,m_dst_z,passenger->GetOrientation(), horisontalSpeed, max_height, true);
+        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z, passenger->GetOrientation(), horisontalSpeed, max_height, true);
     }
     else if (seatInfo)
     {
@@ -575,7 +627,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
             horisontalSpeed = BASE_CHARGE_SPEED;
 
         // may be under water
-        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F/2.0f,3.0f*M_PI_F/2.0f), passenger);
+        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F / 2.0f, 3.0f * M_PI_F / 2.0f), passenger);
         if (m_dst_z < oz)
             m_dst_z = oz;
 
@@ -592,11 +644,11 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), BASE_CHARGE_SPEED, 0.0f);
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"VehicleKit::Dismount %s from %s (%f %f %f), destination point is %f %f %f",
-        passenger->GetObjectGuid().GetString().c_str(),
-        base->GetObjectGuid().GetString().c_str(),
-        ox,oy,oz,
-        m_dst_x,m_dst_y,m_dst_z);
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "VehicleKit::Dismount %s from %s (%f %f %f), destination point is %f %f %f",
+        passenger->GetGuidStr().c_str(),
+        base->GetGuidStr().c_str(),
+        ox, oy, oz,
+        m_dst_x, m_dst_y, m_dst_z);
     SetDestination();
 }
 
@@ -604,11 +656,11 @@ void VehicleKit::SetDestination(float x, float y, float z, float o, float speed,
 {
     m_dst_x = x;
     m_dst_y = y;
-    m_dst_z  = z;
-    m_dst_o  = o;
+    m_dst_z = z;
+    m_dst_o = o;
 
-    m_dst_speed  = speed;
-    m_dst_elevation  = elevation;
+    m_dst_speed = speed;
+    m_dst_elevation = elevation;
 
     if (fabs(m_dst_x) > 0.001 ||
         fabs(m_dst_y) > 0.001 ||
@@ -623,7 +675,7 @@ bool VehicleSeat::IsProtectPassenger() const
 {
     if (seatInfo &&
         ((seatInfo->m_flags & SEAT_FLAG_UNATTACKABLE) ||
-        (seatInfo->m_flags &  SEAT_FLAG_HIDE_PASSENGER) ||
+        (seatInfo->m_flags & SEAT_FLAG_HIDE_PASSENGER) ||
         (seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL)) &&
         !(seatInfo->m_flags &  SEAT_FLAG_FREE_ACTION))
         return true;
@@ -645,6 +697,7 @@ Aura* VehicleKit::GetControlAura(Unit* passenger)
         if (!itr->IsEmpty() && (*itr)->GetCasterGuid() == casterGuid)
             return (*itr)();
     }
+
     return NULL;
 }
 
@@ -654,7 +707,6 @@ void VehicleKit::DisableDismount(Unit* passenger)
         return;
 
     int8 seatId = GetSeatId(passenger);
-
     if (seatId == -1)
         return;
 

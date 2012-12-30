@@ -1468,7 +1468,7 @@ void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_gu
     }
     else                                                    // first player joined
     {
-        group = new Group();
+        group = new Group(GROUPTYPE_BG);
 
         // Need first set BG type for group, even his be wrong type
         group->SetBattlegroundGroup(this);
