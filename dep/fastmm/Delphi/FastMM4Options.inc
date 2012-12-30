@@ -13,7 +13,7 @@ Set the default options for FastMM here.
  smallest block sizes will be 8-byte aligned instead which may result in a
  reduction in memory usage. Medium and large blocks are always 16-byte aligned
  irrespective of this setting.}
-{.$define Align16Bytes}
+{$define Align16Bytes}
 
 {Enable to use faster fixed-size move routines when upsizing small blocks.
  These routines are much faster than the Borland RTL move procedure since they
@@ -60,7 +60,7 @@ Set the default options for FastMM here.
  not properly set the IsMultiThread variable. Also set this option if you are
  going to share this memory manager between a single threaded application and a
  multi-threaded DLL.}
-{.$define AssumeMultiThreaded}
+{$define AssumeMultiThreaded}
 
 {Enable this option to not call Sleep when a thread contention occurs. This
  option will improve performance if the ratio of the number of active threads
@@ -69,7 +69,7 @@ Set the default options for FastMM here.
  timeslice when a thread contention occurs, unless UseSwitchToThread is
  also defined (see below) in which case it will call SwitchToThread instead of
  Sleep.}
-{x$define NeverSleepOnThreadContention}
+{$define NeverSleepOnThreadContention}
 
   {Set this option to call SwitchToThread instead of sitting in a "busy waiting"
    loop when a thread contention occurs. This is used in conjunction with the
@@ -77,7 +77,7 @@ Set the default options for FastMM here.
    NeverSleepOnThreadContention is also defined. This option may improve
    performance with many CPU cores and/or threads of different priorities. Note
    that the SwitchToThread API call is only available on Windows 2000 and later.
-  {.$define UseSwitchToThread}
+  {$define UseSwitchToThread}
 
 {-----------------------------Debugging Options-------------------------------}
 

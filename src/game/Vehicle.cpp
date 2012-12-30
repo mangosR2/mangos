@@ -277,10 +277,6 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         {
             GetBase()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
 
-            if (GetBase()->GetMap() && !GetBase()->GetMap()->IsBattleGround())
-                GetBase()->setFaction(passenger->getFaction());
-
-            passenger->SetCharm(GetBase());
             if (CharmInfo* charmInfo = GetBase()->InitCharmInfo(GetBase()))
             {
                 charmInfo->SetState(CHARM_STATE_ACTION,ACTIONS_DISABLE);
@@ -377,7 +373,6 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
     seat->second.passenger.Clear();
 
     passenger->clearUnitState(UNIT_STAT_ON_VEHICLE);
-    passenger->ClearOnVehicle();
 
     UnBoardPassenger(passenger);                            // Use TransportBase to remove the passenger from storage list
 
@@ -460,12 +455,6 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
             GetBase()->CastSpell(passenger, 45472, true);    // Parachute
     }
 
-    if (passenger->GetTypeId() == TYPEID_UNIT)
-    {
-        // Reinitialize movement
-        if (!passenger->getVictim())
-            passenger->GetMotionMaster()->Initialize();
-    }
 }
 
 void VehicleKit::Reset()
