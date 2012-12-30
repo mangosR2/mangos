@@ -634,13 +634,18 @@ enum MovementFlags
     MOVEFLAG_SWIMMING           = 0x00200000,               // appears with fly flag also
     MOVEFLAG_ASCENDING          = 0x00400000,               // swim up also
     MOVEFLAG_DESCENDING         = 0x00800000,               // swim down also
-    MOVEFLAG_CAN_FLY            = 0x01000000,               // can fly in 3.3?
-    MOVEFLAG_FLYING             = 0x02000000,               // Actual flying mode
+    MOVEFLAG_CAN_FLY            = 0x01000000,               // Appears when unit can fly AND also walk
+    MOVEFLAG_FLYING             = 0x02000000,               // unit is actually flying. pretty sure this is only used for players. creatures use disable_gravity
     MOVEFLAG_SPLINE_ELEVATION   = 0x04000000,               // used for flight paths
     MOVEFLAG_SPLINE_ENABLED     = 0x08000000,               // used for flight paths
     MOVEFLAG_WATERWALKING       = 0x10000000,               // prevent unit from falling through water
     MOVEFLAG_SAFE_FALL          = 0x20000000,               // active rogue safe fall spell (passive)
-    MOVEFLAG_HOVER              = 0x40000000
+    MOVEFLAG_HOVER              = 0x40000000,               // hover, cannot jump
+
+    MOVEFLAG_MASK_MOVING =
+        MOVEFLAG_FORWARD | MOVEFLAG_BACKWARD | MOVEFLAG_STRAFE_LEFT | MOVEFLAG_STRAFE_RIGHT |
+        MOVEFLAG_PITCH_UP | MOVEFLAG_PITCH_DOWN | MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR | MOVEFLAG_ASCENDING | MOVEFLAG_DESCENDING |
+        MOVEFLAG_SPLINE_ELEVATION,
 };
 
 // flags that use in movement check for example at spell casting
@@ -784,6 +789,7 @@ class MovementInfo
         uint32 GetFallTime() const { return fallTime; }
         void ChangeOrientation(float o) { pos.o = o; }
         void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
+        void ChangeTransportPosition(float x, float y, float z, float o) { t_pos.x = x; t_pos.y = y; t_pos.z = z; t_pos.o = o; }
         void UpdateTime(uint32 _time) { time = _time; }
 
         struct JumpInfo

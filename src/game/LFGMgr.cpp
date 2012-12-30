@@ -1374,7 +1374,7 @@ void LFGMgr::UpdateProposal(uint32 ID, ObjectGuid guid, bool accept)
         leader->GetSession()->SendLfgUpdatePlayer(LFG_UPDATETYPE_GROUP_FOUND, leader->GetLFGPlayerState()->GetType());
         leader->GetLFGPlayerState()->AddRole(ROLE_LEADER);
 
-        pGroup = new Group();
+        pGroup = new Group(GROUPTYPE_LFD);
         pGroup->Create(leader->GetObjectGuid(), leader->GetName());
         pGroup->ConvertToLFG(pProposal->GetType());
         sObjectMgr.AddGroup(pGroup);

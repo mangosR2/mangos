@@ -16660,24 +16660,32 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
             removeItem = true;
         }
         // "Conjured items disappear if you are logged out for more than 15 minutes"
-        else if (timediff > 15 * MINUTE && (proto->Flags & ITEM_FLAG_CONJURED))
+        else if ((proto->Flags & ITEM_FLAG_CONJURED) && timediff > 15 * MINUTE)
         {
             DEBUG_LOG("Player::_LoadInventory: %s has conjured item (GUID: %u, Entry: %u) with expired lifetime (15 minutes), deleted.", GetGuidStr().c_str(), itemLowGuid, itemId);
             removeItem = true;
         }
-        else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
+        // Delete items from not active holiday
+        else if (proto->HolidayId && !IsHolidayActive(HolidayIds(proto->HolidayId)))
         {
-            if (!item->LoadRefundDataFromDB(this))
-                DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with refundable flags, but without data in item_refund_instance, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
-
-        }
-        else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
-        {
-            if (!item->LoadSoulboundTradeableDataFromDB(this))
-                DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
+            DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with not active HolidayId (%u), deleted.", GetGuidStr().c_str(), itemId, itemLowGuid, proto->HolidayId);
+            removeItem = true;
         }
 
-        if (removeItem)
+        if (!removeItem)
+        {
+            if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_REFUNDABLE))
+            {
+                if (!item->LoadRefundDataFromDB(this))
+                    DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with refundable flags, but without data in item_refund_instance, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
+            }
+            else if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOP_TRADEABLE))
+            {
+                if (!item->LoadSoulboundTradeableDataFromDB(this))
+                    DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
+            }
+        }
+        else
         {
             item->DeleteFromInventoryDB();
             item->FSetState(ITEM_REMOVED);
@@ -16689,7 +16697,6 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
         uint8  slot       = fields[3].GetUInt8();
 
         bool success = true;
-        //bool arenaitem = false;
 
         // the item/bag is not in a bag
         if (!bagLowGuid)

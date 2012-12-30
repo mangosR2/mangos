@@ -34,8 +34,7 @@ struct VehicleEntry;
 
 struct VehicleSeat
 {
-    VehicleSeat(VehicleSeatEntry const *pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(ObjectGuid()), b_dismount(true) 
-    {}
+    VehicleSeat(VehicleSeatEntry const* pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(ObjectGuid()), b_dismount(true) {}
 
     VehicleSeatEntry const* seatInfo;
     ObjectGuid              passenger;
@@ -45,10 +44,12 @@ struct VehicleSeat
 
 typedef std::map<int8, VehicleSeat> SeatMap;
 
-enum AcccessoryFlags
+enum AccessoryFlags
 {
-    ACCCESSORY_FLAG_MINION = 0,
-    ACCCESSORY_FLAG_MAX,
+    ACCESSORY_FLAG_NONE   = 0x00000000,
+    ACCESSORY_FLAG_MINION = 0x00000001,
+    ACCESSORY_FLAG_HIDE   = 0x00000002,
+    ACCESSORY_FLAG_MAX
 };
 
 struct VehicleAccessory
@@ -62,7 +63,7 @@ struct VehicleAccessory
     float    m_offsetZ;
     float    m_offsetO;
 
-    void Offset(float x, float y, float z, float o = 0.0f) {m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o;};
+    void Offset(float x, float y, float z, float o = 0.0f) { m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o; }
 };
 
 class MANGOS_DLL_SPEC VehicleKit : public TransportBase
@@ -82,8 +83,8 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
         bool HasEmptySeat(int8 seatId) const;
         int8 GetNextEmptySeatWithFlag(int8 seatId, bool next = true, uint32 VehicleSeatFlag = 0) const;
         Unit* GetPassenger(int8 seatId) const;
-        bool AddPassenger(Unit *passenger, int8 seatId = -1);
-        void RemovePassenger(Unit *passenger, bool dismount = false);
+        bool AddPassenger(Unit* passenger, int8 seatId = -1);
+        void RemovePassenger(Unit* passenger, bool dismount = false);
         void RemoveAllPassengers();
         VehicleSeatEntry const* GetSeatInfo(Unit* passenger);
         int8 GetSeatId(Unit* passenger);

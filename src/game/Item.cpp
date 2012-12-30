@@ -297,6 +297,16 @@ bool Item::Create(uint32 guidlow, uint32 itemId, Player const* owner)
     return true;
 }
 
+void Item::GetDataValuesStr(std::ostringstream& ss)
+{
+    if (!m_valuesCount)
+        return;
+
+    ss << GetUInt32Value(0);
+    for (uint16 i = 1; i < m_valuesCount; ++i)
+        ss << ' ' << GetUInt32Value(i);
+}
+
 void Item::UpdateDuration(Player* owner, uint32 diff)
 {
     if (!GetUInt32Value(ITEM_FIELD_DURATION))
@@ -328,8 +338,7 @@ void Item::SaveToDB()
             DeleteFromDB(guid);
 
             std::ostringstream ss;
-            for (uint16 i = 0; i < m_valuesCount; ++i)
-                ss << GetUInt32Value(i) << " ";
+            GetDataValuesStr(ss);
 
             static SqlStatementID insItem;
             SqlStatement stmt = CharacterDatabase.CreateStatement(insItem, "INSERT INTO item_instance (guid, owner_guid, data, text) VALUES (?, ?, ?, ?)");
@@ -340,8 +349,7 @@ void Item::SaveToDB()
         case ITEM_CHANGED:
         {
             std::ostringstream ss;
-            for (uint16 i = 0; i < m_valuesCount; ++i)
-                ss << GetUInt32Value(i) << " ";
+            GetDataValuesStr(ss);
 
             static SqlStatementID updInstance;
             SqlStatement stmt = CharacterDatabase.CreateStatement(updInstance, "UPDATE item_instance SET data = ?, owner_guid = ?, text = ? WHERE guid = ?");
@@ -394,29 +402,32 @@ void Item::SaveToDB()
                 stmt.PExecute(GetGUIDLow(), owner->GetGUIDLow(), loot.gold);
             }
 
-            static SqlStatementID saveLoot;
-            SqlStatement stmt = CharacterDatabase.CreateStatement(saveLoot, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, suffix, property) VALUES (?, ?, ?, ?, ?, ?)");
-
             // save items and quest items (at load its all will added as normal, but this not important for item loot case)
-            for (size_t i = 0; i < loot.GetMaxSlotInLootFor(owner); ++i)
+            if (uint32 lootItemCount = loot.GetMaxSlotInLootFor(owner))
             {
-                QuestItem* qitem = NULL;
+                static SqlStatementID saveLoot;
+                SqlStatement stmt1 = CharacterDatabase.CreateStatement(saveLoot, "INSERT INTO item_loot (guid, owner_guid, itemid, amount, suffix, property) VALUES (?, ?, ?, ?, ?, ?)");
 
-                LootItem* item = loot.LootItemInSlot(i, owner, &qitem);
-                if (!item)
-                    continue;
+                for (uint32 i = 0; i < lootItemCount; ++i)
+                {
+                    QuestItem* qitem = NULL;
 
-                // questitems use the blocked field for other purposes
-                if (!qitem && item->is_blocked)
-                    continue;
+                    LootItem* item = loot.LootItemInSlot(i, owner, &qitem);
+                    if (!item)
+                        continue;
 
-                stmt.addUInt32(GetGUIDLow());
-                stmt.addUInt32(owner->GetGUIDLow());
-                stmt.addUInt32(item->itemid);
-                stmt.addUInt8(item->count);
-                stmt.addUInt32(item->randomSuffix);
-                stmt.addInt32(item->randomPropertyId);
-                stmt.Execute();
+                    // questitems use the blocked field for other purposes
+                    if (!qitem && item->is_blocked)
+                        continue;
+
+                    stmt1.addUInt32(GetGUIDLow());
+                    stmt1.addUInt32(owner->GetGUIDLow());
+                    stmt1.addUInt32(item->itemid);
+                    stmt1.addUInt8(item->count);
+                    stmt1.addUInt32(item->randomSuffix);
+                    stmt1.addInt32(item->randomPropertyId);
+                    stmt1.Execute();
+                }
             }
         }
     }
@@ -510,8 +521,7 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
     if (needSave)                                          // normal item changed state set not work at loading
     {
         std::ostringstream ss;
-        for (uint16 i = 0; i < m_valuesCount; ++i)
-            ss << GetUInt32Value(i) << " ";
+        GetDataValuesStr(ss);
 
         static SqlStatementID updItem;
         SqlStatement stmt = CharacterDatabase.CreateStatement(updItem, "UPDATE item_instance SET owner_guid = ?, data = ? WHERE guid = ?");
@@ -1413,7 +1423,7 @@ bool Item::IsEligibleForRefund() const
     {
         _Spell const& spellData = proto->Spells[i];
 
-        if (spellData.SpellCharges < 0)
+        if (spellData.SpellCharges > 0)
             return false;
     }
 
@@ -1579,8 +1589,13 @@ void Item::DeleteSoulboundTradeableFromDB()
 void Item::SaveSoulboundTradeableToDB()
 {
     std::ostringstream ss;
-    for (AllowedLooterSet::const_iterator itr = m_allowedLooterGuids.begin(); itr != m_allowedLooterGuids.end(); ++itr)
-        ss << *itr << " ";
+    if (!m_allowedLooterGuids.empty())
+    {
+        AllowedLooterSet::const_iterator itr = m_allowedLooterGuids.begin();
+        ss << *itr;
+        for (++itr; itr != m_allowedLooterGuids.end(); ++itr)
+            ss << ' ' << *itr;
+    }
 
     static SqlStatementID saveData;
     SqlStatement stmt = CharacterDatabase.CreateStatement(saveData, "REPLACE INTO item_soulbound_trade_data (itemGuid, allowedPlayers) VALUES (?, ?)");

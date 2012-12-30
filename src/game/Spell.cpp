@@ -1050,7 +1050,7 @@ void Spell::AddTarget(ObjectGuid targetGuid, SpellEffectIndex effIndex)
             // Only for speedup (may be removed later)
             if (m_caster->GetObjectGuid() == targetGuid)
                 AddUnitTarget(m_caster, effIndex);
-            else if (Unit* unit = m_caster->GetMap()->GetUnit(targetGuid))
+            else if (Unit* unit = ObjectAccessor::GetUnit(*m_caster, targetGuid))
                 AddUnitTarget(unit, effIndex);
             break;
         }
@@ -1190,7 +1190,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
     Unit* unit = (m_caster->GetObjectGuid() == target->targetGUID) ? 
                     m_caster : 
-                    m_caster->GetMap()->GetUnit(target->targetGUID);
+                    ObjectAccessor::GetUnit(*m_caster, target->targetGUID);
 
     if (!unit)
         return;
