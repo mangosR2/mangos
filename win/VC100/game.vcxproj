@@ -505,6 +505,7 @@
     <ClCompile Include="..\..\src\game\playerbot\PlayerbotAIConfig.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\PlayerbotFactory.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\PlayerbotMgr.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\PlayerbotSecurity.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\RandomPlayerbotFactory.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\RandomPlayerbotMgr.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\Action.cpp" />
@@ -948,6 +949,7 @@
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotPaladinAI.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotPriestAI.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotRogueAI.h" />
+    <ClInclude Include="..\..\src\game\playerbot\PlayerbotSecurity.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotShamanAI.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotWarlockAI.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotWarriorAI.h" />

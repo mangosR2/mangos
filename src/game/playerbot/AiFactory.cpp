@@ -48,7 +48,7 @@ AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* a
         return new RogueAiObjectContext(ai);
         break;
     }
-    return NULL;
+    return new AiObjectContext(ai);
 }
 
 int AiFactory::GetPlayerSpecTab(Player* player)

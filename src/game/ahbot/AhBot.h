@@ -31,6 +31,7 @@ namespace ahbot
         void Won(AuctionEntry* entry) { AddToHistory(entry); }
         void Expired(AuctionEntry* entry) { /* do nothing */ }
         double GetCategoryMultiplier(string category) { return categoryMultipliers[category]; }
+        int32 GetSellPrice(ItemPrototype const* proto);
 
     private:
         void Update(int auction, ItemBag* inAuction);

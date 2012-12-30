@@ -44,6 +44,8 @@ private:
     bool CheckItemStats(uint8 sp, uint8 ap, uint8 tank);
     void CancelAuras();
     bool IsDesiredReplacement(Item* item);
+    void InitBags();
+    void InitInventory();
 
 private:
     Player* bot;

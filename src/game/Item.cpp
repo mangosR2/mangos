@@ -289,7 +289,7 @@ bool Item::Create(uint32 guidlow, uint32 itemId, Player const* owner)
     // wow armory begin
     if (itemProto->Quality > 2 && itemProto->Flags != 2048 && (itemProto->Class == ITEM_CLASS_WEAPON || itemProto->Class == ITEM_CLASS_ARMOR))
     {
-        if (!GetOwner())
+        if (!GetOwner() || GetOwner()->GetPlayerbotAI())
             return true;
 		GetOwner()->CreateWowarmoryFeed(2, itemProto->ItemId, guidlow, itemProto->Quality);
     }
@@ -1432,7 +1432,7 @@ void Item::SetRefundable(Player* owner, uint32 paidCost, uint16 paidExtendedCost
         SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, owner->GetTotalPlayedTime());
         SaveRefundDataToDB();
     }
-    
+
     owner->AddItemWithTimeCheck(GetGUIDLow());
 }
 

@@ -863,7 +863,6 @@ ChatCommand* ChatHandler::getCommandTable()
         { "repairitems",    SEC_GAMEMASTER,     true,  &ChatHandler::HandleRepairitemsCommand,         "", NULL },
         { "stable",         SEC_ADMINISTRATOR,  false, &ChatHandler::HandleStableCommand,              "", NULL },
         { "waterwalk",      SEC_GAMEMASTER,     false, &ChatHandler::HandleWaterwalkCommand,           "", NULL },
-        { "bot",            SEC_PLAYER,         false, &ChatHandler::HandlePlayerbotCommand,           "", NULL },
         { "quit",           SEC_CONSOLE,        true,  &ChatHandler::HandleQuitCommand,                "", NULL },
         { "gearscore",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleShowGearScoreCommand,       "", NULL },
         { "mmap",           SEC_GAMEMASTER,     false, NULL,                                           "", mmapCommandTable },
@@ -871,7 +870,8 @@ ChatCommand* ChatHandler::getCommandTable()
         { "transport",      SEC_ADMINISTRATOR,  false, NULL,                                           "", transportCommandTable },
         // Playerbot mod
         { "bot",            SEC_PLAYER,         false, &ChatHandler::HandlePlayerbotCommand,           "", NULL },
-        { "ahbot",          SEC_GAMEMASTER,     true, &ChatHandler::HandleAhBotCommand,               "", NULL },
+        { "rndbot",         SEC_CONSOLE,        true, &ChatHandler::HandlePlayerbotConsoleCommand,     "", NULL },
+        { "ahbot",          SEC_GAMEMASTER,     true, &ChatHandler::HandleAhBotCommand,                "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };

@@ -54,6 +54,17 @@ public:
         if (message[0] != '@')
             return message;
 
+        if (message.find("-") != string::npos)
+        {
+            int fromLevel = atoi(message.substr(message.find("@") + 1, message.find("-")).c_str());
+            int toLevel = atoi(message.substr(message.find("-") + 1, message.find(" ")).c_str());
+
+            if (bot->getLevel() >= fromLevel && bot->getLevel() <= toLevel)
+                return ChatFilter::Filter(message);
+
+            return message;
+        }
+
 		int level = atoi(message.substr(message.find("@") + 1, message.find(" ")).c_str());
         if (bot->getLevel() == level)
             return ChatFilter::Filter(message);

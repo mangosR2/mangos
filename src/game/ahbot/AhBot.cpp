@@ -610,3 +610,29 @@ void AhBot::LoadRandomBots()
 
     sLog.outDetail("{2=%d,6=%d,7=%d} bidders loaded", bidders[2].size(), bidders[6].size(), bidders[7].size());
 }
+
+int32 AhBot::GetSellPrice(ItemPrototype const* proto)
+{
+    if (!player)
+        return 0;
+
+    int32 maxPrice = 0;
+    for (int i=0; i<CategoryList::instance.size(); i++)
+    {
+        Category* category = CategoryList::instance[i];
+        if (!category->Contains(proto))
+            continue;
+
+        for (int auction = 0; auction < MAX_AUCTIONS; auction++)
+        {
+            int32 price = (int32)category->GetPricingStrategy()->GetSellPrice(proto, auctionIds[auction]);
+            if (!price)
+                price = (int32)category->GetPricingStrategy()->GetBuyPrice(proto, auctionIds[auction]);
+
+            if (price > maxPrice)
+                maxPrice = price;
+        }
+    }
+
+    return maxPrice;
+}

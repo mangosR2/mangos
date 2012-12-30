@@ -5,7 +5,7 @@
 
 namespace ai
 {
-    class TradeStatusAction : public InventoryAction 
+    class TradeStatusAction : public InventoryAction
     {
     public:
         TradeStatusAction(PlayerbotAI* ai) : InventoryAction(ai, "accept trade") {}
@@ -13,5 +13,7 @@ namespace ai
 
     private:
         void BeginTrade();
+        bool CheckTrade();
+        int32 CalculateCost(TradeData* data);
     };
 }

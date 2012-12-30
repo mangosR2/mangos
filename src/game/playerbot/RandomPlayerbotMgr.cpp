@@ -12,7 +12,8 @@
 
 RandomPlayerbotMgr::RandomPlayerbotMgr(Player* const master) : PlayerbotAIBase(),  master(master)
 {
-    account = sObjectMgr.GetPlayerAccountIdByGUID(master->GetObjectGuid());
+	if (master)
+		account = sObjectMgr.GetPlayerAccountIdByGUID(master->GetObjectGuid());
 }
 
 RandomPlayerbotMgr::~RandomPlayerbotMgr()
@@ -38,7 +39,7 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed)
     list<uint32> bots = GetBots();
     int botCount = bots.size();
     int maxEnemyBots = maxAllowedBotCount * sPlayerbotAIConfig.randomBotEnemyPercent / 100;
-    while (botCount++ < maxEnemyBots)
+    while (botCount++ < maxEnemyBots && botCount < maxAllowedBotCount)
     {
         uint32 bot = AddRandomBot(true);
         if (bot)
@@ -207,6 +208,7 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, vector<WorldLocation> &locs
                 terrain->IsInWater(x, y, z))
             continue;
 
+        sLog.outDetail("Random teleporting bot %s to %u %f,%f,%f", bot->GetName(), loc.mapid, x, y, z);
         z = 0.05f + map->GetTerrain()->GetHeightStatic(x, y, 0.05f + z, true, MAX_HEIGHT);
         bot->TeleportTo(loc.mapid, x, y, z, 0);
         return;
@@ -332,7 +334,7 @@ uint32 RandomPlayerbotMgr::GetZoneLevel(uint32 mapId, float teleX, float teleY, 
         uint32 minLevel = fields[0].GetUInt32();
         uint32 maxLevel = fields[1].GetUInt32();
         level = urand(minLevel, maxLevel);
-        if (level < 10)
+        if (level < 10 && master)
             level = urand(master->getLevel() - 5, master->getLevel());
         if (level > 80)
             level = 80;
@@ -340,7 +342,7 @@ uint32 RandomPlayerbotMgr::GetZoneLevel(uint32 mapId, float teleX, float teleY, 
     }
     else
     {
-        level = urand(master->getLevel() - 5, master->getLevel());
+        level = master ? urand(master->getLevel() - 5, master->getLevel()) : urand(1, 80);
     }
 
     return level;
@@ -510,4 +512,63 @@ uint32 RandomPlayerbotMgr::SetEventValue(uint32 bot, string event, uint32 value,
     }
 
     return value;
+}
+
+bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
+{
+    if(sConfig.GetBoolDefault("PlayerbotAI.DisableBots", false))
+    {
+        sLog.outError("Playerbot system is currently disabled!");
+        return false;
+    }
+
+    if (!args || !*args)
+    {
+        sLog.outError("Usage: rndbot reset");
+        return false;
+    }
+
+    string cmd = args;
+
+    if (cmd == "reset")
+    {
+        CharacterDatabase.PExecute("delete from ai_playerbot_random_bots");
+        sLog.outBasic("Random bots were reset for all players");
+        return true;
+    }
+
+    if (cmd == "init")
+    {
+		RandomPlayerbotMgr mgr(NULL);
+		sLog.outString("Randomizing bots for %d accounts", sPlayerbotAIConfig.randomBotAccounts.size());
+        BarGoLink bar(sPlayerbotAIConfig.randomBotAccounts.size());
+        for (list<uint32>::iterator i = sPlayerbotAIConfig.randomBotAccounts.begin(); i != sPlayerbotAIConfig.randomBotAccounts.end(); ++i)
+        {
+            uint32 account = *i;
+            bar.step();
+            if (QueryResult *results = CharacterDatabase.PQuery("SELECT guid FROM characters where account = '%u'", account))
+            {
+                do
+                {
+                    Field* fields = results->Fetch();
+                    ObjectGuid guid = ObjectGuid(fields[0].GetUInt64());
+                    Player* bot = sObjectMgr.GetPlayer(guid, true);
+                    if (!bot || bot->GetGroup())
+                        continue;
+
+                    sLog.outDetail("Randomizing bot %s for account %u", bot->GetName(), account);
+                    mgr.RandomizeFirst(bot);
+                    uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotRandomizeTime, sPlayerbotAIConfig.maxRandomRandomizeTime);
+                    CharacterDatabase.PExecute("update ai_playerbot_random_bots set validIn = '%u' where event = 'randomize' and bot = '%u'",
+                            randomTime, bot->GetGUIDLow());
+                    CharacterDatabase.PExecute("delete from ai_playerbot_random_bots where event = 'logout' and bot = '%u'", bot->GetGUIDLow());
+                } while (results->NextRow());
+
+                delete results;
+            }
+        }
+        return true;
+    }
+
+    return false;
 }

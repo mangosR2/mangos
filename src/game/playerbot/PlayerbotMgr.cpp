@@ -314,6 +314,16 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         }
     }
 
+    if (charnameStr == "!" && player->GetSession()->GetSecurity() > SEC_GAMEMASTER)
+    {
+        for (PlayerBotMap::const_iterator i = mgr->GetPlayerBotsBegin(); i != mgr->GetPlayerBotsEnd(); ++i)
+        {
+            Player* bot = i->second;
+            if (bot && bot->IsInWorld())
+                bots.insert(bot->GetName());
+        }
+    }
+
     vector<string> chars = split(charnameStr, ',');
     for (vector<string>::iterator i = chars.begin(); i != chars.end(); i++)
     {

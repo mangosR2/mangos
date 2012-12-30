@@ -21,35 +21,38 @@ bool RandomPlayerbotFactory::CreateRandomBot()
 
     map<uint8, uint8*> classes;
     uint8 humanClasses[] = { CLASS_WARRIOR, CLASS_PALADIN, CLASS_ROGUE, CLASS_PRIEST,
-            CLASS_MAGE, CLASS_WARLOCK };
+            CLASS_MAGE, CLASS_WARLOCK, 0 };
     classes[RACE_HUMAN] = humanClasses;
     uint8 dwarfClasses[] = { CLASS_WARRIOR, CLASS_PALADIN, CLASS_ROGUE, CLASS_PRIEST,
-            CLASS_HUNTER };
+            CLASS_HUNTER, 0 };
     classes[RACE_DWARF] = dwarfClasses;
     uint8 neClasses[] = { CLASS_WARRIOR, CLASS_ROGUE, CLASS_PRIEST, CLASS_DRUID,
-            CLASS_HUNTER };
+            CLASS_HUNTER, 0 };
     classes[RACE_NIGHTELF] = neClasses;
     uint8 gnomeClasses[] = { CLASS_WARRIOR, CLASS_ROGUE, CLASS_MAGE,
-            CLASS_WARLOCK };
+            CLASS_WARLOCK, 0 };
     classes[RACE_GNOME] = gnomeClasses;
     uint8 draeneiClasses[] = { CLASS_WARRIOR, CLASS_PALADIN, CLASS_HUNTER, CLASS_PRIEST, CLASS_MAGE,
-            CLASS_SHAMAN };
+            CLASS_SHAMAN, 0 };
     classes[RACE_DRAENEI] = draeneiClasses;
     uint8 orcClasses[] = { CLASS_WARRIOR, CLASS_HUNTER, CLASS_SHAMAN,
-            CLASS_WARLOCK };
+            CLASS_WARLOCK, 0 };
     classes[RACE_ORC] = orcClasses;
     uint8 undeadClasses[] = { CLASS_WARRIOR, CLASS_ROGUE, CLASS_PRIEST, CLASS_MAGE,
-            CLASS_WARLOCK };
+            CLASS_WARLOCK, 0 };
     classes[RACE_UNDEAD] = undeadClasses;
-    uint8 taurenClasses[] = { CLASS_WARRIOR, CLASS_HUNTER, CLASS_SHAMAN, CLASS_DRUID  };
+    uint8 taurenClasses[] = { CLASS_WARRIOR, CLASS_HUNTER, CLASS_SHAMAN, CLASS_DRUID, 0  };
     classes[RACE_TAUREN] = taurenClasses;
-    uint8 trollClasses[] = { CLASS_WARRIOR, CLASS_HUNTER, CLASS_ROGUE, CLASS_PRIEST, CLASS_SHAMAN, CLASS_MAGE };
+    uint8 trollClasses[] = { CLASS_WARRIOR, CLASS_HUNTER, CLASS_ROGUE, CLASS_PRIEST, CLASS_SHAMAN, CLASS_MAGE, 0 };
     classes[RACE_TROLL] = trollClasses;
-    uint8 beClasses[] = { CLASS_PALADIN, CLASS_HUNTER, CLASS_ROGUE, CLASS_PRIEST, CLASS_WARLOCK, CLASS_MAGE };
+    uint8 beClasses[] = { CLASS_PALADIN, CLASS_HUNTER, CLASS_ROGUE, CLASS_PRIEST, CLASS_WARLOCK, CLASS_MAGE, 0 };
     classes[RACE_BLOODELF] = beClasses;
 
     uint8* availableClasses = classes[race];
-    uint8 botClass = availableClasses[urand(0, sizeof(availableClasses) / sizeof(uint8) - 1)];
+    int totalClasses = 0;
+    uint8* p = availableClasses;
+    while (*p++) totalClasses++;
+    uint8 botClass = availableClasses[urand(0, totalClasses - 1)];
 
     string name = CreateRandomBotName();
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Action.h"
+#include "InventoryAction.h"
 
 namespace ai
 {
-    class SuggestWhatToDoAction : public Action
+    class SuggestWhatToDoAction : public InventoryAction
     {
     public:
         SuggestWhatToDoAction(PlayerbotAI* ai);
@@ -23,6 +23,7 @@ namespace ai
         void nothing();
         void relax();
         void achievement();
+        void trade();
 
         vector<uint32> GetIncompletedQuests();
 

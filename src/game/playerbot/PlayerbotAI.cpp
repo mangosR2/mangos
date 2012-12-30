@@ -14,6 +14,7 @@
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotFactory.h"
+#include "PlayerbotSecurity.h"
 
 using namespace ai;
 using namespace std;
@@ -53,14 +54,14 @@ void PacketHandlingHelper::AddPacket(const WorldPacket& packet)
 
 
 PlayerbotAI::PlayerbotAI() : PlayerbotAIBase(), bot(NULL), mgr(NULL), aiObjectContext(NULL),
-    currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0)
+    currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0), security(NULL, NULL)
 {
     for (int i = 0 ; i < BOT_STATE_MAX; i++)
         engines[i] = NULL;
 }
 
 PlayerbotAI::PlayerbotAI(PlayerbotMgr* mgr, Player* bot, NamedObjectContext<UntypedValue>* sharedValues) :
-    PlayerbotAIBase(), chatHelper(this), chatFilter(this)
+    PlayerbotAIBase(), chatHelper(this), chatFilter(this), security(mgr->GetMaster(), bot)
 {
 	this->mgr = mgr;
 	this->bot = bot;
@@ -187,29 +188,8 @@ void PlayerbotAI::Reset()
 
 void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPlayer)
 {
-    if (fromPlayer.GetPlayerbotAI())
+    if (!GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, type != CHAT_MSG_WHISPER, &fromPlayer))
         return;
-
-    if (text.empty() ||
-        text.find("X-Perl") != wstring::npos ||
-        text.find("HealBot") != wstring::npos ||
-        text.find("LOOT_OPENED") != wstring::npos ||
-        text.find("CTRA") != wstring::npos)
-        return;
-
-    if (IsOpposing(GetMaster()) && GetMaster()->GetSession()->GetSecurity() < SEC_ADMINISTRATOR)
-        return;
-
-    if (fromPlayer.GetObjectGuid() != GetMaster()->GetObjectGuid())
-    {
-        if (type == CHAT_MSG_WHISPER)
-        {
-            WorldPacket data(SMSG_MESSAGECHAT, 1024);
-            bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "I'm kind of busy now", LANG_UNIVERSAL);
-            GetMaster()->GetSession()->SendPacket(&data);
-        }
-        return;
-    }
 
     for (string::const_iterator i = text.begin(); i != text.end(); i++)
     {
@@ -222,16 +202,8 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     if (filtered.empty())
         return;
 
-    if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && !bot->GetGroup() && filtered != "who")
-    {
-        if (type == CHAT_MSG_WHISPER)
-        {
-            WorldPacket data(SMSG_MESSAGECHAT, 1024);
-            bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, "Invite me to your group first", LANG_UNIVERSAL);
-            GetMaster()->GetSession()->SendPacket(&data);
-        }
+    if (filtered != "who" && !GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_ALLOW_ALL, type != CHAT_MSG_WHISPER, &fromPlayer))
         return;
-    }
 
     if (type == CHAT_MSG_RAID_WARNING && filtered.find(bot->GetName()) != string::npos && filtered.find("award") == string::npos)
     {
@@ -663,18 +635,12 @@ GameObject* PlayerbotAI::GetGameObject(ObjectGuid guid)
     return NULL;
 }
 
-void PlayerbotAI::TellMaster(string text)
+void PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
 {
-    Player* master = GetMaster();
-    LogLevel logLevel = *aiObjectContext->GetValue<LogLevel>("log level");
-    if (master->GetSession()->GetSecurity() < SEC_GAMEMASTER)
-    {
-        if (IsOpposing(master) && logLevel != LOG_LVL_DEBUG)
-            return;
+    if (!GetSecurity()->CheckLevelFor(securityLevel, true))
+        return;
 
-        if (sPlayerbotAIConfig.IsInRandomAccountList(accountId) && logLevel != LOG_LVL_DEBUG && !bot->GetGroup())
-            return;
-    }
+    Player* master = GetMaster();
 
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
     bot->BuildPlayerChat(&data, *aiObjectContext->GetValue<ChatMsg>("chat"), text, LANG_UNIVERSAL);
@@ -689,7 +655,7 @@ void PlayerbotAI::TellMaster(string text)
     }
 }
 
-void PlayerbotAI::TellMaster(LogLevel level, string text)
+void PlayerbotAI::TellMaster(LogLevel level, string text, PlayerbotSecurityLevel securityLevel)
 {
     LogLevel logLevel = *aiObjectContext->GetValue<LogLevel>("log level");
 
@@ -698,13 +664,13 @@ void PlayerbotAI::TellMaster(LogLevel level, string text)
 
     ostringstream out;
     out << LogLevelAction::logLevel2string(level) << ": " << text;
-    TellMaster(out.str());
+    TellMaster(out.str(), securityLevel);
 }
 
-void PlayerbotAI::TellMaster(bool verbose, string text)
+void PlayerbotAI::TellMaster(bool verbose, string text, PlayerbotSecurityLevel securityLevel)
 {
     if (verbose)
-        TellMaster(text);
+        TellMaster(text, securityLevel);
 }
 
 

@@ -6,6 +6,7 @@
 #include "strategy/Engine.h"
 #include "strategy/ExternalEventHelper.h"
 #include "ChatFilter.h"
+#include "PlayerbotSecurity.h"
 
 class Player;
 class PlayerbotMgr;
@@ -102,10 +103,10 @@ public:
     Creature* GetCreature(ObjectGuid guid);
     Unit* GetUnit(ObjectGuid guid);
     GameObject* GetGameObject(ObjectGuid guid);
-    void TellMaster(ostringstream &stream) { TellMaster(stream.str()); }
-    void TellMaster(string text);
-    void TellMaster(LogLevel level, string text);
-    void TellMaster(bool verbose, string text);
+    void TellMaster(ostringstream &stream, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL) { TellMaster(stream.str(), securityLevel); }
+    void TellMaster(string text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
+    void TellMaster(LogLevel level, string text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
+    void TellMaster(bool verbose, string text, PlayerbotSecurityLevel securityLevel = PLAYERBOT_SECURITY_ALLOW_ALL);
     void SpellInterrupted(uint32 spellid);
     int32 CalculateGlobalCooldown(uint32 spellid);
     void InterruptSpell();
@@ -133,6 +134,7 @@ public:
     ChatHelper* GetChatHelper() { return &chatHelper; }
     bool IsOpposing(Player* player);
     static bool IsOpposing(uint8 race1, uint8 race2);
+    PlayerbotSecurity* GetSecurity() { return &security; }
 
 protected:
 	Player* bot;
@@ -147,5 +149,6 @@ protected:
     PacketHandlingHelper masterIncomingPacketHandlers;
     PacketHandlingHelper masterOutgoingPacketHandlers;
     CompositeChatFilter chatFilter;
+    PlayerbotSecurity security;
 };
 

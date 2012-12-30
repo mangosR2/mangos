@@ -35,13 +35,14 @@ void PlayerbotFactory::Randomize(bool incremental)
     ClearSpells();
     ClearInventory();
 
-    InitTalents();
     InitSpells();
     InitSkills();
     InitQuests();
+    InitTalents();
     InitAvailableSpells();
     InitSpecialSpells();
     InitEquipment(incremental);
+    InitBags();
     InitPet();
 
     // quest rewards boost bot level, so reduce back
@@ -54,6 +55,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     InitMounts();
     InitPotions();
     InitSecondEquipmentSet();
+    InitInventory();
     bot->SaveToDB();
 }
 
@@ -68,8 +70,6 @@ void PlayerbotFactory::InitPet()
         Map* map = bot->GetMap();
         if (!map)
             return;
-
-        pet = new Pet(HUNTER_PET);
 
 		vector<uint32> ids;
         for (uint32 id = 0; id < sCreatureStorage.GetMaxEntry(); ++id)
@@ -88,27 +88,30 @@ void PlayerbotFactory::InitPet()
 
             uint32 guid = map->GenerateLocalLowGuid(HIGHGUID_PET);
             CreatureCreatePos pos(map, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetOrientation(), bot->GetPhaseMask());
+            pet = new Pet(HUNTER_PET);
             if (!pet->Create(guid, pos, co, 0, bot))
+            {
+                delete pet;
+                pet = NULL;
                 continue;
+            }
 
             pet->SetOwnerGuid(bot->GetObjectGuid());
             pet->SetCreatorGuid(bot->GetObjectGuid());
             pet->setFaction(bot->getFaction());
-            pet->InitStatsForLevel(bot->getLevel());
-            pet->GetCharmInfo()->SetPetNumber(sObjectMgr.GeneratePetNumber(), true);
-            pet->AIM_Initialize();
-            pet->InitPetCreateSpells();
-            pet->InitLevelupSpellsForLevel();
-            pet->InitTalentForLevel();
-            pet->SetHealth(pet->GetMaxHealth());
             pet->SetLevel(bot->getLevel());
-            Map* map = bot->GetMap();
-            if (map) map->Add((Creature*)pet);
             bot->SetPet(pet);
+
+            pet->Summon();
             pet->SavePetToDB(PET_SAVE_AS_CURRENT);
-            bot->PetSpellInitialize();
             break;
         }
+    }
+
+    if (!pet)
+    {
+        sLog.outError("Cannot create pet for bot %s", bot->GetName());
+        return;
     }
 
     for (PetSpellMap::const_iterator itr = pet->m_spells.begin(); itr != pet->m_spells.end(); ++itr)
@@ -630,10 +633,57 @@ void PlayerbotFactory::InitSecondEquipmentSet()
     }
 }
 
+void PlayerbotFactory::InitBags()
+{
+    vector<uint32> ids;
+
+    for (uint32 itemId = 0; itemId < sItemStorage.GetMaxEntry(); ++itemId)
+    {
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        if (!proto || proto->Class != ITEM_CLASS_CONTAINER)
+            continue;
+
+        if (!CanEquipItem(proto, ITEM_QUALITY_NORMAL))
+            continue;
+
+        ids.push_back(itemId);
+    }
+
+    if (ids.empty())
+    {
+        sLog.outError("%s: no bags found", bot->GetName());
+        return;
+    }
+
+    for (uint8 slot = INVENTORY_SLOT_BAG_START; slot < INVENTORY_SLOT_BAG_END; ++slot)
+    {
+        for (int attempts = 0; attempts < 15; attempts++)
+        {
+            uint32 index = urand(0, ids.size() - 1);
+            uint32 newItemId = ids[index];
+
+            uint16 dest;
+            if (!CanEquipUnseenItem(slot, dest, newItemId))
+                continue;
+
+            Item* newItem = bot->EquipNewItem(dest, newItemId, true);
+            if (newItem)
+            {
+                newItem->AddToWorld();
+                newItem->AddToUpdateQueueOf(bot);
+                break;
+            }
+        }
+    }
+}
+
 void PlayerbotFactory::EnchantItem(Item* item)
 {
     if (urand(0, 100) < 100 * sPlayerbotAIConfig.randomGearLoweringChance)
         return;
+
+    ItemPrototype const* proto = item->GetProto();
+    int32 itemLevel = proto->ItemLevel;
 
     vector<uint32> ids;
     for (int id = 0; id < sSpellStore.GetNumRows(); ++id)
@@ -642,8 +692,8 @@ void PlayerbotFactory::EnchantItem(Item* item)
         if (!entry)
             continue;
 
-        uint32 requiredLevel = entry->baseLevel;
-        if (requiredLevel && (requiredLevel > item->GetProto()->ItemLevel || requiredLevel < item->GetProto()->ItemLevel - 35))
+        int32 requiredLevel = (int32)entry->baseLevel;
+        if (requiredLevel && (requiredLevel > itemLevel || requiredLevel < itemLevel - 35))
             continue;
 
         if (entry->maxLevel && level > entry->maxLevel)
@@ -1125,4 +1175,45 @@ void PlayerbotFactory::InitPotions()
 void PlayerbotFactory::CancelAuras()
 {
     bot->RemoveAllAuras();
+}
+
+void PlayerbotFactory::InitInventory()
+{
+    vector<uint32> ids;
+    for (uint32 itemId = 0; itemId < sItemStorage.GetMaxEntry(); ++itemId)
+    {
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        if (!proto)
+            continue;
+
+        if (proto->Class != ITEM_CLASS_TRADE_GOODS || proto->Bonding != NO_BIND)
+            continue;
+
+        if (bot->getLevel() >= 40 && proto->Quality < ITEM_QUALITY_RARE)
+            continue;
+
+        if (bot->getLevel() >= 20 && proto->Quality < ITEM_QUALITY_UNCOMMON)
+            continue;
+
+        ids.push_back(itemId);
+    }
+
+    int maxCount = urand(0, 3);
+    int count = 0;
+    for (int attempts = 0; attempts < 15; attempts++)
+    {
+        uint32 index = urand(0, ids.size() - 1);
+        if (index >= ids.size())
+            continue;
+
+        uint32 itemId = ids[index];
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, proto->GetMaxStackSize()));
+        if (newItem)
+        {
+            newItem->AddToUpdateQueueOf(bot);
+            if (count++ >= maxCount)
+                break;
+        }
+   }
 }

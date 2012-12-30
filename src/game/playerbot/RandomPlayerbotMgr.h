@@ -25,6 +25,7 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotAIBase
         bool IsRandomBot(uint32 bot);
         void DoPvpAttack(Player* bot);
         void Randomize(Player* bot);
+        void RandomizeFirst(Player* bot);
 
     private:
         uint32 GetEventValue(uint32 bot, string event);
@@ -40,7 +41,6 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotAIBase
         void Refresh(Player* bot);
         uint32 GetZoneLevel(uint32 mapId, float teleX, float teleY, float teleZ);
         void IncreaseLevel(Player* bot);
-        void RandomizeFirst(Player* bot);
 
     private:
         Player* const master;
