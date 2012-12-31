@@ -57,25 +57,25 @@ bool QueryItemUsageAction::Execute(Event event)
     return true;
 }
 
-void QueryItemUsageAction::QueryItemUsage(ItemPrototype const *item)
+bool QueryItemUsageAction::QueryItemUsage(ItemPrototype const *item)
 {
     Player *bot = ai->GetBot();
     if (bot->CanUseItem(item) != EQUIP_ERR_OK)
-        return;
+        return false;
 
     if (item->InventoryType == INVTYPE_NON_EQUIP)
-        return;
+        return false;
 
     uint16 eDest;
     uint8 msg = bot->CanEquipNewItem(NULL_SLOT, eDest, item->ItemId, true);
     if( msg != EQUIP_ERR_OK )
-        return;
+        return false;
 
     Item* existingItem = bot->GetItemByPos(eDest);
     if (!existingItem)
     {
         ai->TellMaster("Equip");
-        return;
+        return true;
     }
 
     bool equip = false;
@@ -99,7 +99,10 @@ void QueryItemUsageAction::QueryItemUsage(ItemPrototype const *item)
         out << (item->ItemLevel - oldItem->ItemLevel);
         out << " lvl";
         ai->TellMaster(out.str());
+        return true;
     }
+
+    return false;
 }
 
 void QueryItemUsageAction::QueryItemsUsage(ItemIds items)

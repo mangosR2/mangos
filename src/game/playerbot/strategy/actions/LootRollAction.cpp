@@ -7,41 +7,57 @@ using namespace ai;
 
 bool LootRollAction::Execute(Event event)
 {
-    Player *bot = ai->GetBot();
+    Player *bot = QueryItemUsageAction::ai->GetBot();
 
     WorldPacket p(event.getPacket()); //WorldPacket packet for CMSG_LOOT_ROLL, (8+4+1)
-    ObjectGuid Guid;
-    uint32 NumberOfPlayers;
+    ObjectGuid guid;
+    uint32 slot;
     uint8 rollType;
     p.rpos(0); //reset packet pointer
-    p >> Guid; //guid of the item rolled
-    p >> NumberOfPlayers; //number of players invited to roll
+    p >> guid; //guid of the item rolled
+    p >> slot; //number of players invited to roll
     p >> rollType; //need,greed or pass on roll
-
-
-    uint32 choice = urand(0,2); //returns 0,1,or 2
 
     Group* group = bot->GetGroup();
     if(!group)
         return false;
 
+    RollVote vote = ROLL_PASS;
+    for (vector<Roll*>::iterator i = group->GetRolls().begin(); i != group->GetRolls().end(); ++i)
+    {
+        if ((*i)->isValid() && (*i)->lootedTargetGUID == guid && (*i)->itemSlot == slot)
+        {
+            uint32 itemId = (*i)->itemid;
+            ItemPrototype const *proto = sItemStorage.LookupEntry<ItemPrototype>(itemId);
+            if (!proto)
+                continue;
+
+            switch (proto->Class)
+            {
+            case ITEM_CLASS_WEAPON:
+            case ITEM_CLASS_ARMOR:
+                if (QueryItemUsage(proto))
+                    vote = ROLL_NEED;
+                else if (bot->HasSkill(SKILL_ENCHANTING))
+                    vote = ROLL_DISENCHANT;
+                break;
+            default:
+                if (IsLootAllowed(itemId))
+                    vote = ROLL_NEED;
+                break;
+            }
+            break;
+        }
+    }
+
     switch (group->GetLootMethod())
     {
-    case GROUP_LOOT:
-        // bot random roll
-        group->CountRollVote(bot, Guid, NumberOfPlayers, ROLL_NEED);
-        break;
-    case NEED_BEFORE_GREED:
-        choice = 1;
-        // bot need roll
-        group->CountRollVote(bot, Guid, NumberOfPlayers, ROLL_NEED);
-        break;
     case MASTER_LOOT:
-        choice = 0;
-        // bot pass on roll
-        group->CountRollVote(bot, Guid, NumberOfPlayers, ROLL_PASS);
+    case FREE_FOR_ALL:
+        group->CountRollVote(bot, guid, slot, ROLL_PASS);
         break;
     default:
+        group->CountRollVote(bot, guid, slot, vote);
         break;
     }
 
@@ -54,7 +70,7 @@ bool LootRollAction::Execute(Event event)
         bot->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ROLL_GREED, 1);
         break;
     }
-    
+
 
     return true;
 }

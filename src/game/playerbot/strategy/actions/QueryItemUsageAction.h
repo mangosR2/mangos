@@ -6,12 +6,12 @@ namespace ai
 {
     class QueryItemUsageAction : public Action {
     public:
-        QueryItemUsageAction(PlayerbotAI* ai) : Action(ai, "query item usage") {}
+        QueryItemUsageAction(PlayerbotAI* ai, string name = "query item usage") : Action(ai, name) {}
         virtual bool Execute(Event event);
 
-    private:
+    protected:
         void QueryItemsUsage(ItemIds items);
-        void QueryItemUsage(ItemPrototype const *item);
+        bool QueryItemUsage(ItemPrototype const *item);
         void QueryQuestItem(uint32 itemId, const Quest *questTemplate, const QuestStatusData *questStatus);
         void QueryQuestItem(uint32 itemId);
 

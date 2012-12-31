@@ -284,7 +284,7 @@ string ChatHelper::formatChat(ChatMsg chat)
 
 uint32 ChatHelper::parseSpell(string& text)
 {
-    PlayerbotChatHandler handler(ai->GetMaster());
+    PlayerbotChatHandler handler(ai->GetBot());
     return handler.extractSpellId(text);
 }
 

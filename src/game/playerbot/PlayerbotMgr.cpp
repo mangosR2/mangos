@@ -153,6 +153,33 @@ void PlayerbotMgr::OnBotLogin(Player * const bot)
         ! m_master->GetGroup()->IsLeader(masterGuid))
         m_master->GetGroup()->ChangeLeader(masterGuid);
 
+    Group* group = bot->GetGroup();
+    if (group)
+    {
+        bool masterFound = false;
+        for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
+        {
+            Player* player = gref->getSource();
+            if(player == bot)
+                continue;
+
+            if (player == m_master)
+            {
+                masterFound = true;
+                break;
+            }
+        }
+        if (!masterFound)
+        {
+            WorldPacket p;
+            string member = bot->GetName();
+            p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
+            bot->GetSession()->HandleGroupDisbandOpcode(p);
+
+            ai->ResetStrategies();
+        }
+    }
+
     ai->TellMaster("Hello!");
 }
 

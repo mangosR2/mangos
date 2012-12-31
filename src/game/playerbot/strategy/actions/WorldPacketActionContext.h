@@ -89,7 +89,7 @@ namespace ai
         static Action* accept_quest(PlayerbotAI* ai) { return new AcceptQuestAction(ai); }
         static Action* accept_all_quests(PlayerbotAI* ai) { return new AcceptAllQuestsAction(ai); }
         static Action* accept_quest_share(PlayerbotAI* ai) { return new AcceptQuestShareAction(ai); }
-        static Action* loot_roll(PlayerbotAI* ai) { return new LootRollAction(ai); }
+        static Action* loot_roll(PlayerbotAI* ai) { return (QueryItemUsageAction*)new LootRollAction(ai); }
     };
 
 

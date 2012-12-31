@@ -18,5 +18,5 @@ void PossibleTargetsValue::FindUnits(list<Unit*> &targets)
 
 bool PossibleTargetsValue::AcceptUnit(Unit* unit)
 {
-    return true;
+    return unit->IsHostileTo(bot);
 }

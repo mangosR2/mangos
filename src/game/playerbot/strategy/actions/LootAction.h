@@ -33,7 +33,7 @@ namespace ai
         StoreLootAction(PlayerbotAI* ai) : MovementAction(ai, "store loot") {}
         virtual bool Execute(Event event);
 
-    private:
+    protected:
         bool IsLootAllowed(uint32 itemid);
         bool IsLootAllowedBySkill(ItemPrototype const * proto);
     };
