@@ -536,6 +536,7 @@ void Spell::FillTargetMap()
 
     UnitList tmpUnitLists[MAX_EFFECT_INDEX];                // Stores the temporary Target Lists for each effect
     uint8 effToIndex[MAX_EFFECT_INDEX] = {0, 1, 2};         // Helper array, to link to another tmpUnitList, if the targets for both effects match
+    bool doubleFillChecker[MAX_EFFECT_INDEX] = {true, true, true};
     for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
         // not call for empty effect.
@@ -563,6 +564,7 @@ void Spell::FillTargetMap()
         {
             // Check if same target, but handle i.e. AreaAuras different
             if (m_spellInfo->EffectImplicitTargetA[i] == m_spellInfo->EffectImplicitTargetA[j] && m_spellInfo->EffectImplicitTargetB[i] == m_spellInfo->EffectImplicitTargetB[j]
+                && doubleFillChecker[j]
                 && m_spellInfo->Effect[j] != SPELL_EFFECT_NONE
                 && !IsAreaAuraEffect(m_spellInfo->Effect[i]) && !IsAreaAuraEffect(m_spellInfo->Effect[j]))
                 // Add further conditions here if required
@@ -782,6 +784,7 @@ void Spell::FillTargetMap()
         {
             if (!CheckTarget(*itr, SpellEffectIndex(i)))
             {
+                doubleFillChecker[effToIndex[i]] = false;
                 itr = tmpUnitLists[effToIndex[i]].erase(itr);
                 continue;
             }
