@@ -17,6 +17,7 @@ class NonCombatEngineTestCase : public EngineTestBase
       CPPUNIT_TEST( dpsAssist );
       CPPUNIT_TEST( tankAssist );
       CPPUNIT_TEST( attackWeak );
+      CPPUNIT_TEST( doNotAttackIfLowMpHp );
       CPPUNIT_TEST( attackRti );
       CPPUNIT_TEST( loot );
       CPPUNIT_TEST( loot_failed );
@@ -250,6 +251,25 @@ protected:
         set<Unit*>("current target", NULL);
         tick();
         assertActions(">S:tell target");
+    }
+
+    void doNotAttackIfLowMpHp()
+    {
+        engine->addStrategy("stay");
+        engine->addStrategy("dps assist");
+
+        tick();
+        set<uint8>("health", "self target", 1);
+        tickWithNoTarget();
+        set<uint8>("health", "self target", 100);
+        set<uint8>("mana", "self target", 1);
+        tickWithNoTarget();
+
+        set<uint8>("health", "self target", 100);
+        set<uint8>("mana", "self target", 100);
+        tickWithNoTarget();
+
+        assertActions(">S:stay>S:check mount state>S:check mount state>Dps:dps assist");
     }
 };
 

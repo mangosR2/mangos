@@ -68,14 +68,7 @@ bool UseMeetingStoneAction::Execute(Event event)
     if (!goInfo || goInfo->type != GAMEOBJECT_TYPE_SUMMONING_RITUAL)
         return false;
 
-    PlayerbotChatHandler ch(master);
-    if (!ch.teleport(*bot))
-    {
-        ai->TellMaster("You cannot summon me");
-        return false;
-    }
-
-    return true;
+    return Teleport();
 }
 
 
@@ -85,6 +78,28 @@ bool SummonAction::Execute(Event event)
     {
         ai->TellMaster("You must be in a city or inn to summon me");
         return false;
+    }
+
+    return Teleport();
+}
+
+bool SummonAction::Teleport()
+{
+    if (!master->IsBeingTeleported())
+    {
+        float followAngle = GetFollowAngle();
+        for (float angle = followAngle - M_PI; angle <= followAngle + M_PI; angle += M_PI / 4)
+        {
+            uint32 mapId = master->GetMapId();
+            float x = master->GetPositionX() + cos(angle) * sPlayerbotAIConfig.followDistance;
+            float y = master->GetPositionY()+ sin(angle) * sPlayerbotAIConfig.followDistance;
+            float z = master->GetPositionZ();
+            if (master->IsWithinLOS(x, y, z))
+            {
+                bot->TeleportTo(mapId, x, y, z, 0);
+                return true;
+            }
+        }
     }
 
     PlayerbotChatHandler ch(master);

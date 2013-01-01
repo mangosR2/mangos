@@ -18,6 +18,9 @@ bool LfgUpdateAction::Execute(Event event)
     if (!sPlayerbotAIConfig.randomBotJoinLfg)
         return false;
 
+    if (bot->isDead())
+        return false;
+
     if (!master->GetRandomPlayerbotMgr()->IsRandomBot(bot))
         return false;
 

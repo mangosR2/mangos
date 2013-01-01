@@ -153,31 +153,31 @@ void PlayerbotMgr::OnBotLogin(Player * const bot)
         ! m_master->GetGroup()->IsLeader(masterGuid))
         m_master->GetGroup()->ChangeLeader(masterGuid);
 
-    Group* group = bot->GetGroup();
+    Group* group = m_master->GetGroup();
+    bool botFound = false;
     if (group)
     {
-        bool masterFound = false;
         for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
         {
             Player* player = gref->getSource();
-            if(player == bot)
+            if(player == m_master)
                 continue;
 
-            if (player == m_master)
+            if (player == bot)
             {
-                masterFound = true;
+                botFound = true;
                 break;
             }
         }
-        if (!masterFound)
-        {
-            WorldPacket p;
-            string member = bot->GetName();
-            p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
-            bot->GetSession()->HandleGroupDisbandOpcode(p);
+    }
+    if (!botFound)
+    {
+        WorldPacket p;
+        string member = bot->GetName();
+        p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
+        bot->GetSession()->HandleGroupDisbandOpcode(p);
 
-            ai->ResetStrategies();
-        }
+        ai->ResetStrategies();
     }
 
     ai->TellMaster("Hello!");
@@ -236,6 +236,12 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
         else if (cmd == "init=epic" || cmd == "init=purple")
         {
             mgr->RandomizePlayerBot(guid.GetRawValue(), session->GetPlayer()->getLevel(), ITEM_QUALITY_EPIC);
+            return true;
+        }
+        else if (cmd == "update")
+        {
+            PlayerbotFactory factory(bot, bot->getLevel());
+            factory.Randomize(true);
             return true;
         }
         else if (cmd == "pvp")

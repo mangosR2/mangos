@@ -1,23 +1,26 @@
 #pragma once
 
 #include "../Action.h"
+#include "MovementActions.h"
 
 namespace ai
 {
-    class UseMeetingStoneAction : public Action
+    class SummonAction : public MovementAction
     {
     public:
-        UseMeetingStoneAction(PlayerbotAI* ai) : Action(ai, "use meeting stone") {}
+        SummonAction(PlayerbotAI* ai, string name = "summon") : MovementAction(ai, name) {}
+
+        virtual bool Execute(Event event);
+
+    protected:
+        bool Teleport();
+    };
+
+    class UseMeetingStoneAction : public SummonAction
+    {
+    public:
+        UseMeetingStoneAction(PlayerbotAI* ai) : SummonAction(ai, "use meeting stone") {}
 
         virtual bool Execute(Event event);
     };
-
-    class SummonAction : public Action
-    {
-    public:
-        SummonAction(PlayerbotAI* ai) : Action(ai, "summon") {}
-
-        virtual bool Execute(Event event);
-    };
-
 }

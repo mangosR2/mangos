@@ -53,38 +53,17 @@ AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* a
 
 int AiFactory::GetPlayerSpecTab(Player* player)
 {
-    map<uint32,int32> tabs;
-    for(uint32 i = 0;i < uint32(3);i++)
-        tabs[i] = 0;
+    int c0 = player->GetTalentsCount(0);
+    int c1 = player->GetTalentsCount(1);
+    int c2 = player->GetTalentsCount(2);
 
-    uint8 activeSpec = player->GetActiveSpec();
-    PlayerTalentMap talents = player->GetTalentMap(activeSpec);
-    for(PlayerTalentMap::iterator iter = talents.begin();iter != talents.end();++iter){
-        if(iter->second.state == PLAYERSPELL_REMOVED)
-            continue;
+    if (c0 >= c1 && c0 >= c2)
+        return 0;
 
-        const TalentEntry *talentInfo = iter->second.talentEntry;
-        if(!talentInfo)
-            continue;
+    if (c1 >= c0 && c1 >= c2)
+        return 1;
 
-        const TalentTabEntry *talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
-        if(!talentTabInfo)
-            continue;
-
-        if((player->getClassMask() & talentTabInfo->ClassMask) == 0)
-            continue;
-
-        tabs[talentTabInfo->tabpage]++;
-    }
-    int tab = -1, max = 0;
-    for(uint32 i = 0;i < uint32(3);i++){
-        if(tab == -1 || max < tabs[i]){
-            tab = i;
-            max = tabs[i];
-        }
-    }
-
-    return tab;
+    return 2;
 }
 
 void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const facade, Engine* engine)

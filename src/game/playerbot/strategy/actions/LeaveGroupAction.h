@@ -10,7 +10,10 @@ namespace ai
 
         virtual bool Execute(Event event)
         {
-            ai->TellMaster("Goodbye!");
+            if (!bot->GetGroup())
+                return false;
+
+            ai->TellMaster("Goodbye!", PLAYERBOT_SECURITY_TALK);
 
             WorldPacket p;
             string member = bot->GetName();
@@ -18,6 +21,10 @@ namespace ai
             bot->GetSession()->HandleGroupDisbandOpcode(p);
 
             ai->ResetStrategies();
+
+            if (master->GetRandomPlayerbotMgr()->IsRandomBot(bot))
+                master->GetRandomPlayerbotMgr()->ScheduleTeleport(bot->GetGUIDLow());
+
             return true;
         }
     };

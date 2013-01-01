@@ -34,27 +34,33 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from)
         if (bot->GetPlayerbotAI()->IsOpposing(master))
             return PLAYERBOT_SECURITY_DENY_ALL;
 
+        Group* group = master->GetGroup();
+        if (group)
+        {
+            for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
+            {
+                Player* player = gref->getSource();
+                if(player == master)
+                    continue;
+
+                if (player == bot)
+                    return PLAYERBOT_SECURITY_ALLOW_ALL;
+            }
+        }
+
         if ((int)bot->getLevel() - (int)from->getLevel() > 5)
             return PLAYERBOT_SECURITY_TALK;
 
         int botGS = (int)bot->GetEquipGearScore(false, false);
         int fromGS = (int)from->GetEquipGearScore(false, false);
-		if (botGS && bot->getLevel() > 15 && 100 * (botGS - fromGS) / botGS >= (10 + (91 - (int)bot->getLevel()) / 4))
+        if (botGS && bot->getLevel() > 15 && 100 * (botGS - fromGS) / botGS >= (10 + (91 - (int)bot->getLevel()) / 4))
             return PLAYERBOT_SECURITY_TALK;
 
-        if (!bot->GetGroup())
+        if (bot->isDead())
+            return PLAYERBOT_SECURITY_TALK;
+
+        if (!group)
             return PLAYERBOT_SECURITY_INVITE;
-
-        Group* group = bot->GetGroup();
-        for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
-        {
-            Player* player = gref->getSource();
-            if(player == bot)
-                continue;
-
-            if (player == master)
-                return PLAYERBOT_SECURITY_ALLOW_ALL;
-        }
 
         if (group->IsFull())
             return PLAYERBOT_SECURITY_TALK;

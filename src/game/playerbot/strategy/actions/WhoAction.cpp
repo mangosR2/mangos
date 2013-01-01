@@ -28,20 +28,39 @@ bool WhoAction::Execute(Event event)
 {
     ostringstream out;
 
-    out << "|h|cffffffff" << chat->formatClass(bot->getClass(), AiFactory::GetPlayerSpecTab(bot));
-    out << " |h|cff00ff00" << bot->getLevel() << "|h|cffffffff lvl ";
+    int spec = AiFactory::GetPlayerSpecTab(bot);
+    out << "|h|cffffffff" << chat->formatClass(bot, spec);
+    out << "|h|cff00ff00 (" << bot->getLevel() << "|h|cffffffff lvl), ";
 
     ItemCountByQuality visitor;
     IterateItems(&visitor, ITERATE_ITEMS_IN_EQUIP);
 
+    bool needSlash = false;
     if (visitor.count[ITEM_QUALITY_EPIC])
-        out << "|h|cffff00ff" << visitor.count[ITEM_QUALITY_EPIC] << "|h|cffffffff/";
-    if (visitor.count[ITEM_QUALITY_RARE])
-        out << "|h|cff8080ff" << visitor.count[ITEM_QUALITY_RARE] << "|h|cffffffff/";
-    if (visitor.count[ITEM_QUALITY_UNCOMMON])
-        out << "|h|cff00ff00" << visitor.count[ITEM_QUALITY_UNCOMMON] << "|h|cffffffff/";
+    {
+        out << "|h|cffff00ff" << visitor.count[ITEM_QUALITY_EPIC] << "|h|cffffffff";
+        needSlash = true;
+    }
 
-    out << bot->GetEquipGearScore(false, false);
+    if (visitor.count[ITEM_QUALITY_RARE])
+    {
+        if (needSlash) out << "/";
+        out << "|h|cff8080ff" << visitor.count[ITEM_QUALITY_RARE] << "|h|cffffffff";
+        needSlash = true;
+    }
+
+    if (visitor.count[ITEM_QUALITY_UNCOMMON])
+    {
+        if (needSlash) out << "/";
+        out << "|h|cff00ff00" << visitor.count[ITEM_QUALITY_UNCOMMON] << "|h|cffffffff";
+        needSlash = true;
+    }
+
+    if (needSlash)
+    {
+        out << " gear (|h|cff00ff00" << bot->GetEquipGearScore(false, false) << "|h|cffffffff GS)";
+    }
+
 
     // ignore random bot chat filter
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
