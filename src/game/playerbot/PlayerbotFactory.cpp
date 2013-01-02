@@ -1191,6 +1191,12 @@ void PlayerbotFactory::InitInventory()
         if (bot->getLevel() >= 20 && proto->Quality < ITEM_QUALITY_UNCOMMON)
             continue;
 
+        if (proto->RequiredLevel > bot->getLevel() || proto->RequiredLevel < bot->getLevel() - 10)
+            continue;
+
+        if (proto->RequiredSkill && !bot->HasSkill(proto->RequiredSkill))
+            continue;
+
         ids.push_back(itemId);
     }
 

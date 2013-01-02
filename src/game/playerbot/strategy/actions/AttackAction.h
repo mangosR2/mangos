@@ -14,9 +14,7 @@ namespace ai
         virtual bool Execute(Event event);
         virtual bool isPossible()
         {
-            return GetTarget() &&
-                    AI_VALUE2(uint8, "health", "self target") > sPlayerbotAIConfig.lowHealth &&
-                    AI_VALUE2(uint8, "mana", "self target") > sPlayerbotAIConfig.lowMana;
+            return GetTarget();
         }
 
     protected:

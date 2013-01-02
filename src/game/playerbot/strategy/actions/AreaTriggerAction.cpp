@@ -28,9 +28,16 @@ bool ReachAreaTriggerAction::Execute(Event event)
         return true;
     }
 
+    if (at->requiredLevel > bot->getLevel())
+    {
+        ostringstream out; out << "I won't follow: |h|cff00ff00" << (int)at->requiredLevel << "|h|cffffffff level is required";
+        ai->TellMaster(out);
+        return false;
+    }
+
     if (bot->GetMapId() != atEntry->mapid || bot->GetDistance(atEntry->x, atEntry->y, atEntry->z) > sPlayerbotAIConfig.sightDistance)
     {
-        ai->TellMaster("I will not follow you - too far away");
+        ai->TellMaster("I won't follow: too far away");
         return true;
     }
 
@@ -39,11 +46,10 @@ bool ReachAreaTriggerAction::Execute(Event event)
     MotionMaster &mm = *bot->GetMotionMaster();
     mm.Clear();
 	mm.MovePoint(atEntry->mapid, atEntry->x, atEntry->y, atEntry->z);
-    ai->SetNextCheckDelay(sPlayerbotAIConfig.teleportDelay);
-
-    ostringstream out; out << "I will follow you in " << sPlayerbotAIConfig.teleportDelay / 1000 << " seconds";
-    ai->TellMaster(out);
-
+    float distance = bot->GetDistance(atEntry->x, atEntry->y, atEntry->z);
+    float delay = 1000.0f * distance / bot->GetSpeed(MOVE_RUN) + sPlayerbotAIConfig.reactDelay;
+    ai->TellMaster("Wait for me");
+    ai->SetNextCheckDelay(delay);
     context->GetValue<LastMovement&>("last movement")->Get().lastAreaTrigger = triggerId;
 
     return true;
@@ -76,5 +82,6 @@ bool AreaTriggerAction::Execute(Event event)
     p.rpos(0);
     bot->GetSession()->HandleAreaTriggerOpcode(p);
 
+    ai->TellMaster("Hello");
     return true;
 }

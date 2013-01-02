@@ -17,7 +17,8 @@ class NonCombatEngineTestCase : public EngineTestBase
       CPPUNIT_TEST( dpsAssist );
       CPPUNIT_TEST( tankAssist );
       CPPUNIT_TEST( attackWeak );
-      CPPUNIT_TEST( doNotAttackIfLowMpHp );
+      CPPUNIT_TEST( doNotGrindIfLowMpHp );
+      CPPUNIT_TEST( grindIfNoMana );
       CPPUNIT_TEST( attackRti );
       CPPUNIT_TEST( loot );
       CPPUNIT_TEST( loot_failed );
@@ -253,10 +254,11 @@ protected:
         assertActions(">S:tell target");
     }
 
-    void doNotAttackIfLowMpHp()
+    void doNotGrindIfLowMpHp()
     {
         engine->addStrategy("stay");
-        engine->addStrategy("dps assist");
+        engine->addStrategy("grind");
+        context->GetValue<Unit*>("grind target")->Set(MockedTargets::GetGridTarget());
 
         tick();
         set<uint8>("health", "self target", 1);
@@ -269,7 +271,21 @@ protected:
         set<uint8>("mana", "self target", 100);
         tickWithNoTarget();
 
-        assertActions(">S:stay>S:check mount state>S:check mount state>Dps:dps assist");
+        assertActions(">S:stay>S:add all loot>S:add all loot>Grind:attack anything");
+    }
+
+    void grindIfNoMana()
+    {
+        engine->addStrategy("stay");
+        engine->addStrategy("grind");
+        context->GetValue<Unit*>("grind target")->Set(MockedTargets::GetGridTarget());
+
+        tick();
+        set<uint8>("health", "self target", 100);
+        set<uint8>("mana", "self target", 0);
+        tickWithNoTarget();
+
+        assertActions(">S:stay>Grind:attack anything");
     }
 };
 

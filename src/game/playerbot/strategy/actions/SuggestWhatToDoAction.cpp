@@ -20,6 +20,12 @@ SuggestWhatToDoAction::SuggestWhatToDoAction(PlayerbotAI* ai) : InventoryAction(
 
 bool SuggestWhatToDoAction::Execute(Event event)
 {
+    if (suggested)
+    {
+        trade();
+        return true;
+    }
+
     if (bot->GetInstanceId() || suggested)
         return false;
 
