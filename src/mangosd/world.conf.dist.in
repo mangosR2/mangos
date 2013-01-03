@@ -1986,7 +1986,7 @@ Anticheat.Warden  = 1
 #
 ###################################################################################################################
 
-CharDelete.Method = 1
+CharDelete.Method = 0
 CharDelete.MinLevel = 10
 CharDelete.KeepDays = 30
 
