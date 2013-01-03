@@ -64,6 +64,7 @@
 #include "SpellAuras.h"
 #include "DBCStores.h"
 #include "SQLStorages.h"
+#include "Calendar.h"
 
 #include <cmath>
 
@@ -17439,8 +17440,11 @@ void Player::UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficu
     if (itr != m_boundInstances[difficulty].end())
     {
         if (!unload)
-            CharacterDatabase.PExecute("DELETE FROM character_instance WHERE guid = '%u' AND instance = '%u' AND extend = 0",
-                GetGUIDLow(), itr->second.state->GetInstanceId());
+            CharacterDatabase.PExecute("DELETE FROM character_instance WHERE guid = '%u' AND instance = '%u'",
+                                       GetGUIDLow(), itr->second.state->GetInstanceId());
+
+        sCalendarMgr.SendCalendarRaidLockoutRemove(GetObjectGuid(), itr->second.state);
+
         itr->second.state->RemovePlayer(this);              // state can become invalid
         m_boundInstances[difficulty].erase(itr++);
     }
@@ -17518,6 +17522,7 @@ void Player::BindToInstance()
     data << uint32(0);
     GetSession()->SendPacket(&data);
     BindToInstance(_pendingBind, true);
+    sCalendarMgr.SendCalendarRaidLockoutAdd(GetObjectGuid(), _pendingBind);
 }
 
 void Player::SendRaidInfo()

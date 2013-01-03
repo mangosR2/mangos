@@ -311,6 +311,7 @@ ObjectLoadingSplitter.MaxAllowedTime = 10
 #    LogFilter_DbStrictedCheck
 #    LogFilter_SQLText
 #    LogFilter_Pathfinding
+#    LogFilter_Calendar
 #        Log filters (active by default - meaning: the filter is active, hence the log is not displayed)
 #        Default: 1 - not include with any log level
 #                 0 - include in log if log level permit
@@ -408,6 +409,7 @@ LogFilter_PlayerStats = 0
 LogFilter_Damage = 0
 LogFilter_Combat = 0
 LogFilter_SpellCast = 0
+LogFilter_Calendar = 1
 WorldLogFile = ""
 WorldLogTimestamp = 0
 DBErrorLogFile = "DBErrors.log"
@@ -1060,8 +1062,9 @@ FactiomAndRaceChangeWithoutRenaming = 0
 #    AllowTwoSide.Interaction.Guild
 #    AllowTwoSide.Interaction.Auction
 #    AllowTwoSide.Interaction.Mail
+#    AllowTwoSide.Interaction.Calendar
 #        Allow or not common :chat(say,yell);channel(chat)group(join)guild(join);merge all auction houses for players from
-#        different teams, send mail to different team.
+#        different teams, send mail to different team, calendar(invite player from different team)
 #        Default: 0 (Not allowed)
 #                 1 (Allowed)
 #
@@ -1090,6 +1093,7 @@ AllowTwoSide.Interaction.Group = 0
 AllowTwoSide.Interaction.Guild = 0
 AllowTwoSide.Interaction.Auction = 0
 AllowTwoSide.Interaction.Mail = 0
+AllowTwoSide.Interaction.Calendar = 0
 AllowTwoSide.WhoList = 0
 AllowTwoSide.AddFriend = 0
 TalentsInspecting = 1
