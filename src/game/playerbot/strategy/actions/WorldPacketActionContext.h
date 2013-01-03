@@ -58,9 +58,11 @@ namespace ai
             creators["uninvite"] = &WorldPacketActionContext::uninvite;
             creators["lfg update"] = &WorldPacketActionContext::lfg_update;
             creators["lfg proposal"] = &WorldPacketActionContext::lfg_proposal;
+            creators["lfg leave"] = &WorldPacketActionContext::lfg_leave;
         }
 
     private:
+        static Action* lfg_leave(PlayerbotAI* ai) { return new LfgLeaveAction(ai); }
         static Action* lfg_proposal(PlayerbotAI* ai) { return new LfgProposalAction(ai); }
         static Action* lfg_update(PlayerbotAI* ai) { return new LfgUpdateAction(ai); }
         static Action* uninvite(PlayerbotAI* ai) { return new UninviteAction(ai); }

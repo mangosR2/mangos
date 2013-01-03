@@ -40,9 +40,11 @@ namespace ai
             creators["uninvite"] = &WorldPacketTriggerContext::uninvite;
             creators["lfg update"] = &WorldPacketTriggerContext::lfg_update;
             creators["lfg proposal"] = &WorldPacketTriggerContext::lfg_proposal;
+            creators["lfg leave"] = &WorldPacketTriggerContext::lfg_leave;
         }
 
     private:
+        static Trigger* lfg_leave(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "lfg leave"); }
         static Trigger* lfg_proposal(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "lfg proposal"); }
         static Trigger* lfg_update(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "lfg update"); }
         static Trigger* uninvite(PlayerbotAI* ai) { return new WorldPacketTrigger(ai, "uninvite"); }

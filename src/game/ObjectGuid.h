@@ -87,6 +87,8 @@ enum HighGuid
     HIGHGUID_EVENT          = 0xA01,                        // Calendar and guild events (FFU)
     HIGHGUID_OBJECTEVENT    = 0xA02,                        // local object-attached events (FFU)
     HIGHGUID_MAPEVENT       = 0xA03,                        // local map-attached events (FFU)
+    HIGHGUID_CALENDAR_EVENT = 0xA06,                        // Calendar events
+    HIGHGUID_INVITE         = 0xA07,                        // Calendar invites
     HIGHGUID_AREATRIGGER    = 0xA10,                        // AreaTrigger (FFU), possible has real value in 4.x
     HIGHGUID_WORLDLOCATION  = 0xA11,                        // World location (FFU)
     HIGHGUID_WORLDSTATE     = 0xA12,                        // WorldState (FFU)
@@ -166,6 +168,9 @@ class MANGOS_DLL_SPEC ObjectGuid
         bool IsWorldState()        const { return GetHigh() == HIGHGUID_WORLDSTATE;           }
         bool IsLocation()          const { return GetHigh() == HIGHGUID_WORLDLOCATION;        }
 
+        bool IsCalendarEvent()     const { return GetHigh() == HIGHGUID_CALENDAR_EVENT;       }
+        bool IsInvite()            const { return GetHigh() == HIGHGUID_INVITE;               }
+
         static TypeID GetTypeId(HighGuid high)
         {
             switch(high)
@@ -181,6 +186,8 @@ class MANGOS_DLL_SPEC ObjectGuid
                 case HIGHGUID_MO_TRANSPORT: return TYPEID_GAMEOBJECT;
                 case HIGHGUID_VEHICLE:      return TYPEID_UNIT;
 
+                case HIGHGUID_CALENDAR_EVENT:
+                case HIGHGUID_INVITE:
                 case HIGHGUID_EVENT:
                 case HIGHGUID_OBJECTEVENT:
                 case HIGHGUID_MAPEVENT:     return TYPEID_AIGROUP;
@@ -228,6 +235,9 @@ class MANGOS_DLL_SPEC ObjectGuid
 
                 case HIGHGUID_AREATRIGGER:
                 case HIGHGUID_WORLDLOCATION:
+
+                case HIGHGUID_CALENDAR_EVENT:
+                case HIGHGUID_INVITE:
                     return false;
 
                 case HIGHGUID_GAMEOBJECT:

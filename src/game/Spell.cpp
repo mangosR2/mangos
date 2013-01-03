@@ -536,7 +536,6 @@ void Spell::FillTargetMap()
 
     UnitList tmpUnitLists[MAX_EFFECT_INDEX];                // Stores the temporary Target Lists for each effect
     uint8 effToIndex[MAX_EFFECT_INDEX] = {0, 1, 2};         // Helper array, to link to another tmpUnitList, if the targets for both effects match
-    bool doubleFillChecker[MAX_EFFECT_INDEX] = {true, true, true};
     for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
         // not call for empty effect.
@@ -564,7 +563,6 @@ void Spell::FillTargetMap()
         {
             // Check if same target, but handle i.e. AreaAuras different
             if (m_spellInfo->EffectImplicitTargetA[i] == m_spellInfo->EffectImplicitTargetA[j] && m_spellInfo->EffectImplicitTargetB[i] == m_spellInfo->EffectImplicitTargetB[j]
-                && doubleFillChecker[j]
                 && m_spellInfo->Effect[j] != SPELL_EFFECT_NONE
                 && !IsAreaAuraEffect(m_spellInfo->Effect[i]) && !IsAreaAuraEffect(m_spellInfo->Effect[j]))
                 // Add further conditions here if required
@@ -784,7 +782,6 @@ void Spell::FillTargetMap()
         {
             if (!CheckTarget(*itr, SpellEffectIndex(i)))
             {
-                doubleFillChecker[effToIndex[i]] = false;
                 itr = tmpUnitLists[effToIndex[i]].erase(itr);
                 continue;
             }
@@ -7938,11 +7935,6 @@ bool Spell::CheckTarget(Unit* target, SpellEffectIndex eff )
         case SPELL_EFFECT_FRIEND_SUMMON:
         case SPELL_EFFECT_SUMMON_PLAYER:                    // from anywhere
             break;
-        case SPELL_EFFECT_THREAT:
-        case SPELL_EFFECT_THREAT_ALL:
-            if ( target->GetTypeId() == TYPEID_PLAYER && !target->GetCharmer() )
-                return false;
-            break;
         case SPELL_EFFECT_DUMMY:
             break;
         case SPELL_EFFECT_RESURRECT_NEW:
@@ -8811,41 +8803,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
                 if (*itr && (*itr)->isInFrontInMap(m_caster, DEFAULT_VISIBILITY_DISTANCE) && (*itr)->IsWithinLOSInMap(m_caster))
                     targetUnitMap.push_back(*itr);
             }
-            break;
-        }
-        case 69057:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10N)
-        case 70826:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-        case 72088:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 10H)
-        case 72089:                                 // Bone Spike Graveyard (Icecrown Citadel, Lord Marrowgar encounter, 25H)
-        case 73142:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10N)
-        case 73143:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25N)
-        case 73144:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 10H)
-        case 73145:                                 // Bone Spike Graveyard (during Bone Storm) (Icecrown Citadel, Lord Marrowgar encounter, 25H)
-        {
-            unMaxTargets = 1;
-            switch (m_spellInfo->Id)
-            {
-                case 72089:
-                case 70826:
-                case 73143:
-                case 73145:
-                    unMaxTargets = 3;
-            }
-
-            radius = DEFAULT_VISIBILITY_INSTANCE;
-
-            UnitList tmpUnitMap;
-            FillAreaTargets(tmpUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
-            for (UnitList::const_iterator itr = tmpUnitMap.begin(); itr != tmpUnitMap.end(); ++itr)
-            {
-                if ((*itr) && (*itr)->GetTypeId() == TYPEID_PLAYER && // target players only
-                    m_caster->getVictim() &&                        // don't target tank
-                    m_caster->getVictim()->GetObjectGuid() != (*itr)->GetObjectGuid())
-                {
-                    targetUnitMap.push_back(*itr);
-                }
-            }
-
             break;
         }
         case 69099: // Ice Pulse (Lich King)

@@ -22,4 +22,10 @@ namespace ai
         bool JoinProposal();
     };
 
+    class LfgLeaveAction : public Action {
+    public:
+        LfgLeaveAction(PlayerbotAI* ai) : Action(ai, "lfg leave") {}
+        virtual bool Execute(Event event);
+    };
+
 }

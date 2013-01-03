@@ -100,3 +100,9 @@ bool LfgProposalAction::Execute(Event event)
     sLFGMgr.UpdateProposal(ID, bot->GetObjectGuid(), accept);
 	return true;
 }
+
+bool LfgLeaveAction::Execute(Event event)
+{
+    sLFGMgr.Leave(bot);
+	return true;
+}

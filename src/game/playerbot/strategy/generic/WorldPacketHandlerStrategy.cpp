@@ -82,6 +82,7 @@ WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* ai) : PassTr
     supported.push_back("uninvite");
     supported.push_back("lfg update");
     supported.push_back("lfg proposal");
+    supported.push_back("lfg leave");
 }
 
 

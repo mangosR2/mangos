@@ -34,6 +34,7 @@ class WorldPacketHandlerTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( uninvite );
       CPPUNIT_TEST( lfg_update );
       CPPUNIT_TEST( lfg_proposal );
+      CPPUNIT_TEST( lfg_leave );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -233,6 +234,14 @@ protected:
         tick();
 
         assertActions(">S:lfg proposal");
+    }
+
+    void lfg_leave()
+    {
+        trigger("lfg leave");
+        tick();
+
+        assertActions(">S:lfg leave");
     }
 
 };
