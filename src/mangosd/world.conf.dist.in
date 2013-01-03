@@ -495,7 +495,7 @@ LogColors = "13 7 11 9"
 #        LexicsCutterNoActionOnGM = 1
 ###################################################################################################################
 
-ChatLogEnable = 1
+ChatLogEnable = 0
 ChatLogDateSplit = 1
 ChatLogUTFHeader = 1
 ChatLogIgnoreUnprintable = 1
@@ -513,7 +513,7 @@ ChatLogWhisperScreen = 0
 ChatLogChannelScreen = 0
 ChatLogRaidScreen = 0
 ChatLogBattleGroundScreen = 0
-LexicsCutterEnable = 1
+LexicsCutterEnable = 0
 LexicsCutterInnormativeCut = 1
 LexicsCutterCutReplacement = &!@^%!^&*!!!
 LexicsCutterLogFile = innormative-$d.log
@@ -965,7 +965,7 @@ LexicsCutterNoActionOnGM = 1
 #
 ###################################################################################################################
 
-GameType = 8
+GameType = 1
 RealmZone = 1
 Expansion = 2
 DBC.Locale = 255
