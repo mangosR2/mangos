@@ -62,9 +62,9 @@ ConfVersion=2010100901
 RealmID = 1
 DataDir = "."
 LogsDir = ""
-LoginDatabaseInfo     = "127.0.0.1;3306;root;123456;realmd"
-WorldDatabaseInfo     = "127.0.0.1;3306;root;123456;mangos"
-CharacterDatabaseInfo = "127.0.0.1;3306;root;123456;characters"
+LoginDatabaseInfo     = "127.0.0.1;3310;root;123456;realmd"
+WorldDatabaseInfo     = "127.0.0.1;3310;root;123456;mangos"
+CharacterDatabaseInfo = "127.0.0.1;3310;root;123456;characters"
 LoginDatabaseConnections = 1
 WorldDatabaseConnections = 1
 CharacterDatabaseConnections = 1
@@ -495,7 +495,7 @@ LogColors = "13 7 11 9"
 #        LexicsCutterNoActionOnGM = 1
 ###################################################################################################################
 
-ChatLogEnable = 1
+ChatLogEnable = 0
 ChatLogDateSplit = 1
 ChatLogUTFHeader = 1
 ChatLogIgnoreUnprintable = 1
@@ -513,7 +513,7 @@ ChatLogWhisperScreen = 0
 ChatLogChannelScreen = 0
 ChatLogRaidScreen = 0
 ChatLogBattleGroundScreen = 0
-LexicsCutterEnable = 1
+LexicsCutterEnable = 0
 LexicsCutterInnormativeCut = 1
 LexicsCutterCutReplacement = &!@^%!^&*!!!
 LexicsCutterLogFile = innormative-$d.log
@@ -965,7 +965,7 @@ LexicsCutterNoActionOnGM = 1
 #
 ###################################################################################################################
 
-GameType = 8
+GameType = 1
 RealmZone = 1
 Expansion = 2
 DBC.Locale = 255
@@ -1836,7 +1836,7 @@ OutdoorPvp.ZMEnabled = 1
 OutdoorPvp.TFEnabled = 1
 OutdoorPvp.NAEnabled = 1
 OutdoorPvp.GHEnabled = 1
-OutdoorPvp.WGEnabled = 0
+OutdoorPvp.WGEnabled = 1
 
 ###################################################################################################################
 # NETWORK CONFIG
@@ -2059,7 +2059,7 @@ Anticheat.Warden  = 1
 #
 ###################################################################################################################
 
-CharDelete.Method = 1
+CharDelete.Method = 0
 CharDelete.MinLevel = 10
 CharDelete.KeepDays = 30
 

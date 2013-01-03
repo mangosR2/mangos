@@ -119,7 +119,7 @@ ConfVersion=2010062001
 #
 ###################################################################################################################
 
-LoginDatabaseInfo = "127.0.0.1;3306;root;123456;realmd"
+LoginDatabaseInfo = "127.0.0.1;3310;root;123456;realmd"
 LogsDir = ""
 MaxPingTime = 30
 RealmServerPort = 3724
@@ -139,5 +139,5 @@ WrongPass.MaxCount = 0
 WrongPass.BanTime = 600
 WrongPass.BanType = 0
 
-AutoRegistration = 0
-AutoRegistration.Amount = 1
+AutoRegistration = 1
+AutoRegistration.Amount = 9
