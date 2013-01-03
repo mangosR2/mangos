@@ -1836,7 +1836,7 @@ OutdoorPvp.ZMEnabled = 1
 OutdoorPvp.TFEnabled = 1
 OutdoorPvp.NAEnabled = 1
 OutdoorPvp.GHEnabled = 1
-OutdoorPvp.WGEnabled = 0
+OutdoorPvp.WGEnabled = 1
 
 ###################################################################################################################
 # NETWORK CONFIG
