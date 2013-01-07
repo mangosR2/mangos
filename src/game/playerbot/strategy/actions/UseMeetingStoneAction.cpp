@@ -30,6 +30,9 @@ namespace MaNGOS
 
 bool UseMeetingStoneAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     WorldPacket p(event.getPacket());
     p.rpos(0);
     ObjectGuid guid;
@@ -74,6 +77,9 @@ bool UseMeetingStoneAction::Execute(Event event)
 
 bool SummonAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     if (!master->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && master->GetSession()->GetSecurity() < SEC_GAMEMASTER)
     {
         ai->TellMaster("You must be in a city or inn to summon me");

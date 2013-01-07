@@ -7,7 +7,7 @@ using namespace ai;
 
 uint8 AoeHealValue::Calculate()
 {
-    Group* group = master->GetGroup();
+    Group* group = bot->GetGroup();
     if (!group)
     	return 0;
 

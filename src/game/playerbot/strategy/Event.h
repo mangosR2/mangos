@@ -10,11 +10,12 @@ namespace ai
             source = other.source;
             param = other.param;
             packet = other.packet;
+            owner = other.owner;
         }
         Event() {}
         Event(string source) : source(source) {}
-        Event(string source, string param) : source(source), param(param) {}
-        Event(string source, WorldPacket &packet) : source(source), packet(packet) {}
+        Event(string source, string param, Player* owner = NULL) : source(source), param(param), owner(owner) {}
+        Event(string source, WorldPacket &packet, Player* owner = NULL) : source(source), packet(packet), owner(owner) {}
         virtual ~Event() {}
 
 	public:
@@ -22,6 +23,7 @@ namespace ai
         string getParam() { return param; }
         WorldPacket& getPacket() { return packet; }
         ObjectGuid getObject();
+        Player* getOwner() { return owner; }
         bool operator! () const { return source.empty(); }
 
     protected:
@@ -29,5 +31,6 @@ namespace ai
         string param;
         WorldPacket packet;
         ObjectGuid object;
+        Player* owner;
 	};
 }

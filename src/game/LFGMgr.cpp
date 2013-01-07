@@ -2511,6 +2511,11 @@ bool LFGMgr::TryCreateGroup(LFGType type)
         LFGDungeonSet intersection;
         GuidSet newGroup;
         GuidSet const* applicants = &itr->second;
+        // playerbot mod
+        for (int pass = 0; pass < 2; ++pass)
+        {
+        // end of playerbot mod
+
         for (GuidSet::const_iterator itr1 = applicants->begin(); itr1 != applicants->end(); ++itr1)
         {
             ObjectGuid guid = *itr1;
@@ -2534,7 +2539,11 @@ bool LFGMgr::TryCreateGroup(LFGType type)
                 continue;
 
             Player* player1 = sObjectMgr.GetPlayer(guid);
-            if (player1 && player1->IsInWorld())
+            if (player1 && player1->IsInWorld() &&
+                    // playerbot mod
+                    ((!pass && !player1->GetPlayerbotAI()) || pass)
+                    // end of playerbot mod
+                    )
             {
                 rolesMap.insert(std::make_pair(player1->GetObjectGuid(), player1->GetLFGPlayerState()->GetRoles()));
 
@@ -2562,6 +2571,13 @@ bool LFGMgr::TryCreateGroup(LFGType type)
                 break;
             }
         }
+
+        // playerbot mod
+        if (!pass && newGroup.empty())
+            break;
+        }
+        // end of playerbot mod
+
         DEBUG_LOG("LFGMgr:TryCreateGroup: Try create group to dungeon %u from " SIZEFMTD " players. result is %u", itr->first->ID, itr->second.size(), uint8(groupCreated));
         if (groupCreated)
         {

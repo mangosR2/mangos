@@ -19,6 +19,9 @@ bool AttackAction::Execute(Event event)
 
 bool AttackMyTargetAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ObjectGuid guid = master->GetSelectionGuid();
     if (!guid)
     {

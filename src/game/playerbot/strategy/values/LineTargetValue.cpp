@@ -6,8 +6,8 @@ using namespace ai;
 
 Unit* LineTargetValue::Calculate()
 {
-    
-    
+    if (!master)
+        return NULL;
 
     Group* group = master->GetGroup();
     if (!group)

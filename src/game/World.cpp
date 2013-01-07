@@ -71,6 +71,7 @@
 #include "warden/WardenDataStorage.h"
 #include "ahbot/AhBot.h"
 #include "playerbot/PlayerbotAIConfig.h"
+#include "playerbot/RandomPlayerbotMgr.h"
 
 INSTANTIATE_SINGLETON_1( World );
 
@@ -473,7 +474,7 @@ void World::LoadConfigSettings(bool reload)
         setConfig(CONFIG_BOOL_VMSS_ENABLE, "fakeString", false);
     }
 #endif
- 
+
     setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
     setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
@@ -1645,7 +1646,7 @@ void World::SetInitialWorldSettings()
 
     sLog.outString("Loading Warden Data..." );
     WardenDataStorage.Init();
-    
+
     sLog.outString("Initializing AuctionHouseBot...");
     auctionbot.Init();
 
@@ -1769,6 +1770,10 @@ void World::Update(uint32 diff)
         sAuctionBot.Update();
         m_timers[WUPDATE_AHBOT].Reset();
     }
+
+    // playerbot mod
+    sRandomPlayerbotMgr.UpdateAI(diff);
+    // end of playerbot mod
 
     /// <li> Handle session updates
     UpdateSessions(diff);

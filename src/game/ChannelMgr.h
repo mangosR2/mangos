@@ -35,7 +35,6 @@ class ChannelMgr
         Channel* GetJoinChannel(std::string name, uint32 channel_id);
         Channel* GetChannel(std::string name, Player* p, bool pkt = true);
         void LeftChannel(std::string name);
-    private:
         ChannelMap channels;
         void MakeNotOnPacket(WorldPacket* data, std::string name);
 };

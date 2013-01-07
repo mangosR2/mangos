@@ -40,6 +40,9 @@ public:
 
 bool SellAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     string text = event.getParam();
 
     if (text == "gray" || text == "*")

@@ -102,6 +102,9 @@ bool StayCircleAction::Execute(Event event)
     if (!target)
         target = master;
 
+    if (!target)
+        return false;
+
     switch (bot->getClass())
     {
     case CLASS_HUNTER:
@@ -136,6 +139,8 @@ bool StayLineAction::Execute(Event event)
 
     float range = 2.0f;
 
+    if (!master)
+        return false;
 
     float x = master->GetPositionX();
     float y = master->GetPositionY();
@@ -166,6 +171,8 @@ bool StayCombatAction::Execute(Event event)
 
     float range = 2.0f;
 
+    if (!master)
+        return false;
 
     float x = master->GetPositionX();
     float y = master->GetPositionY();

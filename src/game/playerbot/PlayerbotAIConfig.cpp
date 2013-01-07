@@ -76,8 +76,8 @@ bool PlayerbotAIConfig::Initialize()
 
     randomBotAutologin = config.GetBoolDefault("AiPlayerbot.RandomBotAutologin", true);
     randomBotGrinding = config.GetBoolDefault("AiPlayerbot.RandomBotGrinding", true);
-    minRandomBots = config.GetIntDefault("AiPlayerbot.MinRandomBots", 1);
-    maxRandomBots = config.GetIntDefault("AiPlayerbot.MaxRandomBots", 10);
+    minRandomBots = config.GetIntDefault("AiPlayerbot.MinRandomBots", 50);
+    maxRandomBots = config.GetIntDefault("AiPlayerbot.MaxRandomBots", 200);
     randomBotUpdateInterval = config.GetIntDefault("AiPlayerbot.RandomBotUpdateInterval", 60);
     randomBotCountChangeInterval = config.GetIntDefault("AiPlayerbot.RandomBotCountChangeInterval", 5 * 24 * 3600);
     minRandomBotInWorldTime = config.GetIntDefault("AiPlayerbot.MinRandomBotInWorldTime", 2 * 3600);
@@ -87,9 +87,8 @@ bool PlayerbotAIConfig::Initialize()
     minRandomBotPvpTime = config.GetIntDefault("AiPlayerbot.MinRandomBotPvpTime", 120);
     maxRandomBotPvpTime = config.GetIntDefault("AiPlayerbot.MaxRandomBotPvpTime", 3 * 3600);
     randomBotTeleportDistance = config.GetIntDefault("AiPlayerbot.RandomBotTeleportDistance", 400);
-    minRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MinRandomBotsPerInterval", 1);
-    maxRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MaxRandomBotsPerInterval", 5);
-    randomBotEnemyPercent = config.GetIntDefault("AiPlayerbot.RandomBotEnemyPercent", 30);
+    minRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MinRandomBotsPerInterval", 50);
+    maxRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MaxRandomBotsPerInterval", 100);
     randomBotJoinLfg = config.GetBoolDefault("AiPlayerbot.RandomBotJoinLfg", false);
 
     CreateRandomBots();

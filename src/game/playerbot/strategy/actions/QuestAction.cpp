@@ -9,6 +9,9 @@ bool QuestAction::Execute(Event event)
 {
     ObjectGuid guid = event.getObject();
 
+    if (!master)
+        return false;
+
     if (!guid)
         guid = master->GetSelectionGuid();
 

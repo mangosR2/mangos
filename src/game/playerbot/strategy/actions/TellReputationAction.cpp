@@ -7,8 +7,8 @@ using namespace ai;
 
 bool TellReputationAction::Execute(Event event)
 {
-    
-    
+    if (!master)
+        return false;
 
     ObjectGuid selection = master->GetSelectionGuid();
     if (selection.IsEmpty())

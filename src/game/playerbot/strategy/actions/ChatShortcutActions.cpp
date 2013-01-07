@@ -7,6 +7,9 @@ using namespace ai;
 
 bool FollowChatShortcutAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ai->Reset();
     ai->ChangeStrategy("+follow master,-passive", BOT_STATE_NON_COMBAT);
     ai->ChangeStrategy("-follow master,-passive", BOT_STATE_COMBAT);
@@ -21,6 +24,9 @@ bool FollowChatShortcutAction::Execute(Event event)
 
 bool StayChatShortcutAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ai->Reset();
     ai->ChangeStrategy("+stay,-passive", BOT_STATE_NON_COMBAT);
     ai->ChangeStrategy("-follow master,-passive", BOT_STATE_COMBAT);
@@ -30,6 +36,9 @@ bool StayChatShortcutAction::Execute(Event event)
 
 bool FleeChatShortcutAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ai->Reset();
     ai->ChangeStrategy("+follow master,+passive", BOT_STATE_NON_COMBAT);
     ai->ChangeStrategy("+follow master,+passive", BOT_STATE_COMBAT);
@@ -44,6 +53,9 @@ bool FleeChatShortcutAction::Execute(Event event)
 
 bool GoawayChatShortcutAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ai->Reset();
     ai->ChangeStrategy("+runaway", BOT_STATE_NON_COMBAT);
     ai->ChangeStrategy("+runaway", BOT_STATE_COMBAT);
@@ -53,8 +65,26 @@ bool GoawayChatShortcutAction::Execute(Event event)
 
 bool GrindChatShortcutAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     ai->Reset();
     ai->ChangeStrategy("+grind,-passive", BOT_STATE_NON_COMBAT);
     ai->TellMaster("Grinding");
+    return true;
+}
+
+bool TankAttackChatShortcutAction::Execute(Event event)
+{
+    if (!master)
+        return false;
+
+    if (!ai->IsTank(bot))
+        return false;
+
+    ai->Reset();
+    ai->ChangeStrategy("-passive", BOT_STATE_NON_COMBAT);
+    ai->ChangeStrategy("-passive", BOT_STATE_COMBAT);
+    ai->TellMaster("Attacking");
     return true;
 }

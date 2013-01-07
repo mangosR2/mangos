@@ -245,7 +245,7 @@ bool WorldSession::Update(PacketFilter& updater)
                         ExecuteOpcode(opHandle, packet);
 
                     // lag can cause STATUS_LOGGEDIN opcodes to arrive after the player started a transfer
-					
+
 					// playerbot mod
 					if (_player && _player->GetPlayerbotMgr())
 						_player->GetPlayerbotMgr()->HandleMasterIncomingPacket(*packet);
@@ -332,18 +332,36 @@ bool WorldSession::Update(PacketFilter& updater)
                 itr != GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsEnd(); ++itr)
         {
             Player* const botPlayer = itr->second;
-            WorldSession* const pBotWorldSession = botPlayer->GetSession();
             if (botPlayer->IsBeingTeleported())
                 botPlayer->GetPlayerbotAI()->HandleTeleportAck();
             else if (botPlayer->IsInWorld())
             {
                 WorldPacket* packet;
+                WorldSession* const pBotWorldSession = botPlayer->GetSession();
                 while (pBotWorldSession->_recvQueue.next(packet))
                 {
                     OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
                     (pBotWorldSession->*opHandle.handler)(*packet);
                     delete packet;
                 }
+            }
+        }
+    }
+    for (PlayerBotMap::const_iterator itr = sRandomPlayerbotMgr.GetPlayerBotsBegin();
+            itr != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++itr)
+    {
+        Player* const botPlayer = itr->second;
+        if (botPlayer->IsBeingTeleported())
+            botPlayer->GetPlayerbotAI()->HandleTeleportAck();
+        else if (botPlayer->IsInWorld())
+        {
+            WorldPacket* packet;
+            WorldSession* const pBotWorldSession = botPlayer->GetSession();
+            while (pBotWorldSession->_recvQueue.next(packet))
+            {
+                OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
+                (pBotWorldSession->*opHandle.handler)(*packet);
+                delete packet;
             }
         }
     }
@@ -394,10 +412,11 @@ void WorldSession::LogoutPlayer(bool Save)
 
         if (ObjectGuid lootGuid = GetPlayer()->GetLootGuid())
             DoLootRelease(lootGuid);
-        
+
 	// Playerbot mod: log out all player bots owned by this toon
         if (_player->GetPlayerbotMgr())
             _player->GetPlayerbotMgr()->LogoutAllBots();
+        sRandomPlayerbotMgr.OnPlayerLogout(_player);
 
 
         ///- If the player just died before logging out, make him appear as a ghost

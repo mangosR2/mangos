@@ -12,7 +12,8 @@ bool GossipHelloAction::Execute(Event event)
     WorldPacket &p = event.getPacket();
     if (p.empty())
     {
-        guid = master->GetSelectionGuid();
+        if (master)
+            guid = master->GetSelectionGuid();
     }
     else
     {
@@ -48,7 +49,7 @@ bool GossipHelloAction::Execute(Event event)
     {
         GossipMenuItem const& item = menu.GetItem(i);
         ai->TellMaster(item.m_gMessage);
-        
+
         if (item.m_gOptionId < 1000 && item.m_gOptionId != GOSSIP_OPTION_GOSSIP)
         {
             i++;
@@ -59,7 +60,7 @@ bool GossipHelloAction::Execute(Event event)
         std::string code;
         p1 << guid << menu.GetMenuId() << i << code;
         bot->GetSession()->HandleGossipSelectOptionOpcode(p1);
-        
+
         i = 0;
     }
 

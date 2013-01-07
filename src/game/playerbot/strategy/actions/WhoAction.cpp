@@ -2,30 +2,18 @@
 #include "../../playerbot.h"
 #include "WhoAction.h"
 #include "../../AiFactory.h"
+#include "../ItemVisitors.h"
 
 using namespace ai;
 
-class ItemCountByQuality : public IterateItemsVisitor
-{
-public:
-    ItemCountByQuality() : IterateItemsVisitor()
-    {
-        for (uint32 i = 0; i < MAX_ITEM_QUALITY; ++i)
-            count[i] = 0;
-    }
 
-    virtual bool Visit(Item* item)
-    {
-        count[item->GetProto()->Quality]++;
-        return true;
-    }
-
-public:
-    map<uint32, int> count;
-};
 
 bool WhoAction::Execute(Event event)
 {
+    Player* owner = event.getOwner();
+    if (!owner)
+        return false;
+
     ostringstream out;
 
     int spec = AiFactory::GetPlayerSpecTab(bot);
@@ -61,10 +49,12 @@ bool WhoAction::Execute(Event event)
         out << " gear (|h|cff00ff00" << bot->GetEquipGearScore(false, false) << "|h|cffffffff GS)";
     }
 
+    if (bot->GetGroup())
+        out << " invited";
 
     // ignore random bot chat filter
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
     bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, out.str(), LANG_UNIVERSAL);
-    master->GetSession()->SendPacket(&data);
+    owner->GetSession()->SendPacket(&data);
     return true;
 }

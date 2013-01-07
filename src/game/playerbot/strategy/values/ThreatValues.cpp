@@ -14,7 +14,7 @@ uint8 ThreatValue::Calculate()
     if (target->GetObjectGuid().IsPlayer())
         return 0;
 
-    Group* group = master->GetGroup();
+    Group* group = bot->GetGroup();
     if (!group)
         return 0;
 

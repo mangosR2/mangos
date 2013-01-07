@@ -30,8 +30,8 @@ namespace ai
 
 	public:
         virtual Event Check();
-        virtual void ExternalEvent(string param) {}
-        virtual void ExternalEvent(WorldPacket &packet) {}
+        virtual void ExternalEvent(string param, Player* owner = NULL) {}
+        virtual void ExternalEvent(WorldPacket &packet, Player* owner = NULL) {}
         virtual bool IsActive() { return false; }
         virtual NextAction** getHandlers() { return NULL; }
         void Update() {}
@@ -59,13 +59,13 @@ namespace ai
     public:
         TriggerNode(string name, NextAction** handlers = NULL)
         {
-            this->name = name; 
+            this->name = name;
             this->handlers = handlers;
             this->trigger = NULL;
         }
-        virtual ~TriggerNode() 
-        { 
-            NextAction::destroy(handlers); 
+        virtual ~TriggerNode()
+        {
+            NextAction::destroy(handlers);
         }
 
     public:

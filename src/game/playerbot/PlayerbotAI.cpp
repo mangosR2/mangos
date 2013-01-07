@@ -53,23 +53,21 @@ void PacketHandlingHelper::AddPacket(const WorldPacket& packet)
 }
 
 
-PlayerbotAI::PlayerbotAI() : PlayerbotAIBase(), bot(NULL), mgr(NULL), aiObjectContext(NULL),
-    currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0), security(NULL, NULL)
+PlayerbotAI::PlayerbotAI() : PlayerbotAIBase(), bot(NULL), aiObjectContext(NULL),
+    currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0), security(NULL), master(NULL)
 {
     for (int i = 0 ; i < BOT_STATE_MAX; i++)
         engines[i] = NULL;
 }
 
-PlayerbotAI::PlayerbotAI(PlayerbotMgr* mgr, Player* bot, NamedObjectContext<UntypedValue>* sharedValues) :
-    PlayerbotAIBase(), chatHelper(this), chatFilter(this), security(mgr->GetMaster(), bot)
+PlayerbotAI::PlayerbotAI(Player* bot) :
+    PlayerbotAIBase(), chatHelper(this), chatFilter(this), security(bot), master(NULL)
 {
-	this->mgr = mgr;
 	this->bot = bot;
 
 	accountId = sObjectMgr.GetPlayerAccountIdByGUID(bot->GetObjectGuid());
 
     aiObjectContext = AiFactory::createAiObjectContext(bot, this);
-    aiObjectContext->AddShared(sharedValues);
 
     engines[BOT_STATE_COMBAT] = AiFactory::createCombatEngine(bot, this, aiObjectContext);
     engines[BOT_STATE_NON_COMBAT] = AiFactory::createNonCombatEngine(bot, this, aiObjectContext);
@@ -88,8 +86,6 @@ PlayerbotAI::PlayerbotAI(PlayerbotMgr* mgr, Player* bot, NamedObjectContext<Unty
     masterIncomingPacketHandlers.AddHandler(CMSG_ACTIVATETAXIEXPRESS, "activate taxi");
     masterIncomingPacketHandlers.AddHandler(CMSG_MOVE_SPLINE_DONE, "taxi done");
     masterIncomingPacketHandlers.AddHandler(CMSG_GROUP_UNINVITE_GUID, "uninvite");
-    masterIncomingPacketHandlers.AddHandler(CMSG_LFG_PROPOSAL_RESPONSE, "lfg proposal");
-    masterIncomingPacketHandlers.AddHandler(CMSG_LFG_LEAVE, "lfg leave");
 
     botOutgoingPacketHandlers.AddHandler(SMSG_QUESTGIVER_QUEST_DETAILS, "quest share");
     botOutgoingPacketHandlers.AddHandler(SMSG_GROUP_INVITE, "group invite");
@@ -106,12 +102,12 @@ PlayerbotAI::PlayerbotAI(PlayerbotMgr* mgr, Player* bot, NamedObjectContext<Unty
     botOutgoingPacketHandlers.AddHandler(SMSG_PARTY_COMMAND_RESULT, "party command");
     botOutgoingPacketHandlers.AddHandler(SMSG_CAST_FAILED, "cast failed");
     botOutgoingPacketHandlers.AddHandler(SMSG_DUEL_REQUESTED, "duel requested");
+    botOutgoingPacketHandlers.AddHandler(SMSG_LFG_ROLE_CHECK_UPDATE, "lfg role check");
+    botOutgoingPacketHandlers.AddHandler(SMSG_LFG_PROPOSAL_UPDATE, "lfg proposal");
 
     masterOutgoingPacketHandlers.AddHandler(SMSG_PARTY_COMMAND_RESULT, "party command");
     masterOutgoingPacketHandlers.AddHandler(MSG_RAID_READY_CHECK, "ready check");
     masterOutgoingPacketHandlers.AddHandler(MSG_RAID_READY_CHECK_FINISHED, "ready check finished");
-    masterOutgoingPacketHandlers.AddHandler(SMSG_LFG_UPDATE_PARTY, "lfg update");
-    masterOutgoingPacketHandlers.AddHandler(SMSG_LFG_UPDATE_PLAYER, "lfg update");
 }
 
 PlayerbotAI::~PlayerbotAI()
@@ -134,8 +130,10 @@ void PlayerbotAI::UpdateAIInternal(uint32 elapsed)
     ExternalEventHelper helper(aiObjectContext);
     while (!chatCommands.empty())
     {
-        string command = chatCommands.top();
-        if (!helper.ParseChatCommand(command))
+        ChatCommandHolder holder = chatCommands.top();
+        string command = holder.GetCommand();
+        Player* owner = holder.GetOwner();
+        if (!helper.ParseChatCommand(command, owner))
         {
             ostringstream out; out << "Unknown command " << command;
             TellMaster(out);
@@ -198,9 +196,12 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     for (string::const_iterator i = text.begin(); i != text.end(); i++)
     {
         char symbol = *i;
-        if (symbol < 32 || symbol > 127)
+        if (symbol < 32 || symbol > 127 || symbol == '$' || symbol == '%')
             return;
     }
+
+    if (type == CHAT_MSG_ADDON)
+        return;
 
     string filtered = chatFilter.Filter(trim((string&)text));
     if (filtered.empty())
@@ -211,7 +212,8 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
 
     if (type == CHAT_MSG_RAID_WARNING && filtered.find(bot->GetName()) != string::npos && filtered.find("award") == string::npos)
     {
-        chatCommands.push("warning");
+        ChatCommandHolder cmd("warning", &fromPlayer);
+        chatCommands.push(cmd);
         return;
     }
 
@@ -226,7 +228,8 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     }
     else
     {
-        chatCommands.push(filtered);
+        ChatCommandHolder cmd(filtered, &fromPlayer);
+        chatCommands.push(cmd);
     }
 }
 
@@ -376,10 +379,9 @@ void PlayerbotAI::ChangeEngine(BotState type)
 
 void PlayerbotAI::DoNextAction()
 {
-    if (bot->IsBeingTeleported() || GetMaster()->IsBeingTeleported())
+    if (bot->IsBeingTeleported() || (GetMaster() && GetMaster()->IsBeingTeleported()))
         return;
 
-    Player* master = GetMaster();
     bot->UpdateUnderwaterState(bot->GetMap(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
     bot->CheckAreaExploreAndOutdoor();
 
@@ -396,14 +398,20 @@ void PlayerbotAI::DoNextAction()
         bot->GetSession()->HandleMovementOpcodes(packet);
     }
 
+    Player* master = GetMaster();
     if (bot->IsMounted() && bot->IsFlying())
     {
         bot->m_movementInfo.SetMovementFlags((MovementFlags)(MOVEFLAG_FLYING|MOVEFLAG_CAN_FLY));
-        bot->SetSpeedRate(MOVE_FLIGHT, 1.0f, true);
-        bot->SetSpeedRate(MOVE_FLIGHT, GetMaster()->GetSpeedRate(MOVE_FLIGHT), true);
 
+        bot->SetSpeedRate(MOVE_FLIGHT, 1.0f, true);
         bot->SetSpeedRate(MOVE_RUN, 1.0f, true);
-        bot->SetSpeedRate(MOVE_RUN, GetMaster()->GetSpeedRate(MOVE_FLIGHT), true);
+
+        if (master)
+        {
+            bot->SetSpeedRate(MOVE_FLIGHT, master->GetSpeedRate(MOVE_FLIGHT), true);
+            bot->SetSpeedRate(MOVE_RUN, master->GetSpeedRate(MOVE_FLIGHT), true);
+        }
+
     }
 
     if (currentEngine != engines[BOT_STATE_DEAD] && !bot->isAlive())
@@ -641,10 +649,12 @@ GameObject* PlayerbotAI::GetGameObject(ObjectGuid guid)
 
 void PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
 {
-    if (!GetSecurity()->CheckLevelFor(securityLevel, true))
+    Player* master = GetMaster();
+    if (!master)
         return;
 
-    Player* master = GetMaster();
+    if (!GetSecurity()->CheckLevelFor(securityLevel, true, master))
+        return;
 
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
     bot->BuildPlayerChat(&data, *aiObjectContext->GetValue<ChatMsg>("chat"), text, LANG_UNIVERSAL);
@@ -1067,7 +1077,7 @@ bool PlayerbotAI::canDispel(const SpellEntry* entry, uint32 dispelType)
         strcmpi((const char*)entry->SpellName[0], "ice armor"));
 }
 
-inline bool IsAlliance(uint8 race)
+bool IsAlliance(uint8 race)
 {
     return race == RACE_HUMAN || race == RACE_DWARF || race == RACE_NIGHTELF ||
             race == RACE_GNOME || race == RACE_DRAENEI;

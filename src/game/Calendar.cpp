@@ -78,7 +78,7 @@ CalendarInviteMap::iterator CalendarEvent::RemoveInviteByItr(CalendarInviteMap::
         if (!IsGuildEvent())
             sCalendarMgr.SendCalendarEventInviteRemoveAlert(inviteItr->second->InviteeGuid, this, CALENDAR_STATUS_REMOVED);
 
-        sCalendarMgr.SendCalendarEventInviteRemove(inviteItr->second, Flags);
+        sCalendarMgr.SendCalendarEventInviteRemove(inviteItr->second, this, Flags);
 
         inviteItr->second->AddFlag(CALENDAR_STATE_FLAG_DELETED);
         return ++inviteItr;
@@ -492,7 +492,7 @@ void CalendarMgr::LoadFromDB()
     else
     {
         BarGoLink bar(eventsQuery->GetRowCount());
-        do 
+        do
         {
             Field* field = eventsQuery->Fetch();
 
@@ -539,7 +539,7 @@ void CalendarMgr::LoadFromDB()
         if (someEventExist)
         {
             BarGoLink bar(invitesQuery->GetRowCount());
-            do 
+            do
             {
                 Field* field = invitesQuery->Fetch();
 
@@ -919,11 +919,9 @@ void CalendarMgr::SendCalendarEvent(ObjectGuid const& guid, CalendarEvent const*
     player->SendDirectMessage(&data);
 }
 
-void CalendarMgr::SendCalendarEventInviteRemove(CalendarInvite const* invite, uint32 flags)
+void CalendarMgr::SendCalendarEventInviteRemove(CalendarInvite const* invite, CalendarEvent const* event, uint32 flags)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_CALENDAR, "SMSG_CALENDAR_EVENT_INVITE_REMOVED");
-
-    CalendarEvent const* event = invite->GetCalendarEvent();
 
     WorldPacket data(SMSG_CALENDAR_EVENT_INVITE_REMOVED, 8 + 4 + 4 + 1);
     data.appendPackGUID(invite->InviteeGuid);

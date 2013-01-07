@@ -57,7 +57,7 @@ uint8 BalancePercentValue::Calculate()
     float playerLevel = 0,
         attackerLevel = 0;
 
-    Group* group = master->GetGroup();
+    Group* group = bot->GetGroup();
     if (group)
     {
         Group::MemberSlotList const& groupSlot = group->GetMemberSlots();

@@ -12,10 +12,6 @@ namespace ai
 
     public:
         virtual bool Execute(Event event);
-        virtual bool isPossible()
-        {
-            return GetTarget();
-        }
 
     protected:
         bool Attack(Unit* target);

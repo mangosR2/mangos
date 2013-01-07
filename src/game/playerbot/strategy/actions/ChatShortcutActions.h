@@ -35,4 +35,10 @@ namespace ai
         virtual bool Execute(Event event);
     };
 
+    class TankAttackChatShortcutAction : public Action {
+    public:
+        TankAttackChatShortcutAction(PlayerbotAI* ai) : Action(ai, "tank attack chat shortcut") {}
+        virtual bool Execute(Event event);
+    };
+
 }

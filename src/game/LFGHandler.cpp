@@ -469,7 +469,7 @@ void WorldSession::SendLfgUpdateParty(LFGUpdateType updateType, LFGType type)
     DEBUG_LOG("SMSG_LFG_UPDATE_PARTY updatetype: %u", updateType);
 
     WorldPacket data(SMSG_LFG_UPDATE_PARTY, 1 + 1 + (extrainfo ? 1 : 0) * (1 + 1 + 1 + 1 + 1 + size * 4 + comment.length()));
-    data << uint8(updateType);                              // Lfg Update type
+    data << uint8(updateType);                              // lfg join type
     data << uint8(extrainfo);                               // Extra info
     if (extrainfo)
     {
@@ -533,7 +533,7 @@ void WorldSession::SendLfgUpdatePlayer(LFGUpdateType updateType, LFGType type)
     DEBUG_LOG("SMSG_LFG_UPDATE_PLAYER %u updatetype: %u", GetPlayer()->GetObjectGuid().GetCounter(), updateType);
 
     WorldPacket data(SMSG_LFG_UPDATE_PLAYER, 1 + 1 + (extrainfo ? 1 : 0) * (1 + 1 + 1 + 1 + size * 4 + comment.length()));
-    data << uint8(updateType);                              // Lfg Update type
+    data << uint8(updateType);                              // lfg join type
     data << uint8(extrainfo);                               // Extra info
     if (extrainfo)
     {

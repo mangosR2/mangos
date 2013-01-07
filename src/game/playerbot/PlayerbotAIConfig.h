@@ -39,7 +39,6 @@ public:
     uint32 minRandomBotRandomizeTime, maxRandomRandomizeTime;
     uint32 minRandomBotPvpTime, maxRandomBotPvpTime;
     uint32 minRandomBotsPerInterval, maxRandomBotsPerInterval;
-    uint32 randomBotEnemyPercent;
     bool randomBotJoinLfg;
 
     uint32 iterationsPerTick;

@@ -32,8 +32,7 @@ class WorldPacketHandlerTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( taxi_done );
       CPPUNIT_TEST( ready_check );
       CPPUNIT_TEST( uninvite );
-      CPPUNIT_TEST( lfg_update );
-      CPPUNIT_TEST( lfg_proposal );
+      CPPUNIT_TEST( lfg );
       CPPUNIT_TEST( lfg_leave );
   CPPUNIT_TEST_SUITE_END();
 
@@ -57,7 +56,7 @@ protected:
         trigger("group set leader");
         tick();
 
-        assertActions(">S:pass leadership to master");
+        assertActions(">S:leader");
     }
     void notEnoughMoney()
     {
@@ -220,25 +219,23 @@ protected:
         assertActions(">S:uninvite");
     }
 
-    void lfg_update()
+    void lfg()
     {
-        trigger("lfg update");
+        trigger("random");
         tick();
 
-        assertActions(">S:lfg update");
-    }
+        trigger("lfg role check");
+        tick();
 
-    void lfg_proposal()
-    {
         trigger("lfg proposal");
         tick();
 
-        assertActions(">S:lfg proposal");
+        assertActions(">S:lfg join>S:lfg role check>S:lfg accept");
     }
 
     void lfg_leave()
     {
-        trigger("lfg leave");
+        trigger("seldom");
         tick();
 
         assertActions(">S:lfg leave");

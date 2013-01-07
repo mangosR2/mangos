@@ -20,7 +20,7 @@ public:
         return copy;
     }
 
-    virtual void ExternalEvent(string param)
+    virtual void ExternalEvent(string param, Player* owner = NULL)
     {
         this->event = Event("mock", param);
     }
@@ -60,7 +60,7 @@ private:
     string* buffer;
 };
 
-MockAiObjectContext::MockAiObjectContext(PlayerbotAI* const ai, AiObjectContext *realContext, string* buffer) : 
+MockAiObjectContext::MockAiObjectContext(PlayerbotAI* const ai, AiObjectContext *realContext, string* buffer) :
     AiObjectContext(ai), buffer(buffer), realContext(realContext)
 {
 }
@@ -94,7 +94,7 @@ Trigger* MockAiObjectContext::GetTrigger(string  name)
     Trigger* trigger = triggers[name];
     if (trigger)
         return trigger;
-    
+
     return triggers[name] = new MockTrigger(ai);
 }
 

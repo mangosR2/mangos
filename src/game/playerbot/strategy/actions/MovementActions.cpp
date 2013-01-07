@@ -96,7 +96,7 @@ bool MovementAction::MoveTo(Unit* target, float distance)
 
 float MovementAction::GetFollowAngle()
 {
-    Group* group = bot->GetGroup();
+    Group* group = master ? master->GetGroup() : bot->GetGroup();
     if (!group)
         return 0.0f;
 
@@ -141,7 +141,7 @@ bool MovementAction::IsMovingAllowed()
 {
     if (bot->isFrozen() || bot->IsPolymorphed() ||
             (bot->isDead() && !bot->GetCorpse()) ||
-            bot->IsBeingTeleported() || bot->isInRoots())
+            bot->IsBeingTeleported() || bot->isInRoots() || bot->HasAuraType(SPELL_AURA_MOD_CONFUSE) || bot->isCharmed())
         return false;
 
     MotionMaster &mm = *bot->GetMotionMaster();
@@ -157,14 +157,17 @@ bool MovementAction::Follow(Unit* target, float distance, float angle)
 {
     MotionMaster &mm = *bot->GetMotionMaster();
 
-    if (bot->GetDistance2d(master->GetPositionX(), master->GetPositionY()) <= sPlayerbotAIConfig.sightDistance &&
-            abs(bot->GetPositionZ() - master->GetPositionZ()) >= sPlayerbotAIConfig.spellDistance)
+    if (!target)
+        return false;
+
+    if (bot->GetDistance2d(target->GetPositionX(), target->GetPositionY()) <= sPlayerbotAIConfig.sightDistance &&
+            abs(bot->GetPositionZ() - target->GetPositionZ()) >= sPlayerbotAIConfig.spellDistance)
     {
         mm.Clear();
-        float x = bot->GetPositionX(), y = bot->GetPositionY(), z = master->GetPositionZ();
-        if (master->GetMapId() && bot->GetMapId() != master->GetMapId())
+        float x = bot->GetPositionX(), y = bot->GetPositionY(), z = target->GetPositionZ();
+        if (target->GetMapId() && bot->GetMapId() != target->GetMapId())
         {
-            bot->TeleportTo(master->GetMapId(), x, y, z, bot->GetOrientation());
+            bot->TeleportTo(target->GetMapId(), x, y, z, bot->GetOrientation());
         }
         else
         {
@@ -203,6 +206,9 @@ bool MovementAction::Flee(Unit *target)
 {
     if (!target)
         target = master;
+
+    if (!target)
+        return false;
 
     if (!IsMovingAllowed())
         return false;

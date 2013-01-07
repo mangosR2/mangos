@@ -16,7 +16,7 @@ bool ReviveFromCorpseAction::Execute(Event event)
     if (reclaimTime > time(0) || corpse->GetDistance(bot) > sPlayerbotAIConfig.spellDistance)
         return false;
 
-    PlayerbotChatHandler ch(master);
+    PlayerbotChatHandler ch(bot);
     if (! ch.revive(*bot))
     {
         ai->TellMaster(".. could not be revived ..");
@@ -39,7 +39,7 @@ bool SpiritHealerAction::Execute(Event event)
         Unit* unit = ai->GetUnit(*i);
         if (unit && unit->isSpiritHealer())
         {
-            PlayerbotChatHandler ch(master);
+            PlayerbotChatHandler ch(bot);
             if (! ch.revive(*bot))
             {
                 ai->TellMaster(".. could not be revived ..");

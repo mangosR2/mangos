@@ -14,6 +14,7 @@
 #include "strategy/rogue/RogueAiObjectContext.h"
 #include "../Player.h"
 #include "PlayerbotAIConfig.h"
+#include "RandomPlayerbotMgr.h"
 
 
 AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* ai)
@@ -136,8 +137,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             break;
     }
 
-    Player* master = facade->GetMaster();
-    if (master->GetRandomPlayerbotMgr()->IsRandomBot(player) && !player->GetGroup())
+    if (sRandomPlayerbotMgr.IsRandomBot(player) && !player->GetGroup())
     {
         engine->addStrategy("dps");
         if (sPlayerbotAIConfig.randomBotGrinding)
@@ -172,8 +172,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
     nonCombatEngine->addStrategies("nc", "attack weak", "food", "stay", "chat",
             "default", "quest", "loot", "gather", "duel", "emote", NULL);
 
-    Player* master = facade->GetMaster();
-    if (master->GetRandomPlayerbotMgr()->IsRandomBot(player) && !player->GetGroup())
+    if (sRandomPlayerbotMgr.IsRandomBot(player) && !player->GetGroup())
     {
         nonCombatEngine->addStrategies("grind", "move random", NULL);
         nonCombatEngine->removeStrategy("loot");
@@ -192,8 +191,7 @@ Engine* AiFactory::createNonCombatEngine(Player* player, PlayerbotAI* const faca
 void AiFactory::AddDefaultDeadStrategies(Player* player, PlayerbotAI* const facade, Engine* deadEngine)
 {
     deadEngine->addStrategies("dead", "stay", "chat", "default", "follow master", NULL);
-    Player* master = facade->GetMaster();
-    if (master->GetRandomPlayerbotMgr()->IsRandomBot(player) && !player->GetGroup())
+    if (sRandomPlayerbotMgr.IsRandomBot(player) && !player->GetGroup())
     {
         deadEngine->removeStrategy("follow master");
     }

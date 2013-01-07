@@ -18,7 +18,7 @@ namespace ai
             if (!inviter)
                 return false;
 
-            if (!ai->GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE))
+			if (!ai->GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, false, inviter))
             {
                 WorldPacket data(SMSG_GROUP_DECLINE, 10);
                 data << bot->GetName();
@@ -31,6 +31,9 @@ namespace ai
             uint32 roles_mask = 0;
             p << roles_mask;
             bot->GetSession()->HandleGroupAcceptOpcode(p);
+
+            if (sRandomPlayerbotMgr.IsRandomBot(bot))
+                bot->GetPlayerbotAI()->SetMaster(inviter);
 
             ai->ResetStrategies();
             ai->TellMaster("Hello");

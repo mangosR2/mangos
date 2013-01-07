@@ -7,12 +7,7 @@ using namespace ai;
 
 bool DropQuestAction::Execute(Event event)
 {
-    
-    
     string link = event.getParam();
-    
-    ObjectGuid oldSelection = master->GetSelectionGuid();
-    master->SetSelectionGuid(bot->GetObjectGuid());
 
     PlayerbotChatHandler ch(bot);
     if (!ch.dropQuest(link))
@@ -22,7 +17,6 @@ bool DropQuestAction::Execute(Event event)
         return false;
     }
 
-    master->SetSelectionGuid(oldSelection);
     ai->TellMaster("Quest removed");
     return true;
 }

@@ -49,8 +49,8 @@ AiPlayerbot.RandomBotAutologin = false
 AiPlayerbot.RandomBotAutoCreate = true
 
 # Random bot count
-AiPlayerbot.MinRandomBots = 1
-AiPlayerbot.MaxRandomBots = 10
+AiPlayerbot.MinRandomBots = 50
+AiPlayerbot.MaxRandomBots = 200
 
 # Accounts to create for random bots
 AiPlayerbot.RandomBotAccountPrefix = "rndbot"
@@ -86,14 +86,11 @@ AiPlayerbot.MinRandomBotRandomizeTime = 2 * 3600
 AiPlayerbot.MaxRandomRandomizeTime = 14 * 24 * 3600
 AiPlayerbot.MinRandomBotPvpTime = 120
 AiPlayerbot.MaxRandomBotPvpTime = 3 * 3600
-AiPlayerbot.MinRandomBotsPerInterval = 1
-AiPlayerbot.MaxRandomBotsPerInterval = 5
+AiPlayerbot.MinRandomBotsPerInterval = 50
+AiPlayerbot.MaxRandomBotsPerInterval = 100
 
 # How far random bots are teleported after death
 AiPlayerbot.RandomBotTeleportDistance = 400
-
-# Enemy/Friend random bot percentage
-AiPlayerbot.RandomBotEnemyPercent = 30
 
 # Debug switches
 AiPlayerbot.SpellDump = false

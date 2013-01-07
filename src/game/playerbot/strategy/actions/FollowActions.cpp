@@ -17,6 +17,9 @@ bool FollowMasterAction::Execute(Event event)
 
 bool FollowMasterRandomAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     float range = rand() % 10 + 2;
     float angle = GetFollowAngle();
     float x = master->GetPositionX() + cos(angle) * range;

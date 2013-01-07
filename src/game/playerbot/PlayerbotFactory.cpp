@@ -59,6 +59,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     InitEquipment(incremental);
     InitBags();
     InitAmmo();
+    InitFood();
     InitPotions();
     InitSecondEquipmentSet();
     InitInventory();
@@ -87,13 +88,21 @@ void PlayerbotFactory::InitPet()
             if (!co || !co->isTameable(false))
                 continue;
 
+			PetLevelInfo const* petInfo = sObjectMgr.GetPetLevelInfo(co->Entry, bot->getLevel());
+            if (!petInfo)
+                continue;
+
 			ids.push_back(id);
 		}
 
 		for (int i = 0; i < 100; i++)
 		{
-			int index = urand(0, ids.size());
+			int index = urand(0, ids.size() - 1);
 			CreatureInfo const* co = sCreatureStorage.LookupEntry<CreatureInfo>(ids[index]);
+
+            PetLevelInfo const* petInfo = sObjectMgr.GetPetLevelInfo(co->Entry, bot->getLevel());
+            if (!petInfo)
+                continue;
 
             uint32 guid = map->GenerateLocalLowGuid(HIGHGUID_PET);
             CreatureCreatePos pos(map, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetOrientation(), bot->GetPhaseMask());
@@ -503,7 +512,7 @@ void PlayerbotFactory::InitEquipment(bool incremental)
         vector<uint32>& ids = items[slot];
         if (ids.empty())
         {
-            sLog.outError("%s: no items to equip for slot %d", bot->GetName(), slot);
+            sLog.outDetail("%s: no items to equip for slot %d", bot->GetName(), slot);
             continue;
         }
 
@@ -623,7 +632,7 @@ void PlayerbotFactory::InitSecondEquipmentSet()
         vector<uint32>& ids = i->second;
         if (ids.empty())
         {
-            sLog.outError("%s: no items to make second equipment set for slot %d", bot->GetName(), i->first);
+            sLog.outDetail("%s: no items to make second equipment set for slot %d", bot->GetName(), i->first);
             continue;
         }
 
@@ -1155,6 +1164,50 @@ void PlayerbotFactory::InitPotions()
     {
         uint32 effect = effects[i];
         vector<uint32>& ids = items[effect];
+        uint32 index = urand(0, ids.size() - 1);
+        if (index >= ids.size())
+            continue;
+
+        uint32 itemId = ids[index];
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, proto->GetMaxStackSize()));
+        if (newItem)
+            newItem->AddToUpdateQueueOf(bot);
+   }
+}
+
+void PlayerbotFactory::InitFood()
+{
+    map<uint32, vector<uint32> > items;
+    for (uint32 itemId = 0; itemId < sItemStorage.GetMaxEntry(); ++itemId)
+    {
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        if (!proto)
+            continue;
+
+        if (proto->Class != ITEM_CLASS_CONSUMABLE ||
+            proto->SubClass != ITEM_SUBCLASS_FOOD ||
+            (proto->Spells[0].SpellCategory != 11 && proto->Spells[0].SpellCategory != 59) ||
+            proto->Bonding != NO_BIND)
+            continue;
+
+        if (proto->RequiredLevel > bot->getLevel() || proto->RequiredLevel < bot->getLevel() - 10)
+            continue;
+
+        if (proto->RequiredSkill && !bot->HasSkill(proto->RequiredSkill))
+            continue;
+
+        if (proto->Area || proto->Map || proto->RequiredCityRank || proto->RequiredHonorRank)
+            continue;
+
+        items[proto->Spells[0].SpellCategory].push_back(itemId);
+    }
+
+    uint32 categories[] = { 11, 59 };
+    for (int i = 0; i < sizeof(categories) / sizeof(uint32); ++i)
+    {
+        uint32 category = categories[i];
+        vector<uint32>& ids = items[category];
         uint32 index = urand(0, ids.size() - 1);
         if (index >= ids.size())
             continue;

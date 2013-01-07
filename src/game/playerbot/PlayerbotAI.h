@@ -15,6 +15,8 @@ class ChatHandler;
 using namespace std;
 using namespace ai;
 
+bool IsAlliance(uint8 race);
+
 class PlayerbotChatHandler: protected ChatHandler
 {
 public:
@@ -75,11 +77,30 @@ private:
     stack<WorldPacket> queue;
 };
 
+class ChatCommandHolder
+{
+public:
+    ChatCommandHolder(string command, Player* owner = NULL) : command(command), owner(owner) {}
+    ChatCommandHolder(ChatCommandHolder const& other)
+    {
+        this->command = other.command;
+        this->owner = other.owner;
+    }
+
+public:
+    string GetCommand() { return command; }
+    Player* GetOwner() { return owner; }
+
+private:
+    string command;
+    Player* owner;
+};
+
 class PlayerbotAI : public PlayerbotAIBase
 {
 public:
 	PlayerbotAI();
-	PlayerbotAI(PlayerbotMgr* mgr, Player* bot, NamedObjectContext<UntypedValue>* sharedValues);
+	PlayerbotAI(Player* bot);
 	virtual ~PlayerbotAI();
 
 public:
@@ -129,7 +150,8 @@ public:
 
 public:
 	Player* GetBot() { return bot; }
-    Player* GetMaster() { return mgr ? mgr->GetMaster() : NULL; }
+    Player* GetMaster() { return master; }
+    void SetMaster(Player* master) { this->master = master; }
     AiObjectContext* GetAiObjectContext() { return aiObjectContext; }
     ChatHelper* GetChatHelper() { return &chatHelper; }
     bool IsOpposing(Player* player);
@@ -138,13 +160,13 @@ public:
 
 protected:
 	Player* bot;
-	PlayerbotMgr* mgr;
+	Player* master;
 	uint32 accountId;
     AiObjectContext* aiObjectContext;
     Engine* currentEngine;
     Engine* engines[BOT_STATE_MAX];
     ChatHelper chatHelper;
-    stack<string> chatCommands;
+    stack<ChatCommandHolder> chatCommands;
     PacketHandlingHelper botOutgoingPacketHandlers;
     PacketHandlingHelper masterIncomingPacketHandlers;
     PacketHandlingHelper masterOutgoingPacketHandlers;

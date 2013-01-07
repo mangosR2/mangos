@@ -12,7 +12,7 @@ bool ReadyCheckAction::Execute(Event event)
 	p.rpos(0);
     if (!p.empty())
         p >> player;
-    
+
 	if (player == bot->GetObjectGuid())
         return false;
 
@@ -35,11 +35,14 @@ bool ReadyCheckAction::ReadyCheck()
         return false;
     }
 
-    bool distance = bot->GetDistance(master) <= sPlayerbotAIConfig.sightDistance;
-    if (!distance)
+    if (master)
     {
-        ai->TellMaster("Too far away!");
-        return false;
+        bool distance = bot->GetDistance(master) <= sPlayerbotAIConfig.sightDistance;
+        if (!distance)
+        {
+            ai->TellMaster("Too far away!");
+            return false;
+        }
     }
 
     if (bot->getClass() == CLASS_HUNTER)

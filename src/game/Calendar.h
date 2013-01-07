@@ -263,7 +263,7 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         void SendCalendarEventRemovedAlert(CalendarEvent const* event);
         void SendCalendarEvent(ObjectGuid const& guid, CalendarEvent const* event, uint32 sendType);
         void SendCalendarEventInviteRemoveAlert(ObjectGuid const& guid, CalendarEvent const* event, CalendarInviteStatus status);
-        void SendCalendarEventInviteRemove(CalendarInvite const* invite, uint32 flags);
+        void SendCalendarEventInviteRemove(CalendarInvite const* invite, CalendarEvent const* event, uint32 flags);
         void SendCalendarEventStatus(CalendarInvite const* invite);
         void SendCalendarClearPendingAction(ObjectGuid const& guid);
         void SendCalendarEventModeratorStatusAlert(CalendarInvite const* invite);

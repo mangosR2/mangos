@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Action.h"
+#include "../../RandomPlayerbotMgr.h"
 
 namespace ai
 {
@@ -20,11 +21,13 @@ namespace ai
             p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
             bot->GetSession()->HandleGroupDisbandOpcode(p);
 
+            if (sRandomPlayerbotMgr.IsRandomBot(bot))
+            {
+                bot->GetPlayerbotAI()->SetMaster(NULL);
+                sRandomPlayerbotMgr.ScheduleTeleport(bot->GetGUIDLow());
+            }
+
             ai->ResetStrategies();
-
-            if (master->GetRandomPlayerbotMgr()->IsRandomBot(bot))
-                master->GetRandomPlayerbotMgr()->ScheduleTeleport(bot->GetGUIDLow());
-
             return true;
         }
     };
@@ -45,7 +48,7 @@ namespace ai
             if (operation != PARTY_OP_LEAVE)
                 return false;
 
-            if (member == master->GetName())
+            if (master && member == master->GetName())
                 return LeaveGroupAction::Execute(event);
 
             return false;

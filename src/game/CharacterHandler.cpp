@@ -70,14 +70,16 @@ class LoginQueryHolder : public SqlQueryHolder
 class PlayerbotLoginQueryHolder : public LoginQueryHolder
 {
 private:
-    uint32 m_masterAccountId;
+    uint32 masterAccountId;
+    PlayerbotHolder* playerbotHolder;
 
 public:
-    PlayerbotLoginQueryHolder(uint32 masterAccount, uint32 accountId, ObjectGuid guid)
-        : LoginQueryHolder(accountId, guid), m_masterAccountId(masterAccount) { }
+    PlayerbotLoginQueryHolder(PlayerbotHolder* playerbotHolder, uint32 masterAccount, uint32 accountId, ObjectGuid guid)
+        : LoginQueryHolder(accountId, guid), masterAccountId(masterAccount), playerbotHolder(playerbotHolder) { }
 
 public:
-    uint32 GetMasterAccountId() const { return m_masterAccountId; }
+    uint32 GetMasterAccountId() const { return masterAccountId; }
+    PlayerbotHolder* GetPlayerbotHolder() { return playerbotHolder; }
 };
 
 bool LoginQueryHolder::Initialize()
@@ -163,7 +165,6 @@ class CharacterHandler
             if (player && !player->GetPlayerbotAI())
             {
                 player->SetPlayerbotMgr(new PlayerbotMgr(player));
-                player->SetRandomPlayerbotMgr(new RandomPlayerbotMgr(player));
             }
         }
 		// Playerbot mod: is different from the normal HandlePlayerLoginCallback in that it
@@ -175,51 +176,48 @@ class CharacterHandler
                 return;
 
             PlayerbotLoginQueryHolder* lqh = (PlayerbotLoginQueryHolder*) holder;
-
-            uint32 masterAccount = lqh->GetMasterAccountId();
-            WorldSession* masterSession = sWorld.FindSession(masterAccount);
-
-            if (!masterSession || sObjectMgr.GetPlayer(lqh->GetGuid()))
+            if (sObjectMgr.GetPlayer(lqh->GetGuid()))
             {
                 delete holder;
                 return;
             }
 
+            PlayerbotHolder* playerbotHolder = lqh->GetPlayerbotHolder();
+            uint32 masterAccount = lqh->GetMasterAccountId();
+            WorldSession* masterSession = masterAccount ? sWorld.FindSession(masterAccount) : NULL;
+
             // The bot's WorldSession is owned by the bot's Player object
             // The bot's WorldSession is deleted by PlayerbotMgr::LogoutPlayerBot
             uint32 botAccountId = lqh->GetAccountId();
-            WorldSession *botSession = new WorldSession(botAccountId, NULL, SEC_PLAYER, masterSession->Expansion(), 0, masterSession->GetSessionDbcLocale());
+            WorldSession *botSession = new WorldSession(botAccountId, NULL, SEC_PLAYER, 2, 0, LOCALE_enUS);
             botSession->m_Address = "bot";
             botSession->HandlePlayerLogin(lqh); // will delete lqh
             Player* bot = botSession->GetPlayer();
             if (!bot)
                 return;
 
-            Player* master = masterSession->GetPlayer();
-            PlayerbotMgr* mgr = master->GetPlayerbotMgr();
-
             bool allowed = false;
             if (botAccountId == masterAccount)
                 allowed = true;
-            else if (sPlayerbotAIConfig.allowGuildBots && bot->GetGuildId() == master->GetGuildId())
+            else if (masterSession && sPlayerbotAIConfig.allowGuildBots && bot->GetGuildId() == masterSession->GetPlayer()->GetGuildId())
                 allowed = true;
             else if (sPlayerbotAIConfig.IsInRandomAccountList(botAccountId))
                 allowed = true;
 
             if (allowed)
-                mgr->OnBotLogin(bot);
-            else
+                playerbotHolder->OnBotLogin(bot);
+            else if (masterSession)
             {
                 ChatHandler ch(masterSession);
                 ch.PSendSysMessage("You are not allowed to control bot %s...", bot->GetName());
-                mgr->LogoutPlayerBot(bot->GetObjectGuid().GetRawValue());
+                playerbotHolder->LogoutPlayerBot(bot->GetObjectGuid().GetRawValue());
             }
         }
 } chrHandler;
 
 // Playerbot mod. Can't easily reuse HandlePlayerLoginOpcode for logging in bots because it assumes
 // a WorldSession exists for the bot. The WorldSession for a bot is created after the character is loaded.
-void PlayerbotMgr::AddPlayerBot(uint64 playerGuid, WorldSession* session)
+void PlayerbotHolder::AddPlayerBot(uint64 playerGuid, uint32 masterAccountId)
 {
     // has bot already been added?
     if (sObjectMgr.GetPlayer(ObjectGuid(playerGuid)))
@@ -229,7 +227,7 @@ void PlayerbotMgr::AddPlayerBot(uint64 playerGuid, WorldSession* session)
     if (accountId == 0)
         return;
 
-    PlayerbotLoginQueryHolder *holder = new PlayerbotLoginQueryHolder(session->GetAccountId(), accountId, ObjectGuid(playerGuid));
+    PlayerbotLoginQueryHolder *holder = new PlayerbotLoginQueryHolder(this, masterAccountId, accountId, ObjectGuid(playerGuid));
     if(!holder->Initialize())
     {
         delete holder;                                      // delete all unprocessed queries
@@ -922,6 +920,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     delete holder;
+
+    // playerbot mod
+    sRandomPlayerbotMgr.OnPlayerLogin(pCurrChar);
+    // end of playerbot mod
 }
 
 void WorldSession::HandleSetFactionAtWarOpcode(WorldPacket& recv_data)

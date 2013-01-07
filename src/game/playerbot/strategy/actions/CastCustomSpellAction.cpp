@@ -6,8 +6,11 @@ using namespace ai;
 
 bool CastCustomSpellAction::Execute(Event event)
 {
-    ObjectGuid targetGuid = master->GetSelectionGuid();
-    Unit* target = ai->GetUnit(targetGuid);
+    Unit* target = NULL;
+
+    if (master && master->GetSelectionGuid())
+        target = ai->GetUnit(master->GetSelectionGuid());
+
     if (!target)
         target = bot;
 

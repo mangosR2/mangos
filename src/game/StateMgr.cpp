@@ -68,6 +68,7 @@ public:
         if (!target)
             return;
 
+        target->StopMoving();
         target->addUnitState(UNIT_STAT_STUNNED);
         target->SetTargetGuid(ObjectGuid());
 
@@ -118,6 +119,7 @@ public:
         Unit* const target = &u;
         if (!target)
             return;
+        target->StopMoving();
         target->addUnitState(UNIT_STAT_ROOT);
         target->SetTargetGuid(ObjectGuid());
         //Save last orientation
@@ -160,8 +162,7 @@ public:
         if (!target)
             return;
 
-        if (target->GetTypeId() != TYPEID_PLAYER)
-            target->StopMoving();
+        target->StopMoving();
 
         target->m_movementInfo.RemoveMovementFlag(movementFlagsMask);
         target->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_UNK_29);

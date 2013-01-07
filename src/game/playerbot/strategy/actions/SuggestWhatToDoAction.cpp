@@ -2,6 +2,7 @@
 #include "../../playerbot.h"
 #include "SuggestWhatToDoAction.h"
 #include "../../../ahbot/AhBot.h"
+#include "../../../ChannelMgr.h"
 
 using namespace ai;
 
@@ -38,7 +39,7 @@ bool SuggestWhatToDoAction::Execute(Event event)
 void SuggestWhatToDoAction::instance()
 {
     if (bot->getLevel() > 15)
-        ai->TellMaster("I would like to do an instance. Would you like to join me?", PLAYERBOT_SECURITY_INVITE);
+        ai->TellMaster("I would like to do an instance. Would you like to join me?", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 vector<uint32> SuggestWhatToDoAction::GetIncompletedQuests()
@@ -69,42 +70,42 @@ void SuggestWhatToDoAction::specificQuest()
 
     Quest const* quest = sObjectMgr.GetQuestTemplate(quests[index]);
     ostringstream out; out << "We could do some quest, for instance " << chat->formatQuest(quest);
-    ai->TellMaster(out, PLAYERBOT_SECURITY_INVITE);
+    ai->TellMaster(out, PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::newQuest()
 {
     vector<uint32> quests = GetIncompletedQuests();
     if (quests.size() < MAX_QUEST_LOG_SIZE - 5)
-        ai->TellMaster("I would like to pick up and do a new quest. Would you like to join me?", PLAYERBOT_SECURITY_INVITE);
+        ai->TellMaster("I would like to pick up and do a new quest. Would you like to join me?", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::grindMaterials()
 {
     if (bot->getLevel() > 5)
-        ai->TellMaster("I think we should grind some materials for our group tradeskill", PLAYERBOT_SECURITY_TALK);
+        ai->TellMaster("I think we should grind some materials for our group tradeskill", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::grindReputation()
 {
     if (bot->getLevel() > 50)
-        ai->TellMaster("I think we should do something to improve our reputation", PLAYERBOT_SECURITY_TALK);
+        ai->TellMaster("I think we should do something to improve our reputation", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::nothing()
 {
-    ai->TellMaster("I don't want to do anything", PLAYERBOT_SECURITY_TALK);
+    ai->TellMaster("I don't want to do anything", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::relax()
 {
-    ai->TellMaster("It is so boring... We could relax a bit", PLAYERBOT_SECURITY_TALK);
+    ai->TellMaster("It is so boring... We could relax a bit", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::achievement()
 {
     if (bot->getLevel() > 15)
-        ai->TellMaster("I would like to do some achievement. Would you like to join me?", PLAYERBOT_SECURITY_INVITE);
+        ai->TellMaster("I would like to do some achievement. Would you like to join me?", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 class FindTradeItemsVisitor : public IterateItemsVisitor
@@ -126,7 +127,7 @@ public:
 
 void SuggestWhatToDoAction::trade()
 {
-    if (!master->GetRandomPlayerbotMgr()->IsRandomBot(bot))
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
         return;
 
     FindTradeItemsVisitor visitor;
@@ -144,5 +145,18 @@ void SuggestWhatToDoAction::trade()
         return;
 
     ostringstream out; out << "Selling " << chat->formatItem(item->GetProto(), item->GetCount()) << " for " << chat->formatMoney(price);
-    ai->TellMaster(out, PLAYERBOT_SECURITY_INVITE);
+    spam(out.str());
+}
+
+void SuggestWhatToDoAction::spam(string msg)
+{
+    if (ChannelMgr* cMgr = channelMgr(bot->GetTeam()))
+    {
+        for (ChannelMgr::ChannelMap::iterator i = cMgr->channels.begin(); i != cMgr->channels.end(); ++i)
+        {
+            Channel* chn = i->second;
+            if (chn->GetFlags() & 0x18)
+                chn->Say(bot->GetObjectGuid(), msg.c_str(), LANG_UNIVERSAL);
+        }
+    }
 }

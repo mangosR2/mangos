@@ -52,6 +52,7 @@ class ChatCommandTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( flee );
       CPPUNIT_TEST( stay );
       CPPUNIT_TEST( grind );
+      CPPUNIT_TEST( tank_attack );
       CPPUNIT_TEST( talk );
       CPPUNIT_TEST( cast );
       CPPUNIT_TEST( invite );
@@ -252,7 +253,9 @@ protected:
 
     void attack()
     {
-        assertCommand("spells");
+        trigger("attack");
+        tick();
+        assertActions(">S:attack my target");
     }
 
     void chat()
@@ -325,6 +328,14 @@ protected:
         trigger("grind");
         tick();
         assertActions(">S:grind chat shortcut");
+    }
+
+    void tank_attack()
+    {
+        trigger("tank attack");
+        tick();
+        tick();
+        assertActions(">S:tank attack chat shortcut>S:attack my target");
     }
 
     void gb()

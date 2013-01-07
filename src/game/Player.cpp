@@ -388,7 +388,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     // Playerbot mod:
     m_playerbotAI = 0;
     m_playerbotMgr = 0;
-    m_randomPlayerbotMgr = 0;
 
     m_speakTime = 0;
     m_speakCount = 0;
@@ -655,11 +654,6 @@ Player::~Player ()
         delete m_playerbotMgr;
         m_playerbotMgr = 0;
     }
-    if (m_randomPlayerbotMgr) {
-        delete m_randomPlayerbotMgr;
-        m_randomPlayerbotMgr = 0;
-    }
-
 }
 
 void Player::CleanupsBeforeDelete()
@@ -1483,8 +1477,6 @@ void Player::Update(uint32 update_diff, uint32 p_time)
        m_playerbotAI->UpdateAI(p_time);
     if (m_playerbotMgr)
        m_playerbotMgr->UpdateAI(p_time);
-    if (m_randomPlayerbotMgr)
-        m_randomPlayerbotMgr->UpdateAI(p_time);
 }
 
 void Player::SetDeathState(DeathState s)

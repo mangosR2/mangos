@@ -1,102 +1,32 @@
 #include "Config/Config.h"
 #include "../pchdef.h"
 #include "playerbot.h"
-#include "strategy/values/SharedValueContext.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotFactory.h"
 #include "../AccountMgr.h"
+#include "RandomPlayerbotMgr.h"
 
 
 class LoginQueryHolder;
 class CharacterHandler;
 
-class SharedPlayerbotAI : public PlayerbotAIBase
-{
-public:
-    SharedPlayerbotAI() : PlayerbotAIBase() { }
-    virtual ~SharedPlayerbotAI() { }
-
-public:
-    SharedValueContext* GetSharedValues()
-    {
-        return &sharedValues;
-    }
-
-    virtual void UpdateAIInternal(uint32 elapsed)
-    {
-        sharedValues.Update();
-    }
-
-    void Clear()
-    {
-        sharedValues.Clear();
-    }
-
-private:
-    SharedValueContext sharedValues;
-};
-
-PlayerbotMgr::PlayerbotMgr(Player* const master) : PlayerbotAIBase(),  m_master(master) , sharedAi(NULL)
+PlayerbotHolder::PlayerbotHolder() : PlayerbotAIBase()
 {
     for (uint32 spellId = 0; spellId < sSpellStore.GetNumRows(); spellId++)
         sSpellStore.LookupEntry(spellId);
 }
 
-PlayerbotMgr::~PlayerbotMgr()
+PlayerbotHolder::~PlayerbotHolder()
 {
     LogoutAllBots();
-    if (sharedAi)
-    {
-        delete sharedAi;
-        sharedAi = NULL;
-    }
 }
 
-void PlayerbotMgr::UpdateAIInternal(uint32 elapsed)
+
+void PlayerbotHolder::UpdateAIInternal(uint32 elapsed)
 {
-    if (sharedAi)
-        sharedAi->UpdateAI(elapsed);
-
-    SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
 }
 
-void PlayerbotMgr::HandleCommand(uint32 type, const string& text)
-{
-    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
-    {
-        Player* const bot = it->second;
-        bot->GetPlayerbotAI()->HandleCommand(type, text, *GetMaster());
-    }
-}
-
-void PlayerbotMgr::HandleMasterIncomingPacket(const WorldPacket& packet)
-{
-    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
-    {
-        Player* const bot = it->second;
-        bot->GetPlayerbotAI()->HandleMasterIncomingPacket(packet);
-    }
-
-    switch (packet.GetOpcode())
-    {
-        // if master is logging out, log out all bots
-        case CMSG_LOGOUT_REQUEST:
-        {
-            LogoutAllBots();
-            return;
-        }
-    }
-}
-void PlayerbotMgr::HandleMasterOutgoingPacket(const WorldPacket& packet)
-{
-    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
-    {
-        Player* const bot = it->second;
-        bot->GetPlayerbotAI()->HandleMasterOutgoingPacket(packet);
-    }
-}
-
-void PlayerbotMgr::LogoutAllBots()
+void PlayerbotHolder::LogoutAllBots()
 {
     while (true)
     {
@@ -107,79 +37,69 @@ void PlayerbotMgr::LogoutAllBots()
     }
 }
 
-void PlayerbotMgr::LogoutPlayerBot(uint64 guid)
+void PlayerbotHolder::LogoutPlayerBot(uint64 guid)
 {
     Player* bot = GetPlayerBot(guid);
     if (bot)
     {
         bot->GetPlayerbotAI()->TellMaster("Goodbye!");
 
-        ResetSharedAi();
-
         WorldSession * botWorldSessionPtr = bot->GetSession();
-        m_playerBots.erase(guid);    // deletes bot player ptr inside this WorldSession PlayerBotMap
+        playerBots.erase(guid);    // deletes bot player ptr inside this WorldSession PlayerBotMap
         botWorldSessionPtr->LogoutPlayer(true); // this will delete the bot Player object and PlayerbotAI object
         delete botWorldSessionPtr;  // finally delete the bot's WorldSession
     }
 }
 
-void PlayerbotMgr::RandomizePlayerBot(uint64 guid, uint32 level, uint32 itemQuality)
+Player* PlayerbotHolder::GetPlayerBot(uint64 playerGuid) const
 {
-    Player* bot = GetPlayerBot(guid);
-    if (!bot)
-        return;
-
-    PlayerbotFactory factory(bot, level, itemQuality);
-    factory.Randomize(false);
+    PlayerBotMap::const_iterator it = playerBots.find(playerGuid);
+    return (it == playerBots.end()) ? 0 : it->second;
 }
 
-Player* PlayerbotMgr::GetPlayerBot(uint64 playerGuid) const
+void PlayerbotHolder::OnBotLogin(Player * const bot)
 {
-    PlayerBotMap::const_iterator it = m_playerBots.find(playerGuid);
-    return (it == m_playerBots.end()) ? 0 : it->second;
-}
-
-void PlayerbotMgr::OnBotLogin(Player * const bot)
-{
-    ResetSharedAi();
-
-    PlayerbotAI* ai = new PlayerbotAI(this, bot, ((SharedPlayerbotAI*)sharedAi)->GetSharedValues());
+    PlayerbotAI* ai = new PlayerbotAI(bot);
     bot->SetPlayerbotAI(ai);
+    OnBotLoginInternal(bot);
 
-    m_playerBots[bot->GetObjectGuid().GetRawValue()] = bot;
+    playerBots[bot->GetObjectGuid().GetRawValue()] = bot;
 
-    ObjectGuid masterGuid = m_master->GetObjectGuid();
-    if (m_master->GetGroup() &&
-        ! m_master->GetGroup()->IsLeader(masterGuid))
-        m_master->GetGroup()->ChangeLeader(masterGuid);
+    Player* master = ai->GetMaster();
+    if (master)
+    {
+        ObjectGuid masterGuid = master->GetObjectGuid();
+        if (master->GetGroup() &&
+            ! master->GetGroup()->IsLeader(masterGuid))
+            master->GetGroup()->ChangeLeader(masterGuid);
+    }
 
-    Group* group = m_master->GetGroup();
-    bool botFound = false;
+    Group *group = bot->GetGroup();
     if (group)
     {
-        for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
+        bool groupValid = false;
+        Group::MemberSlotList const& slots = group->GetMemberSlots();
+        for (Group::MemberSlotList::const_iterator i = slots.begin(); i != slots.end(); ++i)
         {
-            Player* player = gref->getSource();
-            if(player == m_master)
-                continue;
-
-            if (player == bot)
+            ObjectGuid member = i->guid;
+            uint32 account = sAccountMgr.GetPlayerAccountIdByGUID(member);
+            if (!sPlayerbotAIConfig.IsInRandomAccountList(account))
             {
-                botFound = true;
+                groupValid = true;
                 break;
             }
         }
-    }
-    if (!botFound)
-    {
-        WorldPacket p;
-        string member = bot->GetName();
-        p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
-        bot->GetSession()->HandleGroupDisbandOpcode(p);
 
-        ai->ResetStrategies();
+        if (!groupValid)
+        {
+            WorldPacket p;
+            string member = bot->GetName();
+            p << uint32(PARTY_OP_LEAVE) << member << uint32(0);
+            bot->GetSession()->HandleGroupDisbandOpcode(p);
+        }
     }
 
+    ai->ResetStrategies();
     ai->TellMaster("Hello!");
 }
 
@@ -189,7 +109,7 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
         return false;
 
     PlayerbotMgr* mgr = session->GetPlayer()->GetPlayerbotMgr();
-    bool isRandomBot = mgr->GetMaster()->GetRandomPlayerbotMgr()->IsRandomBot(guid);
+    bool isRandomBot = sRandomPlayerbotMgr.IsRandomBot(guid);
     bool isRandomAccount = sPlayerbotAIConfig.IsInRandomAccountList(sObjectMgr.GetPlayerAccountIdByGUID(guid));
 
     if (isRandomAccount && !isRandomBot && session->GetSecurity() < SEC_GAMEMASTER)
@@ -200,7 +120,7 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
         if (sObjectMgr.GetPlayer(guid, true))
             return false;
 
-        mgr->AddPlayerBot(guid.GetRawValue(), session);
+        mgr->AddPlayerBot(guid.GetRawValue(), session->GetAccountId());
         return true;
     }
     else if (cmd == "remove" || cmd == "logout" || cmd == "rm")
@@ -244,14 +164,9 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
             factory.Randomize(true);
             return true;
         }
-        else if (cmd == "pvp")
+        else if (cmd == "random" && mgr->GetMaster())
         {
-            mgr->GetMaster()->GetRandomPlayerbotMgr()->DoPvpAttack(bot);
-            return true;
-        }
-        else if (cmd == "random")
-        {
-            mgr->GetMaster()->GetRandomPlayerbotMgr()->Randomize(bot);
+            sRandomPlayerbotMgr.Randomize(bot);
             return true;
         }
     }
@@ -404,6 +319,91 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
     return res;
 }
 
+
+PlayerbotMgr::PlayerbotMgr(Player* const master) : PlayerbotHolder(),  master(master)
+{
+}
+
+PlayerbotMgr::~PlayerbotMgr()
+{
+}
+
+void PlayerbotMgr::UpdateAIInternal(uint32 elapsed)
+{
+    SetNextCheckDelay(sPlayerbotAIConfig.reactDelay);
+}
+
+void PlayerbotMgr::HandleCommand(uint32 type, const string& text)
+{
+    Player *master = GetMaster();
+    if (!master)
+        return;
+
+    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        bot->GetPlayerbotAI()->HandleCommand(type, text, *master);
+    }
+
+    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr.GetPlayerBotsBegin(); it != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        if (bot->GetPlayerbotAI()->GetMaster() == master)
+            bot->GetPlayerbotAI()->HandleCommand(type, text, *master);
+    }
+}
+
+void PlayerbotMgr::HandleMasterIncomingPacket(const WorldPacket& packet)
+{
+    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        bot->GetPlayerbotAI()->HandleMasterIncomingPacket(packet);
+    }
+
+    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr.GetPlayerBotsBegin(); it != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        if (bot->GetPlayerbotAI()->GetMaster() == GetMaster())
+            bot->GetPlayerbotAI()->HandleMasterIncomingPacket(packet);
+    }
+
+    switch (packet.GetOpcode())
+    {
+        // if master is logging out, log out all bots
+        case CMSG_LOGOUT_REQUEST:
+        {
+            LogoutAllBots();
+            return;
+        }
+    }
+}
+void PlayerbotMgr::HandleMasterOutgoingPacket(const WorldPacket& packet)
+{
+    for (PlayerBotMap::const_iterator it = GetPlayerBotsBegin(); it != GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        bot->GetPlayerbotAI()->HandleMasterOutgoingPacket(packet);
+    }
+
+    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr.GetPlayerBotsBegin(); it != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        if (bot->GetPlayerbotAI()->GetMaster() == GetMaster())
+            bot->GetPlayerbotAI()->HandleMasterOutgoingPacket(packet);
+    }
+}
+
+void PlayerbotMgr::RandomizePlayerBot(uint64 guid, uint32 level, uint32 itemQuality)
+{
+    Player* bot = GetPlayerBot(guid);
+    if (!bot)
+        return;
+
+    PlayerbotFactory factory(bot, level, itemQuality);
+    factory.Randomize(false);
+}
+
 uint32 PlayerbotMgr::GetAccountId(string name)
 {
     uint32 accountId = 0;
@@ -422,7 +422,7 @@ uint32 PlayerbotMgr::GetAccountId(string name)
 bool PlayerbotMgr::ProcessBot(string name, string cmdStr)
 {
     ObjectGuid member = sObjectMgr.GetPlayerGuidByName(name);
-	if (member != GetMaster()->GetObjectGuid())
+	if (GetMaster() && member != GetMaster()->GetObjectGuid())
     {
 		return processBotCommand(GetMaster()->GetSession(), cmdStr, member);
     }
@@ -436,12 +436,16 @@ void PlayerbotMgr::SaveToDB()
         Player* const bot = it->second;
         bot->SaveToDB();
     }
+    for (PlayerBotMap::const_iterator it = sRandomPlayerbotMgr.GetPlayerBotsBegin(); it != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++it)
+    {
+        Player* const bot = it->second;
+        if (bot->GetPlayerbotAI()->GetMaster() == GetMaster())
+            bot->SaveToDB();
+    }
 }
 
-void PlayerbotMgr::ResetSharedAi()
+void PlayerbotMgr::OnBotLoginInternal(Player * const bot)
 {
-    if (sharedAi)
-        ((SharedPlayerbotAI*)sharedAi)->Clear();
-    else
-        sharedAi = new SharedPlayerbotAI();
+    bot->GetPlayerbotAI()->SetMaster(master);
+    bot->GetPlayerbotAI()->ResetStrategies();
 }

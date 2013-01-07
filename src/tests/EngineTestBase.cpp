@@ -3,7 +3,6 @@
 #include "EngineTestBase.h"
 #include "MockedTargets.h"
 #include "AiObjectContextWrapper.h"
-#include "playerbot/strategy/values/SharedValueContext.h"
 
 class TestActionExecutionListener : public ActionExecutionListener
 {
@@ -101,7 +100,6 @@ void EngineTestBase::va_generic(void (EngineTestBase::*callback)(const char*), v
 
 void EngineTestBase::setupEngine(AiObjectContext* aiObjectContext, ...)
 {
-    aiObjectContext->AddShared(new SharedValueContext());
     context = new AiObjectContextWrapper(ai, aiObjectContext);
     ai->SetContext(context);
     engine = new Engine(ai, context);

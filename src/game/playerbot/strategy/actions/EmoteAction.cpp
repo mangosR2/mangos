@@ -25,17 +25,20 @@ bool EmoteAction::Execute(Event event)
         emote = emotes[param];
     }
 
-    ObjectGuid masterSelection = master->GetSelectionGuid();
-    if (masterSelection)
-    {
-        ObjectGuid oldSelection = bot->GetSelectionGuid();
-        bot->SetSelectionGuid(masterSelection);
-        ai->GetBot()->HandleEmoteCommand(emote);
-        bot->SetSelectionGuid(oldSelection);
-    }
-    else
-        ai->GetBot()->HandleEmoteCommand(emote);
+	if (master)
+	{
+        ObjectGuid masterSelection = master->GetSelectionGuid();
+        if (masterSelection)
+        {
+            ObjectGuid oldSelection = bot->GetSelectionGuid();
+            bot->SetSelectionGuid(masterSelection);
+            ai->GetBot()->HandleEmoteCommand(emote);
+            bot->SetSelectionGuid(oldSelection);
+            return true;
+        }
+	}
 
+    ai->GetBot()->HandleEmoteCommand(emote);
     return true;
 }
 

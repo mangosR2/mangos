@@ -4,6 +4,24 @@
 
 using namespace ai;
 
+class ChatCommandActionNodeFactoryInternal : public NamedObjectFactory<ActionNode>
+{
+public:
+    ChatCommandActionNodeFactoryInternal()
+    {
+        creators["tank attack chat shortcut"] = &tank_attack_chat_shortcut;
+    }
+
+private:
+    static ActionNode* tank_attack_chat_shortcut(PlayerbotAI* ai)
+    {
+        return new ActionNode ("tank attack chat shortcut",
+            /*P*/ NULL,
+            /*A*/ NULL,
+            /*C*/ NextAction::array(0, new NextAction("attack my target", 100.0f), NULL));
+    }
+};
+
 void ChatCommandHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 {
     PassTroughStrategy::InitTriggers(triggers);
@@ -79,6 +97,10 @@ void ChatCommandHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("flee chat shortcut", relevance), NULL)));
 
     triggers.push_back(new TriggerNode(
+        "tank attack",
+        NextAction::array(0, new NextAction("tank attack chat shortcut", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
         "grind",
         NextAction::array(0, new NextAction("grind chat shortcut", relevance), NULL)));
 
@@ -107,6 +129,8 @@ void ChatCommandHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
 ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* ai) : PassTroughStrategy(ai)
 {
+    actionNodeFactories.Add(new ChatCommandActionNodeFactoryInternal());
+
     supported.push_back("quests");
     supported.push_back("stats");
     supported.push_back("leave");

@@ -11,6 +11,9 @@ bool PositionAction::Execute(Event event)
 	if (qualifier.empty())
 		return false;
 
+    if (!master)
+        return false;
+
 	ai::Position& pos = context->GetValue<ai::Position&>("position", qualifier)->Get();
     pos.Set( master->GetPositionX(), master->GetPositionY(), master->GetPositionZ());
 

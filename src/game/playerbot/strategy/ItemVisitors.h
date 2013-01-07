@@ -4,7 +4,7 @@ char * strstri (const char* str1, const char* str2);
 
 namespace ai
 {
-    class IterateItemsVisitor 
+    class IterateItemsVisitor
     {
     public:
         IterateItemsVisitor() {}
@@ -43,7 +43,7 @@ namespace ai
 
     class FindUsableItemVisitor : public FindItemVisitor {
     public:
-        FindUsableItemVisitor(Player* bot) : FindItemVisitor() 
+        FindUsableItemVisitor(Player* bot) : FindItemVisitor()
         {
             this->bot = bot;
         }
@@ -64,7 +64,7 @@ namespace ai
     class FindItemsByQualityVisitor : public IterateItemsVisitor
     {
     public:
-        FindItemsByQualityVisitor(uint32 quality, int count) : IterateItemsVisitor() 
+        FindItemsByQualityVisitor(uint32 quality, int count) : IterateItemsVisitor()
         {
             this->quality = quality;
             this->count = count;
@@ -110,7 +110,7 @@ namespace ai
     class FindItemsToTradeByClassVisitor : public IterateItemsVisitor
     {
     public:
-        FindItemsToTradeByClassVisitor(uint32 itemClass, uint32 itemSubClass, int count) 
+        FindItemsToTradeByClassVisitor(uint32 itemClass, uint32 itemSubClass, int count)
             : IterateItemsVisitor(), count(count), itemClass(itemClass), itemSubClass(itemSubClass) {}
 
         virtual bool Visit(Item* item)
@@ -140,10 +140,10 @@ namespace ai
         list<Item*> result;
     };
 
-    class QueryItemCountVisitor : public IterateItemsVisitor 
+    class QueryItemCountVisitor : public IterateItemsVisitor
     {
     public:
-        QueryItemCountVisitor(uint32 itemId) 
+        QueryItemCountVisitor(uint32 itemId)
         {
             count = 0;
             this->itemId = itemId;
@@ -165,7 +165,7 @@ namespace ai
     };
 
 
-    class QueryNamedItemCountVisitor : public QueryItemCountVisitor 
+    class QueryNamedItemCountVisitor : public QueryItemCountVisitor
     {
     public:
         QueryNamedItemCountVisitor(string name) : QueryItemCountVisitor(0)
@@ -188,7 +188,7 @@ namespace ai
 
     class FindUsableNamedItemVisitor : public FindUsableItemVisitor {
     public:
-        FindUsableNamedItemVisitor(Player* bot, string name) : FindUsableItemVisitor(bot) 
+        FindUsableNamedItemVisitor(Player* bot, string name) : FindUsableItemVisitor(bot)
         {
             this->name = name;
         }
@@ -204,7 +204,7 @@ namespace ai
 
     class FindItemByIdVisitor : public FindItemVisitor {
     public:
-        FindItemByIdVisitor(uint32 id) : FindItemVisitor() 
+        FindItemByIdVisitor(uint32 id) : FindItemVisitor()
         {
             this->id = id;
         }
@@ -235,5 +235,24 @@ namespace ai
             items[id] += item->GetCount();
             return true;
         }
-    };   
+    };
+
+    class ItemCountByQuality : public IterateItemsVisitor
+    {
+    public:
+        ItemCountByQuality() : IterateItemsVisitor()
+        {
+            for (uint32 i = 0; i < MAX_ITEM_QUALITY; ++i)
+                count[i] = 0;
+        }
+
+        virtual bool Visit(Item* item)
+        {
+            count[item->GetProto()->Quality]++;
+            return true;
+        }
+
+    public:
+        map<uint32, int> count;
+    };
 }

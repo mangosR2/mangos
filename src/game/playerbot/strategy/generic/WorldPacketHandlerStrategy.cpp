@@ -14,7 +14,7 @@ void WorldPacketHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "group set leader",
-        NextAction::array(0, new NextAction("pass leadership to master", relevance), NULL)));
+        NextAction::array(0, new NextAction("leader", relevance), NULL)));
 
     triggers.push_back(new TriggerNode(
         "not enough money",
@@ -70,6 +70,18 @@ void WorldPacketHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode(
         "ready check finished",
         NextAction::array(0, new NextAction("finish ready check", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "random",
+        NextAction::array(0, new NextAction("lfg join", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "seldom",
+        NextAction::array(0, new NextAction("lfg leave", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "lfg proposal",
+        NextAction::array(0, new NextAction("lfg accept", relevance), NULL)));
 }
 
 WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* ai) : PassTroughStrategy(ai)
@@ -80,9 +92,7 @@ WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* ai) : PassTr
     supported.push_back("party command");
     supported.push_back("ready check");
     supported.push_back("uninvite");
-    supported.push_back("lfg update");
-    supported.push_back("lfg proposal");
-    supported.push_back("lfg leave");
+    supported.push_back("lfg role check");
 }
 
 

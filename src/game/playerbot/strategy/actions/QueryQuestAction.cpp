@@ -5,7 +5,7 @@
 
 using namespace ai;
 
-void QueryQuestAction::TellObjective(string name, int available, int required) 
+void QueryQuestAction::TellObjective(string name, int available, int required)
 {
     ai->TellMaster(chat->formatQuestObjective(name, available, required));
 }
@@ -13,11 +13,11 @@ void QueryQuestAction::TellObjective(string name, int available, int required)
 
 bool QueryQuestAction::Execute(Event event)
 {
-    
+
     Player *bot = ai->GetBot();
     string text = event.getParam();
 
-    PlayerbotChatHandler ch(master);
+    PlayerbotChatHandler ch(bot);
     uint32 questId = ch.extractQuestId(text);
     if (!questId)
         return false;
@@ -47,7 +47,7 @@ bool QueryQuestAction::Execute(Event event)
     return false;
 }
 
-void QueryQuestAction::TellObjectives(uint32 questId) 
+void QueryQuestAction::TellObjectives(uint32 questId)
 {
     Quest const* questTemplate = sObjectMgr.GetQuestTemplate(questId);
     QuestStatusMap &questMap = (QuestStatusMap&)bot->GetQuestStatusMap();

@@ -8,9 +8,10 @@ namespace ai
     public:
         ChatCommandTrigger(PlayerbotAI* ai, string command) : Trigger(ai, command), triggered(false) {}
 
-        virtual void ExternalEvent(string param) 
+        virtual void ExternalEvent(string param, Player* owner = NULL)
         {
             this->param = param;
+            this->owner = owner;
             triggered = true;
         }
 
@@ -19,7 +20,7 @@ namespace ai
             if (!triggered)
                 return Event();
 
-            return Event(getName(), param);
+            return Event(getName(), param, owner);
         }
 
         virtual void Reset()
@@ -30,5 +31,6 @@ namespace ai
    private:
         string param;
         bool triggered;
+        Player* owner;
     };
 }

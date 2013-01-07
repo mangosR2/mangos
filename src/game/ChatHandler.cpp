@@ -576,6 +576,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recv_data)
                     {
                         _player->GetPlayerbotMgr()->HandleCommand(type, msg);
                     }
+                    sRandomPlayerbotMgr.HandleCommand(type, msg, *_player);
                     chn->Say(_player->GetObjectGuid(), msg.c_str(), lang);
                 }
             }

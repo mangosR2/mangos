@@ -11,7 +11,10 @@ bool BuyAction::Execute(Event event)
     string link = event.getParam();
 
     ItemIds itemIds = chat->parseItems(link);
-    if (itemIds.empty()) 
+    if (itemIds.empty())
+        return false;
+
+    if (!master)
         return false;
 
     ObjectGuid vendorguid = master->GetSelectionGuid();
@@ -32,7 +35,7 @@ bool BuyAction::Execute(Event event)
         return false;
     }
 
-    for (ItemIds::iterator i = itemIds.begin(); i != itemIds.end(); i++) 
+    for (ItemIds::iterator i = itemIds.begin(); i != itemIds.end(); i++)
     {
         for (uint32 slot = 0; slot < tItems->GetItemCount(); slot++)
         {
@@ -43,6 +46,6 @@ bool BuyAction::Execute(Event event)
             }
         }
     }
-    
+
     return true;
 }

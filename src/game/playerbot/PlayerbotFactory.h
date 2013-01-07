@@ -37,6 +37,7 @@ private:
     void InitAmmo();
     void InitMounts();
     void InitPotions();
+    void InitFood();
     bool CanEquipArmor(ItemPrototype const* proto, uint8 slot);
     bool CanEquipWeapon(ItemPrototype const* proto, uint8 slot);
     void EnchantItem(Item* item);

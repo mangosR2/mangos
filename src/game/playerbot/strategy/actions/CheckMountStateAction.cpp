@@ -8,7 +8,7 @@ uint64 extractGuid(WorldPacket& packet);
 
 bool CheckMountStateAction::Execute(Event event)
 {
-    if (!bot->GetGroup())
+    if (!bot->GetGroup() || !master)
         return false;
 
     if (master->IsMounted() && !bot->IsMounted())

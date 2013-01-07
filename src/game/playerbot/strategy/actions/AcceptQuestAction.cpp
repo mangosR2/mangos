@@ -11,6 +11,9 @@ void AcceptAllQuestsAction::ProcessQuest(Quest const* quest, WorldObject* questG
 
 bool AcceptQuestAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     Player *bot = ai->GetBot();
     uint64 guid;
     uint32 quest;

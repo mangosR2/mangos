@@ -14,14 +14,13 @@ enum PlayerbotSecurityLevel
 class MANGOS_DLL_SPEC PlayerbotSecurity
 {
     public:
-        PlayerbotSecurity(Player* const master, Player* const bot);
+        PlayerbotSecurity(Player* const bot);
 
 	public:
-        PlayerbotSecurityLevel LevelFor(Player* from = NULL);
-        bool CheckLevelFor(PlayerbotSecurityLevel level, bool silent = false, Player* from = NULL);
+        PlayerbotSecurityLevel LevelFor(Player* from);
+        bool CheckLevelFor(PlayerbotSecurityLevel level, bool silent, Player* from);
 
     private:
-        Player* const master;
         Player* const bot;
         uint32 account;
 };

@@ -6,6 +6,9 @@ using namespace ai;
 
 bool ListSpellsAction::Execute(Event event)
 {
+    if (!master)
+        return false;
+
     int loc = master->GetSession()->GetSessionDbcLocale();
 
     std::ostringstream posOut;

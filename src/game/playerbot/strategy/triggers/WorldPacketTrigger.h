@@ -8,9 +8,10 @@ namespace ai
     public:
         WorldPacketTrigger(PlayerbotAI* ai, string command) : Trigger(ai, command), triggered(false) {}
 
-        virtual void ExternalEvent(WorldPacket &packet) 
+        virtual void ExternalEvent(WorldPacket &packet, Player* owner = NULL)
         {
             this->packet = packet;
+            this->owner = owner;
             triggered = true;
         }
 
@@ -19,7 +20,7 @@ namespace ai
             if (!triggered)
                 return Event();
 
-            return Event(getName(), packet);
+            return Event(getName(), packet, owner);
         }
 
         virtual void Reset()
@@ -30,5 +31,6 @@ namespace ai
     private:
         WorldPacket packet;
         bool triggered;
+        Player* owner;
     };
 }
