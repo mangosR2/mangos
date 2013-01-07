@@ -2578,9 +2578,16 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT>() && (pVictim->HasAura(53569, EFFECT_INDEX_0) || pVictim->HasAura(53576, EFFECT_INDEX_0)))
                         {
                             triggered_spell_id = 66922;
+
                             basepoints[0] = int32(damage / GetSpellAuraMaxTicks(triggered_spell_id));
+
+                            // For first rank of Infusion of Light  has only 1/2 bonus
                             if (pVictim->HasAura(53569, EFFECT_INDEX_0))
-                                basepoints[0] = basepoints[0] >> 1;
+                                basepoints[0] /= 2;
+
+                            // T9 - 4 paladin bonus cause double heal
+                            if (pVictim->HasAura(67191))
+                                basepoints[0] *= 2;
                         }
                         else
                             return SPELL_AURA_PROC_FAILED;

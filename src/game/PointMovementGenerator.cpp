@@ -50,6 +50,12 @@ void PointMovementGenerator<T>::Finalize(T &unit)
 template<class T>
 void PointMovementGenerator<T>::Interrupt(T &unit)
 {
+    if (!unit.movespline->Finalized())
+    {
+        Location loc = unit.movespline->ComputePosition();
+        unit.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
+        unit.movespline->_Interrupt();
+    }
     unit.clearUnitState(UNIT_STAT_ROAMING|UNIT_STAT_ROAMING_MOVE);
 }
 

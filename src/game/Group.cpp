@@ -1270,7 +1270,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
     if (player && player->IsInWorld())
         lastMap = player->GetMapId();
     else if (player && player->IsBeingTeleported())
-        lastMap = player->GetTeleportDest().mapid;
+        lastMap = player->GetTeleportDest().GetMapId();
 
     MemberSlot member;
     member.guid      = guid;

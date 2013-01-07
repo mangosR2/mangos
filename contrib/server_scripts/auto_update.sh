@@ -7,7 +7,7 @@ scriptConf=$home"/etc/scriptdev2.conf"
 mangosSource=$home"/Mangos-Sources/mangos"
 YTDBSource=$home"/Mangos-Sources/ytdbase/Wotlk"
 #
-#echo "Please, setup directories and files in begin of this script!"
+echo "Please, setup directories and files in begin of this script!"
 exit
 ###############################################################################
 r2searchDir=$mangosSource"/sql_mr"
@@ -29,7 +29,10 @@ function db_config_extract()
 {
     echo `cat $1|grep "^"$2 |sed 's/^.*=\t*//'|sed 's/\"//g' |sed 's/\<//'|sed 's/\>//'|sed 's/\;/ /g'|sed 's/\r/ /g'`
 }
-
+###############################################################################
+# some extended features. don't touch, if not sure!
+# dropDB : 0 - not drop before fill, 1 - drop only mangos DB, >1 - drop all DB's
+dropDB=1
 ###############################################################################
 # check all needed sources
 if [ ! -f $mangosConf ]; 
@@ -77,8 +80,9 @@ count=0;
 
 ###############################################################################
 # check (and create if need) DB
-
-#_rc=$(db_exec $realmhost $realmport $realmuser $realmpass $realmdb 'DROP DATABASE IF EXISTS '$realmdb)
+if [ $dropDB -gt 1 ]; then
+    _rc=$(db_exec $realmhost $realmport $realmuser $realmpass $realmdb 'DROP DATABASE IF EXISTS '$realmdb)
+    fi;
 dbcheck=$(db_exec $realmhost $realmport $realmuser $realmpass "information_schema" "SHOW DATABASES LIKE '"$realmdb"'")
 if [[ $dbcheck != $realmdb ]];
     then
@@ -126,6 +130,9 @@ read mangoshost mangosport mangosuser mangospass mangosdb <<<$dtemp
 ###############################################################################
 # check (and create if need) DB
 
+if [ $dropDB -ge 1 ]; then
+    _rc=$(db_exec $mangoshost $mangosport $mangosuser $mangospass $mangosdb 'DROP DATABASE IF EXISTS '$mangosdb)
+    fi;
 dbcheck=$(db_exec $mangoshost $mangosport $mangosuser $mangospass "information_schema" "SHOW DATABASES LIKE '"$mangosdb"'")
 if [[ $dbcheck != $mangosdb ]];
     then
@@ -163,6 +170,11 @@ searchDir=$mangosSource"/sql/updates"
 dbverfull=$(db_exec $mangoshost $mangosport $mangosuser $mangospass $mangosdb "SELECT version FROM db_version")
 echo "Full version of MANGOS DB:" $dbverfull
 count=0;
+
+# begin masquerade tables before apply YTDB updates (for structure compartibility)
+if [ -f $r2searchDir"/custom_mangos_masquerade_begin.sql" ]; then
+    _rc=$(db_run $mangoshost $mangosport $mangosuser $mangospass $mangosdb $r2searchDir"/custom_mangos_masquerade_begin.sql")
+fi;
 
 while [ ! -z $mangosdb ]
 do
@@ -204,9 +216,18 @@ do
     count=$(($count+1));
 done
 
-echo "Updating YTDB completed. Count of updates:"$count
-echo "Last update YTDB: "$dblastupdate
-echo
+# finish masquerade tables after apply YTDB updates 
+if [ -f $r2searchDir"/custom_mangos_masquerade_end.sql" ]; then
+    _rc=$(db_run $mangoshost $mangosport $mangosuser $mangospass $mangosdb $r2searchDir"/custom_mangos_masquerade_end.sql")
+fi;
+
+if [ $count -gt 0 ]; then
+    _rc=$(db_run $mangoshost $mangosport $mangosuser $mangospass $mangosdb $r2searchDir"/custom_rerun_every_mangos_DB_update.sql")
+    echo "Updating YTDB completed. Count of updates:"$count
+    fi;
+
+dbverfull=$(db_exec $mangoshost $mangosport $mangosuser $mangospass $mangosdb "SELECT version FROM db_version")
+echo "Last update YTDB: "$dblastupdate" Full YTDB version: "$dbverfull
 
 count=0;
 while [ ! -z $mangosdb ]
@@ -223,10 +244,16 @@ do
     count=$(($count+1));
 done
 
-echo "Updating MANGOS DB completed. Count of updates:"$count
+if [ $count -gt 0 ]; then
+    _rc=$(db_run $mangoshost $mangosport $mangosuser $mangospass $mangosdb $r2searchDir"/custom_rerun_every_mangos_DB_update.sql")
+fi
+
+if [ $count -gt 0 ]; then
+    echo "Updating MANGOS DB completed. Count of updates:"$count
+    fi;
+
 echo "Last update MANGOS DB: "$dblastupdate
 echo
-
 ###############################################################################
 # characters
 dtemp=$(db_config_extract $mangosConf "CharacterDatabaseInfo")
@@ -235,6 +262,9 @@ count=0;
 
 ###############################################################################
 # check (and create if need) DB
+if [ $dropDB -gt 1 ]; then
+    _rc=$(db_exec $charhost $charport $charuser $charpass $chardb 'DROP DATABASE IF EXISTS '$chardb)
+    fi;
 
 dbcheck=$(db_exec $charhost $charport $charuser $charpass "information_schema" "SHOW DATABASES LIKE '"$chardb"'")
 if [[ $dbcheck != $chardb ]];
@@ -277,7 +307,9 @@ searchDir=$mangosSource"/src/bindings/ScriptDev2/sql/updates"
 dtemp=$(db_config_extract $scriptConf "ScriptDev2DatabaseInfo")
 read sdhost sdport sduser sdpass sddb <<<$dtemp
 
-#echo $(db_exec $sdhost $sdport $sduser $sdpass $sddb 'DROP DATABASE '$sddb)
+if [ $dropDB -gt 1 ]; then
+    _rc=$(db_exec $sdhost $sdport $sduser $sdpass $sddb 'DROP DATABASE IF EXISTS '$sddb)
+    fi;
 ###############################################################################
 # check (and create if need) DB
 

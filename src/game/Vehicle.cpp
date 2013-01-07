@@ -254,7 +254,7 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
 
     if (seatInfo->m_flags & SEAT_FLAG_CAN_CONTROL)
     {
-        if (!(GetEntry()->m_flags & (VEHICLE_FLAG_ACCESSORY)))
+        if (!(GetEntry()->m_flags & VEHICLE_FLAG_ACCESSORY))
         {
             GetBase()->StopMoving();
             GetBase()->GetMotionMaster()->Clear();
@@ -264,6 +264,8 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         GetBase()->getHostileRefManager().deleteReferences();
         GetBase()->SetCharmerGuid(passenger->GetObjectGuid());
         GetBase()->addUnitState(UNIT_STAT_CONTROLLED);
+
+        passenger->SetCharm(GetBase());
 
         if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) || ((Creature*)GetBase())->CanFly())
         {
@@ -390,13 +392,12 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
         passenger->SetCharm(NULL);
         passenger->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
 
+        GetBase()->SetCharmerGuid(ObjectGuid());
         GetBase()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
         GetBase()->clearUnitState(UNIT_STAT_CONTROLLED);
 
         if (passenger->GetTypeId() == TYPEID_PLAYER)
         {
-            GetBase()->SetCharmerGuid(ObjectGuid());
-
             Player* player = (Player*)passenger;
             player->SetClientControl(GetBase(), 0);
             player->RemovePetActionBar();

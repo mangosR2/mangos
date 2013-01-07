@@ -233,17 +233,9 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         void CopyEvent(ObjectGuid const& eventId, time_t newTime, ObjectGuid const& guid);
         uint32 GetPlayerNumPending(ObjectGuid const& guid);
 
-        CalendarEvent* GetEventById(ObjectGuid const& eventId)
-        {
-            CalendarEventStore::iterator itr = m_EventStore.find(eventId);
-            return (itr != m_EventStore.end() && !itr->second.HasFlag(CALENDAR_STATE_FLAG_DELETED)) ? &itr->second : NULL;
-        }
-
-        CalendarInvite* GetInviteById(ObjectGuid const& inviteId)
-        {
-            CalendarInviteStore::iterator itr = m_InviteStore.find(inviteId);
-            return (itr != m_InviteStore.end() && !itr->second.HasFlag(CALENDAR_STATE_FLAG_DELETED)) ? &itr->second : NULL;
-        }
+        // Main calendar search methods.
+        CalendarEvent* GetEventById(ObjectGuid const& eventId);
+        CalendarInvite* GetInviteById(ObjectGuid const& inviteId);
 
         // World thread update system
         void Update();
@@ -263,7 +255,7 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         void SendCalendarEventRemovedAlert(CalendarEvent const* event);
         void SendCalendarEvent(ObjectGuid const& guid, CalendarEvent const* event, uint32 sendType);
         void SendCalendarEventInviteRemoveAlert(ObjectGuid const& guid, CalendarEvent const* event, CalendarInviteStatus status);
-        void SendCalendarEventInviteRemove(CalendarInvite const* invite, uint32 flags);
+        void SendCalendarEventInviteRemove(CalendarInvite const* invite, CalendarEvent const* event, uint32 flags);
         void SendCalendarEventStatus(CalendarInvite const* invite);
         void SendCalendarClearPendingAction(ObjectGuid const& guid);
         void SendCalendarEventModeratorStatusAlert(CalendarInvite const* invite);

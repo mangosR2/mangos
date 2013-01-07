@@ -3212,9 +3212,9 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
             m_bot->BuildPlayerRepop();
             // relocate ghost
             WorldLocation loc;
-            Corpse *corpse = m_bot->GetCorpse();
+            Corpse* corpse = m_bot->GetCorpse();
             corpse->GetPosition(loc);
-            m_bot->TeleportTo(loc.mapid, loc.coord_x, loc.coord_y, loc.coord_z, m_bot->GetOrientation());
+            m_bot->TeleportTo(loc);
             // set state to released
             SetState(BOTSTATE_DEADRELEASED);
         }

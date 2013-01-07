@@ -21,54 +21,67 @@
 #define _WORLDLOCATION_H
 
 #include "Common.h"
+#include <G3D/Vector3.h>
 
-struct MANGOS_DLL_SPEC Position
+using G3D::Vector3;
+
+struct MANGOS_DLL_SPEC Location : public Vector3
 {
-    Position() : x(0.0f), y(0.0f), z(0.0f), o(0.0f) {}
-    Position(float _x, float _y, float _z, float _o) : x(_x), y(_y), z(_z), o(_o) {}
-    virtual ~Position() {};
+    Location() 
+        : orientation(0.0f)
+    {}
+
+    Location(float x, float y, float z, float o = 0.0f)
+        : Vector3(x, y, z), orientation(o)
+    {}
+
+    Location(const Vector3& v) 
+        : Vector3(v), orientation(0.0f)
+    {}
+
+    Location(const Vector3& v, float o) 
+        : Vector3(v), orientation(o)
+    {}
+
+    virtual ~Location()
+    {};
+
     union
     {
-        float x;
-        float coord_x;
-    };
-    union
-    {
-        float y;
-        float coord_y;
-    };
-    union
-    {
-        float z;
-        float coord_z;
-    };
-    union
-    {
-        float o;
         float orientation;
+        float o;
     };
+};
+
+struct MANGOS_DLL_SPEC Position : public Location
+{
+    Position() 
+        : Location(), coord_x(x), coord_y(y), coord_z(z)
+    {};
+
+    Position(float _x, float _y, float _z, float _o = 0.0f)
+        : Location(_x, _y, _z, _o), coord_x(x), coord_y(y), coord_z(z)
+    {};
+
+    virtual ~Position()
+    {};
+
+    float& coord_x;
+    float& coord_y;
+    float& coord_z;
 
     virtual bool HasMap() const { return false; };
 
-    bool operator == (Position const &pos) const
-    {
-        return ((x - pos.x < M_NULL_F)
-            && (y - pos.y < M_NULL_F)
-            && (z - pos.z < M_NULL_F));
-    }
+    Position& operator = (Position const& pos);
+    bool operator == (Position const& pos) const;
 };
 
 class WorldObject;
 
 struct MANGOS_DLL_SPEC WorldLocation : public Position
 {
-    // mapid = -1 for not initialized WorldLocation
-    int32     mapid;
-    uint32    instance;
 
-    // assume 0 as "current realm"
-    uint32    realmid;
-
+    public:
     WorldLocation()
         : Position(), mapid(-1), instance(0), realmid(0)
     {}
@@ -89,22 +102,42 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
         : Position(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation), mapid(loc.mapid), instance(loc.instance), realmid(loc.realmid)
     {}
 
-    ~WorldLocation() {};
+    WorldLocation(WorldObject const& object);
 
-    bool operator == (WorldLocation const &loc) const
-    {
-        return (realmid    == loc.realmid
-            && mapid       == loc.mapid
-            && instance    == loc.instance
-            && (coord_x - loc.coord_x < M_NULL_F)
-            && (coord_y - loc.coord_y < M_NULL_F)
-            && (coord_z - loc.coord_z < M_NULL_F));
-    }
+    virtual ~WorldLocation() 
+    {};
 
-    bool HasMap() const override
+    bool operator == (WorldLocation const& loc) const;
+
+    virtual bool HasMap() const override
     {
         return mapid >= 0;
     }
+
     Position const& GetPosition() { return *this; };
+
+    uint32 GetZoneId() const;
+    uint32 GetAreaId() const;
+
+    uint32 GetRealmId()    const { return realmid; };
+    uint32 GetMapId()      const { return HasMap() ? abs(mapid) :  UINT32_MAX; };
+    uint32 GetInstanceId() const { return HasMap() ? instance :  0; };
+
+
+    void SetMapId(uint32 value);
+    void SetInstanceId(uint32 value)  { instance = value; };
+    void SetRealmId(uint32 value)     { realmid  = value; }; // Currently not need make realm switch - awaiting multirealm implement.
+
+    bool IsValidMapCoord(WorldLocation const& loc);
+
+    void SetOrientation(float value);
+
+    WorldLocation& operator = (WorldLocation const& loc);
+
+    private:
+    int32     mapid;                      // mapid    = -1 for not fully initialized WorldLocation
+    uint32    instance;                   // instance = 0  for not fully initialized WorldLocation ("current instance")
+    uint32    realmid;                    // realmid  = 0  for "always current realm". 
+
 };
 #endif
