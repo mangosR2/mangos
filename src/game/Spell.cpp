@@ -5826,6 +5826,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                             break;
                         }
                     }
+
+                    if (creatureScriptTarget || goScriptTarget)
+                        break;
                 }
 
                 if (creatureScriptTarget)

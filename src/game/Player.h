@@ -1067,13 +1067,10 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool TeleportToBGEntryPoint();
 
-        void SetSummonPoint(uint32 mapid, float x, float y, float z)
+        void SetSummonPoint(WorldLocation const& loc)
         {
             m_summon_expire = time(NULL) + MAX_PLAYER_SUMMON_DELAY;
-            m_summon_mapid = mapid;
-            m_summon_x = x;
-            m_summon_y = y;
-            m_summon_z = z;
+            m_summon_loc = loc;
         }
         void SummonIfPossible(bool agree);
 
@@ -2691,10 +2688,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         // Player summoning
         time_t m_summon_expire;
-        uint32 m_summon_mapid;
-        float  m_summon_x;
-        float  m_summon_y;
-        float  m_summon_z;
+        WorldLocation m_summon_loc;
 
         DeclinedName* m_declinedname;
         Runes* m_runes;

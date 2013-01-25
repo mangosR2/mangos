@@ -556,10 +556,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
 
     // Player summoning
     m_summon_expire = 0;
-    m_summon_mapid = 0;
-    m_summon_x = 0.0f;
-    m_summon_y = 0.0f;
-    m_summon_z = 0.0f;
 
     m_contestedPvPTimer = 0;
 
@@ -21370,14 +21366,15 @@ void Player::SummonIfPossible(bool agree)
 
     // drop flag at summon
     // this code can be reached only when GM is summoning player who carries flag, because player should be immune to summoning spells when he carries flag
-    if (BattleGround *bg = GetBattleGround())
+    if (BattleGround* bg = GetBattleGround())
         bg->EventPlayerDroppedFlag(this);
 
     m_summon_expire = 0;
 
     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_ACCEPTED_SUMMONINGS, 1);
 
-    TeleportTo(m_summon_mapid, m_summon_x, m_summon_y, m_summon_z,GetOrientation());
+    m_summon_loc.SetOrientation(GetOrientation());
+    TeleportTo(m_summon_loc);
 }
 
 void Player::RemoveItemDurations(Item* item)
