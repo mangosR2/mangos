@@ -1373,7 +1373,7 @@ void LFGMgr::UpdateProposal(uint32 ID, ObjectGuid guid, bool accept)
         leader->GetSession()->SendLfgUpdatePlayer(LFG_UPDATETYPE_GROUP_FOUND, leader->GetLFGPlayerState()->GetType());
         leader->GetLFGPlayerState()->AddRole(ROLE_LEADER);
 
-        pGroup = new Group();
+        pGroup = new Group(GROUPTYPE_LFD);
         pGroup->Create(leader->GetObjectGuid(), leader->GetName());
         pGroup->ConvertToLFG(pProposal->GetType());
         sObjectMgr.AddGroup(pGroup);
@@ -2216,8 +2216,8 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
         return;
     DEBUG_LOG("LFGMgr::SetRoles set roles for rolesmap size = %u",uint8(rolesMap->size()));
 
-    LFGRoleMask oldRoles;
-    LFGRoleMask newRole;
+    LFGRoleMask oldRoles = LFG_ROLE_MASK_NONE;
+    LFGRoleMask newRole  = LFG_ROLE_MASK_NONE;
     ObjectGuid  tankGuid;
     ObjectGuid  healGuid;
 

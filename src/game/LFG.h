@@ -304,7 +304,7 @@ protected:
 };
 
 
-struct LFGPlayerState : public LFGStateStructure
+struct MANGOS_DLL_SPEC LFGPlayerState : public LFGStateStructure
 {
 public:
     explicit LFGPlayerState(Player* player) : m_pPlayer(player)
@@ -346,7 +346,7 @@ private:
 
 typedef std::map<ObjectGuid, LFGAnswer> LFGAnswerMap;
 
-struct LFGGroupState : public LFGStateStructure
+struct MANGOS_DLL_SPEC LFGGroupState : public LFGStateStructure
 {
 
 public:

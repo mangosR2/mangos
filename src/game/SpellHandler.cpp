@@ -713,7 +713,6 @@ void WorldSession::HandleUpdateProjectilePosition(WorldPacket& recvPacket)
 
 void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
 {
-    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WORLD: CMSG_GET_MIRRORIMAGE_DATA");
 
     ObjectGuid guid;
     recv_data >> guid;
@@ -730,11 +729,16 @@ void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
 
     Unit* pCaster = images.front()->GetCaster();
 
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WorldSession::HandleGetMirrorimageData CMSG_GET_MIRRORIMAGE_DATA creature %s aura %u caster %s",
+        guid.GetString().c_str(),
+        images.front()->GetId(),
+        pCaster ? pCaster->GetObjectGuid().GetString().c_str() : "<none>");
+
     WorldPacket data(SMSG_MIRRORIMAGE_DATA, 68);
 
     data << guid;
-    data << (uint32)pCreature->GetDisplayId();
 
+    data << (uint32)pCreature->GetDisplayId();
     data << (uint8)pCreature->getRace();
     data << (uint8)pCreature->getGender();
     data << (uint8)pCreature->getClass();

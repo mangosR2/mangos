@@ -22,7 +22,6 @@
 #include "Common.h"
 #include "SharedDefines.h"
 #include "Object.h"
-#include "LootMgr.h"
 #include "Database/DatabaseEnv.h"
 
 // GCC have alternative #pragma pack(N) syntax and old gcc version not support pack(push,N), also any gcc version not support it at some platform
@@ -230,6 +229,8 @@ struct GameObjectInfo
             uint32 transportPhysics;                        //5
             uint32 mapID;                                   //6
             uint32 worldState1;                             //7
+            uint32 defaultState;                            //8
+            uint32 difficultyMask;                          //9 custom data, not be found in cache.
         } moTransport;
         //16 GAMEOBJECT_TYPE_DUELFLAG - empty
         //17 GAMEOBJECT_TYPE_FISHINGNODE - empty
@@ -513,17 +514,6 @@ struct GameObjectInfo
             default: return 0;
         }
     }
-
-    uint32 GetEventScriptId() const
-    {
-        switch (type)
-        {
-            case GAMEOBJECT_TYPE_GOOBER:        return goober.eventId;
-            case GAMEOBJECT_TYPE_CHEST:         return chest.eventId;
-            case GAMEOBJECT_TYPE_CAMERA:        return camera.eventID;
-            default: return 0;
-        }
-    }
 };
 
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
@@ -634,7 +624,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         ~GameObject();
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove) override;
 
         bool Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang,
                     QuaternionData rotation = QuaternionData(), uint8 animprogress = GO_ANIMPROGRESS_DEFAULT, GOState go_state = GO_STATE_READY);
@@ -643,7 +633,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         bool IsTransport() const;
         bool IsDynTransport() const;
-        void SetActiveObjectState(bool on);
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
 
@@ -753,20 +742,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 
         void SaveRespawnTime();
 
-        // Loot System
-        Loot loot;
-        void getFishLoot(Loot* loot, Player* loot_owner);
-        void StartGroupLoot(Group* group, uint32 timer);
-
-        ObjectGuid GetLootRecipientGuid() const { return m_lootRecipientGuid; }
-        uint32 GetLootGroupRecipientId() const { return m_lootGroupRecipientId; }
-        Player* GetLootRecipient() const;                   // use group cases as prefered
-        Group* GetGroupLootRecipient() const;
-        bool HasLootRecipient() const { return m_lootGroupRecipientId || !m_lootRecipientGuid.IsEmpty(); }
-        bool IsGroupLootRecipient() const { return m_lootGroupRecipientId; }
-        void SetLootRecipient(Unit* pUnit);
-        Player* GetOriginalLootRecipient() const;           // ignore group changes/etc, not for looting
-
         bool HasQuest(uint32 quest_id) const;
         bool HasInvolvedQuest(uint32 quest_id) const;
         bool ActivateToQuest(Player* pTarget) const;
@@ -775,8 +750,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void ResetDoorOrButton();
         void ResetCapturePoint();
 
-        bool IsHostileTo(Unit const* unit) const;
-        bool IsFriendlyTo(Unit const* unit) const;
+        virtual bool IsHostileTo(Unit const* unit) const override;
+        virtual bool IsFriendlyTo(Unit const* unit) const override;
 
         void SummonLinkedTrapIfAny();
         void TriggerLinkedGameObject(Unit* target);
@@ -790,9 +765,10 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         GridReference<GameObject>& GetGridRef() { return m_gridRef; }
 
         bool IsInRange(float x, float y, float z, float radius) const;
-        void DamageTaken(Unit *pDoneBy, uint32 uiDamage, uint32 spellId = 0);
-        void Rebuild(Unit *pWho);
 
+        void DealGameObjectDamage(uint32 damage, uint32 spell, Unit* caster);
+        void DamageTaken(Unit* pWho, int32 uiDamage, uint32 spellId = 0);
+        void Rebuild(Unit* pWho, uint32 spellId = 0);
         uint32 GetHealth() const { return m_health; }
         uint32 GetMaxHealth() const { return m_goInfo->destructibleBuilding.intactNumHits + m_goInfo->destructibleBuilding.damagedNumHits; }
 
@@ -832,13 +808,6 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         GameObjectDisplayInfoEntry const* m_displayInfo;
         int64 m_packedRotation;
         QuaternionData m_worldRotation;
-
-        // Loot System
-        uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
-        uint32 m_groupLootId;                               // used to find group which is looting
-        void StopGroupLoot();
-        ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
-        uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
 
     private:
         void SwitchDoorOrButton(bool activate, bool alternative = false);

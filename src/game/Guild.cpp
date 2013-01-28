@@ -29,6 +29,7 @@
 #include "Util.h"
 #include "Language.h"
 #include "World.h"
+#include "Calendar.h"
 
 //// MemberSlot ////////////////////////////////////////////
 void MemberSlot::SetMemberStats(Player* player)
@@ -616,6 +617,40 @@ void Guild::BroadcastPacketToRank(WorldPacket* packet, uint32 rankId)
                 player->GetSession()->SendPacket(packet);
         }
     }
+}
+
+// add new event to all already connected guild memebers
+void Guild::MassInviteToEvent(WorldSession* session, uint32 minLevel, uint32 maxLevel, uint32 minRank)
+{
+    uint32 count = 0;
+
+    WorldPacket data(SMSG_CALENDAR_FILTER_GUILD);
+    data << uint32(count); // count placeholder
+
+    for (MemberList::const_iterator itr = members.begin(); itr != members.end(); ++itr)
+    {
+        // not sure if needed, maybe client checks it as well
+        if (count >= CALENDAR_MAX_INVITES)
+        {
+            if (Player* player = session->GetPlayer())
+                sCalendarMgr.SendCalendarCommandResult(player->GetObjectGuid(), CALENDAR_ERROR_INVITES_EXCEEDED);
+            return;
+        }
+
+        MemberSlot const* member = &itr->second;
+        uint32 level = Player::GetLevelFromDB(member->guid);
+
+        if (member->guid != session->GetPlayer()->GetObjectGuid() && level >= minLevel && level <= maxLevel && member->RankId <= minRank)
+        {
+            data << member->guid.WriteAsPacked();
+            data << uint8(level);
+            ++count;
+        }
+    }
+
+    data.put<uint32>(0, count);
+
+    session->SendPacket(&data);
 }
 
 void Guild::CreateRank(std::string name_, uint32 rights)
@@ -1745,7 +1780,7 @@ Item* Guild::_StoreItem(uint8 tab, uint8 slot, Item* pItem, uint32 count, bool c
 
         if (!clone)
         {
-            pItem->RemoveFromWorld();
+            pItem->RemoveFromWorld(true);
             pItem->DeleteFromDB();
             delete pItem;
         }
@@ -2403,7 +2438,7 @@ void Guild::DeleteGuildBankItems(bool alsoInDB /*= false*/)
         {
             if (Item* pItem = m_TabListMap[i]->Slots[j])
             {
-                pItem->RemoveFromWorld();
+                pItem->RemoveFromWorld(true);
 
                 if (alsoInDB)
                     pItem->DeleteFromDB();

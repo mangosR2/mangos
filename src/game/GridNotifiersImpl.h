@@ -202,7 +202,7 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
             return;
     }
 
-    if (i_dynobject.IsAffecting(target))
+    if (target->HasAura(i_dynobject.GetSpellId(), i_dynobject.GetEffIndex()))
         return;
 
     SpellEntry const* spellInfo = sSpellStore.LookupEntry(i_dynobject.GetSpellId());

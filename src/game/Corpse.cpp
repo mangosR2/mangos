@@ -27,7 +27,7 @@
 #include "World.h"
 #include "ObjectMgr.h"
 
-Corpse::Corpse(CorpseType type) : WorldObject()
+Corpse::Corpse(CorpseType type) : WorldObject(), loot(this)
 {
     m_objectType |= TYPEMASK_CORPSE;
     m_objectTypeId = TYPEID_CORPSE;
@@ -56,13 +56,13 @@ void Corpse::AddToWorld()
     Object::AddToWorld();
 }
 
-void Corpse::RemoveFromWorld()
+void Corpse::RemoveFromWorld(bool remove)
 {
     ///- Remove the corpse from the accessor
     if (IsInWorld())
         sObjectAccessor.RemoveObject(this);
 
-    Object::RemoveFromWorld();
+    Object::RemoveFromWorld(remove);
 }
 
 bool Corpse::Create(uint32 guidlow)

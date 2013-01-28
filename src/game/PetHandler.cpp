@@ -508,7 +508,6 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
 
     if (pet->IsPet() || pet->isCharmed())
         GetPlayer()->CallForAllControlledUnits(DoPetCastWithHelper(GetPlayer(), cast_count, &targets, spellInfo ),CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
-
 }
 
 void WorldSession::SendPetNameInvalid(uint32 error, const std::string& name, DeclinedName* declinedName)

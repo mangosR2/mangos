@@ -281,6 +281,9 @@ class MANGOS_DLL_SPEC Item : public Object
 
         virtual bool Create(uint32 guidlow, uint32 itemid, Player const* owner);
 
+        void AddToWorld();
+        virtual void RemoveFromWorld(bool remove);
+
         ItemPrototype const* GetProto() const;
 
         ObjectGuid const& GetOwnerGuid() const { return GetGuidValue(ITEM_FIELD_OWNER); }
@@ -386,9 +389,9 @@ class MANGOS_DLL_SPEC Item : public Object
         bool IsPotion() const { return GetProto()->IsPotion(); }
         bool IsConjuredConsumable() const { return GetProto()->IsConjuredConsumable(); }
 
-        void AddToClientUpdateList();
-        void RemoveFromClientUpdateList();
-        void BuildUpdateData(UpdateDataMapType& update_players);
+        void AddToClientUpdateList() override;
+        void RemoveFromClientUpdateList() override;
+        void BuildUpdateData(UpdateDataMapType& update_players) override;
 
         // Item Refunding system
         bool IsEligibleForRefund() const;
@@ -408,6 +411,8 @@ class MANGOS_DLL_SPEC Item : public Object
         bool LoadSoulboundTradeableDataFromDB(Player* owner);
         bool CheckSoulboundTradeExpire(Player* owner);
     private:
+        void GetDataValuesStr(std::ostringstream& ss);
+
         bool IsRefundOrSoulboundTradeExpired(Player* owner) const;
 
         void DeleteLootFromDB();

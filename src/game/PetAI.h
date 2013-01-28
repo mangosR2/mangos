@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
- * Copyright (C) 2011-2012 /dev/rsa for MangosR2 <http://github.com/MangosR2>
+ * Copyright (C) 2011-2013 /dev/rsa for MangosR2 <http://github.com/MangosR2>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,6 +83,9 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
 
         GuidSet const& GetAllyGuids() { return m_AllySet; };
 
+        bool  SetPrimaryTarget(ObjectGuid const& guid);
+        Unit* GetPrimaryTarget();
+
     private:
         bool _isVisible(Unit *) const;
         bool _needToStop(void) const;
@@ -95,6 +98,7 @@ class MANGOS_DLL_DECL PetAI : public CreatureAI
         bool inCombat;
 
         GuidSet m_AllySet;
+        ObjectGuid m_primaryTargetGuid;
 
         IntervalTimer   m_updateAlliesTimer;
         IntervalTimer   m_attackDistanceRecheckTimer;

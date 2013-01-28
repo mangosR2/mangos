@@ -131,7 +131,7 @@ bool TargetedMovementGeneratorMedium<T, D>::Update(T& owner, const uint32& time_
     if (!i_target.isValid() || !i_target->IsInWorld())
         return false;
 
-    if (owner.hasUnitState(UNIT_STAT_NOT_MOVE))
+    if (owner.hasUnitState(UNIT_STAT_NOT_MOVE) || (owner.IsInUnitState(UNIT_ACTION_CHASE) && owner.hasUnitState(UNIT_STAT_NO_COMBAT_MOVEMENT)))
     {
         D::_clearUnitStateMove(owner);
         return true;
@@ -197,7 +197,7 @@ bool TargetedMovementGeneratorMedium<T, D>::Update(T& owner, const uint32& time_
 
         G3D::Vector3 dest = owner.movespline->FinalDestination();
 
-        if (owner.GetTypeId() == TYPEID_UNIT && ((Creature*)&owner)->CanFly() || ((Creature*)&owner)->IsLevitating())
+        if (owner.GetTypeId() == TYPEID_UNIT && (((Creature*)&owner)->CanFly() || ((Creature*)&owner)->IsLevitating()))
             targetMoved = !i_target->IsWithinDist3d(dest.x, dest.y, dest.z, allowed_dist);
         else
             targetMoved = !i_target->IsWithinDist2d(dest.x, dest.y, allowed_dist);
@@ -274,13 +274,17 @@ template<class T>
 void ChaseMovementGenerator<T>::Finalize(T& owner)
 {
     owner.clearUnitState(UNIT_STAT_CHASE | UNIT_STAT_CHASE_MOVE);
-    if (owner.GetTypeId() == TYPEID_UNIT && owner.isAlive() && !owner.IsInEvadeMode())
-        owner.AddEvent(new EvadeDelayEvent(owner), EVADE_TIME_DELAY);
 }
 
 template<class T>
 void ChaseMovementGenerator<T>::Interrupt(T& owner)
 {
+    if (!owner.movespline->Finalized())
+    {
+        Location loc = owner.movespline->ComputePosition();
+        owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
+        owner.movespline->_Interrupt();
+    }
     owner.clearUnitState(UNIT_STAT_CHASE | UNIT_STAT_CHASE_MOVE);
 }
 
@@ -312,10 +316,6 @@ void FollowMovementGenerator<Player>::_updateSpeed(Player& /*u*/)
 template<>
 void FollowMovementGenerator<Creature>::_updateSpeed(Creature& u)
 {
-    // pet only sync speed with owner
-    if (!((Creature&)u).IsPet() || !i_target.isValid() || i_target->GetObjectGuid() != u.GetOwnerGuid())
-        return;
-
     u.UpdateSpeed(MOVE_RUN, true);
     u.UpdateSpeed(MOVE_WALK, true);
     u.UpdateSpeed(MOVE_SWIM, true);
@@ -347,6 +347,12 @@ void FollowMovementGenerator<T>::Finalize(T& owner)
 template<class T>
 void FollowMovementGenerator<T>::Interrupt(T& owner)
 {
+    if (!owner.movespline->Finalized())
+    {
+        Location loc = owner.movespline->ComputePosition();
+        owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
+        owner.movespline->_Interrupt();
+    }
     owner.clearUnitState(UNIT_STAT_FOLLOW | UNIT_STAT_FOLLOW_MOVE);
     _updateSpeed(owner);
 }

@@ -28,6 +28,7 @@
 #include "GuildMgr.h"
 #include "GossipDef.h"
 #include "SocialMgr.h"
+#include "Calendar.h"
 
 void WorldSession::HandleGuildQueryOpcode(WorldPacket& recvPacket)
 {
@@ -179,8 +180,9 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
         return;
     }
 
+    ObjectGuid memberGuid = slot->guid;
     // possible last member removed, do cleanup, and no need events
-    if (guild->DelMember(slot->guid))
+    if (guild->DelMember(memberGuid))
     {
         guild->Disband();
         delete guild;
@@ -188,7 +190,7 @@ void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
     }
 
     // Put record into guild log
-    guild->LogGuildEvent(GUILD_EVENT_LOG_UNINVITE_PLAYER, GetPlayer()->GetObjectGuid(), slot->guid);
+    guild->LogGuildEvent(GUILD_EVENT_LOG_UNINVITE_PLAYER, GetPlayer()->GetObjectGuid(), memberGuid);
 
     guild->BroadcastEvent(GE_REMOVED, plName.c_str(), _player->GetName());
 }
@@ -382,6 +384,8 @@ void WorldSession::HandleGuildLeaveOpcode(WorldPacket& /*recvPacket*/)
         SendGuildCommandResult(GUILD_QUIT_S, "", ERR_GUILD_LEADER_LEAVE);
         return;
     }
+
+    sCalendarMgr.RemoveGuildCalendar(_player->GetObjectGuid(), guild->GetId());
 
     if (_player->GetObjectGuid() == guild->GetLeaderGuid())
     {

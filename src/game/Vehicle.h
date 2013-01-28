@@ -34,8 +34,7 @@ struct VehicleEntry;
 
 struct VehicleSeat
 {
-    VehicleSeat(VehicleSeatEntry const *pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(ObjectGuid()), b_dismount(true) 
-    {}
+    VehicleSeat(VehicleSeatEntry const* pSeatInfo = NULL) : seatInfo(pSeatInfo), passenger(ObjectGuid()), b_dismount(true) {}
 
     VehicleSeatEntry const* seatInfo;
     ObjectGuid              passenger;
@@ -45,24 +44,25 @@ struct VehicleSeat
 
 typedef std::map<int8, VehicleSeat> SeatMap;
 
-enum AcccessoryFlags
+enum AccessoryFlags
 {
-    ACCCESSORY_FLAG_MINION = 0,
-    ACCCESSORY_FLAG_MAX,
+    ACCESSORY_FLAG_NONE   = 0x00000000,
+    ACCESSORY_FLAG_MINION = 0x00000001,
+    ACCESSORY_FLAG_HIDE   = 0x00000002
 };
 
 struct VehicleAccessory
 {
     uint32   vehicleEntry;
-    uint32   passengerEntry;
     int32    seatId;
+    uint32   passengerEntry;
     uint32   m_flags;
     float    m_offsetX;
     float    m_offsetY;
     float    m_offsetZ;
     float    m_offsetO;
 
-    void Offset(float x, float y, float z, float o = 0.0f) {m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o;};
+    void Offset(float x, float y, float z, float o = 0.0f) { m_offsetX = x; m_offsetY = y; m_offsetZ = z; m_offsetO = o; }
 };
 
 class MANGOS_DLL_SPEC VehicleKit : public TransportBase
@@ -77,12 +77,13 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
         bool IsInitialized() const { return m_isInitialized; }
 
         void Reset();
+        void InstallAccessory(int8 seatID);
 
         bool HasEmptySeat(int8 seatId) const;
         int8 GetNextEmptySeatWithFlag(int8 seatId, bool next = true, uint32 VehicleSeatFlag = 0) const;
         Unit* GetPassenger(int8 seatId) const;
-        bool AddPassenger(Unit *passenger, int8 seatId = -1);
-        void RemovePassenger(Unit *passenger, bool dismount = false);
+        bool AddPassenger(Unit* passenger, int8 seatId = -1);
+        void RemovePassenger(Unit* passenger, bool dismount = false);
         void RemoveAllPassengers();
         VehicleSeatEntry const* GetSeatInfo(Unit* passenger);
         int8 GetSeatId(Unit* passenger);
@@ -90,14 +91,14 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
         void SetDestination() { m_dst_x = 0.0f; m_dst_y = 0.0f; m_dst_z  = 0.0f; m_dst_o  = 0.0f; m_dst_speed  = 0.0f; m_dst_elevation  = 0.0f; b_dstSet = false;};
         void DisableDismount(Unit* passenger);
 
-        Unit* GetBase() const { return m_pBase; }
+        Unit* GetBase() const { return (Unit*)GetOwner(); }
         Aura* GetControlAura(Unit* passenger);
 
     private:
         // Internal use to calculate the boarding position
         void CalculateBoardingPositionOf(float gx, float gy, float gz, float go, float &lx, float &ly, float &lz, float &lo);
 
-        void CalculateSeatPositionOf(int8 seatId, float &x, float &y, float &z, float &o);
+        void CalculateSeatPositionOf(VehicleSeatEntry const* seatInfo, float &x, float &y, float &z, float &o);
 
         void UpdateFreeSeatCount();
         void InstallAccessory(VehicleAccessory const* accessory);
@@ -105,7 +106,6 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
 
         void Dismount(Unit* passenger, VehicleSeatEntry const* pSeatInfo = NULL);
 
-        Unit*   m_pBase;
         VehicleEntry const* m_vehicleEntry;
         SeatMap m_Seats;
         uint32  m_uiNumFreeSeats;

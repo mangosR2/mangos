@@ -908,6 +908,11 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
         PSendSysMessage(LANG_COMMAND_RAWPAWNTIMES, defRespawnDelayStr.c_str(), curRespawnDelayStr.c_str());
 
         ShowNpcOrGoSpawnInformation<GameObject>(target->GetGUIDLow());
+
+        if (target->GetGoType() == GAMEOBJECT_TYPE_DOOR)
+            PSendSysMessage(LANG_COMMAND_GO_STATUS_DOOR, target->GetGoState(), target->getLootState(), GetOnOffStr(target->CalculateCurrentCollisionState()), goI->door.startOpen ? "open" : "closed");
+        else
+            PSendSysMessage(LANG_COMMAND_GO_STATUS, target->GetGoState(), target->getLootState(), GetOnOffStr(target->CalculateCurrentCollisionState()));
     }
     return true;
 }
@@ -1500,8 +1505,7 @@ bool ChatHandler::HandleModifyRepCommand(char* args)
     if (!*args)
         return false;
 
-    Player* target = NULL;
-    target = getSelectedPlayer();
+    Player* target = getSelectedPlayer();
 
     if (!target)
     {
@@ -1972,7 +1976,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
             const_cast<CreatureData*>(data)->posZ = z;
             const_cast<CreatureData*>(data)->orientation = o;
         }
-        pCreature->GetMap()->CreatureRelocation(pCreature, x, y, z, o);
+        pCreature->GetMap()->Relocation(pCreature, x, y, z, o);
         pCreature->GetMotionMaster()->Initialize();
         if (pCreature->isAlive())                           // dead creature will reset movement generator at respawn
         {
@@ -4925,7 +4929,7 @@ bool ChatHandler::HandlePoolInfoCommand(char* args)
 
     if (pool_id > sPoolMgr.GetMaxPoolId())
     {
-        PSendSysMessage("Pool %u not found", pool_id);
+        PSendSysMessage(LANG_POOL_ENTRY_LOWER_MAX_POOL, pool_id, sPoolMgr.GetMaxPoolId());
         return true;
     }
 
@@ -5502,12 +5506,9 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
 
     // this entry visible only to GM's with "gm on"
     static const uint32 WAYPOINT_NPC_ENTRY = 1;
-    Creature* wp = NULL;
     for (uint32 i = 0; i < pointPath.size(); ++i)
-    {
-        wp = player->SummonCreature(WAYPOINT_NPC_ENTRY, pointPath[i].x, pointPath[i].y, pointPath[i].z, 0, TEMPSUMMON_TIMED_DESPAWN, 9000);
+        player->SummonCreature(WAYPOINT_NPC_ENTRY, pointPath[i].x, pointPath[i].y, pointPath[i].z, 0, TEMPSUMMON_TIMED_DESPAWN, 9000);
         // TODO: make creature not sink/fall
-    }
 
     return true;
 }
@@ -5683,28 +5684,31 @@ bool ChatHandler::HandleWorldStateCommand(char* args)
 
 bool ChatHandler::HandleWorldStateListCommand(char* args)
 {
-    WorldStateSet wsSet = sWorldStateMgr.GetWorldStatesFor(m_session->GetPlayer());
-
-    if (wsSet.empty())
+    WorldStateSet* wsSet = sWorldStateMgr.GetWorldStatesFor(m_session->GetPlayer());
+    if (!wsSet)
         return false;
 
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    for (uint8 i = 0; i < wsSet->count(); ++i)
     {
-        PSendSysMessage(LANG_WORLDSTATE_LIST,(*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+        WorldState* ws = (*wsSet)[i];
+		PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
+    delete wsSet;
     return true;
 }
 
 bool ChatHandler::HandleWorldStateListAllCommand(char* args)
 {
-    WorldStateSet wsSet = sWorldStateMgr.GetWorldStates(UINT32_MAX);
-    if (wsSet.empty())
+    WorldStateSet* wsSet = sWorldStateMgr.GetWorldStates(UINT32_MAX);
+    if (!wsSet)
         return false;
 
-    for (WorldStateSet::const_iterator itr = wsSet.begin(); itr != wsSet.end(); ++itr)
+    for (uint8 i = 0; i < wsSet->count(); ++i)
     {
-        PSendSysMessage(LANG_WORLDSTATE_LIST_FULL, (*itr)->GetId(), (*itr)->GetType(), (*itr)->GetCondition(), (*itr)->GetInstance(), (*itr)->GetValue());
+        WorldState* ws = (*wsSet)[i];
+        PSendSysMessage(LANG_WORLDSTATE_LIST_FULL, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
+    delete wsSet;
     return true;
 }
 

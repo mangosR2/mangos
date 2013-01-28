@@ -42,7 +42,7 @@ ObjectAccessor::~ObjectAccessor()
 {
     for(Player2CorpsesMapType::const_iterator itr = i_player2corpse.begin(); itr != i_player2corpse.end(); ++itr)
     {
-        itr->second->RemoveFromWorld();
+        itr->second->RemoveFromWorld(true);
         delete itr->second;
     }
 }
@@ -134,9 +134,7 @@ ObjectAccessor::RemoveCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     Player2CorpsesMapType::iterator iter = i_player2corpse.find(corpse->GetOwnerGuid());
     if( iter == i_player2corpse.end() )
@@ -147,9 +145,11 @@ ObjectAccessor::RemoveCorpse(Corpse *corpse)
     uint32 cell_id = (cell_pair.y_coord*TOTAL_NUMBER_OF_CELLS_PER_MAP) + cell_pair.x_coord;
 
     sObjectMgr.DeleteCorpseCellData(corpse->GetMapId(), cell_id, corpse->GetOwnerGuid().GetCounter());
-    corpse->RemoveFromWorld();
-
+    corpse->RemoveFromWorld(true);
     i_player2corpse.erase(iter);
+
+    // need recheck - may be need free memory in this place
+    //delete corpse;
 }
 
 void
@@ -157,9 +157,7 @@ ObjectAccessor::AddCorpse(Corpse *corpse)
 {
     MANGOS_ASSERT(corpse && corpse->GetType() != CORPSE_BONES);
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::WriteGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     MANGOS_ASSERT(i_player2corpse.find(corpse->GetOwnerGuid()) == i_player2corpse.end());
     i_player2corpse[corpse->GetOwnerGuid()] = corpse;
@@ -175,9 +173,7 @@ void
 ObjectAccessor::AddCorpsesToGrid(GridPair const& gridpair,GridType& grid,Map* map)
 {
 
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     HashMapHolder<Corpse>::ReadGuard g(HashMapHolder<Corpse>::GetLock());
-#endif
 
     for(Player2CorpsesMapType::iterator iter = i_player2corpse.begin(); iter != i_player2corpse.end(); ++iter)
         if(iter->second->GetGrid() == gridpair)
@@ -282,7 +278,7 @@ void ObjectAccessor::RemoveOldCorpses()
 /// Define the static member of HashMapHolder
 
 template <class T> typename HashMapHolder<T>::MapType HashMapHolder<T>::m_objectMap;
-template <class T> ACE_RW_Thread_Mutex HashMapHolder<T>::i_lock;
+template <class T> MANGOSR2_MUTEX_MODEL HashMapHolder<T>::i_lock;
 
 /// Global definitions for the hashmap storage
 

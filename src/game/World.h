@@ -83,7 +83,8 @@ enum WorldTimers
     WUPDATE_AHBOT       = 6,
     WUPDATE_AUTOBROADCAST = 7,
     WUPDATE_WORLDSTATE  = 8,
-    WUPDATE_COUNT       = 9
+    WUPDATE_CALENDAR    = 9,
+    WUPDATE_COUNT
 };
 
 /// Configuration elements
@@ -327,6 +328,7 @@ enum eConfigBoolValues
     CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD,
     CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_AUCTION,
     CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_MAIL,
+    CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CALENDAR,
     CONFIG_BOOL_ALLOW_TWO_SIDE_WHO_LIST,
     CONFIG_BOOL_ALLOW_TWO_SIDE_ADD_FRIEND,
     CONFIG_BOOL_INSTANCE_IGNORE_LEVEL,
@@ -778,9 +780,9 @@ class World
         mutable ObjectLockType   i_lock[MAP_LOCK_TYPE_MAX];
 
         // reset duel system
-        std::set<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
+        UNORDERED_SET<uint32> areaEnabledIds; //set of areaIds where is enabled the Duel reset system
         // Disable dungeons for LFG system
-        std::set<uint32> disabledMapIdForDungeonFinder; // set of MapIds which are disabled for DungeonFinder
+        UNORDERED_SET<uint32> disabledMapIdForDungeonFinder; // set of MapIds which are disabled for DungeonFinder
 
 };
 

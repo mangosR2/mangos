@@ -940,7 +940,9 @@ enum MangosStrings
     LANG_AHBOT_ITEMS_RATIO              = 1191,
     LANG_MOVEGENS_EFFECT                = 1192,
     LANG_GEARSCORE                      = 1193,
-    // Room for more level 3              1194-1199 not used
+    LANG_COMMAND_GO_STATUS              = 1194,
+    LANG_COMMAND_GO_STATUS_DOOR         = 1195,
+    // Room for more level 3              1196-1199 not used
 
     // Debug commands
     LANG_CINEMATIC_NOT_EXIST            = 1200,
@@ -969,7 +971,8 @@ enum MangosStrings
     LANG_NPC_EVENTAI_PHASE              = 1506,
     LANG_NPC_EVENTAI_MOVE               = 1507,
     LANG_NPC_EVENTAI_COMBAT             = 1508,
-    // Room for more Level 2              1509-1549 not used
+    LANG_POOL_ENTRY_LOWER_MAX_POOL      = 1509,
+    // Room for more Level 2              1510-1599 not used
 
     // Level 2 (worldstate operations)
     LANG_WORLDSTATE_LIST                = 1550,

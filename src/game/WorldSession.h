@@ -82,11 +82,11 @@ struct AccountData
 
 struct AddonInfo
 {
-    AddonInfo(const std::string& name, uint8 enabled, uint32 crc)
+    AddonInfo(const std::string& name, uint8 enabled, uint32 crc) :
+        Name(name),
+        Enabled(enabled),
+        CRC(crc)
     {
-        Name = name;
-        Enabled = enabled;
-        CRC = crc;
     }
 
     std::string Name;
@@ -816,6 +816,7 @@ class MANGOS_DLL_SPEC WorldSession
         void HandleCalendarGetCalendar(WorldPacket& recv_data);
         void HandleCalendarGetEvent(WorldPacket& recv_data);
         void HandleCalendarGuildFilter(WorldPacket& recv_data);
+        void HandleCalendarEventSignup(WorldPacket& recvData);
         void HandleCalendarArenaTeam(WorldPacket& recv_data);
         void HandleCalendarAddEvent(WorldPacket& recv_data);
         void HandleCalendarUpdateEvent(WorldPacket& recv_data);

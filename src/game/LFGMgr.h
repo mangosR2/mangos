@@ -265,7 +265,7 @@ class LFGMgr
         void OnPlayerLeaveMap(Player* pPlayer, Map* pMap);
 
         // multithread locking
-        typedef   ACE_RW_Thread_Mutex          LockType;
+        typedef   MANGOSR2_MUTEX_MODEL              LockType;
         typedef   ACE_Read_Guard<LockType>     ReadGuard;
         typedef   ACE_Write_Guard<LockType>    WriteGuard;
         LockType& GetLock() { return i_lock; }

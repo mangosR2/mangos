@@ -91,6 +91,13 @@ enum ScriptCommand                                          // resSource, resTar
                                                             // datalong=NPCFlags
                                                             // datalong2:0x00=toggle, 0x01=add, 0x02=remove
     SCRIPT_COMMAND_SEND_TAXI_PATH           = 30,           // datalong = taxi path id (source or target must be player)
+    SCRIPT_COMMAND_TERMINATE_SCRIPT         = 31,           // datalong = search for npc entry if provided
+                                                            // datalong2= search distance
+                                                            // data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL: terminate steps of this script if npc found
+                                                            //                                        ELSE: terminate steps of this script if npc not found
+                                                            // dataint=diff to change a waittime of current Waypoint Movement
+    SCRIPT_COMMAND_PAUSE_WAYPOINTS          = 32,           // resSource = Creature
+                                                            // datalong = 0: unpause waypoint 1: pause waypoint
 };
 
 #define MAX_TEXT_ID 4                                       // used for SCRIPT_COMMAND_TALK
@@ -286,11 +293,24 @@ struct ScriptInfo
             uint32 change_flag;                             // datalong2
         } npcFlag;
 
-        struct
+        struct                                              // SCRIPT_COMMAND_SEND_TAXI_PATH (30)
         {
             uint32 taxiPathId;                              // datalong
             uint32 empty;
         } sendTaxiPath;
+
+        struct                                              // SCRIPT_COMMAND_TERMINATE_SCRIPT (31)
+        {
+            uint32 npcEntry;                                // datalong
+            uint32 searchDist;                              // datalong2
+            // changeWaypointWaitTime                       // dataint
+        } terminateScript;
+
+        struct                                              // SCRIPT_COMMAND_PAUSE_WAYPOINTS (32)
+        {
+            uint32 doPause;                                 // datalong
+            uint32 empty;
+        } pauseWaypoint;
 
         struct
         {
@@ -350,6 +370,7 @@ struct ScriptInfo
             case SCRIPT_COMMAND_MOVEMENT:
             case SCRIPT_COMMAND_MORPH_TO_ENTRY_OR_MODEL:
             case SCRIPT_COMMAND_MOUNT_TO_ENTRY_OR_MODEL:
+            case SCRIPT_COMMAND_TERMINATE_SCRIPT:
                 return true;
             default:
                 return false;
@@ -364,7 +385,21 @@ class ScriptAction
             m_table(_table), m_map(_map), m_sourceGuid(_sourceGuid), m_targetGuid(_targetGuid), m_ownerGuid(_ownerGuid), m_script(_script)
         {}
 
-        void HandleScriptStep();
+        bool HandleScriptStep();                            // return true IF AND ONLY IF the script should be terminated
+
+        const char* GetTableName() const { return m_table; }
+        uint32 GetId() const { return m_script->id; }
+        ObjectGuid GetSourceGuid() const { return m_sourceGuid; }
+        ObjectGuid GetTargetGuid() const { return m_targetGuid; }
+        ObjectGuid GetOwnerGuid() const { return m_ownerGuid; }
+
+        bool IsSameScript(const char* table, uint32 id, ObjectGuid sourceGuid, ObjectGuid targetGuid, ObjectGuid ownerGuid) const
+        {
+            return table == m_table && id == GetId() &&
+                (sourceGuid == m_sourceGuid || !sourceGuid) &&
+                (targetGuid == m_targetGuid || !targetGuid) &&
+                (ownerGuid == m_ownerGuid || !ownerGuid);
+        }
 
     private:
         const char* m_table;                                // of which table the script was started
@@ -468,6 +503,7 @@ class ScriptMgr
         bool OnAuraDummy(Aura const* pAura, bool apply);
 
     private:
+        void CollectPossibleEventIds(std::set<uint32>& eventIds);
         void LoadScripts(ScriptMapMapName& scripts, const char* tablename);
         void CheckScriptTexts(ScriptMapMapName const& scripts, std::set<int32>& ids);
 
@@ -519,6 +555,9 @@ class ScriptMgr
         bool (MANGOS_IMPORT* m_pOnEffectDummyItem) (Unit*, uint32, SpellEffectIndex, Item*);
         bool (MANGOS_IMPORT* m_pOnAuraDummy) (Aura const*, bool);
 };
+
+// Starters for events
+bool StartEvents_Event(Map* map, uint32 id, Object* source, Object* target, bool isStart = true, Unit* forwardToPvp = NULL);
 
 #define sScriptMgr MaNGOS::Singleton<ScriptMgr>::Instance()
 

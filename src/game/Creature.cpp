@@ -135,7 +135,7 @@ bool CreatureCreatePos::Relocate(Creature* cr) const
 }
 
 Creature::Creature(CreatureSubtype subtype) :
-Unit(), i_AI(NULL),
+Unit(), i_AI(NULL), loot(this),
 lootForPickPocketed(false), lootForBody(false), lootForSkin(false),m_lootMoney(0),
 m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_respawnradius(5.0f),
 m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
@@ -165,41 +165,16 @@ Creature::~Creature()
 
 void Creature::AddToWorld()
 {
-    ///- Register the creature for guid lookup
-    if (!IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
-    {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().insert<Creature>(GetObjectGuid(), (Creature*)this);
-    }
+    Unit::AddToWorld();
 
-    if (IsInWorld() && GetObjectGuid().IsPet())
-    {
-        DEBUG_LOG("Creature::AddToWorld called, but creature (guid %u) is pet! Crush possible later.", GetObjectGuid().GetCounter());
-        ((Pet*)this)->AddToWorld();
-    }
-    else
-        Unit::AddToWorld();
-
+    // Not one time call this "added to world" creatures, spawned with negative spawn time (BG events mostly)
     if (GetVehicleKit())
         GetVehicleKit()->Reset();
 }
 
-void Creature::RemoveFromWorld()
+void Creature::RemoveFromWorld(bool remove)
 {
-    ///- Remove the creature from the accessor
-    if (IsInWorld() && GetObjectGuid().IsCreatureOrVehicle())
-    {
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        GetMap()->GetObjectsStore().erase<Creature>(GetObjectGuid(), (Creature*)NULL);
-    }
-
-    if (IsInWorld() && GetObjectGuid().IsPet())
-    {
-        DEBUG_LOG("Creature::RemoveFromWorld called, but creature (guid %u) is pet! Crush possible later.", GetObjectGuid().GetCounter());
-        ((Pet*)this)->RemoveFromWorld();
-    }
-    else
-        Unit::RemoveFromWorld();
+    Unit::RemoveFromWorld(remove);
 }
 
 void Creature::RemoveCorpse()
@@ -226,8 +201,15 @@ void Creature::RemoveCorpse()
 
     float x, y, z, o;
     GetRespawnCoord(x, y, z, &o);
-    GetMap()->CreatureRelocation(this, x, y, z, o);
+    GetMap()->Relocation(this, x, y, z, o);
     DisableSpline();
+
+    // forced recreate creature object at clients
+    UnitVisibility currentVis = GetVisibility();
+    SetVisibility(VISIBILITY_REMOVE_CORPSE);
+    UpdateObjectVisibility();
+    SetVisibility(currentVis);                              // restore visibility state
+    UpdateObjectVisibility();
 }
 
 /**
@@ -322,7 +304,7 @@ bool Creature::InitEntry(uint32 Entry, CreatureData const* data /*=NULL*/, GameE
     UpdateSpeed(MOVE_WALK, false);
     UpdateSpeed(MOVE_RUN,  false);
 
-    SetLevitate(cinfo->InhabitType & INHABIT_AIR);
+    SetLevitate(cinfo->InhabitType & INHABIT_AIR, GetObjectGuid().IsPet() ? 2.0f : 4.0f);
 
     // checked at loading
     m_defaultMovementType = MovementGeneratorType(cinfo->MovementType);
@@ -688,12 +670,12 @@ void Creature::Regenerate(Powers power)
 
     AuraList const& ModPowerRegenAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN);
     for(AuraList::const_iterator i = ModPowerRegenAuras.begin(); i != ModPowerRegenAuras.end(); ++i)
-        if ((*i)->GetModifier()->m_miscvalue == power)
+        if (Powers((*i)->GetModifier()->m_miscvalue) == power)
             addvalue += (*i)->GetModifier()->m_amount;
 
     AuraList const& ModPowerRegenPCTAuras = GetAurasByType(SPELL_AURA_MOD_POWER_REGEN_PERCENT);
     for(AuraList::const_iterator i = ModPowerRegenPCTAuras.begin(); i != ModPowerRegenPCTAuras.end(); ++i)
-        if ((*i)->GetModifier()->m_miscvalue == power)
+        if (Powers((*i)->GetModifier()->m_miscvalue) == power)
             addvalue *= ((*i)->GetModifier()->m_amount + 100) / 100.0f;
 
     ModifyPower(power, int32(addvalue));
@@ -704,13 +686,12 @@ void Creature::RegenerateHealth()
     if (!IsRegeneratingHealth())
         return;
 
-    uint32 curValue = GetHealth();
-    uint32 maxValue = GetMaxHealth();
+    uint32 maxvalue = GetMaxHealth();
 
-    if (curValue >= maxValue)
+    if (GetHealth() >= maxvalue)
         return;
 
-    uint32 addvalue = 0;
+    float addvalue = 0.0f;
 
     // Not only pet, but any controlled creature
     if (GetCharmerOrOwnerGuid())
@@ -719,14 +700,28 @@ void Creature::RegenerateHealth()
         float Spirit = GetStat(STAT_SPIRIT);
 
         if (GetPower(POWER_MANA) > 0)
-            addvalue = uint32(Spirit * 0.25 * HealthIncreaseRate);
+            addvalue = Spirit * 0.25 * HealthIncreaseRate;
         else
-            addvalue = uint32(Spirit * 0.80 * HealthIncreaseRate);
+            addvalue = Spirit * 0.80 * HealthIncreaseRate;
     }
     else
-        addvalue = maxValue / 3;
+        addvalue = maxvalue / 3.0f;
 
-    ModifyHealth(addvalue);
+    // Currenly creatures regenerate health only out of combat, but i'm think, that it's wrong /dev/rsa
+    if (!isInCombat())
+    {
+        AuraList const& mModHealthRegenPct = GetAurasByType(SPELL_AURA_MOD_HEALTH_REGEN_PERCENT);
+        if (!mModHealthRegenPct.empty())
+        {
+            for(AuraList::const_iterator i = mModHealthRegenPct.begin(); i != mModHealthRegenPct.end(); ++i)
+                addvalue *= (100.0f + (*i)->GetModifier()->m_amount) / 100.0f;
+        }
+    }
+    else if (HasAuraType(SPELL_AURA_MOD_REGEN_DURING_COMBAT))
+        addvalue *= GetTotalAuraModifier(SPELL_AURA_MOD_REGEN_DURING_COMBAT) / 100.0f;
+
+    if (addvalue > M_NULL_F)
+        ModifyHealth((uint32)addvalue);
 }
 
 void Creature::DoFleeToGetAssistance()
@@ -1270,14 +1265,7 @@ bool Creature::CreateFromProto(uint32 guidlow, CreatureInfo const* cinfo, Team t
 
     Object::_Create(guidlow, cinfo->Entry, cinfo->GetHighGuid());
 
-    if (!UpdateEntry(cinfo->Entry, team, data, eventData, false))
-        return false;
-
-    // Checked at startup
-    if (GetCreatureInfo()->vehicleId)
-        SetVehicleId(GetCreatureInfo()->vehicleId);
-
-    return true;
+    return UpdateEntry(cinfo->Entry, team, data, eventData, false);
 }
 
 bool Creature::LoadFromDB(uint32 guidlow, Map* map)
@@ -1308,6 +1296,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     if (!Create(guidlow, pos, cinfo, TEAM_NONE, data, eventData))
         return false;
 
+    SetRespawnCoord(pos);
     m_respawnradius = data->spawndist;
 
     m_respawnDelay = data->spawntimesecs;
@@ -1321,7 +1310,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
         m_deathState = DEAD;
         if (CanFly())
         {
-            float tz = GetMap()->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ, false);
+            float tz = GetMap()->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ);
             if (data->posZ - tz > 0.1)
                 Relocate(data->posX, data->posY, tz);
         }
@@ -1351,7 +1340,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             // Just set to dead, so need to relocate like above
             if (CanFly())
             {
-                float tz = GetMap()->GetHeight(data->phaseMask, data->posX, data->posY, data->posZ, false);
+                float tz = GetMap()->GetHeight(data->phaseMask, data->posX, data->posY, data->posZ);
                 if (data->posZ - tz > 0.1)
                     Relocate(data->posX, data->posY, tz);
             }
@@ -1458,6 +1447,7 @@ void Creature::DeleteFromDB(uint32 lowguid, CreatureData const* data)
     WorldDatabase.PExecuteLog("DELETE FROM game_event_creature WHERE guid=%u", lowguid);
     WorldDatabase.PExecuteLog("DELETE FROM game_event_creature_data WHERE guid=%u", lowguid);
     WorldDatabase.PExecuteLog("DELETE FROM creature_battleground WHERE guid=%u", lowguid);
+    WorldDatabase.PExecuteLog("DELETE FROM creature_linking WHERE guid=%u OR master_guid=%u", lowguid, lowguid);
     WorldDatabase.CommitTransaction();
 }
 
@@ -1572,13 +1562,6 @@ void Creature::Respawn()
 {
     RemoveCorpse();
 
-    // forced recreate creature object at clients
-    UnitVisibility currentVis = GetVisibility();
-    SetVisibility(VISIBILITY_RESPAWN);
-    UpdateObjectVisibility();
-    SetVisibility(currentVis);                              // restore visibility state
-    UpdateObjectVisibility();
-
     if (IsDespawned())
     {
         if (HasStaticDBSpawnData())
@@ -1601,12 +1584,14 @@ void Creature::ForcedDespawn(uint32 timeMSToDespawn)
     if (IsInWorld() && isAlive())
         SetDeathState(JUST_DIED);
 
-    RemoveCorpse();
+    m_corpseDecayTimer = 1;                                 // Properly remove corpse on next tick (also pool system requires Creature::Update call with CORPSE state
+
     if (IsInWorld())
         SetHealth(0);                                           // just for nice GM-mode view
 
     if (IsTemporarySummon())
          ((TemporarySummon*)this)->UnSummon();
+
 }
 
 bool Creature::IsImmuneToSpell(SpellEntry const* spellInfo, bool isFriendly) const
@@ -1988,7 +1973,7 @@ bool Creature::LoadCreatureAddon(bool reload)
         SetUInt32Value(UNIT_NPC_EMOTESTATE, cainfo->emote);
 
     if (cainfo->splineFlags & SPLINEFLAG_FLYING)
-        SetLevitate(true);
+        SetLevitate(true, GetObjectGuid().IsPet() ? 2.0f : 4.0f);
 
     if (cainfo->auras)
     {
@@ -2206,7 +2191,8 @@ bool Creature::HasSpellCooldown(uint32 spell_id) const
 
 uint8 Creature::getRace() const
 {
-    return GetCreatureModelRace(GetNativeDisplayId());
+    uint8 race = Unit::getRace();
+    return race ? race : GetCreatureModelRace(GetNativeDisplayId());
 }
 
 bool Creature::IsInEvadeMode() const
@@ -2235,30 +2221,26 @@ time_t Creature::GetRespawnTimeEx() const
 
 void Creature::GetRespawnCoord(float& x, float& y, float& z, float* ori, float* dist) const
 {
-    if (CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow()))
-    {
-        x = data->posX;
-        y = data->posY;
-        z = data->posZ;
-        if (ori)
-            *ori = data->orientation;
-        if (dist)
-            *dist = GetRespawnRadius();
-    }
-    else
-    {
-        float orient;
-
-        GetSummonPoint(x, y, z, orient);
-
-        if (ori)
-            *ori = orient;
-        if (dist)
-            *dist = GetRespawnRadius();
-    }
-
+    x = m_respawnPos.x;
+    y = m_respawnPos.y;
+    z = m_respawnPos.z;
+    if (ori)
+        *ori = m_respawnPos.o;
+    if (dist)
+        *dist = GetRespawnRadius();
     // lets check if our creatures have valid spawn coordinates
     MANGOS_ASSERT(MaNGOS::IsValidMapCoord(x, y, z) || PrintCoordinatesError(x, y, z, "respawn"));
+}
+
+void Creature::ResetRespawnCoord()
+{
+    if (CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow()))
+    {
+        m_respawnPos.x = data->posX;
+        m_respawnPos.y = data->posY;
+        m_respawnPos.z = data->posZ;
+        m_respawnPos.o = data->orientation;
+    }
 }
 
 void Creature::AllLootRemovedFromCorpse()
@@ -2444,6 +2426,13 @@ void Creature::SetFactionTemporary(uint32 factionId, uint32 tempFactionFlags)
 {
     m_temporaryFactionFlags = tempFactionFlags;
     setFaction(factionId);
+
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE)
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK)
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE)
+        RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
 }
 
 void Creature::ClearTemporaryFaction()
@@ -2454,8 +2443,17 @@ void Creature::ClearTemporaryFaction()
     if (isCharmed())
         return;
 
-    m_temporaryFactionFlags = TEMPFACTION_NONE;
+    // Reset to original faction
     setFaction(GetCreatureInfo()->faction_A);
+    // Reset UNIT_FLAG_NON_ATTACKABLE, UNIT_FLAG_OOC_NOT_ATTACKABLE or UNIT_FLAG_PASSIVE flags
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_NON_ATTACKABLE && GetCreatureInfo()->unit_flags & UNIT_FLAG_NON_ATTACKABLE)
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_OOC_NOT_ATTACK && GetCreatureInfo()->unit_flags & UNIT_FLAG_OOC_NOT_ATTACKABLE && !isInCombat())
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
+    if (m_temporaryFactionFlags & TEMPFACTION_TOGGLE_PASSIVE && GetCreatureInfo()->unit_flags & UNIT_FLAG_PASSIVE)
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PASSIVE);
+
+    m_temporaryFactionFlags = TEMPFACTION_NONE;
 }
 
 void Creature::SendAreaSpiritHealerQueryOpcode(Player* pl)
@@ -2615,12 +2613,18 @@ void Creature::SetWalk(bool enable, bool asDefault)
     SendMessageToSet(&data, true);
 }
 
-void Creature::SetLevitate(bool enable)
+void Creature::SetLevitate(bool enable, float altitude)
 {
     if (enable)
+    {
         m_movementInfo.AddMovementFlag(MOVEFLAG_LEVITATING);
+        SetFloatValue(UNIT_FIELD_HOVERHEIGHT, altitude);            // Used for storing altitude of levitated creature
+    }
     else
+    {
         m_movementInfo.RemoveMovementFlag(MOVEFLAG_LEVITATING);
+        SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 0.0f);
+    }
 
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
     data << GetPackGUID();

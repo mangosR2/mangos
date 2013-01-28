@@ -3149,17 +3149,13 @@ enum TrackedAuraType
     MAX_TRACKED_AURA_TYPES
 };
 
-// we need to stick to 1 version or half of the stuff will work for someone
-// others will not and opposite
-// will only support WoW, WoW:TBC and WoW:WotLK 3.3.5a client build 12340...
-
-#define EXPECTED_MANGOSD_CLIENT_BUILD        {12340, 0}
-
-// max supported expansion level in mangosd
-// NOTE: not set it more that supported by targeted client version with all expansions installed
-// account with expansion > client supported will rejected at connection by client
-// because if client receive unsupported expansion level it think
-// that it not have expansion installed and reject
-#define MAX_EXPANSION 2
+enum ConditionSource                                        // From where was the condition called?
+{
+    CONDITION_FROM_LOOT             = 0,                    // Used to check a *_loot_template entry
+    CONDITION_FROM_REFERING_LOOT    = 1,                    // Used to check a entry refering to a reference_loot_template entry
+    CONDITION_FROM_GOSSIP_MENU      = 2,                    // Used to check a gossip menu menu-text
+    CONDITION_FROM_GOSSIP_OPTION    = 3,                    // Used to check a gossip menu option-item
+    CONDITION_FROM_EVENTAI          = 4,                    // Used to check EventAI Event "On Receive Emote"
+};
 
 #endif

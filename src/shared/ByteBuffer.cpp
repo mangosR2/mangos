@@ -110,7 +110,7 @@ void ByteBuffer::hexlike() const
     sLog.outDebug(ss.str().c_str());
 }
 
-uint32 ByteBuffer::ReadPackedTime()
+time_t ByteBuffer::ReadPackedTime()
 {
     uint32 packedDate = read<uint32>();
 
@@ -119,12 +119,12 @@ uint32 ByteBuffer::ReadPackedTime()
 
     _localtime.tm_min     = packedDate & 0x3F;
     _localtime.tm_hour    = (packedDate >> 6) & 0x1F;
-    //_localtime.tm_wday   = (packedDate >> 11) & 7;
+    _localtime.tm_wday    = (packedDate >> 11) & 7;
     _localtime.tm_mday    = ((packedDate >> 14) & 0x3F) + 1;
     _localtime.tm_mon     = (packedDate >> 20) & 0xF;
     _localtime.tm_year    = ((packedDate >> 24) & 0x1F) + 100;
 
-    return mktime(&_localtime) + timezone;
+    return time_t(mktime(&_localtime));
 }
 
 void ByteBuffer::AppendPackedTime(time_t time)

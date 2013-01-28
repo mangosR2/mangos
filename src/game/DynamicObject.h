@@ -38,7 +38,7 @@ class DynamicObject : public WorldObject
         explicit DynamicObject();
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove) override;
 
         bool Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEffectIndex effIndex, float x, float y, float z, int32 duration, float radius, DynamicObjectType type);
         void Update(uint32 update_diff, uint32 p_time) override;
@@ -55,8 +55,8 @@ class DynamicObject : public WorldObject
         void RemoveAffected(Unit* unit) { m_affected.erase(unit->GetObjectGuid()); }
         void Delay(int32 delaytime);
 
-        bool IsHostileTo(Unit const* unit) const;
-        bool IsFriendlyTo(Unit const* unit) const;
+        virtual bool IsHostileTo(Unit const* unit) const override;
+        virtual bool IsFriendlyTo(Unit const* unit) const override;
 
         float GetObjectBoundingRadius() const               // overwrite WorldObject version
         {

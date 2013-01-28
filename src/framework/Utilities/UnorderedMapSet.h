@@ -42,27 +42,33 @@
 #ifdef _STLPORT_VERSION
 #  define UNORDERED_MAP std::hash_map
 #  define UNORDERED_SET std::hash_set
+#  define UNORDERED_MULTIMAP std::hash_multimap
 #  define HASH_NAMESPACE_START namespace std {
 #  define HASH_NAMESPACE_END }
 using std::hash_map;
 using std::hash_set;
+using std::hash_multimap;
 #elif COMPILER == COMPILER_MICROSOFT && _MSC_VER >= 1600    // VS100
 #  define UNORDERED_MAP std::unordered_map
 #  define UNORDERED_SET std::unordered_set
+#  define UNORDERED_MULTIMAP std::unordered_multimap
 #  define HASH_NAMESPACE_START namespace std {
 #  define HASH_NAMESPACE_END }
 #elif COMPILER == COMPILER_MICROSOFT && _MSC_VER >= 1500 && _HAS_TR1
 #  define UNORDERED_MAP std::tr1::unordered_map
 #  define UNORDERED_SET std::tr1::unordered_set
+#  define UNORDERED_MULTIMAP std::tr1::unordered_multimap
 #  define HASH_NAMESPACE_START namespace std { namespace tr1 {
 #  define HASH_NAMESPACE_END } }
 #elif COMPILER == COMPILER_MICROSOFT && _MSC_VER >= 1300
 #  define UNORDERED_MAP stdext::hash_map
 #  define UNORDERED_SET stdext::hash_set
+#  define UNORDERED_MULTIMAP stdext::hash_multimap
 #  define HASH_NAMESPACE_START namespace stdext {
 #  define HASH_NAMESPACE_END }
 using stdext::hash_map;
 using stdext::hash_set;
+using stdext::hash_multimap;
 
 #if !_HAS_TRADITIONAL_STL
 
@@ -83,18 +89,22 @@ HASH_NAMESPACE_END
 #elif COMPILER == COMPILER_INTEL
 #  define UNORDERED_MAP std::hash_map
 #  define UNORDERED_SET std::hash_set
+#  define UNORDERED_MULTIMAP std::hash_multimap
 #  define HASH_NAMESPACE_START namespace std {
 #  define HASH_NAMESPACE_END }
 using std::hash_map;
 using std::hash_set;
+using std::hash_multimap;
 #elif COMPILER == COMPILER_GNU && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 3)
 #  define UNORDERED_MAP std::tr1::unordered_map
 #  define UNORDERED_SET std::tr1::unordered_set
+#  define UNORDERED_MULTIMAP std::tr1::unordered_multimap
 #  define HASH_NAMESPACE_START namespace std { namespace tr1 {
 #  define HASH_NAMESPACE_END } }
 #elif COMPILER == COMPILER_GNU && __GNUC__ >= 3
 #  define UNORDERED_MAP __gnu_cxx::hash_map
 #  define UNORDERED_SET __gnu_cxx::hash_set
+#  define UNORDERED_MULTIMAP __gnu_cxx::hash_multimap
 #  define HASH_NAMESPACE_START namespace __gnu_cxx {
 #  define HASH_NAMESPACE_END }
 
@@ -127,10 +137,12 @@ HASH_NAMESPACE_END
 #else
 #  define UNORDERED_MAP std::hash_map
 #  define UNORDERED_SET std::hash_set
+#  define UNORDERED_MULTIMAP std::hash_multimap
 #  define HASH_NAMESPACE_START namespace std {
 #  define HASH_NAMESPACE_END }
 using std::hash_map;
 using std::hash_set;
+using std::hash_multimap;
 #endif
 
 #endif

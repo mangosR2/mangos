@@ -367,9 +367,10 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
             if (c_owner->IsDespawned() || c_owner->isCharmed() || c_owner->hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
                 return true;
 
-            CreatureAI* ai = c_owner->AI();
-            if (ai)
+            c_owner->LockAI(true);
+            if (CreatureAI* ai = c_owner->AI())
                 ai->EnterEvadeMode();
+            c_owner->LockAI(false);
 
             if (InstanceData* mapInstance = c_owner->GetInstanceData())
                 mapInstance->OnCreatureEvade(c_owner);

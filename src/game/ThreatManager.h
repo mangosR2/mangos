@@ -25,7 +25,6 @@
 #include "UnitEvents.h"
 #include "Timer.h"
 #include "ObjectGuid.h"
-#include "LockedVector.h"
 
 //==============================================================
 
@@ -134,7 +133,7 @@ class MANGOS_DLL_SPEC HostileReference : public Reference<Unit, ThreatManager>
 //==============================================================
 class ThreatManager;
 
-typedef ACE_Based::LockedVector<HostileReference*> ThreatList;
+typedef std::list<HostileReference*> ThreatList;
 
 class MANGOS_DLL_SPEC ThreatContainer
 {
@@ -159,7 +158,7 @@ class MANGOS_DLL_SPEC ThreatContainer
 
         bool IsSecondChoiceTarget(Creature* pAttacker, Unit* pTarget, bool bCheckThreatArea, bool bCheckMeleeRange);
 
-        HostileReference* selectNextVictim(Creature* pAttacker, HostileReference* pCurrentVictim);
+        HostileReference* selectNextVictim(Unit* pAttacker, HostileReference* pCurrentVictim);
 
         void setDirty(bool pDirty) { iDirty = pDirty; }
 
@@ -181,7 +180,7 @@ class MANGOS_DLL_SPEC ThreatManager
     public:
         friend class HostileReference;
 
-        explicit ThreatManager(Unit *pOwner);
+        explicit ThreatManager(Unit& owner);
 
         ~ThreatManager() { clearReferences(); }
 
@@ -193,7 +192,7 @@ class MANGOS_DLL_SPEC ThreatManager
         // add threat as raw value (ignore redirections and expection all mods applied already to it
         void addThreatDirectly(Unit* pVictim, float threat);
 
-        void modifyThreatPercent(Unit *pVictim, int32 pPercent);
+        void modifyThreatPercent(Unit* pVictim, int32 pPercent);
 
         float getThreat(Unit *pVictim, bool pAlsoSearchOfflineList = false);
 
@@ -205,12 +204,14 @@ class MANGOS_DLL_SPEC ThreatManager
 
         HostileReference* getCurrentVictim() { return iCurrentVictim; }
 
-        Unit*  getOwner() const { return iOwner; }
+        Unit* getOwner() { return &owner; }
+
+        bool isOwnerOnline() const;
 
         Unit* getHostileTarget();
 
         void tauntApply(Unit* pTaunter);
-        void tauntFadeOut(Unit *pTaunter);
+        void tauntFadeOut(Unit* pTaunter);
 
         void setCurrentVictim(HostileReference* pHostileReference);
 
@@ -220,7 +221,7 @@ class MANGOS_DLL_SPEC ThreatManager
         ThreatList const& getThreatList() const { return iThreatContainer.getThreatList(); }
     private:
         HostileReference* iCurrentVictim;
-        Unit* iOwner;
+        Unit& owner;
         ShortTimeTracker iUpdateTimer;
         bool iUpdateNeed;
         ThreatContainer iThreatContainer;

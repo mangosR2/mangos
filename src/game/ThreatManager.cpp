@@ -25,6 +25,7 @@
 #include "ObjectAccessor.h"
 #include "UnitEvents.h"
 #include "SpellMgr.h"
+#include "Vehicle.h"
 
 //==============================================================
 //================= ThreatCalcHelper ===========================
@@ -312,8 +313,9 @@ bool ThreatContainer::IsSecondChoiceTarget(Creature* pAttacker, Unit* pTarget, b
 // return the next best victim
 // could be the current victim
 
-HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, HostileReference* pCurrentVictim)
+HostileReference* ThreatContainer::selectNextVictim(Unit* pUnitAttacker, HostileReference* pCurrentVictim)
 {
+    Creature* pAttacker = (Creature*)pUnitAttacker;
     HostileReference* pCurrentRef = NULL;
     bool found = false;
     bool onlySecondChoiceTargetsFound = false;
@@ -329,6 +331,13 @@ HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, Hostile
         Unit* pTarget = pCurrentRef->getTarget();
 
 //        MANGOS_ASSERT(pTarget);                             // if the ref has status online the target must be there!
+
+        if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER && !((Player*)pTarget)->isGameMaster() && pTarget->GetVehicle())
+        {
+            Unit* vehicleBase = pTarget->GetVehicle()->GetBase();
+            if (pUnitAttacker->IsHostileTo(vehicleBase))
+                pTarget = vehicleBase;
+        }
 
         if (!pTarget)
             continue;
@@ -414,8 +423,8 @@ HostileReference* ThreatContainer::selectNextVictim(Creature* pAttacker, Hostile
 //=================== ThreatManager ==========================
 //============================================================
 
-ThreatManager::ThreatManager(Unit* owner)
-: iCurrentVictim(NULL), iOwner(owner), iUpdateTimer(THREAT_UPDATE_INTERVAL), iUpdateNeed(false)
+ThreatManager::ThreatManager(Unit& _owner)
+: iCurrentVictim(NULL), owner(_owner), iUpdateTimer(THREAT_UPDATE_INTERVAL), iUpdateNeed(false)
 {
 }
 
@@ -453,7 +462,7 @@ void ThreatManager::addThreat(Unit* pVictim, float pThreat, bool crit, SpellScho
 
     MANGOS_ASSERT(getOwner()->GetTypeId()== TYPEID_UNIT);
 
-    float threat = ThreatCalcHelper::CalcThreat(pVictim, iOwner, pThreat, crit, schoolMask, pThreatSpell);
+    float threat = ThreatCalcHelper::CalcThreat(pVictim, getOwner(), pThreat, crit, schoolMask, pThreatSpell);
 
     if (threat > M_NULL_F)
     {
@@ -513,9 +522,19 @@ void ThreatManager::modifyThreatPercent(Unit *pVictim, int32 pPercent)
 Unit* ThreatManager::getHostileTarget()
 {
     iThreatContainer.update();
-    HostileReference* nextVictim = iThreatContainer.selectNextVictim((Creature*) getOwner(), getCurrentVictim());
+    HostileReference* nextVictim = iThreatContainer.selectNextVictim(getOwner(), getCurrentVictim());
     setCurrentVictim(nextVictim);
-    return getCurrentVictim() != NULL ? getCurrentVictim()->getTarget() : NULL;
+    if (!getCurrentVictim())
+        return NULL;
+
+    Unit* pTarget = getCurrentVictim()->getTarget();
+    if (!pTarget)
+        return NULL;
+
+    if (pTarget->GetTypeId() == TYPEID_PLAYER && pTarget->GetVehicle())
+        pTarget = pTarget->GetVehicle()->GetBase();
+
+    return pTarget;
 }
 
 //============================================================
@@ -569,7 +588,7 @@ void ThreatManager::setCurrentVictim(HostileReference* pHostileReference)
         return;
 
     if (pHostileReference)
-        iOwner->SendHighestThreatUpdate(pHostileReference);
+        getOwner()->SendHighestThreatUpdate(pHostileReference);
 
     iCurrentVictim = pHostileReference;
     iUpdateNeed = true;
@@ -600,16 +619,15 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                     setCurrentVictim(NULL);
                     setDirty(true);
                 }
-                if (getOwner() && getOwner()->IsInWorld())
-                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
-                        getOwner()->SendThreatRemove(hostileReference);
+                if (isOwnerOnline())
+                    getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
                 iThreatOfflineContainer.addReference(hostileReference);
             }
             else
             {
-                if(getCurrentVictim() && hostileReference->getThreat() > (1.1f * getCurrentVictim()->getThreat()))
+                if (getCurrentVictim() && hostileReference->getThreat() > (1.1f * getCurrentVictim()->getThreat()))
                     setDirty(true);
                 iThreatContainer.addReference(hostileReference);
                 iUpdateNeed = true;
@@ -622,11 +640,11 @@ void ThreatManager::processThreatEvent(ThreatRefStatusChangeEvent* threatRefStat
                 setCurrentVictim(NULL);
                 setDirty(true);
             }
+
             if(hostileReference->isOnline())
             {
-                if (getOwner() && getOwner()->IsInWorld())
-                    if (/*Unit* target = */getOwner()->GetMap()->GetUnit(hostileReference->getUnitGuid()))
-                        getOwner()->SendThreatRemove(hostileReference);
+                if (isOwnerOnline())
+                    getOwner()->SendThreatRemove(hostileReference);
                 iThreatContainer.remove(hostileReference);
                 iUpdateNeed = true;
             }
@@ -644,8 +662,24 @@ void ThreatManager::UpdateForClient(uint32 diff)
     iUpdateTimer.Update(diff);
     if (iUpdateTimer.Passed())
     {
-        iOwner->SendThreatUpdate();
+        getOwner()->SendThreatUpdate();
         iUpdateTimer.Reset(THREAT_UPDATE_INTERVAL);
         iUpdateNeed = false;
     }
+}
+
+bool ThreatManager::isOwnerOnline() const
+{
+    if (!owner.IsInWorld() || !owner.GetMap())
+        return false;
+
+    // Check for map valid - some object pointers removed after removing map :)
+    Map* map = sMapMgr.FindMap(owner.GetMapId(), owner.GetInstanceId());
+    if (map != owner.GetMap())
+        return false;
+
+    if (owner.GetTypeId() == TYPEID_PLAYER)
+        return ((Player const*)&owner)->GetSession() && !((Player const*)&owner)->GetSession()->PlayerLogout();
+
+    return true;
 }

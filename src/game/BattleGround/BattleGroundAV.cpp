@@ -398,7 +398,7 @@ void BattleGroundAV::UpdatePlayerScore(Player* source, uint32 type, uint32 value
     if (itr == m_PlayerScores.end())                        // player not found...
         return;
 
-    uint32 achCriId;
+    uint32 achCriId = 0;
 
     switch (type)
     {
@@ -426,7 +426,8 @@ void BattleGroundAV::UpdatePlayerScore(Player* source, uint32 type, uint32 value
             return;
     }
 
-    source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
+    if (achCriId > 0)
+        source->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BG_OBJECTIVE_CAPTURE, 1, achCriId);
 }
 
 void BattleGroundAV::EventPlayerDestroyedPoint(BG_AV_Nodes node)

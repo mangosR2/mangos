@@ -26,31 +26,28 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 
-int
-TotemAI::Permissible(const Creature *creature)
+int TotemAI::Permissible(Creature const* creature)
 {
     if( creature->IsTotem() )
         return PERMIT_BASE_PROACTIVE;
 
     return PERMIT_BASE_NO;
-}
+};
 
-TotemAI::TotemAI(Creature *c) : CreatureAI(c)
+TotemAI::TotemAI(Creature* c) : CreatureAI(c)
 {
-}
+};
 
-void
-TotemAI::MoveInLineOfSight(Unit *)
+void TotemAI::MoveInLineOfSight(Unit*)
 {
-}
+};
 
 void TotemAI::EnterEvadeMode()
 {
     m_creature->CombatStop(true);
-}
+};
 
-void
-TotemAI::UpdateAI(const uint32 /*diff*/)
+void TotemAI::UpdateAI(uint32 const /*diff*/)
 {
     if (getTotem().GetTotemType() != TOTEM_ACTIVE)
         return;
@@ -79,7 +76,7 @@ TotemAI::UpdateAI(const uint32 /*diff*/)
     {
         victim = NULL;
 
-        MaNGOS::NearestAttackableUnitInObjectRangeCheck u_check(m_creature, m_creature, max_range);
+        MaNGOS::NearestAttackableUnitInObjectRangeCheck u_check(m_creature, max_range);
         MaNGOS::UnitLastSearcher<MaNGOS::NearestAttackableUnitInObjectRangeCheck> checker(victim, u_check);
         Cell::VisitAllObjects(m_creature, checker, max_range);
     }
@@ -96,16 +93,14 @@ TotemAI::UpdateAI(const uint32 /*diff*/)
     }
     else
         i_victimGuid.Clear();
-}
+};
 
-bool
-TotemAI::IsVisible(Unit *) const
+bool TotemAI::IsVisible(Unit*) const
 {
     return false;
-}
+};
 
-void
-TotemAI::AttackStart(Unit *)
+void TotemAI::AttackStart(Unit*)
 {
     // Sentry totem sends ping on attack
     if (m_creature->GetEntry() == SENTRY_TOTEM_ENTRY && m_creature->GetOwner() && m_creature->GetOwner()->GetTypeId() == TYPEID_PLAYER)
@@ -116,9 +111,9 @@ TotemAI::AttackStart(Unit *)
         data << m_creature->GetPositionY();
         ((Player*)m_creature->GetOwner())->GetSession()->SendPacket(&data);
     }
-}
+};
 
 Totem& TotemAI::getTotem()
 {
     return static_cast<Totem&>(*m_creature);
-}
+};

@@ -24,6 +24,7 @@
 #include "HomeMovementGenerator.h"
 #include "IdleMovementGenerator.h"
 #include "PointMovementGenerator.h"
+#include "Pet.h"
 #include "TargetedMovementGenerator.h"
 #include "WaypointMovementGenerator.h"
 #include "RandomMovementGenerator.h"
@@ -259,6 +260,13 @@ void MotionMaster::propagateSpeedChange()
     GetUnitStateMgr()->CurrentAction()->UnitSpeedChanged();
 }
 
+uint32 MotionMaster::getLastReachedWaypoint() const
+{
+    if (ActionInfo* action = const_cast<MotionMaster*>(this)->GetUnitStateMgr()->GetAction(UNIT_ACTION_DOWAYPOINTS))
+        return static_cast<WaypointMovementGenerator<Creature>*>(&*(action->Action()))->getLastReachedWaypoint();
+    return 0;
+}
+
 MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
 {
     return const_cast<MotionMaster*>(this)->CurrentMovementGenerator()->GetMovementGeneratorType();
@@ -383,7 +391,7 @@ void MotionMaster::MoveWithSpeed(float x, float y, float z, float speed, bool ge
 void MotionMaster::MoveFall()
 {
     // use larger distance for vmap height search than in most other cases
-    float tz = m_owner->GetMap()->GetHeight(m_owner->GetPhaseMask(), m_owner->GetPositionX(), m_owner->GetPositionY(), m_owner->GetPositionZ(), true, MAX_FALL_DISTANCE);
+    float tz = m_owner->GetMap()->GetHeight(m_owner->GetPhaseMask(), m_owner->GetPositionX(), m_owner->GetPositionY(), m_owner->GetPositionZ());
     if (tz <= INVALID_HEIGHT)
     {
         sLog.outError("MotionMaster::MoveFall: unable retrive a proper height at map %u (x: %f, y: %f, z: %f).",

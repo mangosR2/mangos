@@ -60,10 +60,10 @@ void VisibleNotifier::Notify()
     i_data.AddOutOfRangeGUID(i_clientGUIDs);
     for (GuidSet::iterator itr = i_clientGUIDs.begin(); itr != i_clientGUIDs.end(); ++itr)
     {
-        player.m_clientGUIDs.erase(*itr);
-
-        DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s is out of range (no in active cells set) now for %s",
-                         itr->GetString().c_str(), player.GetGuidStr().c_str());
+        ObjectGuid guid = *itr;
+        player.m_clientGUIDs.erase(guid);
+        DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify %s is out of range (no in active cells set) now for %s",
+                         guid.GetString().c_str(), player.GetGuidStr().c_str());
     }
 
     if (i_data.HasData())
@@ -88,7 +88,7 @@ void VisibleNotifier::Notify()
     // Now do operations that required done at object visibility change to visible
 
     // send data at target visibility change (adding to client)
-    for (std::set<WorldObject*>::const_iterator vItr = i_visibleNow.begin(); vItr != i_visibleNow.end(); ++vItr)
+    for (WorldObjectSet::const_iterator vItr = i_visibleNow.begin(); vItr != i_visibleNow.end(); ++vItr)
     {
         // target aura duration for caster show only if target exist at caster client
         if ((*vItr) != &player && (*vItr)->isType(TYPEMASK_UNIT))

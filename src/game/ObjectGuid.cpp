@@ -42,6 +42,9 @@ char const* ObjectGuid::GetTypeName(HighGuid high)
         case HIGHGUID_MO_TRANSPORT: return "MoTransport";
         case HIGHGUID_INSTANCE:     return "InstanceID";
         case HIGHGUID_GROUP:        return "Group";
+
+        case HIGHGUID_CALENDAR_EVENT: return "Calendar event";
+        case HIGHGUID_INVITE:       return "Calendar invite";
         default:
             return "<unknown>";
     }
@@ -112,3 +115,6 @@ template uint32 ObjectGuidGenerator<HIGHGUID_DYNAMICOBJECT>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_CORPSE>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_INSTANCE>::Generate();
 template uint32 ObjectGuidGenerator<HIGHGUID_GROUP>::Generate();
+
+template uint32 ObjectGuidGenerator<HIGHGUID_CALENDAR_EVENT>::Generate();
+template uint32 ObjectGuidGenerator<HIGHGUID_INVITE>::Generate();

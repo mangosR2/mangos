@@ -65,6 +65,7 @@
 #include "Util.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "CharacterDatabaseCleaner.h"
+#include "Calendar.h"
 #include "CreatureLinkingMgr.h"
 #include "LFGMgr.h"
 #include "warden/WardenDataStorage.h"
@@ -459,10 +460,18 @@ void World::LoadConfigSettings(bool reload)
 
     ///- Read the player limit and the Message of the day from the config file
     SetPlayerLimit( sConfig.GetIntDefault("PlayerLimit", DEFAULT_PLAYER_LIMIT), true );
-    SetMotd( sConfig.GetStringDefault("Motd", "Welcome to the Massive Network Game Object Server." ) );
+    SetMotd( sConfig.GetStringDefault("Motd", "Welcome to the MangosR2 game server." ) );
 
     // VMSS system
     setConfig(CONFIG_BOOL_VMSS_ENABLE,                "VMSS.Enable", false);
+#ifdef MANGOSR2_SINGLE_THREAD
+    if (getConfig(CONFIG_BOOL_VMSS_ENABLE))
+    {
+        sLog.outError(" Your OS (%s) not support VMSS! resetted to off", MANGOSR2_SINGLE_THREAD);
+        setConfig(CONFIG_BOOL_VMSS_ENABLE, "fakeString", false);
+    }
+#endif
+ 
     setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
     setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
@@ -568,6 +577,14 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_NUMTHREADS, "MapUpdate.Threads", 3);
     setConfig(CONFIG_BOOL_THREADS_DYNAMIC,"MapUpdate.DynamicThreadsCount", false);
 
+#ifdef MANGOSR2_SINGLE_THREAD
+    if (getConfig(CONFIG_UINT32_NUMTHREADS) > 1)
+    {
+        sLog.outError(" Your OS (%s) not support set MapUpdate.Threads > 1! Resetted to 1", MANGOSR2_SINGLE_THREAD);
+        setConfig(CONFIG_UINT32_NUMTHREADS, "fakeString", 1);
+    }
+#endif
+
     setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_HIGHVALUE, "MapUpdate.LoadBalanceHighValue", 0.8f, 0.5f, 1.0f);
     setConfigMinMax(CONFIG_FLOAT_LOADBALANCE_LOWVALUE, "MapUpdate.LoadBalanceLowValue", 0.2f, 0.0f, 0.5f);
 
@@ -598,6 +615,7 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD,   "AllowTwoSide.Interaction.Guild", false);
     setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_AUCTION, "AllowTwoSide.Interaction.Auction", false);
     setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_MAIL,    "AllowTwoSide.Interaction.Mail", false);
+    setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CALENDAR,"AllowTwoSide.Interaction.Calendar", false);
     setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_WHO_LIST,            "AllowTwoSide.WhoList", false);
     setConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_ADD_FRIEND,          "AllowTwoSide.AddFriend", false);
 
@@ -1142,6 +1160,9 @@ void World::SetInitialWorldSettings()
     DetectDBCLang();
     sObjectMgr.SetDBCLocaleIndex(GetDefaultDbcLocale());    // Get once for all the locale index of DBC language (console/broadcasts)
 
+    sLog.outString("Loading opcodes for realm (client build %u)...",CLIENT_VERSION);
+    sObjectMgr.LoadOpcodes();
+
     sLog.outString("Loading GameObject models...");
     LoadGameObjectModelList();
 
@@ -1485,6 +1506,9 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading GameTeleports..." );
     sObjectMgr.LoadGameTele();
 
+    sLog.outString( "Loading Calendar events/invites..." );
+    sCalendarMgr.LoadFromDB();
+
     sLog.outString( "Loading GM tickets...");
     sTicketMgr.LoadGMTickets();
 
@@ -1513,11 +1537,11 @@ void World::SetInitialWorldSettings()
     sLog.outString( "Loading Scripts text locales..." );    // must be after Load*Scripts calls
     sScriptMgr.LoadDbScriptStrings();
 
-    sLog.outString( "Loading CreatureEventAI Texts...");
-    sEventAIMgr.LoadCreatureEventAI_Texts(false);       // false, will checked in LoadCreatureEventAI_Scripts
+    sLog.outString("Loading CreatureEventAI Texts...");
+    sEventAIMgr.LoadCreatureEventAI_Texts(false);           // false, will checked in LoadCreatureEventAI_Scripts
 
-    sLog.outString( "Loading CreatureEventAI Summons...");
-    sEventAIMgr.LoadCreatureEventAI_Summons(false);     // false, will checked in LoadCreatureEventAI_Scripts
+    sLog.outString("Loading CreatureEventAI Summons...");
+    sEventAIMgr.LoadCreatureEventAI_Summons(false);         // false, will checked in LoadCreatureEventAI_Scripts
 
     sLog.outString( "Loading CreatureEventAI Scripts...");
     sEventAIMgr.LoadCreatureEventAI_Scripts();
@@ -1557,7 +1581,7 @@ void World::SetInitialWorldSettings()
     static uint32 abtimer = 0;
     abtimer = sConfig.GetIntDefault("AutoBroadcast.Timer", 60000);
 
-    m_timers[WUPDATE_WEATHERS].SetInterval(1*IN_MILLISECONDS);
+    m_timers[WUPDATE_WEATHERS].SetInterval(1*MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_UPTIME].SetInterval(getConfig(CONFIG_UINT32_UPTIME_UPDATE)*MINUTE*IN_MILLISECONDS);
                                                             //Update "uptime" table based on configuration entry in minutes.
@@ -1565,6 +1589,7 @@ void World::SetInitialWorldSettings()
     m_timers[WUPDATE_DELETECHARS].SetInterval(DAY*IN_MILLISECONDS); // check for chars to delete every day
     m_timers[WUPDATE_AUTOBROADCAST].SetInterval(abtimer);
     m_timers[WUPDATE_WORLDSTATE].SetInterval(1*MINUTE*IN_MILLISECONDS);
+    m_timers[WUPDATE_CALENDAR].SetInterval(30*IN_MILLISECONDS);
 
     // for AhBot
     m_timers[WUPDATE_AHBOT].SetInterval(20*IN_MILLISECONDS); // every 20 sec
@@ -1788,6 +1813,13 @@ void World::Update(uint32 diff)
     {
         m_timers[WUPDATE_WORLDSTATE].Reset();
         sWorldStateMgr.Update();
+    }
+
+    // Update Calendar (cleanup and save)
+    if (m_timers[WUPDATE_CALENDAR].Passed())
+    {
+        m_timers[WUPDATE_CALENDAR].Reset();
+        sCalendarMgr.Update();
     }
 
     // Check if any group can be created by dungeon finder

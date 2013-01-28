@@ -459,7 +459,7 @@ class Spell
         bool CheckTargetBeforeLimitation(Unit* target, SpellEffectIndex eff);
         SpellCastResult CanAutoCast(Unit* target);
 
-        static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result);
+        static void MANGOS_DLL_SPEC SendCastResult(Player* caster, SpellEntry const* spellInfo, uint8 cast_count, SpellCastResult result, bool isPetCastResult = false);
         void SendCastResult(SpellCastResult result);
         void SendSpellStart();
         void SendSpellGo();
@@ -507,9 +507,11 @@ class Spell
         bool IsDeletable() const { return !m_referencedFromCurrentSpell && !m_executedCurrently; }
         void SetReferencedFromCurrent(bool yes) { m_referencedFromCurrentSpell = yes; }
         void SetExecutedCurrently(bool yes) { m_executedCurrently = yes; }
+
         uint64 GetDelayStart() const { return m_delayStart; }
         void SetDelayStart(uint64 m_time) { m_delayStart = m_time; }
         uint64 GetDelayMoment() const { return m_delayMoment; }
+        float GetBaseSpellSpeed();
 
         bool IsNeedSendToClient() const;                    // use for hide spell cast for client in case when cast not have client side affect (animation or log entries)
         bool IsTriggeredSpellWithRedundentData() const;     // use for ignore some spell data for triggered spells like cast time, some triggered spells have redundent copy data from main spell for client use purpose
@@ -568,7 +570,6 @@ class Spell
         int32 m_powerCost;                                  // Calculated spell cost     initialized only in Spell::prepare
         int32 m_casttime;                                   // Calculated spell cast time initialized only in Spell::prepare
         int32 m_duration;
-        bool m_canReflect;                                  // can reflect this spell?
         uint8 m_spellFlags;                                 // for spells whose target was changed in cast i.e. due to reflect
         bool m_autoRepeat;
         uint8 m_runesState;
@@ -767,6 +768,8 @@ namespace MaNGOS
         {
             if (!i_originalCaster)
                 i_originalCaster = i_spell.GetAffectiveCasterObject();
+            if (!i_castingObject)
+                i_castingObject = i_spell.m_caster;
             i_playerControlled = i_originalCaster  ? i_originalCaster->IsControlledByPlayer() : false;
 
             switch(i_push_type)
@@ -793,7 +796,7 @@ namespace MaNGOS
                     else
                         i_spell.m_targets.getDestination(i_centerX, i_centerY, i_centerZ);
 
-                    i_center =  WorldLocation(i_castingObject->GetMapId(), i_centerX, i_centerY, i_centerZ);
+                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
 
                     break;
                 }
@@ -820,7 +823,7 @@ namespace MaNGOS
                         i_centerZ = i_spell.m_targets.m_destZ;
                     }
 
-                    i_center =  WorldLocation(i_castingObject->GetMapId(), i_centerX, i_centerY, i_centerZ);
+                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
 
                     break;
                 }
@@ -888,8 +891,8 @@ namespace MaNGOS
 
                         if (!itr->getSource()->IsVisibleTargetForSpell(i_originalCaster, i_spell.m_spellInfo, &i_center))
                             continue;
+                        break;
                     }
-                    break;
                     case SPELL_TARGETS_ALL:
                         break;
                     default: continue;

@@ -1053,10 +1053,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         explicit Player (WorldSession *session);
         ~Player ();
 
-        void CleanupsBeforeDelete();
+        virtual void CleanupsBeforeDelete() override;
 
         void AddToWorld();
-        void RemoveFromWorld();
+        virtual void RemoveFromWorld(bool remove) override;
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
@@ -1067,13 +1067,10 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool TeleportToBGEntryPoint();
 
-        void SetSummonPoint(uint32 mapid, float x, float y, float z)
+        void SetSummonPoint(WorldLocation const& loc)
         {
             m_summon_expire = time(NULL) + MAX_PLAYER_SUMMON_DELAY;
-            m_summon_mapid = mapid;
-            m_summon_x = x;
-            m_summon_y = y;
-            m_summon_z = z;
+            m_summon_loc = loc;
         }
         void SummonIfPossible(bool agree);
 
@@ -1249,7 +1246,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool StoreNewItemInBestSlots(uint32 item_id, uint32 item_count);
         Item* StoreNewItemInInventorySlot(uint32 itemEntry, uint32 amount);
 
-        void AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
+        void AutoStoreLoot(WorldObject const* lootTarget, uint32 loot_id, LootStore const& store, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
         void AutoStoreLoot(Loot& loot, bool broadcast = false, uint8 bag = NULL_BAG, uint8 slot = NULL_SLOT);
 
         Item* ConvertItem(Item* item, uint32 newItemId);
@@ -1269,7 +1266,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         {
             return StoreItem(dest, pItem, update);
         }
-        Item* BankItem(uint16 pos, Item *pItem, bool update);
         void RemoveItem(uint8 bag, uint8 slot, bool update);
         void MoveItemFromInventory(uint8 bag, uint8 slot, bool update);
                                                             // in trade, auction, guild bank, mail....
@@ -2292,9 +2288,9 @@ class MANGOS_DLL_SPEC Player : public Unit
         float  m_recallO;
         void   SaveRecallPosition();
 
-        void SetHomebindToLocation(WorldLocation const& loc, uint32 area_id);
-        void RelocateToHomebind() { SetLocationMapId(m_homebindMapId); Relocate(m_homebindX, m_homebindY, m_homebindZ); }
-        bool TeleportToHomebind(uint32 options = TELE_TO_CHECKED) { return TeleportTo(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, GetOrientation(), options); }
+        void SetHomebindToLocation(WorldLocation const& loc);
+        void RelocateToHomebind() { SetLocationMapId(m_homebind.GetMapId()); Relocate(m_homebind); }
+        bool TeleportToHomebind(uint32 options = TELE_TO_CHECKED) { return TeleportTo(m_homebind, options); }
 
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
@@ -2309,7 +2305,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target);
 
         template<class T>
-            void UpdateVisibilityOf(WorldObject const* viewPoint,T* target, UpdateData& data, std::set<WorldObject*>& visibleNow);
+            void UpdateVisibilityOf(WorldObject const* viewPoint,T* target, UpdateData& data, WorldObjectSet& visibleNow);
 
         // Stealth detection system
         void HandleStealthedUnitsDetection();
@@ -2461,6 +2457,12 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         // Return collision height sent to client
         float GetCollisionHeight(bool mounted);
+
+        // Parent objects (items currently) update system
+        virtual Object* GetDependentObject(ObjectGuid const& guid) override;
+        virtual GuidSet const* GetObjectsUpdateQueue() override { return &i_objectsToClientUpdate; };
+        virtual void AddUpdateObject(ObjectGuid const& guid) override;
+        virtual void RemoveUpdateObject(ObjectGuid const& guid) override;
 
     protected:
 
@@ -2686,14 +2688,14 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         // Player summoning
         time_t m_summon_expire;
-        uint32 m_summon_mapid;
-        float  m_summon_x;
-        float  m_summon_y;
-        float  m_summon_z;
+        WorldLocation m_summon_loc;
 
         DeclinedName* m_declinedname;
         Runes* m_runes;
         EquipmentSets m_EquipmentSets;
+
+        // Parent objects (items currently) update system
+        GuidSet i_objectsToClientUpdate;
 
         // Refer-A-Friend
         ObjectGuid m_curGrantLevelGiverGuid;
@@ -2752,11 +2754,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         PlayerbotMgr* m_playerbotMgr;
 
         // Homebind coordinates
-        uint32 m_homebindMapId;
-        uint16 m_homebindAreaId;
-        float m_homebindX;
-        float m_homebindY;
-        float m_homebindZ;
+        WorldLocation m_homebind;
 
         uint32 m_lastFallTime;
         float  m_lastFallZ;

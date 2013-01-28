@@ -34,21 +34,25 @@ enum TypeID
     TYPEID_PLAYER        = 4,
     TYPEID_GAMEOBJECT    = 5,
     TYPEID_DYNAMICOBJECT = 6,
-    TYPEID_CORPSE        = 7
+    TYPEID_CORPSE        = 7,
+    TYPEID_AIGROUP       = 8,
+    TYPEID_AREATRIGGER   = 9,
+    MAX_TYPE_ID
 };
 
-#define MAX_TYPE_ID        8
 
 enum TypeMask
 {
-    TYPEMASK_OBJECT         = 0x0001,
-    TYPEMASK_ITEM           = 0x0002,
-    TYPEMASK_CONTAINER      = 0x0004,
-    TYPEMASK_UNIT           = 0x0008,                       // players also have it
-    TYPEMASK_PLAYER         = 0x0010,
-    TYPEMASK_GAMEOBJECT     = 0x0020,
-    TYPEMASK_DYNAMICOBJECT  = 0x0040,
-    TYPEMASK_CORPSE         = 0x0080,
+    TYPEMASK_OBJECT         = (1 << TYPEID_OBJECT),
+    TYPEMASK_ITEM           = (1 << TYPEID_ITEM),
+    TYPEMASK_CONTAINER      = (1 << TYPEID_CONTAINER),
+    TYPEMASK_UNIT           = (1 << TYPEID_UNIT),
+    TYPEMASK_PLAYER         = (1 << TYPEID_PLAYER),
+    TYPEMASK_GAMEOBJECT     = (1 << TYPEID_GAMEOBJECT),
+    TYPEMASK_DYNAMICOBJECT  = (1 << TYPEID_DYNAMICOBJECT),
+    TYPEMASK_CORPSE         = (1 << TYPEID_CORPSE),
+    TYPEMASK_AIGROUP        = (1 << TYPEID_AIGROUP),
+    TYPEMASK_AREATRIGGER    = (1 << TYPEID_AREATRIGGER),
 
     // used combinations in Player::GetObjectByTypeMask (TYPEMASK_UNIT case ignore players in call)
     TYPEMASK_CREATURE_OR_GAMEOBJECT = TYPEMASK_UNIT | TYPEMASK_GAMEOBJECT,
@@ -75,6 +79,19 @@ enum HighGuid
     HIGHGUID_MO_TRANSPORT   = 0x1FC,                        // blizz 1FC (for GAMEOBJECT_TYPE_MO_TRANSPORT)
     HIGHGUID_INSTANCE       = 0x1F4,                        // blizz 1F4
     HIGHGUID_GROUP          = 0x1F5,                        // blizz 1F5
+
+    HIGHGUID_BATTLEGROUND   = 0x1F1,                        // new 4.x
+    HIGHGUID_GUILD          = 0x1FF,                        // new 4.x
+
+    // Custom high guids (not found in sniffs! Only for coding convenience!)
+    HIGHGUID_EVENT          = 0xA01,                        // Calendar and guild events (FFU)
+    HIGHGUID_OBJECTEVENT    = 0xA02,                        // local object-attached events (FFU)
+    HIGHGUID_MAPEVENT       = 0xA03,                        // local map-attached events (FFU)
+    HIGHGUID_CALENDAR_EVENT = 0xA06,                        // Calendar events
+    HIGHGUID_INVITE         = 0xA07,                        // Calendar invites
+    HIGHGUID_AREATRIGGER    = 0xA10,                        // AreaTrigger (FFU), possible has real value in 4.x
+    HIGHGUID_WORLDLOCATION  = 0xA11,                        // World location (FFU)
+    HIGHGUID_WORLDSTATE     = 0xA12,                        // WorldState (FFU)
 };
 
 class ObjectGuid;
@@ -146,6 +163,14 @@ class MANGOS_DLL_SPEC ObjectGuid
         bool IsGroup()             const { return GetHigh() == HIGHGUID_GROUP;                }
         bool IsPlayerOrPet()       const { return !IsEmpty() && (GetHigh() == HIGHGUID_PLAYER || GetHigh() == HIGHGUID_PET); }
 
+        bool IsEvent()             const { return GetHigh() == HIGHGUID_EVENT || GetHigh() == HIGHGUID_OBJECTEVENT || GetHigh() == HIGHGUID_MAPEVENT; }
+        bool IsAreaTrigger()       const { return GetHigh() == HIGHGUID_AREATRIGGER;          }
+        bool IsWorldState()        const { return GetHigh() == HIGHGUID_WORLDSTATE;           }
+        bool IsLocation()          const { return GetHigh() == HIGHGUID_WORLDLOCATION;        }
+
+        bool IsCalendarEvent()     const { return GetHigh() == HIGHGUID_CALENDAR_EVENT;       }
+        bool IsInvite()            const { return GetHigh() == HIGHGUID_INVITE;               }
+
         static TypeID GetTypeId(HighGuid high)
         {
             switch(high)
@@ -160,9 +185,22 @@ class MANGOS_DLL_SPEC ObjectGuid
                 case HIGHGUID_CORPSE:       return TYPEID_CORPSE;
                 case HIGHGUID_MO_TRANSPORT: return TYPEID_GAMEOBJECT;
                 case HIGHGUID_VEHICLE:      return TYPEID_UNIT;
+
+                case HIGHGUID_CALENDAR_EVENT:
+                case HIGHGUID_INVITE:
+                case HIGHGUID_EVENT:
+                case HIGHGUID_OBJECTEVENT:
+                case HIGHGUID_MAPEVENT:     return TYPEID_AIGROUP;
+
+                case HIGHGUID_AREATRIGGER:
+                case HIGHGUID_WORLDLOCATION: return TYPEID_AREATRIGGER;
+
                 // unknown
                 case HIGHGUID_INSTANCE:
                 case HIGHGUID_GROUP:
+                case HIGHGUID_WORLDSTATE:
+                case HIGHGUID_BATTLEGROUND:
+                case HIGHGUID_GUILD:
                 default:                    return TYPEID_OBJECT;
             }
         }
@@ -191,12 +229,28 @@ class MANGOS_DLL_SPEC ObjectGuid
                 case HIGHGUID_MO_TRANSPORT:
                 case HIGHGUID_INSTANCE:
                 case HIGHGUID_GROUP:
+
+                case HIGHGUID_BATTLEGROUND:
+                case HIGHGUID_GUILD:
+
+                case HIGHGUID_AREATRIGGER:
+                case HIGHGUID_WORLDLOCATION:
+
+                case HIGHGUID_CALENDAR_EVENT:
+                case HIGHGUID_INVITE:
                     return false;
+
                 case HIGHGUID_GAMEOBJECT:
                 case HIGHGUID_TRANSPORT:
                 case HIGHGUID_UNIT:
                 case HIGHGUID_PET:
                 case HIGHGUID_VEHICLE:
+
+                case HIGHGUID_EVENT:
+                case HIGHGUID_OBJECTEVENT:
+                case HIGHGUID_MAPEVENT:
+                case HIGHGUID_WORLDSTATE:
+
                 default:
                     return true;
             }
@@ -212,7 +266,7 @@ class MANGOS_DLL_SPEC ObjectGuid
 };
 
 // Some Shared defines
-typedef std::set<ObjectGuid> GuidSet;
+typedef UNORDERED_SET<ObjectGuid> GuidSet;
 typedef ACE_Based::LockedVector<ObjectGuid> GuidList;
 typedef ACE_Based::LockedVector<ObjectGuid> GuidVector;
 

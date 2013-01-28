@@ -50,6 +50,7 @@ class Unit;
 class WorldPacket;
 class InstanceData;
 class Group;
+class Transport;
 class MapPersistentState;
 class WorldPersistentState;
 class DungeonPersistentState;
@@ -163,8 +164,10 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         //function for setting up visibility distance for maps on per-type/per-Id basis
         virtual void InitVisibilityDistance();
 
-        void PlayerRelocation(Player *, float x, float y, float z, float angl);
-        void CreatureRelocation(Creature *creature, float x, float y, float z, float orientation);
+        template<class T> void Relocation(T* object, float x, float y, float z, float orientation);
+
+        // FIXME - remove this wrapper after SD2 correct
+        void CreatureRelocation(Creature* object, float x, float y, float z, float orientation);
 
         template<class T, class CONTAINER> void Visit(const Cell& cell, TypeContainerVisitor<T, CONTAINER> &visitor);
 
@@ -231,7 +234,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // can't be NULL for loaded map
         MapPersistentState* GetPersistentState() const;
 
-        void AddObjectToRemoveList(WorldObject *obj);
+        void AddObjectToRemoveList(WorldObject *obj, bool immediateCleanup = false);
         void RemoveObjectFromRemoveList(WorldObject* obj);
 
         void UpdateObjectVisibility(WorldObject* obj, Cell cell, CellPair cellpair);
@@ -249,8 +252,15 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         typedef MapRefManager PlayerList;
         PlayerList const& GetPlayers() const { return m_mapRefManager; }
 
-        //per-map script storage
-        bool ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target);
+        // per-map script storage
+        enum ScriptExecutionParam
+        {
+            SCRIPT_EXEC_PARAM_NONE                    = 0x00,   // Start regardless if already started
+            SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE        = 0x01,   // Start Script only if not yet started (uniqueness identified by id and source)
+            SCRIPT_EXEC_PARAM_UNIQUE_BY_TARGET        = 0x02,   // Start Script only if not yet started (uniqueness identified by id and target)
+            SCRIPT_EXEC_PARAM_UNIQUE_BY_SOURCE_TARGET = 0x03,   // Start Script only if not yet started (uniqueness identified by id, source and target)
+        };
+        bool ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams = SCRIPT_EXEC_PARAM_NONE);
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
 
         // must called with AddToWorld
@@ -258,28 +268,29 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // must called with RemoveFromWorld
         void RemoveFromActive(WorldObject* obj);
 
-        Player* GetPlayer(ObjectGuid guid);
+        Player* GetPlayer(ObjectGuid guid, bool globalSearch = false);
         Creature* GetCreature(ObjectGuid guid);
         Pet* GetPet(ObjectGuid guid);
         Creature* GetAnyTypeCreature(ObjectGuid guid);      // normal creature or pet or vehicle
         GameObject* GetGameObject(ObjectGuid guid);
         DynamicObject* GetDynamicObject(ObjectGuid guid);
+        Transport* GetTransport(ObjectGuid guid);
         Corpse* GetCorpse(ObjectGuid guid);                 // !!! find corpse can be not in world
         Unit* GetUnit(ObjectGuid guid);                     // only use if sure that need objects at current map, specially for player case
         WorldObject* GetWorldObject(ObjectGuid guid);       // only use if sure that need objects at current map, specially for player case
 
-        typedef TypeUnorderedMapContainer<AllMapStoredObjectTypes, ObjectGuid> MapStoredObjectTypesContainer;
-        MapStoredObjectTypesContainer& GetObjectsStore() { return m_objectsStore; }
+        // Container maked without any locks (for faster search), need make external locks!
+        typedef UNORDERED_MAP<ObjectGuid, WorldObject*> MapStoredObjectTypesContainer;
+        MapStoredObjectTypesContainer const& GetObjectsStore() { return m_objectsStore; }
+        void InsertObject(WorldObject* object);
+        void EraseObject(WorldObject* object);
+        void EraseObject(ObjectGuid guid);
+        WorldObject* FindObject(ObjectGuid guid);
 
-        void AddUpdateObject(Object *obj)
-        {
-            i_objectsToClientUpdateQueue.push(obj);
-        }
-
-        void RemoveUpdateObject(Object *obj)
-        {
-            i_objectsToClientNotUpdate.insert(obj);
-        }
+        // Manipulation with objects update queue
+        void AddUpdateObject(ObjectGuid const& guid);
+        void RemoveUpdateObject(ObjectGuid const& guid);
+        GuidSet const* GetObjectsUpdateQueue() { return &i_objectsToClientUpdate; };
 
         // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);
@@ -288,7 +299,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         const TerrainInfo * GetTerrain() const { return m_TerrainData; }
 
         void CreateInstanceData(bool load);
-        InstanceData* GetInstanceData() { return i_data; }
+        InstanceData* GetInstanceData() const { return i_data; }
         uint32 GetScriptId() const { return i_script_id; }
 
         void MonsterYellToMap(ObjectGuid guid, int32 textId, uint32 language, Unit* target);
@@ -306,7 +317,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void AddAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
         void RemoveAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid);
         void RemoveAllAttackersFor(ObjectGuid targetGuid);
-        GuidSet GetAttackersFor(ObjectGuid targetGuid);
+        GuidSet& GetAttackersFor(ObjectGuid targetGuid);
         void CreateAttackersStorageFor(ObjectGuid targetGuid);
         void RemoveAttackersStorageFor(ObjectGuid targetGuid);
 
@@ -321,8 +332,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void SetBroken( bool _value = true ) { m_broken = _value; };
         void ForcedUnload();
 
-        // dynamic VMaps
-        float GetHeight(uint32 phasemask, float x, float y, float z, bool pCheckVMap=true, float maxSearchDist=DEFAULT_HEIGHT_SEARCH) const;
+        // Dynamic VMaps
+        float GetHeight(uint32 phasemask, float x, float y, float z) const;
         bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const;
         bool GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, uint32 phasemask, float modifyDist) const;
 
@@ -330,10 +341,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void RemoveGameObjectModel(const GameObjectModel& mdl);
         bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
 
-        void AddLoadingObject(LoadingObjectQueueMember* obj)
-        {
-            i_loadingObjectQueue.push(obj);
-        }
+        void AddLoadingObject(LoadingObjectQueueMember* obj);
+        LoadingObjectQueueMember* GetNextLoadingObject();
         LoadingObjectsQueue const& GetLoadingObjectsQueue() { return i_loadingObjectQueue; };
         bool IsLoadingObjectsQueueEmpty() const { return i_loadingObjectQueue.empty(); };
 
@@ -351,15 +360,15 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
         void SendInitSelf( Player * player );
 
-        void SendInitTransports( Player * player );
-        void SendRemoveTransports( Player * player );
+        void SendInitTransports(Player* player);
+        void SendRemoveTransports(Player* player);
 
-        bool CreatureCellRelocation(Creature *creature, Cell new_cell);
+        bool CreatureCellRelocation(Creature* creature, Cell new_cell);
 
-        bool loaded(const GridPair &) const;
-        void EnsureGridCreated(const GridPair &);
-        bool EnsureGridLoaded(Cell const&);
-        void EnsureGridLoadedAtEnter(Cell const&, Player* player = NULL);
+        bool loaded(GridPair const& p) const;
+        void EnsureGridCreated(GridPair const& p);
+        bool EnsureGridLoaded(Cell const& c);
+        void EnsureGridLoadedAtEnter(Cell const& c, Player* player = NULL);
 
         void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
@@ -370,6 +379,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         {
             MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
             MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
+            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
             return i_grids[x][y];
         }
 
@@ -377,16 +387,15 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         template<class T> void setUnitCell(T* /*obj*/) {}
         void setUnitCell(Creature* obj);
 
-        bool isGridObjectDataLoaded(uint32 x, uint32 y) const { return getNGrid(x,y) ? getNGrid(x,y)->isGridObjectDataLoaded() : false; }
-        void setGridObjectDataLoaded(bool pLoaded, uint32 x, uint32 y) { getNGrid(x,y)->setGridObjectDataLoaded(pLoaded); }
+        bool IsGridObjectDataLoaded(NGridType const* grid) const;
+        void SetGridObjectDataLoaded(bool pLoaded, NGridType* grid);
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
         void ScriptsProcess();
 
         void SendObjectUpdates();
-        std::set<Object *> i_objectsToClientUpdate;
-        std::set<Object *> i_objectsToClientNotUpdate;
-        std::queue<Object*> i_objectsToClientUpdateQueue;
+
+        GuidSet i_objectsToClientUpdate;
 
         LoadingObjectsQueue i_loadingObjectQueue;
 
@@ -401,7 +410,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         MapRefManager m_mapRefManager;
         MapRefManager::iterator m_mapRefIter;
 
-        typedef std::set<WorldObject*> ActiveNonPlayers;
+        typedef UNORDERED_SET<WorldObject*> ActiveNonPlayers;
         ActiveNonPlayers m_activeNonPlayers;
         ActiveNonPlayers::iterator m_activeNonPlayersIter;
         MapStoredObjectTypesContainer m_objectsStore;
@@ -419,7 +428,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
         std::bitset<TOTAL_NUMBER_OF_CELLS_PER_MAP*TOTAL_NUMBER_OF_CELLS_PER_MAP> marked_cells;
 
-        std::set<WorldObject *> i_objectsToRemove;
+        UNORDERED_SET<WorldObject*> i_objectsToRemove;
 
         typedef std::multimap<time_t, ScriptAction> ScriptScheduleMap;
         ScriptScheduleMap m_scriptSchedule;
@@ -524,7 +533,7 @@ Map::Visit(const Cell& cell, TypeContainerVisitor<T, CONTAINER> &visitor)
     const uint32 cell_x = cell.CellX();
     const uint32 cell_y = cell.CellY();
 
-    if( !cell.NoCreate() || loaded(GridPair(x,y)) )
+    if (!cell.NoCreate() || loaded(GridPair(x,y)))
     {
         EnsureGridLoaded(cell);
         getNGrid(x, y)->Visit(cell_x, cell_y, visitor);

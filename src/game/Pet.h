@@ -156,9 +156,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         explicit Pet(PetType type = MAX_PET_TYPE);
         virtual ~Pet();
 
-        void AddToWorld();
-        void RemoveFromWorld();
-
         PetType getPetType() const { return m_petType; }
         void setPetType(PetType type) { m_petType = type; }
         bool isControlled() const { return getPetType()==SUMMON_PET || getPetType()==HUNTER_PET; }
@@ -285,7 +282,6 @@ class MANGOS_DLL_SPEC Pet : public Creature
         bool Summon();
         void SetCreateSpellID(uint32 SpellID) { m_createSpellID = SpellID; }
         uint32 GetCreateSpellID() { return m_createSpellID; }
-        bool IsInWorld() const { return ( !m_loading && !m_removed && Object::IsInWorld()); }
 
         bool IsInEvadeMode() const override;
 
