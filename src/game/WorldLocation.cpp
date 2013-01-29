@@ -67,7 +67,7 @@ float Position::GetDistance(Position const& pos) const
 };
 
 WorldLocation::WorldLocation(WorldObject const& object)
-    : Position(object.GetPositionX(), object.GetPositionX(), object.GetPositionZ(), object.GetOrientation(), object.GetPhaseMask()),
+    : Position(object.GetPositionX(), object.GetPositionY(), object.GetPositionZ(), object.GetOrientation(), object.GetPhaseMask()),
         mapid(object.GetMapId()), instance(object.GetInstanceId()), realmid(sWorld.getConfig(CONFIG_UINT32_REALMID))
 {
 };
