@@ -73,15 +73,15 @@ struct MANGOS_DLL_SPEC Position : public Location
     {};
 
     Position(float _x, float _y, float _z, float _o, uint32 phaseMask)
-        : Location(_x, _y, _z, _o), m_phaseMask(phaseMask), coord_x(x), coord_y(y), coord_z(z)
+        : Location(_x, _y, _z, _o), coord_x(x), coord_y(y), coord_z(z), m_phaseMask(phaseMask)
     {};
 
     Position(Position const &pos)
-        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(pos.GetPhaseMask()), coord_x(x), coord_y(y), coord_z(z)
+        : Location(pos.x, pos.y, pos.z, pos.orientation), coord_x(x), coord_y(y), coord_z(z), m_phaseMask(pos.GetPhaseMask())
     {}
 
     Position(Position const &pos, uint32 phaseMask)
-        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(phaseMask), coord_x(x), coord_y(y), coord_z(z)
+        : Location(pos.x, pos.y, pos.z, pos.orientation), coord_x(x), coord_y(y), coord_z(z), m_phaseMask(phaseMask)
     {}
 
     virtual ~Position()
