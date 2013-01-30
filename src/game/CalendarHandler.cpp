@@ -605,7 +605,7 @@ void WorldSession::HandleCalendarEventStatus(WorldPacket& recv_data)
 
     recv_data >> invitee.ReadAsPacked();
     recv_data >> eventId >> inviteId >> ownerInviteId >> status;
-    DEBUG_FILTER_LOG(LOG_FILTER_CALENDAR, "WorldSession::HandleCalendarEventStatus EventId %u ownerInviteId %u, Invitee %u id: %u, status %u",
+    DEBUG_FILTER_LOG(LOG_FILTER_CALENDAR, "WorldSession::HandleCalendarEventStatus Updater: %u EventId %u ownerInviteId %u, Invitee %u id: %u, status %u",
         updaterGuid.GetCounter(), eventId.GetCounter(), ownerInviteId.GetCounter(), invitee.GetCounter(), inviteId.GetCounter(), status);
 
     if (CalendarEvent* calendarEvent = sCalendarMgr.GetEventById(eventId))

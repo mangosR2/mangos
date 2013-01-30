@@ -182,7 +182,7 @@ void CalendarEvent::SendMailOnRemoveEvent(ObjectGuid const& removerGuid)
 //////////////////////////////////////////////////////////////////////////
 
 CalendarInvite::CalendarInvite(CalendarEvent* event, ObjectGuid inviteId, ObjectGuid senderGuid, ObjectGuid inviteeGuid, time_t statusTime, CalendarInviteStatus status, CalendarModerationRank rank, std::string text) :
-    InviteId(inviteId), SenderGuid(senderGuid), InviteeGuid(inviteeGuid), LastUpdateTime(statusTime), Status(status), Rank(rank), Text(text)
+    InviteId(inviteId), InviteeGuid(inviteeGuid), SenderGuid(senderGuid), LastUpdateTime(statusTime), Status(status), Rank(rank), Text(text)
 {
     // only for pre invite case
     if (!event)
