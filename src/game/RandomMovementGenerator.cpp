@@ -62,7 +62,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
 
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 
-    Movement::MoveSplineInit init(creature);
+    Movement::MoveSplineInit<Unit*> init(creature);
     init.MoveTo(destX, destY, destZ, true);
     init.SetWalk(true);
     init.Launch();

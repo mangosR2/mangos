@@ -570,7 +570,6 @@ class Spell
         int32 m_powerCost;                                  // Calculated spell cost     initialized only in Spell::prepare
         int32 m_casttime;                                   // Calculated spell cast time initialized only in Spell::prepare
         int32 m_duration;
-        bool m_canReflect;                                  // can reflect this spell?
         uint8 m_spellFlags;                                 // for spells whose target was changed in cast i.e. due to reflect
         bool m_autoRepeat;
         uint8 m_runesState;

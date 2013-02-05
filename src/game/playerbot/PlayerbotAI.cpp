@@ -3211,9 +3211,8 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
             m_bot->SetBotDeathTimer();
             m_bot->BuildPlayerRepop();
             // relocate ghost
-            WorldLocation loc;
             Corpse* corpse = m_bot->GetCorpse();
-            corpse->GetPosition(loc);
+            WorldLocation loc = corpse->GetPosition();
             m_bot->TeleportTo(loc);
             // set state to released
             SetState(BOTSTATE_DEADRELEASED);

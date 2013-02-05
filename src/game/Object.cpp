@@ -43,6 +43,8 @@
 #include "TemporarySummon.h"
 #include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "movement/packet_builder.h"
+#include "movement/MoveSplineInit.h"
+#include "movement/MoveSpline.h"
 #include "UpdateFieldFlags.h"
 #include "Group.h"
 #include "CreatureLinkingMgr.h"
@@ -103,13 +105,12 @@ bool UpdateFieldData::IsUpdateFieldVisible(uint16 fieldIndex) const
     return false;
 }
 
-Object::Object( )
+Object::Object()
 {
     m_objectTypeId        = TYPEID_OBJECT;
     m_objectType          = TYPEMASK_OBJECT;
 
     m_uint32Values        = 0;
-    m_uint32Values_mirror = 0;
     m_valuesCount         = 0;
     m_fieldNotifyFlags    = UF_FLAG_DYNAMIC;
 
@@ -117,7 +118,7 @@ Object::Object( )
     m_objectUpdated       = false;
 }
 
-Object::~Object( )
+Object::~Object()
 {
     if (IsInWorld())
     {
@@ -132,13 +133,7 @@ Object::~Object( )
         MANGOS_ASSERT(false);
     }
 
-    if (m_uint32Values)
-    {
-        //DEBUG_LOG("Object desctr 1 check (%p)",(void*)this);
-        delete [] m_uint32Values;
-        delete [] m_uint32Values_mirror;
-        //DEBUG_LOG("Object desctr 2 check (%p)",(void*)this);
-    }
+    delete[] m_uint32Values;
 }
 
 void Object::_InitValues()
@@ -146,8 +141,7 @@ void Object::_InitValues()
     m_uint32Values = new uint32[ m_valuesCount ];
     memset(m_uint32Values, 0, m_valuesCount*sizeof(uint32));
 
-    m_uint32Values_mirror = new uint32[ m_valuesCount ];
-    memset(m_uint32Values_mirror, 0, m_valuesCount*sizeof(uint32));
+    m_changedValues.resize(m_valuesCount, false);
 
     m_objectUpdated = false;
 }
@@ -756,11 +750,8 @@ void Object::ClearUpdateMask(bool remove)
 {
     if (m_uint32Values)
     {
-        for( uint16 index = 0; index < m_valuesCount; ++index )
-        {
-            if (m_uint32Values_mirror[index]!= m_uint32Values[index])
-                m_uint32Values_mirror[index] = m_uint32Values[index];
-        }
+        for (uint16 index = 0; index < m_valuesCount; ++index)
+            m_changedValues[index] = false;
     }
 
     if (m_objectUpdated)
@@ -796,7 +787,7 @@ void Object::_SetUpdateBits(UpdateMask* updateMask, Player* target) const
     for (uint16 index = 0; index < m_valuesCount; ++index)
     {
         if (ufd.IsUpdateNeeded(index, m_fieldNotifyFlags) ||
-            ((m_uint32Values_mirror[index] != m_uint32Values[index]) && ufd.IsUpdateFieldVisible(index)))
+            (m_changedValues[index] && ufd.IsUpdateFieldVisible(index)))
             updateMask->SetBit(index);
     }
 }
@@ -808,7 +799,7 @@ void Object::_SetCreateBits(UpdateMask* updateMask, Player* target) const
     for (uint16 index = 0; index < m_valuesCount; ++index)
     {
         if (ufd.IsUpdateNeeded(index, m_fieldNotifyFlags) ||
-            ((GetUInt32Value(index)) && ufd.IsUpdateFieldVisible(index)))
+            ((GetUInt32Value(index) != 0) && ufd.IsUpdateFieldVisible(index)))
             updateMask->SetBit(index);
     }
 }
@@ -817,9 +808,10 @@ void Object::SetInt32Value( uint16 index, int32 value )
 {
     MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
 
-    if (m_int32Values[ index ] != value)
+    if (m_int32Values[index] != value)
     {
-        m_int32Values[ index ] = value;
+        m_int32Values[index] = value;
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -828,20 +820,23 @@ void Object::SetUInt32Value( uint16 index, uint32 value )
 {
     MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
 
-    if (m_uint32Values[ index ] != value)
+    if (m_uint32Values[index] != value)
     {
-        m_uint32Values[ index ] = value;
+        m_uint32Values[index] = value;
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
 void Object::SetUInt64Value( uint16 index, const uint64 &value )
 {
-    MANGOS_ASSERT( index + 1 < m_valuesCount || PrintIndexError( index, true ) );
-    if(*((uint64*)&(m_uint32Values[ index ])) != value)
+    MANGOS_ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
+    if (*((uint64*) & (m_uint32Values[index])) != value)
     {
-        m_uint32Values[ index ] = *((uint32*)&value);
-        m_uint32Values[ index + 1 ] = *(((uint32*)&value) + 1);
+        m_uint32Values[index] = *((uint32*)&value);
+        m_uint32Values[index + 1] = *(((uint32*)&value) + 1);
+        m_changedValues[index] = true;
+        m_changedValues[index + 1] = true;
         MarkForClientUpdate();
     }
 }
@@ -850,9 +845,10 @@ void Object::SetFloatValue( uint16 index, float value )
 {
     MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
 
-    if (m_floatValues[ index ] != value)
+    if (m_floatValues[index] != value)
     {
-        m_floatValues[ index ] = value;
+        m_floatValues[index] = value;
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -867,10 +863,11 @@ void Object::SetByteValue( uint16 index, uint8 offset, uint8 value )
         return;
     }
 
-    if (uint8(m_uint32Values[ index ] >> (offset * 8)) != value)
+    if (uint8(m_uint32Values[index] >> (offset * 8)) != value)
     {
-        m_uint32Values[ index ] &= ~uint32(uint32(0xFF) << (offset * 8));
-        m_uint32Values[ index ] |= uint32(uint32(value) << (offset * 8));
+        m_uint32Values[index] &= ~uint32(uint32(0xFF) << (offset * 8));
+        m_uint32Values[index] |= uint32(uint32(value) << (offset * 8));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -885,10 +882,11 @@ void Object::SetUInt16Value( uint16 index, uint8 offset, uint16 value )
         return;
     }
 
-    if (uint16(m_uint32Values[ index ] >> (offset * 16)) != value)
+    if (uint16(m_uint32Values[index] >> (offset * 16)) != value)
     {
-        m_uint32Values[ index ] &= ~uint32(uint32(0xFFFF) << (offset * 16));
-        m_uint32Values[ index ] |= uint32(uint32(value) << (offset * 16));
+        m_uint32Values[index] &= ~uint32(uint32(0xFFFF) << (offset * 16));
+        m_uint32Values[index] |= uint32(uint32(value) << (offset * 16));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -943,26 +941,28 @@ void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
 
 void Object::SetFlag( uint16 index, uint32 newFlag )
 {
-    MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
-    uint32 oldval = m_uint32Values[ index ];
+    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    uint32 oldval = m_uint32Values[index];
     uint32 newval = oldval | newFlag;
 
     if (oldval != newval)
     {
-        m_uint32Values[ index ] = newval;
+        m_uint32Values[index] = newval;
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
 
 void Object::RemoveFlag( uint16 index, uint32 oldFlag )
 {
-    MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
-    uint32 oldval = m_uint32Values[ index ];
+    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    uint32 oldval = m_uint32Values[index];
     uint32 newval = oldval & ~oldFlag;
 
     if (oldval != newval)
     {
-        m_uint32Values[ index ] = newval;
+        m_uint32Values[index] = newval;
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -977,9 +977,10 @@ void Object::SetByteFlag( uint16 index, uint8 offset, uint8 newFlag )
         return;
     }
 
-    if(!(uint8(m_uint32Values[ index ] >> (offset * 8)) & newFlag))
+    if (!(uint8(m_uint32Values[index] >> (offset * 8)) & newFlag))
     {
-        m_uint32Values[ index ] |= uint32(uint32(newFlag) << (offset * 8));
+        m_uint32Values[index] |= uint32(uint32(newFlag) << (offset * 8));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -994,9 +995,10 @@ void Object::RemoveByteFlag( uint16 index, uint8 offset, uint8 oldFlag )
         return;
     }
 
-    if (uint8(m_uint32Values[ index ] >> (offset * 8)) & oldFlag)
+    if (uint8(m_uint32Values[index] >> (offset * 8)) & oldFlag)
     {
-        m_uint32Values[ index ] &= ~uint32(uint32(oldFlag) << (offset * 8));
+        m_uint32Values[index] &= ~uint32(uint32(oldFlag) << (offset * 8));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -1008,6 +1010,7 @@ void Object::SetShortFlag(uint16 index, bool highpart, uint16 newFlag)
     if (!(uint16(m_uint32Values[index] >> (highpart ? 16 : 0)) & newFlag))
     {
         m_uint32Values[index] |= uint32(uint32(newFlag) << (highpart ? 16 : 0));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -1019,6 +1022,7 @@ void Object::RemoveShortFlag(uint16 index, bool highpart, uint16 oldFlag)
     if (uint16(m_uint32Values[index] >> (highpart ? 16 : 0)) & oldFlag)
     {
         m_uint32Values[index] &= ~uint32(uint32(oldFlag) << (highpart ? 16 : 0));
+        m_changedValues[index] = true;
         MarkForClientUpdate();
     }
 }
@@ -1081,10 +1085,14 @@ void Object::MarkForClientUpdate()
 }
 
 WorldObject::WorldObject()
-    : m_groupLootTimer(0), loot(this), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL),
-    m_currMap(NULL), m_mapId(0), m_InstanceId(0), m_phaseMask(PHASEMASK_NORMAL), m_viewPoint(*this), m_isActiveObject(false),
-    m_LastUpdateTime(WorldTimer::getMSTime())
+    : loot(this), m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL), movespline(new Movement::MoveSpline()),
+    m_currMap(NULL), m_position(WorldLocation()), m_viewPoint(*this), m_isActiveObject(false), m_LastUpdateTime(WorldTimer::getMSTime())
 {
+}
+
+WorldObject::~WorldObject()
+{
+    delete movespline;
 }
 
 void WorldObject::CleanupsBeforeDelete()
@@ -1096,7 +1104,7 @@ void WorldObject::CleanupsBeforeDelete()
 void WorldObject::_Create(ObjectGuid guid, uint32 phaseMask)
 {
     Object::_Create(guid);
-    m_phaseMask = phaseMask;
+    SetPhaseMask(phaseMask, false);
 }
 
 void WorldObject::AddToWorld()
@@ -1130,6 +1138,22 @@ void WorldObject::RemoveFromWorld(bool remove)
 ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
 {
     return GetMap() ? GetMap()->GetLock(_lockType) : sWorld.GetLock(_lockType);
+}
+
+void WorldObject::Relocate(WorldLocation const& location)
+{
+    bool locationChanged    = !bool(location == m_position);
+    bool orientationChanged = bool(fabs(location.o - m_position.o) > M_NULL_F);
+
+    m_position = location;
+
+    if (isType(TYPEMASK_UNIT))
+    {
+        if (locationChanged)
+            ((Unit*)this)->m_movementInfo.ChangePosition(m_position.x, m_position.y, m_position.z, m_position.o);
+        else if (orientationChanged)
+            ((Unit*)this)->m_movementInfo.ChangeOrientation(m_position.o);
+    }
 }
 
 void WorldObject::Relocate(float x, float y, float z, float orientation)
@@ -1181,43 +1205,38 @@ InstanceData* WorldObject::GetInstanceData() const
     return GetMap()->GetInstanceData();
 }
 
-                                                            //slow
 float WorldObject::GetDistance(const WorldObject* obj) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float dz = GetPositionZ() - obj->GetPositionZ();
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy) + (dz*dz)) - sizefactor;
-    return ( dist > 0 ? dist : 0);
+    float dist = GetDistance(obj->GetPosition()) - sizefactor;
+    return ( dist > M_NULL_F ? dist : 0.0f);
+}
+
+float WorldObject::GetDistance(WorldLocation const& loc) const
+{
+    float dist = GetPosition().GetDistance(loc) - GetObjectBoundingRadius();
+    return (dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistance2d(float x, float y) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
     float sizefactor = GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy)) - sizefactor;
-    return ( dist > 0 ? dist : 0);
+    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ())) - sizefactor;
+    return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistance(float x, float y, float z) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
     float sizefactor = GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy) + (dz*dz)) - sizefactor;
-    return ( dist > 0 ? dist : 0);
+    float dist = GetPosition().GetDistance(Location(x, y, z)) - sizefactor;
+    return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistance2d(const WorldObject* obj) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy)) - sizefactor;
-    return ( dist > 0 ? dist : 0);
+    float dist = GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ())) - sizefactor;
+    return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistanceZ(const WorldObject* obj) const
@@ -1225,48 +1244,38 @@ float WorldObject::GetDistanceZ(const WorldObject* obj) const
     float dz = fabs(GetPositionZ() - obj->GetPositionZ());
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
     float dist = dz - sizefactor;
-    return ( dist > 0 ? dist : 0);
+    return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 bool WorldObject::IsWithinDist3d(float x, float y, float z, float dist2compare) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
-    float distsq = dx*dx + dy*dy + dz*dz;
-
     float sizefactor = GetObjectBoundingRadius();
+    float dist = GetPosition().GetDistance(Location(x, y, z));
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsWithinDist2d(float x, float y, float dist2compare) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float distsq = dx*dx + dy*dy;
-
+    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ()));
     float sizefactor = GetObjectBoundingRadius();
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::_IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float distsq = dx*dx + dy*dy;
-    if (is3D)
-    {
-        float dz = GetPositionZ() - obj->GetPositionZ();
-        distsq += dz*dz;
-    }
+
+    float dist = is3D ?
+        GetPosition().GetDistance(obj->GetPosition()) :
+        GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ()));
+
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
@@ -1288,91 +1297,71 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 
 bool WorldObject::GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D /* = true */) const
 {
-    float dx1 = GetPositionX() - obj1->GetPositionX();
-    float dy1 = GetPositionY() - obj1->GetPositionY();
-    float distsq1 = dx1*dx1 + dy1*dy1;
-    if (is3D)
-    {
-        float dz1 = GetPositionZ() - obj1->GetPositionZ();
-        distsq1 += dz1*dz1;
-    }
+    float dist1 = is3D ?
+        GetPosition().GetDistance(obj1->GetPosition()) :
+        GetPosition().GetDistance(Location(obj1->GetPositionX(), obj1->GetPositionY(), GetPositionZ()));
 
-    float dx2 = GetPositionX() - obj2->GetPositionX();
-    float dy2 = GetPositionY() - obj2->GetPositionY();
-    float distsq2 = dx2*dx2 + dy2*dy2;
-    if (is3D)
-    {
-        float dz2 = GetPositionZ() - obj2->GetPositionZ();
-        distsq2 += dz2*dz2;
-    }
+    float dist2 = is3D ?
+        GetPosition().GetDistance(obj2->GetPosition()) :
+        GetPosition().GetDistance(Location(obj2->GetPositionX(), obj2->GetPositionY(), GetPositionZ()));
 
-    return distsq1 < distsq2;
+    return dist1 < dist2;
 }
 
 bool WorldObject::IsInRange(WorldObject const* obj, float minRange, float maxRange, bool is3D /* = true */) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float distsq = dx*dx + dy*dy;
-    if (is3D)
-    {
-        float dz = GetPositionZ() - obj->GetPositionZ();
-        distsq += dz*dz;
-    }
+    float dist = is3D ?
+        GetPosition().GetDistance(obj->GetPosition()) :
+        GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ()));
 
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
 
     // check only for real range
-    if (minRange > 0.0f)
+    if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInRange2d(float x, float y, float minRange, float maxRange) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float distsq = dx*dx + dy*dy;
+    float dist =  GetPosition().GetDistance(Location(x, y, GetPositionZ()));
 
     float sizefactor = GetObjectBoundingRadius();
 
     // check only for real range
-    if (minRange > 0.0f)
+    if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInRange3d(float x, float y, float z, float minRange, float maxRange) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
-    float distsq = dx*dx + dy*dy + dz*dz;
 
+    float dist = GetPosition().GetDistance(Location(x, y, z));
     float sizefactor = GetObjectBoundingRadius();
 
     // check only for real range
-    if (minRange > 0.0f)
+    if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInBetween(const WorldObject *obj1, const WorldObject *obj2, float size) const
@@ -1462,7 +1451,7 @@ bool WorldObject::isInBack(WorldObject const* target, float distance, float arc)
 
 void WorldObject::GetRandomPoint( float x, float y, float z, float distance, float &rand_x, float &rand_y, float &rand_z) const
 {
-    if (distance == 0)
+    if (fabs(distance) < M_NULL_F)
     {
         rand_x = x;
         rand_y = y;
@@ -1747,8 +1736,8 @@ void WorldObject::SetMap(Map * map)
     MANGOS_ASSERT(map);
     m_currMap = map;
     //lets save current map's Id/instanceId
-    m_mapId = map->GetId();
-    m_InstanceId = map->GetInstanceId();
+    m_position.SetMapId(map->GetId());
+    m_position.SetInstanceId(map->GetInstanceId());
 }
 
 TerrainInfo const* WorldObject::GetTerrain() const
@@ -2032,7 +2021,7 @@ void WorldObject::GetNearPoint(WorldObject const* searcher, float &x, float &y, 
 
 void WorldObject::SetPhaseMask(uint32 newPhaseMask, bool update)
 {
-    m_phaseMask = newPhaseMask;
+    m_position.SetPhaseMask(newPhaseMask);
 
     if (update && IsInWorld())
         UpdateVisibilityAndView();
@@ -2282,9 +2271,10 @@ void WorldObject::SetLootRecipient(Unit *unit)
 // Frozen Mod
 void Object::ForceValuesUpdateAtIndex(uint16 index)
 {
-    MANGOS_ASSERT( index < m_valuesCount || PrintIndexError( index, true ) );
+    MANGOS_ASSERT( index < m_valuesCount || PrintIndexError(index, true));
 
-    m_uint32Values_mirror[index] = m_uint32Values[index] + 1; // makes server think the field changed
+    m_changedValues[index] = true; // makes server think the field changed
+
     MarkForClientUpdate();
 }
 // Frozen Mod

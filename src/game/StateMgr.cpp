@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2012 /dev/rsa for MaNGOS <http://getmangos.com/>
+ * Copyright (C) 2012-2013 /dev/rsa for MangosR2 <http://github.com/mangosR2>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,6 @@ public:
         if (!target)
             return;
 
-        target->StopMoving();
         target->addUnitState(UNIT_STAT_STUNNED);
         target->SetTargetGuid(ObjectGuid());
 
@@ -194,7 +193,7 @@ class TaxiState : public FlightPathMovementGenerator
 {
 public:
     TaxiState(uint32 mountDisplayId, uint32 path, uint32 startNode = 0) :
-        m_displayId(mountDisplayId), FlightPathMovementGenerator(sTaxiPathNodesByPath[path], startNode), m_previewDisplayId(0)
+        FlightPathMovementGenerator(sTaxiPathNodesByPath[path], startNode), m_displayId(mountDisplayId), m_previewDisplayId(0)
     {
     };
 

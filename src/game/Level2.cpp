@@ -1976,8 +1976,11 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
             const_cast<CreatureData*>(data)->posZ = z;
             const_cast<CreatureData*>(data)->orientation = o;
         }
+
+        pCreature->SetRespawnCoord(x, y, z, o);
         pCreature->GetMap()->Relocation(pCreature, x, y, z, o);
         pCreature->GetMotionMaster()->Initialize();
+
         if (pCreature->isAlive())                           // dead creature will reset movement generator at respawn
         {
             pCreature->SetDeathState(JUST_DIED);
@@ -5691,7 +5694,7 @@ bool ChatHandler::HandleWorldStateListCommand(char* args)
     for (uint8 i = 0; i < wsSet->count(); ++i)
     {
         WorldState* ws = (*wsSet)[i];
-		PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
+        PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
     delete wsSet;
     return true;

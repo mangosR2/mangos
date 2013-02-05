@@ -50,7 +50,7 @@ void FleeingMovementGenerator<T>::_setTargetLocation(T& owner)
         return;
     }
 
-    Movement::MoveSplineInit init(owner);
+    Movement::MoveSplineInit<Unit*> init(owner);
     init.MovebyPath(path.getPath());
     init.SetWalk(false);
     int32 traveltime = init.Launch();

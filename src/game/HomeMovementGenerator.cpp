@@ -38,7 +38,7 @@ void HomeMovementGenerator<Creature>::_setTargetLocation(Creature& owner)
     if (owner.hasUnitState(UNIT_STAT_NOT_MOVE))
         return;
 
-    Movement::MoveSplineInit init(owner);
+    Movement::MoveSplineInit<Unit*> init(owner);
     float x, y, z, o;
     // at apply we can select more nice return points base at current movegen
     if (owner.GetMotionMaster()->empty() || !owner.GetMotionMaster()->CurrentMovementGenerator()->GetResetPosition(owner, x, y, z))

@@ -551,7 +551,7 @@ void WorldSession::LogoutPlayer(bool Save)
 
         ///- Broadcast a logout message to the player's friends
         sSocialMgr.SendFriendStatus(GetPlayer(), FRIEND_OFFLINE, GetPlayer()->GetObjectGuid(), true);
-        sSocialMgr.RemovePlayerSocial (GetPlayer()->GetGUIDLow ());
+        sSocialMgr.RemovePlayerSocial(GetPlayer()->GetObjectGuid());
 
         // Playerbot - remember player GUID for update SQL below
         uint32 guid = GetPlayer()->GetGUIDLow();

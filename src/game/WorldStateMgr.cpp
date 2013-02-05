@@ -1279,7 +1279,7 @@ void WorldStateMgr::AddWorldStateFor(Player* player, uint32 stateId, uint32 inst
                     for (uint8 i = 0; i < stateSet->count(); ++i)
                     {
                         WorldState* ws = (*stateSet)[i];
-						ws->AddClient(player);
+                        ws->AddClient(player);
                         player->_SendUpdateWorldState(ws->GetId(), ws->GetValue());
                         DEBUG_LOG("WorldStateMgr::AddWorldStateFor  send linked state %u value %u for %s",
                             ws->GetId(), ws->GetValue(), player->GetGuidStr().c_str());
@@ -1314,7 +1314,7 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId, uint32 i
             }
         }
 
-		const_cast<WorldState*>(state)->RemoveClient(player);
+        const_cast<WorldState*>(state)->RemoveClient(player);
         player->_SendUpdateWorldState(stateId, WORLD_STATE_REMOVE);
         DEBUG_LOG("WorldStateMgr::RemoveWorldStateFor remove main state %u (value %u) for %s",
             stateId, WORLD_STATE_REMOVE,
@@ -1439,11 +1439,11 @@ WorldStateSet* WorldStateMgr::GetInitWorldStates(uint32 mapId, uint32 instanceId
             if (state->HasDownLink())
             {
                 if (WorldStateSet* linkedStateSet = GetDownLinkedWorldStates(state))
-				{
-					for (uint8 i = 0; i < linkedStateSet->count(); ++i)
+                {
+                    for (uint8 i = 0; i < linkedStateSet->count(); ++i)
                         AddToWorldStateSet(&stateSet, (*linkedStateSet)[i]);
                     delete linkedStateSet;
-				}
+                }
             }
             AddToWorldStateSet(&stateSet, &itr->second);
         }

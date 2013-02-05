@@ -466,41 +466,7 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
 
     m_needAliveTargetMask = 0;
 
-    // determine reflection
-    m_canReflect = false;
-
     m_spellFlags = SPELL_FLAG_NORMAL;
-
-//    if(m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_CANT_REFLECTED))
-
-    // AoE spells, spells with non-magic DmgClass or SchoolMask or with SPELL_ATTR_EX2_CANT_REFLECTED cannot be reflected
-    if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC &&
-        m_spellInfo->SchoolMask != SPELL_SCHOOL_MASK_NORMAL &&
-        !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) &&
-        !IsAreaOfEffectSpell(m_spellInfo))
-    {
-        for(int j = 0; j < MAX_EFFECT_INDEX; ++j)
-        {
-            if (m_spellInfo->Effect[j] == SPELL_EFFECT_NONE)
-                continue;
-
-            if (IsPositiveTarget(m_spellInfo->EffectImplicitTargetA[j], m_spellInfo->EffectImplicitTargetB[j]) && !m_spellInfo->HasAttribute(SPELL_ATTR_EX_NEGATIVE))
-/*            if(!IsPositiveTarget(m_spellInfo->EffectImplicitTargetA[j], m_spellInfo->EffectImplicitTargetB[j]))
-                m_canReflect = true;
-            else
-                m_canReflect = m_spellInfo->HasAttribute(SPELL_ATTR_EX_NEGATIVE);
-
-            if(m_canReflect)
-*/
-                continue;
-            else
-                m_canReflect = true;
-
-            if (m_canReflect)
-                break;
-        }
-    }
-
     CleanupTargetList();
 }
 
@@ -960,7 +926,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     target.processed  = false;                              // Effects not applied on target
 
     // Calculate hit result
-    target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
+    target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo);
 
     // spell fly from visual cast object
     WorldObject* affectiveObject = GetAffectiveCasterObject();
@@ -1017,7 +983,7 @@ this piece of code make delayed stun and other effects for charge-like spells. s
     if (target.missCondition == SPELL_MISS_REFLECT)
     {
         // Calculate reflected spell result on caster
-        target.reflectResult =  m_caster->SpellHitResult(m_caster, m_spellInfo, m_canReflect);
+        target.reflectResult =  m_caster->SpellHitResult(m_caster, m_spellInfo);
 
         if (target.reflectResult == SPELL_MISS_REFLECT)     // Impossible reflect again, so simply deflect spell
             target.reflectResult = SPELL_MISS_PARRY;
@@ -2269,6 +2235,9 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
                     for(SpellScriptTarget::const_iterator i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
                     {
+                        if (!i_spellST->second.CanHitWithSpellEffect(effIndex))
+                            continue;
+
                         // only creature entries supported for this target type
                         if (i_spellST->second.type == SPELL_TARGET_TYPE_GAMEOBJECT)
                             continue;
@@ -2318,6 +2287,8 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
                     for(SpellScriptTarget::const_iterator i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
                     {
+                        if (!i_spellST->second.CanHitWithSpellEffect(effIndex))
+                            continue;
                         // only creature entries supported for this target type
                         if (i_spellST->second.type == SPELL_TARGET_TYPE_GAMEOBJECT)
                             continue;
@@ -2384,6 +2355,9 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 for(SpellScriptTarget::const_iterator i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
                 {
+                    if (!i_spellST->second.CanHitWithSpellEffect(effIndex))
+                        continue;
+
                     if (i_spellST->second.type == SPELL_TARGET_TYPE_GAMEOBJECT)
                     {
                         // search all GO's with entry, within range of m_destN
@@ -3971,24 +3945,22 @@ void Spell::_handle_finish_phase()
 
 void Spell::SendSpellCooldown()
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    Player* _player = (Player*)m_caster;
-
-    // mana/health/etc potions, disabled by client (until combat out as declarate)
-    if (m_CastItem && m_CastItem->IsPotion())
+    if (m_caster->GetTypeId() == TYPEID_PLAYER)
     {
-        // need in some way provided data for Spell::finish SendCooldownEvent
-        _player->SetLastPotionId(m_CastItem->GetEntry());
-        return;
+        // mana/health/etc potions, disabled by client (until combat out as declarate)
+        if (m_CastItem && m_CastItem->IsPotion())
+        {
+            // need in some way provided data for Spell::finish SendCooldownEvent
+            ((Player*)m_caster)->SetLastPotionId(m_CastItem->GetEntry());
+            return;
+        }
     }
 
     // (1) have infinity cooldown but set at aura apply, (2) passive cooldown at triggering
     if (m_spellInfo->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE) || m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE))
         return;
 
-    _player->AddSpellAndCategoryCooldowns(m_spellInfo, m_CastItem ? m_CastItem->GetEntry() : 0);
+    m_caster->AddSpellAndCategoryCooldowns(m_spellInfo, m_CastItem ? m_CastItem->GetEntry() : 0);
 }
 
 void Spell::update(uint32 difftime)
@@ -5317,8 +5289,7 @@ Unit* Spell::GetPrefilledUnitTargetOrUnitTarget(SpellEffectIndex effIndex) const
 SpellCastResult Spell::CheckCast(bool strict)
 {
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
-    if (m_caster->GetTypeId()==TYPEID_PLAYER && !m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
-        ((Player*)m_caster)->HasSpellCooldown(m_spellInfo->Id))
+    if (!m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) && m_caster->HasSpellCooldown(m_spellInfo))
     {
         if (m_triggeredByAuraSpell)
             return SPELL_FAILED_DONT_REPORT;
@@ -5474,8 +5445,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                 !m_caster->IsIgnoreUnitState(m_spellInfo, m_spellInfo->TargetAuraState == AURA_STATE_FROZEN ? IGNORE_UNIT_TARGET_NON_FROZEN : IGNORE_UNIT_TARGET_STATE))
                 return SPELL_FAILED_TARGET_AURASTATE;
 
-            // Not allow casting on flying player
-            if (target->IsTaxiFlying())
+            // Not allow direct casting on flying player (enable only server-side casts)
+            if (target->IsTaxiFlying() && !m_spellInfo->HasAttribute(SPELL_ATTR_HIDE_IN_COMBAT_LOG))
                 return SPELL_FAILED_BAD_TARGETS;
 
             if(!m_IsTriggeredSpell && !target->IsVisibleTargetForSpell(m_caster, m_spellInfo))
@@ -5778,6 +5749,9 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 for(SpellScriptTarget::const_iterator i_spellST = bounds.first; i_spellST != bounds.second; ++i_spellST)
                 {
+                    if (!i_spellST->second.CanHitWithSpellEffect(SpellEffectIndex(j)))
+                        continue;
+
                     switch(i_spellST->second.type)
                     {
                         case SPELL_TARGET_TYPE_GAMEOBJECT:
@@ -5860,6 +5834,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                             break;
                         }
                     }
+
+                    if (creatureScriptTarget || goScriptTarget)
+                        break;
                 }
 
                 if (creatureScriptTarget)
@@ -6778,7 +6755,7 @@ SpellCastResult Spell::CheckPetCast(Unit* target)
             }
         }
                                                             //cooldown
-        if(((Creature*)m_caster)->HasSpellCooldown(m_spellInfo->Id))
+        if(m_caster->HasSpellCooldown(m_spellInfo))
             return SPELL_FAILED_NOT_READY;
     }
 
@@ -8468,8 +8445,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             if (targetUnitMap.empty())
             {
                 // no valid targets, clear cooldown at fail
-                if (m_caster->GetTypeId() == TYPEID_PLAYER)
-                    ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->Id, true);
+                m_caster->RemoveSpellCooldown(m_spellInfo->Id, true);
                 SendCastResult(SPELL_FAILED_NO_VALID_TARGETS);
                 finish(false);
             }
@@ -8511,8 +8487,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
             if (targetUnitMap.empty())
             {
                 // no valid targets, clear cooldown at fail
-                if (m_caster->GetTypeId() == TYPEID_PLAYER)
-                    ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->Id, true);
+                m_caster->RemoveSpellCooldown(m_spellInfo->Id, true);
                 SendCastResult(SPELL_FAILED_NO_VALID_TARGETS);
                 finish(false);
             }
@@ -8705,6 +8680,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 59796:
         case 63023: // Searing Light (normal&heroic) (XT-002 in Ulduar)
         case 65120:
+        case 72456: // Mutated Slime (ICC - Professor Putricide)
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_HOSTILE);
             break;

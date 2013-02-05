@@ -1159,8 +1159,7 @@ uint32 Pet::GetCurrentFoodBenefitLevel(uint32 itemlevel)
 
 void Pet::_LoadSpellCooldowns()
 {
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
+    RemoveAllSpellCooldown();
 
     QueryResult *result = CharacterDatabase.PQuery("SELECT spell,time FROM pet_spell_cooldown WHERE guid = '%u'",m_charmInfo->GetPetNumber());
 
@@ -1192,15 +1191,15 @@ void Pet::_LoadSpellCooldowns()
             data << uint32(spell_id);
             data << uint32(uint32(db_time-curTime)*IN_MILLISECONDS);
 
-            _AddCreatureSpellCooldown(spell_id,db_time);
+            AddSpellCooldown(spell_id, 0, db_time);
 
             DEBUG_LOG("Pet (Number: %u) spell %u cooldown loaded (%u secs).", m_charmInfo->GetPetNumber(), spell_id, uint32(db_time-curTime));
         }
-        while( result->NextRow() );
+        while (result->NextRow());
 
         delete result;
 
-        if(!m_CreatureSpellCooldowns.empty() && GetOwner())
+        if(!GetSpellCooldownMap()->empty() && GetOwner())
         {
             ((Player*)GetOwner())->GetSession()->SendPacket(&data);
         }
@@ -1215,19 +1214,12 @@ void Pet::_SaveSpellCooldowns()
     SqlStatement stmt = CharacterDatabase.CreateStatement(delSpellCD, "DELETE FROM pet_spell_cooldown WHERE guid = ?");
     stmt.PExecute(m_charmInfo->GetPetNumber());
 
-    time_t curTime = time(NULL);
-
     // remove oudated and save active
-    for(CreatureSpellCooldowns::iterator itr = m_CreatureSpellCooldowns.begin();itr != m_CreatureSpellCooldowns.end();)
+    RemoveOutdatedSpellCooldowns();
+    for(SpellCooldowns::const_iterator itr = GetSpellCooldownMap()->begin();itr != GetSpellCooldownMap()->end(); ++itr)
     {
-        if(itr->second <= curTime)
-            m_CreatureSpellCooldowns.erase(itr++);
-        else
-        {
-            stmt = CharacterDatabase.CreateStatement(insSpellCD, "INSERT INTO pet_spell_cooldown (guid,spell,time) VALUES (?, ?, ?)");
-            stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint64(itr->second));
-            ++itr;
-        }
+        stmt = CharacterDatabase.CreateStatement(insSpellCD, "INSERT INTO pet_spell_cooldown (guid,spell,time) VALUES (?, ?, ?)");
+        stmt.PExecute(m_charmInfo->GetPetNumber(), itr->first, uint64(itr->second.end));
     }
 }
 

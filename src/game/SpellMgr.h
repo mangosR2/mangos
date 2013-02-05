@@ -324,6 +324,10 @@ inline bool IsCasterSourceTarget(uint32 target)
         case TARGET_DIRECTLY_FORWARD:
         case TARGET_NONCOMBAT_PET:
         case TARGET_IN_FRONT_OF_CASTER_30:
+        case TARGET_RANDOM_NEARBY_LOC:
+        case TARGET_RANDOM_CIRCUMFERENCE_POINT:
+        case TARGET_DEST_RADIUS:
+        case TARGET_RANDOM_NEARBY_DEST:
             return true;
         default:
             break;
@@ -925,9 +929,15 @@ enum SpellTargetType
 
 struct SpellTargetEntry
 {
-    SpellTargetEntry(SpellTargetType type_,uint32 targetEntry_) : type(type_), targetEntry(targetEntry_) {}
+    SpellTargetEntry(SpellTargetType type_,uint32 targetEntry_, uint32 invEffectMask_ = 0) : type(type_), targetEntry(targetEntry_), invEffectMask(invEffectMask_) {}
     SpellTargetType type;
     uint32 targetEntry;
+    uint32 invEffectMask;
+
+    bool CanHitWithSpellEffect(SpellEffectIndex effect) const
+    {
+        return invEffectMask ? !(invEffectMask & 1 << effect) :  true;
+    }
 };
 
 typedef UNORDERED_MULTIMAP<uint32,SpellTargetEntry> SpellScriptTarget;
@@ -1337,6 +1347,7 @@ class SpellMgr
         static bool IsGroupBuff(SpellEntry const *spellInfo);
         static bool IsStackableSpellAuraHolder(SpellEntry const *spellInfo);
         static bool IsTargetMatchedWithCreatureType(SpellEntry const* spellInfo, Unit* pTarget);
+        static bool IsReflectableSpell(SpellEntry const* spellInfo);
         static uint32 GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit const* caster);
         static float GetSpellRadiusWithCustom(SpellEntry const* spellInfo, Unit const* caster, SpellEffectIndex effIndex);
         static uint32 GetSpellTargetsForChainWithCustom(SpellEntry const* spellInfo, Unit const* caster, SpellEffectIndex effIndex);

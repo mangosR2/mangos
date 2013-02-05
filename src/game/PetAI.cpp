@@ -455,7 +455,7 @@ void PetAI::UpdateAI(const uint32 diff)
             m_creature->InterruptNonMeleeSpells(false);
             _stopAttack();
             return;
-         }
+        }
         else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && IsInCombat() && m_creature->getVictim() && m_creature->getVictim()->IsCrowdControlled())  // Stop attack if target under CC effect
         {
             m_savedTargetGuid = m_creature->getVictim()->GetObjectGuid();
@@ -565,7 +565,7 @@ void PetAI::UpdateAI(const uint32 diff)
             if (m_creature->GetCharmInfo() && m_creature->GetCharmInfo()->GetGlobalCooldownMgr().HasGlobalCooldown(spellInfo))
                 continue;
 
-            if (m_creature->HasSpellCooldown(spellInfo->Id))
+            if (m_creature->HasSpellCooldown(spellInfo))
                 continue;
 
             // ignore some combinations of combat state and combat/noncombat spells
@@ -780,7 +780,7 @@ void PetAI::UpdateAI(const uint32 diff)
 
             if (b_castOk)
             {
-                m_creature->AddCreatureSpellCooldown(spellID);
+                m_creature->AddSpellAndCategoryCooldowns(spellInfo);
                 if (m_creature->IsPet())
                 {
                     if(((Pet*)m_creature)->getPetType() == SUMMON_PET && (urand(0, 100) < 10))
@@ -880,7 +880,7 @@ uint32 PetAI::GetSpellType(PetAutoSpellType type)
         if (m_creature->GetCharmInfo() && m_creature->GetCharmInfo()->GetGlobalCooldownMgr().HasGlobalCooldown(spellInfo))
             continue;
 
-        if (m_creature->HasSpellCooldown(_spellID))
+        if (m_creature->HasSpellCooldown(spellInfo))
             continue;
 
         if (IsInCombat() && IsNonCombatSpell(spellInfo))

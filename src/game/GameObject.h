@@ -621,7 +621,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 {
     public:
         explicit GameObject();
-        ~GameObject();
+        virtual ~GameObject();
 
         void AddToWorld();
         virtual void RemoveFromWorld(bool remove) override;
@@ -777,6 +777,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void SetLinkedWorldState(uint32 value);
         Team GetTeam() const;
         bool SetTeam(Team team);
+
+        void UpdateSplineMovement(uint32 t_diff);
 
         GameObjectModel* m_model;
 

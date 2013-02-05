@@ -47,7 +47,8 @@ enum CanCastResult
     CAST_FAIL_TOO_CLOSE         = 4,
     CAST_FAIL_POWER             = 5,
     CAST_FAIL_STATE             = 6,
-    CAST_FAIL_TARGET_AURA       = 7
+    CAST_FAIL_TARGET_AURA       = 7,
+    CAST_FAIL_SPELL_COOLDOWN    = 8,
 };
 
 enum CastFlags

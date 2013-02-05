@@ -1524,7 +1524,7 @@ bool Item::IsEligibleForSoulboundTrade(AllowedLooterSet* allowedLooters) const
     if (!proto || (proto->Flags & ITEM_FLAG_LOOTABLE) || (proto->GetMaxStackSize() != 1) || !allowedLooters || !IsSoulBound())
         return false;
 
-	uint32 ownerGuid = GetOwnerGuid().GetCounter();
+    uint32 ownerGuid = GetOwnerGuid().GetCounter();
     for (AllowedLooterSet::const_iterator itr = allowedLooters->begin(); itr != allowedLooters->end(); ++itr)
     {
         if (*itr == ownerGuid) // own
@@ -1533,7 +1533,7 @@ bool Item::IsEligibleForSoulboundTrade(AllowedLooterSet* allowedLooters) const
         return true;
     }
 
-	return false;
+    return false;
 }
 
 void Item::SetSoulboundTradeable(Player* owner, AllowedLooterSet* allowedLooters, bool load/*=false*/)

@@ -103,9 +103,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
     {
         if (fabs(m_dist) < M_NULL_F)
         {
-            m_pos.x = m_closeObject->GetPositionX();
-            m_pos.y = m_closeObject->GetPositionY();
-            m_pos.z = m_closeObject->GetPositionZ();
+            m_pos = m_closeObject->GetPosition();
         }
         else if (checkLOS)
         {
@@ -123,7 +121,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
 
 bool CreatureCreatePos::Relocate(Creature* cr) const
 {
-    cr->Relocate(m_pos.x, m_pos.y, m_pos.z, m_pos.o);
+    cr->Relocate(m_pos);
 
     if (!cr->IsPositionValid())
     {
@@ -146,9 +144,6 @@ m_creatureInfo(NULL)
 {
     m_regenTimer = 200;
     m_valuesCount = UNIT_END;
-
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
 
     SetWalk(true, true);
 }
@@ -1447,6 +1442,7 @@ void Creature::DeleteFromDB(uint32 lowguid, CreatureData const* data)
     WorldDatabase.PExecuteLog("DELETE FROM game_event_creature WHERE guid=%u", lowguid);
     WorldDatabase.PExecuteLog("DELETE FROM game_event_creature_data WHERE guid=%u", lowguid);
     WorldDatabase.PExecuteLog("DELETE FROM creature_battleground WHERE guid=%u", lowguid);
+    WorldDatabase.PExecuteLog("DELETE FROM creature_linking WHERE guid=%u OR master_guid=%u", lowguid, lowguid);
     WorldDatabase.CommitTransaction();
 }
 
@@ -2142,50 +2138,6 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
     }
 
     return NULL;
-}
-
-void Creature::_AddCreatureSpellCooldown(uint32 spell_id, time_t end_time)
-{
-    m_CreatureSpellCooldowns[spell_id] = end_time;
-}
-
-void Creature::_AddCreatureCategoryCooldown(uint32 category, time_t apply_time)
-{
-    m_CreatureCategoryCooldowns[category] = apply_time;
-}
-
-void Creature::AddCreatureSpellCooldown(uint32 spellid)
-{
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid);
-    if (!spellInfo)
-        return;
-
-    uint32 cooldown = GetSpellRecoveryTime(spellInfo);
-
-    if (Player* modOwner = GetSpellModOwner())
-        modOwner->ApplySpellMod(spellid, SPELLMOD_COOLDOWN, cooldown);
-
-    if (cooldown)
-        _AddCreatureSpellCooldown(spellid, time(NULL) + cooldown / IN_MILLISECONDS);
-
-    if (spellInfo->Category)
-        _AddCreatureCategoryCooldown(spellInfo->Category, time(NULL));
-}
-
-bool Creature::HasCategoryCooldown(uint32 spell_id) const
-{
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
-    if (!spellInfo)
-        return false;
-
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
-    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(NULL));
-}
-
-bool Creature::HasSpellCooldown(uint32 spell_id) const
-{
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(NULL)) || HasCategoryCooldown(spell_id);
 }
 
 uint8 Creature::getRace() const

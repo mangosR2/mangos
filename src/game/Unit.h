@@ -862,10 +862,6 @@ inline ByteBuffer& operator>> (ByteBuffer& buf, MovementInfo& mi)
     return buf;
 }
 
-namespace Movement{
-    class MoveSpline;
-}
-
 enum DiminishingLevels
 {
     DIMINISHING_LEVEL_1             = 0,
@@ -1253,6 +1249,14 @@ enum IgnoreUnitState
     IGNORE_UNIT_TARGET_NON_FROZEN = 126,                    // ignore absent of frozen state
 };
 
+struct SpellCooldown
+{
+    time_t end;
+    uint16 itemid;
+};
+
+typedef std::map<uint32, SpellCooldown> SpellCooldowns;
+
 typedef GuidSet GuardianPetList;
 typedef GuidSet GroupPetList;
 
@@ -1492,7 +1496,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         float  MeleeSpellMissChance(Unit* pVictim, WeaponAttackType attType, int32 skillDiff, SpellEntry const *spell);
         SpellMissInfo MeleeSpellHitResult(Unit* pVictim, SpellEntry const* spell);
         SpellMissInfo MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell);
-        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool canReflect = false);
+        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell);
         SpellMissInfo SpellResistResult(Unit* pVictim, SpellEntry const* spell);
         uint32 CalculateBaseSpellHitChance(Unit* pVictim);
 
@@ -1915,6 +1919,11 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool SelectHostileTarget(bool withEvade = true);
         bool TauntApply(Unit* pVictim, bool isSingleEffect = false);
         void TauntFadeOut(Unit *taunter);
+
+        void FixateTarget(Unit* pVictim);
+        ObjectGuid const& GetFixatedTargetGuid() { return m_fixateTargetGuid; };
+        Unit* GetFixatedTarget();
+
         ThreatManager& getThreatManager() { return m_ThreatManager; }
         ThreatManager const& getThreatManager() const { return m_ThreatManager; }
         void addHatedBy(HostileReference* pHostileReference) { m_HostileRefManager->insertFirst(pHostileReference); };
@@ -1988,6 +1997,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         // at any changes to scale and/or displayId
         void UpdateModelData();
 
+        DynamicObject* GetEffectiveDynObject(uint32 spellId, SpellEffectIndex effIndex, Unit* pTarget);
         DynamicObject* GetDynObject(uint32 spellId, SpellEffectIndex effIndex);
         DynamicObject* GetDynObject(uint32 spellId);
         void AddDynObject(DynamicObject* dynObj);
@@ -2169,7 +2179,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         // Movement info
         MovementInfo m_movementInfo;
-        Movement::MoveSpline * movespline;
 
         // Transports
         Transport* GetTransport() const { return m_transport; }
@@ -2206,6 +2215,21 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         bool IsLinkingEventTrigger() const { return m_isCreatureLinkingTrigger; }
 
+        // Cooldown System
+        static uint32 const infinityCooldownDelay = MONTH;  // used for set "infinity cooldowns" for spells and check
+        static uint32 const infinityCooldownDelayCheck = MONTH/2;
+        bool HasSpellCooldown(SpellEntry const* spellInfo) const;
+        bool HasSpellCooldown(uint32 spellId) const;
+        time_t GetSpellCooldownDelay(SpellEntry const* spellInfo) const;
+        SpellCooldowns const* GetSpellCooldownMap() const { return &m_spellCooldowns; }
+
+        void RemoveOutdatedSpellCooldowns();
+
+        void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time);
+        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId = 0, bool infinityCooldown = false );
+        void RemoveSpellCooldown(uint32 spell_id, bool update = false);
+        void RemoveAllSpellCooldown();
+        void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
     protected:
         explicit Unit ();
 
@@ -2279,7 +2303,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         Unit* _GetTotem(TotemSlot slot) const;              // for templated function without include need
         Pet* _GetPet(ObjectGuid guid) const;                // for templated function without include need
 
-        void JustKilledCreature(Creature* victim);          // Wrapper called by DealDamage when a creature is killed
+        // Wrapper called by DealDamage when a creature is killed
+        void JustKilledCreature(Creature* victim, Player* responsiblePlayer);
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
@@ -2288,9 +2313,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         uint32 m_castCounter;                               // count casts chain of triggered spells for prevent infinity cast crashes
 
         UnitVisibility m_Visibility;
-        Position m_last_notified_position;
+        WorldLocation m_last_notified_position;
         bool m_AINotifyScheduled;
-        ShortTimeTracker m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units threatening us
@@ -2312,6 +2336,10 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
         UnitStateMgr m_stateMgr;
+
+        ObjectGuid m_fixateTargetGuid;                      //< Stores the Guid of a fixated target
+
+        SpellCooldowns m_spellCooldowns;
 
     private:                                                // Error traps for some wrong args using
         // this will catch and prevent build for any cases when all optional args skipped and instead triggered used non boolean type

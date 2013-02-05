@@ -52,6 +52,8 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
     { "ahbot_buyer",         "LogFilter_AhbotBuyer",         true  },
     { "pathfinding",         "LogFilter_Pathfinding",        true  },
     { "calendar",            "LogFilter_Calendar",           true  },
+    { "map_loading",         "LogFilter_MapLoading",         true  },
+    { "event_ai_dev",        "LogFilter_EventAiDev",         true  },
 };
 
 enum LogType
@@ -66,7 +68,7 @@ const int LogType_count = int(LogError) +1;
 
 Log::Log() :
     raLogfile(NULL), logfile(NULL), gmLogfile(NULL), charLogfile(NULL),
-    dberLogfile(NULL), scriptErrLogFile(NULL), worldLogfile(NULL), m_colored(false), m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(NULL)
+    dberLogfile(NULL), eventAiErLogfile(NULL), scriptErrLogFile(NULL), worldLogfile(NULL), m_colored(false), m_includeTime(false), m_gmlog_per_account(false), m_scriptLibName(NULL)
 {
     Initialize();
 }
@@ -260,10 +262,11 @@ void Log::Initialize()
         }
     }
 
-    charLogfile = openLogFile("CharLogFile","CharLogTimestamp","a");
-    dberLogfile = openLogFile("DBErrorLogFile",NULL,"a");
-    raLogfile = openLogFile("RaLogFile",NULL,"a");
-    worldLogfile = openLogFile("WorldLogFile","WorldLogTimestamp","a");
+    charLogfile = openLogFile("CharLogFile", "CharLogTimestamp", "a");
+    dberLogfile = openLogFile("DBErrorLogFile", NULL, "a");
+    eventAiErLogfile = openLogFile("EventAIErrorLogFile", NULL, "a");
+    raLogfile = openLogFile("RaLogFile", NULL, "a");
+    worldLogfile = openLogFile("WorldLogFile", "WorldLogTimestamp", "a");
 
     ReloadConfigDefaults();
 
@@ -526,7 +529,82 @@ void Log::outErrorDb( const char * err, ... )
     fflush(stderr);
 }
 
-void Log::outBasic( const char * str, ... )
+void Log::outErrorEventAI()
+{
+    if (m_includeTime)
+        outTime();
+
+    fprintf(stderr, "\n");
+
+    if (logfile)
+    {
+        outTimestamp(logfile);
+        fprintf(logfile, "ERROR CreatureEventAI\n");
+        fflush(logfile);
+    }
+
+    if (eventAiErLogfile)
+    {
+        outTimestamp(eventAiErLogfile);
+        fprintf(eventAiErLogfile, "\n");
+        fflush(eventAiErLogfile);
+    }
+
+    fflush(stderr);
+}
+
+void Log::outErrorEventAI(const char* err, ...)
+{
+    if (!err)
+        return;
+
+    if (m_colored)
+        SetColor(false, m_colors[LogError]);
+
+    if (m_includeTime)
+        outTime();
+
+    va_list ap;
+
+    va_start(ap, err);
+    vutf8printf(stderr, err, &ap);
+    va_end(ap);
+
+    if (m_colored)
+        ResetColor(false);
+
+    fprintf(stderr, "\n");
+
+    if (logfile)
+    {
+        outTimestamp(logfile);
+        fprintf(logfile, "ERROR CreatureEventAI: ");
+
+        va_start(ap, err);
+        vfprintf(logfile, err, ap);
+        va_end(ap);
+
+        fprintf(logfile, "\n");
+        fflush(logfile);
+    }
+
+    if (eventAiErLogfile)
+    {
+        outTimestamp(eventAiErLogfile);
+
+        va_list ap;
+        va_start(ap, err);
+        vfprintf(eventAiErLogfile, err, ap);
+        va_end(ap);
+
+        fprintf(eventAiErLogfile, "\n");
+        fflush(eventAiErLogfile);
+    }
+
+    fflush(stderr);
+}
+
+void Log::outBasic(const char* str, ...)
 {
     if (!str)
         return;
