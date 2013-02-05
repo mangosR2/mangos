@@ -26,7 +26,7 @@ namespace ai
                 return ai->GetBot()->GetDistance(obj);
             }
             Unit* target = AI_VALUE(Unit*, qualifier);
-            if (!target)
+            if (!target || !target->IsInWorld())
                 return 0.0f;
 
             return ai->GetBot()->GetDistance(target);

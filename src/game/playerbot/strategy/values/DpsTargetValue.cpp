@@ -14,8 +14,8 @@ public:
         minDpsCount = 0;
     }
 
-protected:
-    virtual void CheckAttacker(Player* player, Unit* creature, ThreatManager* threatManager)
+public:
+    virtual void CheckAttacker(Unit* creature, ThreatManager* threatManager)
     {
         float threat = threatManager->getThreat(ai->GetBot());
         int tankCount, dpsCount;

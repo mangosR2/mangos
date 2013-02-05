@@ -13,13 +13,13 @@ public:
     {
     }
 
-protected:
-    virtual void CheckAttacker(Player* player, Unit* attacker, ThreatManager* threatManager)
+public:
+    virtual void CheckAttacker(Unit* attacker, ThreatManager* threatManager)
     {
-        if (!result || attacker->GetObjectGuid().IsPlayer())
+        if (!result)
         {
-            Player* player = dynamic_cast<Player*>(attacker);
-            if (player && ai->IsOpposing(player))
+            Player* enemy = dynamic_cast<Player*>(attacker);
+            if (enemy && ai->IsOpposing(enemy))
                 result = attacker;
         }
     }

@@ -7,48 +7,18 @@ using namespace ai;
 
 Unit* TargetValue::FindTarget(FindTargetStrategy* strategy)
 {
-
-    Group* group = bot->GetGroup();
-    if (!group)
+    list<ObjectGuid>& attackers = ai->GetAiObjectContext()->GetValue<list<ObjectGuid> >("attackers")->Get();
+    for (list<ObjectGuid>::iterator i = attackers.begin(); i != attackers.end(); ++i)
     {
-        strategy->CheckAttackers(bot);
-        return strategy->GetResult();
-    }
-
-    for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
-    {
-        Player* member = gref->getSource();
-        if (!member || !member->isAlive() || !member->IsWithinLOSInMap(member))
+        Unit* unit = ai->GetUnit(*i);
+        if (!unit)
             continue;
 
-        strategy->CheckAttackers(member);
+        ThreatManager &threatManager = unit->getThreatManager();
+        strategy->CheckAttacker(unit, &threatManager);
     }
 
     return strategy->GetResult();
-}
-
-
-void FindTargetStrategy::CheckAttackers(Player* player)
-{
-    Player* bot = ai->GetBot();
-    for (HostileReference* ref = player->getHostileRefManager().getFirst(); ref; ref = ref->next())
-    {
-        ThreatManager* threatManager = ref->getSource();
-        Unit *attacker = threatManager->getOwner();
-        if (attacker && alreadyChecked.find(attacker) == alreadyChecked.end() &&
-            !attacker->isDead() &&
-            !attacker->IsPolymorphed() &&
-            !attacker->isFrozen() &&
-            !attacker->isCharmed() &&
-            !attacker->isFeared() &&
-            !attacker->hasUnitState(UNIT_STAT_ISOLATED) &&
-            !attacker->IsFriendlyTo(bot) &&
-            bot->IsWithinLOSInMap(attacker))
-        {
-            CheckAttacker(player, attacker, threatManager);
-            alreadyChecked.insert(attacker);
-        }
-    }
 }
 
 void FindTargetStrategy::GetPlayerCount(Unit* creature, int* tankCount, int* dpsCount)
