@@ -33,7 +33,7 @@ echo --------------
 echo Compiler: %compiler%
 echo Install path: %INSTALL_PATH%
 echo Build platform: %BUILD_PLATFORM%
-echo CPU core number(s): %CORE_NUMBER%
+echo CPU core(s) number: %CORE_NUMBER%
 echo.
 echo Windows partition: %win_partition%
 echo Windows platform: %win_platform%
