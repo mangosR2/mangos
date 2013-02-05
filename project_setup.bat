@@ -180,4 +180,9 @@ REM ****************************************************************************
 
 :end
 cd ..
+if exist %INSTALL_PATH%\bin\aiplayerbot.conf.dist.in (
+    del %INSTALL_PATH%\bin\aiplayerbot.conf.dist.in
+)
+copy src\game\playerbot\aiplayerbot.conf.dist.in %INSTALL_PATH%\bin\
+
 pause
