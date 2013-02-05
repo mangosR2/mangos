@@ -83,7 +83,7 @@ bool ConfusedMovementGenerator<T>::Update(T& unit, const uint32& diff)
                 return true;
             }
 
-            Movement::MoveSplineInit init(unit);
+            Movement::MoveSplineInit<Unit*> init(unit);
             init.MovebyPath(path.getPath());
             init.SetWalk(true);
             init.Launch();

@@ -3575,7 +3575,7 @@ void SpellMgr::LoadSpellScriptTarget()
 
     uint32 count = 0;
 
-    QueryResult *result = WorldDatabase.Query("SELECT entry,type,targetEntry FROM spell_script_target");
+    QueryResult *result = WorldDatabase.Query("SELECT entry,type,targetEntry,invertEffectMask FROM spell_script_target");
 
     if (!result)
     {
@@ -3598,6 +3598,7 @@ void SpellMgr::LoadSpellScriptTarget()
         uint32 spellId     = fields[0].GetUInt32();
         uint32 type        = fields[1].GetUInt32();
         uint32 targetEntry = fields[2].GetUInt32();
+        uint32 invertEffectMask = fields[3].GetUInt32();
 
         SpellEntry const* spellProto = sSpellStore.LookupEntry(spellId);
 
@@ -3678,7 +3679,7 @@ void SpellMgr::LoadSpellScriptTarget()
                 break;
         }
 
-        mSpellScriptTarget.insert(SpellScriptTarget::value_type(spellId,SpellTargetEntry(SpellTargetType(type),targetEntry)));
+        mSpellScriptTarget.insert(SpellScriptTarget::value_type(spellId,SpellTargetEntry(SpellTargetType(type),targetEntry, invertEffectMask)));
 
         ++count;
     } while (result->NextRow());

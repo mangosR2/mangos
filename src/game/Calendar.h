@@ -22,9 +22,7 @@
 #include "Common.h"
 #include "ObjectGuid.h"
 #include "SharedDefines.h"
-
-// TODO: make as parameter in config file
-#define EXPIRED_EVENT_KEEP_TIME     WEEK
+#include "World.h"
 
 enum CalendarEventType
 {
@@ -225,8 +223,26 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         uint32 GenerateEventLowGuid()                    { return m_EventGuids.Generate();  }
         uint32 GenerateInviteLowGuid()                   { return m_InviteGuids.Generate(); }
 
+        // remapping DB ids
+        #define DELETED_ID UINT32_MAX
+        enum TRemapAction
+        {
+            RA_DEL_EXPIRED,
+            RA_REMAP_EVENTS,
+            RA_REMAP_INVITES
+        };
+        typedef std::pair<uint32, uint32> TRemapGee;
+        typedef std::list<TRemapGee> TRemapData;
+
+        bool IsEventReadyForRemove(time_t eventTime)
+        {
+            int32 delaySec = sWorld.getConfig(CONFIG_INT32_CALENDAR_REMOVE_EXPIRED_EVENTS_DELAY);
+            return delaySec < 0 ? false : eventTime + time_t(delaySec) <= time(NULL);
+        }
+        void DBRemap(TRemapAction remapAction, TRemapData& remapData, bool& dbTransactionUsed);
         void RemoveExpiredEventsAndRemapData();
 
+        // utils
         inline bool IsDeletedEvent(CalendarEventStore::const_iterator iter) { return iter->second.HasFlag(CALENDAR_STATE_FLAG_DELETED); }
         inline bool IsValidEvent(CalendarEventStore::const_iterator iter) { return iter != m_EventStore.end() && !IsDeletedEvent(iter); }
 

@@ -929,9 +929,15 @@ enum SpellTargetType
 
 struct SpellTargetEntry
 {
-    SpellTargetEntry(SpellTargetType type_,uint32 targetEntry_) : type(type_), targetEntry(targetEntry_) {}
+    SpellTargetEntry(SpellTargetType type_,uint32 targetEntry_, uint32 invEffectMask_ = 0) : type(type_), targetEntry(targetEntry_), invEffectMask(invEffectMask_) {}
     SpellTargetType type;
     uint32 targetEntry;
+    uint32 invEffectMask;
+
+    bool CanHitWithSpellEffect(SpellEffectIndex effect) const
+    {
+        return invEffectMask ? !(invEffectMask & 1 << effect) :  true;
+    }
 };
 
 typedef UNORDERED_MULTIMAP<uint32,SpellTargetEntry> SpellScriptTarget;

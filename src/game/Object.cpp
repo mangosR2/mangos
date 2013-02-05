@@ -43,6 +43,8 @@
 #include "TemporarySummon.h"
 #include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "movement/packet_builder.h"
+#include "movement/MoveSplineInit.h"
+#include "movement/MoveSpline.h"
 #include "UpdateFieldFlags.h"
 #include "Group.h"
 #include "CreatureLinkingMgr.h"
@@ -1083,9 +1085,14 @@ void Object::MarkForClientUpdate()
 }
 
 WorldObject::WorldObject()
-    : loot(this), m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL),
+    : loot(this), m_groupLootTimer(0), m_groupLootId(0), m_lootGroupRecipientId(0), m_transportInfo(NULL), movespline(new Movement::MoveSpline()),
     m_currMap(NULL), m_position(WorldLocation()), m_viewPoint(*this), m_isActiveObject(false), m_LastUpdateTime(WorldTimer::getMSTime())
 {
+}
+
+WorldObject::~WorldObject()
+{
+    delete movespline;
 }
 
 void WorldObject::CleanupsBeforeDelete()
@@ -1198,14 +1205,10 @@ InstanceData* WorldObject::GetInstanceData() const
     return GetMap()->GetInstanceData();
 }
 
-                                                            //slow
 float WorldObject::GetDistance(const WorldObject* obj) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float dz = GetPositionZ() - obj->GetPositionZ();
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy) + (dz*dz)) - sizefactor;
+    float dist = GetDistance(obj->GetPosition()) - sizefactor;
     return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
@@ -1217,29 +1220,22 @@ float WorldObject::GetDistance(WorldLocation const& loc) const
 
 float WorldObject::GetDistance2d(float x, float y) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
     float sizefactor = GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy)) - sizefactor;
+    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ())) - sizefactor;
     return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistance(float x, float y, float z) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
     float sizefactor = GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy) + (dz*dz)) - sizefactor;
+    float dist = GetPosition().GetDistance(Location(x, y, z)) - sizefactor;
     return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
 float WorldObject::GetDistance2d(const WorldObject* obj) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
-    float dist = sqrt((dx*dx) + (dy*dy)) - sizefactor;
+    float dist = GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ())) - sizefactor;
     return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
@@ -1253,43 +1249,33 @@ float WorldObject::GetDistanceZ(const WorldObject* obj) const
 
 bool WorldObject::IsWithinDist3d(float x, float y, float z, float dist2compare) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
-    float distsq = dx*dx + dy*dy + dz*dz;
-
     float sizefactor = GetObjectBoundingRadius();
+    float dist = GetPosition().GetDistance(Location(x, y, z));
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsWithinDist2d(float x, float y, float dist2compare) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float distsq = dx*dx + dy*dy;
-
+    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ()));
     float sizefactor = GetObjectBoundingRadius();
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::_IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float distsq = dx*dx + dy*dy;
-    if (is3D)
-    {
-        float dz = GetPositionZ() - obj->GetPositionZ();
-        distsq += dz*dz;
-    }
+
+    float dist = is3D ?
+        GetPosition().GetDistance(obj->GetPosition()) :
+        GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ()));
+
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
     float maxdist = dist2compare + sizefactor;
 
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsWithinLOSInMap(const WorldObject* obj) const
@@ -1311,37 +1297,22 @@ bool WorldObject::IsWithinLOS(float ox, float oy, float oz) const
 
 bool WorldObject::GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D /* = true */) const
 {
-    float dx1 = GetPositionX() - obj1->GetPositionX();
-    float dy1 = GetPositionY() - obj1->GetPositionY();
-    float distsq1 = dx1*dx1 + dy1*dy1;
-    if (is3D)
-    {
-        float dz1 = GetPositionZ() - obj1->GetPositionZ();
-        distsq1 += dz1*dz1;
-    }
+    float dist1 = is3D ?
+        GetPosition().GetDistance(obj1->GetPosition()) :
+        GetPosition().GetDistance(Location(obj1->GetPositionX(), obj1->GetPositionY(), GetPositionZ()));
 
-    float dx2 = GetPositionX() - obj2->GetPositionX();
-    float dy2 = GetPositionY() - obj2->GetPositionY();
-    float distsq2 = dx2*dx2 + dy2*dy2;
-    if (is3D)
-    {
-        float dz2 = GetPositionZ() - obj2->GetPositionZ();
-        distsq2 += dz2*dz2;
-    }
+    float dist2 = is3D ?
+        GetPosition().GetDistance(obj2->GetPosition()) :
+        GetPosition().GetDistance(Location(obj2->GetPositionX(), obj2->GetPositionY(), GetPositionZ()));
 
-    return distsq1 < distsq2;
+    return dist1 < dist2;
 }
 
 bool WorldObject::IsInRange(WorldObject const* obj, float minRange, float maxRange, bool is3D /* = true */) const
 {
-    float dx = GetPositionX() - obj->GetPositionX();
-    float dy = GetPositionY() - obj->GetPositionY();
-    float distsq = dx*dx + dy*dy;
-    if (is3D)
-    {
-        float dz = GetPositionZ() - obj->GetPositionZ();
-        distsq += dz*dz;
-    }
+    float dist = is3D ?
+        GetPosition().GetDistance(obj->GetPosition()) :
+        GetPosition().GetDistance(Location(obj->GetPositionX(), obj->GetPositionY(), GetPositionZ()));
 
     float sizefactor = GetObjectBoundingRadius() + obj->GetObjectBoundingRadius();
 
@@ -1349,19 +1320,17 @@ bool WorldObject::IsInRange(WorldObject const* obj, float minRange, float maxRan
     if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInRange2d(float x, float y, float minRange, float maxRange) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float distsq = dx*dx + dy*dy;
+    float dist =  GetPosition().GetDistance(Location(x, y, GetPositionZ()));
 
     float sizefactor = GetObjectBoundingRadius();
 
@@ -1369,33 +1338,30 @@ bool WorldObject::IsInRange2d(float x, float y, float minRange, float maxRange) 
     if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInRange3d(float x, float y, float z, float minRange, float maxRange) const
 {
-    float dx = GetPositionX() - x;
-    float dy = GetPositionY() - y;
-    float dz = GetPositionZ() - z;
-    float distsq = dx*dx + dy*dy + dz*dz;
 
+    float dist = GetPosition().GetDistance(Location(x, y, z));
     float sizefactor = GetObjectBoundingRadius();
 
     // check only for real range
     if (minRange > M_NULL_F)
     {
         float mindist = minRange + sizefactor;
-        if (distsq < mindist * mindist)
+        if (dist < mindist)
             return false;
     }
 
     float maxdist = maxRange + sizefactor;
-    return distsq < maxdist * maxdist;
+    return dist < maxdist;
 }
 
 bool WorldObject::IsInBetween(const WorldObject *obj1, const WorldObject *obj2, float size) const

@@ -406,17 +406,80 @@ bool AuthSocket::_HandleLogonChallenge()
 
         if (qresult)
         {
-            ///- If the IP is 'locked', check that the player comes indeed from the correct IP address
-            bool locked = false;
-            if ((*qresult)[2].GetUInt8() == 1)                // if ip is locked
+            std::string rI = (*qresult)[0].GetCppString();
+            uint32 accountId = (*qresult)[1].GetUInt32();
+            uint8 locked = (*qresult)[2].GetUInt8();
+            std::string lastIP = (*qresult)[3].GetString();
+            uint8 secLevel = (*qresult)[4].GetUInt8();
+            std::string databaseV = (*qresult)[5].GetCppString();
+            std::string databaseS = (*qresult)[6].GetCppString();
+
+            bool blockLogin = false;
+            if (sConfig.GetBoolDefault("MultiIPCheck", false))
             {
-                DEBUG_LOG("[AuthChallenge] Account '%s' is locked to IP - '%s'", _login.c_str(), (*qresult)[3].GetString());
+                int32 iplimit = sConfig.GetIntDefault("MultiIPLimit", 10);
+                int32 multiIPdelay = sConfig.GetIntDefault("MultiIPPeriodInHours", 48);
+                // If a GM account login ignore MultiIP
+                QueryResult* ipcheck = LoginDatabase.PQuery("SELECT id FROM account WHERE last_ip = '%s' AND id != %u AND last_login > NOW() - INTERVAL %u HOUR ORDER BY last_login DESC;", get_remote_address().c_str(), accountId, multiIPdelay);
+                if (ipcheck)
+                {
+                    // build whitelist
+                    std::list<uint32> accountsInWhitelist;
+                    accountsInWhitelist.clear();
+                    QueryResult* IDsinwhite = LoginDatabase.PQuery("SELECT whitelist FROM multi_IP_whitelist WHERE whitelist LIKE '%|%u|%'", accountId);
+                    if (IDsinwhite)
+                    {
+                        Tokens whitelistaccounts((*IDsinwhite)[0].GetCppString(),'|');
+                        bool isInWhite = false;
+                        for (Tokens::const_iterator itr = whitelistaccounts.begin(); itr != whitelistaccounts.end(); ++itr)
+                            accountsInWhitelist.push_back(atoi(*itr));
+                        delete IDsinwhite;
+                    }
+
+                    do
+                    {
+                        Field* pFields =ipcheck->Fetch();
+                        uint32 MultiAccountID = pFields[0].GetUInt32();
+                        bool isInWhite = false;
+                        for (std::list<uint32>::const_iterator itr = accountsInWhitelist.begin(); itr != accountsInWhitelist.end(); ++itr)
+                        {
+                            if (*itr == MultiAccountID)
+                                isInWhite = true;
+                        }
+                        if (!isInWhite)
+                        {
+                            --iplimit;
+                        }
+                    }
+                    while (ipcheck->NextRow());
+
+                    delete ipcheck;
+                }
+                /*
+                 * default case 10 allowed account with same last_ip
+                 * we found 9 account with current ip. NOTE: actual account is not in list
+                 * 10 - 9 - 1
+                 *          ^ current account
+                 *      ^ account in list
+                 * ^ allowed
+                 */
+                if (iplimit < 1)
+                {
+                    DEBUG_LOG("[AuthChallenge] Account '%s' is multi IP - '%s'", _login.c_str(), lastIP.c_str());
+                    result = WOW_FAIL_PARENTCONTROL;
+                    blockLogin = true;
+                }
+            }
+            ///- If the IP is 'locked', check that the player comes indeed from the correct IP address
+            if (locked == 1)                // if ip is locked
+            {
+                DEBUG_LOG("[AuthChallenge] Account '%s' is locked to IP - '%s'", _login.c_str(), lastIP.c_str());
                 DEBUG_LOG("[AuthChallenge] Player address is '%s'", get_remote_address().c_str());
-                if ( strcmp((*qresult)[3].GetString(),get_remote_address().c_str()) )
+                if (strcmp(lastIP.c_str(),get_remote_address().c_str()) )
                 {
                     DEBUG_LOG("[AuthChallenge] Account IP differs");
                     result = WOW_FAIL_SUSPENDED;
-                    locked = true;
+                    blockLogin = true;
                 }
                 else
                 {
@@ -428,36 +491,28 @@ bool AuthSocket::_HandleLogonChallenge()
                 DEBUG_LOG("[AuthChallenge] Account '%s' is not locked to ip", _login.c_str());
             }
 
-            if (!locked)
+            if (!blockLogin)
             {
-                uint32 accId = (*qresult)[1].GetUInt32();
                 ///- If the account is banned, reject the logon attempt
                 QueryResult* banresult = LoginDatabase.PQuery("SELECT bandate,unbandate FROM account_banned WHERE "
-                    "id = %u AND active = 1 AND (unbandate > UNIX_TIMESTAMP() OR unbandate = bandate)", accId);
+                    "id = %u AND active = 1 AND (unbandate > UNIX_TIMESTAMP() OR unbandate = bandate)", accountId);
                 if (banresult)
                 {
                     if ((*banresult)[0].GetUInt64() == (*banresult)[1].GetUInt64())
                     {
                         result = WOW_FAIL_BANNED;
-                        BASIC_LOG("[AuthChallenge] Banned account %s (Id: %u) tries to login!", _login.c_str(), accId);
+                        BASIC_LOG("[AuthChallenge] Banned account %s (Id: %u) tries to login!", _login.c_str(), accountId);
                     }
                     else
                     {
                         result = WOW_FAIL_SUSPENDED;
-                        BASIC_LOG("[AuthChallenge] Temporarily banned account %s (Id: %u) tries to login!",_login.c_str(), accId);
+                        BASIC_LOG("[AuthChallenge] Temporarily banned account %s (Id: %u) tries to login!",_login.c_str(), accountId);
                     }
 
                     delete banresult;
                 }
                 else
                 {
-                    ///- Get the password from the account table, upper it, and make the SRP6 calculation
-                    std::string rI = (*qresult)[0].GetCppString();
-
-                    ///- Don't calculate (v, s) if there are already some in the database
-                    std::string databaseV = (*qresult)[5].GetCppString();
-                    std::string databaseS = (*qresult)[6].GetCppString();
-
                     DEBUG_LOG("database authentication values: v='%s' s='%s'", databaseV.c_str(), databaseS.c_str());
 
                     // multiply with 2, bytes are stored as hexstring
@@ -471,14 +526,13 @@ bool AuthSocket::_HandleLogonChallenge()
 
                     result = WOW_SUCCESS;
 
-                    uint8 secLevel = (*qresult)[4].GetUInt8();
                     _accountSecurityLevel = secLevel <= SEC_ADMINISTRATOR ? AccountTypes(secLevel) : SEC_ADMINISTRATOR;
 
                     _localizationName.resize(4);
                     for (int i = 0; i < 4; ++i)
                         _localizationName[i] = ch->country[4-i-1];
 
-                    BASIC_LOG("[AuthChallenge] account %s (Id: %u) is using '%c%c%c%c' locale (%u)", _login.c_str (), accId, ch->country[3], ch->country[2], ch->country[1], ch->country[0], GetLocaleByName(_localizationName));
+                    BASIC_LOG("[AuthChallenge] account %s (Id: %u) is using '%c%c%c%c' locale (%u)", _login.c_str (), accountId, ch->country[3], ch->country[2], ch->country[1], ch->country[0], GetLocaleByName(_localizationName));
                 }
             }
             delete qresult;

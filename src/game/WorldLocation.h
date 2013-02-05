@@ -164,6 +164,8 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
 
     float GetDistance(WorldLocation const& loc) const;
 
+    float GetDistance(Location const& loc) const;
+
     private:
     int32     mapid;                      // mapid    = -1 for not fully initialized WorldLocation
     uint32    instance;                   // instance = 0  for not fully initialized WorldLocation ("current instance")

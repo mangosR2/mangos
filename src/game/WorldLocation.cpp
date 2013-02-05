@@ -143,3 +143,8 @@ float WorldLocation::GetDistance(WorldLocation const& loc) const
         ((Position)*this).GetDistance((Position)loc) :
         MAX_VISIBILITY_DISTANCE + 1.0f;
 };
+
+float WorldLocation::GetDistance(Location const& loc) const
+{
+    return ((Location)*this).GetDistance(loc);
+};

@@ -124,19 +124,23 @@ void PlayerSocial::SendSocialList()
     data << uint32(7);                                      // unk flag (0x1, 0x2, 0x4), 0x7 if it include ignore list
     data << uint32(size);                                   // friends count
 
-    for(PlayerSocialMap::iterator itr = m_playerSocialMap.begin(); itr != m_playerSocialMap.end(); ++itr)
+    for (PlayerSocialMap::iterator itr = m_playerSocialMap.begin(); itr != m_playerSocialMap.end(); ++itr)
     {
+        FriendInfo friendInfo;
+        if (itr->second.Flags & SOCIAL_FLAG_FRIEND)         // if IsFriend()
+            friendInfo = sSocialMgr.GetFriendInfo(plr, itr->first);
+
         data << itr->first;                                 // player guid
         data << uint32(itr->second.Flags);                  // player flag (0x1-friend?, 0x2-ignored?, 0x4-muted?)
-        data << itr->second.Note;                           // string note
-        if(itr->second.Flags & SOCIAL_FLAG_FRIEND)          // if IsFriend()
+        data << friendInfo.Note;                            // string note
+        if (itr->second.Flags & SOCIAL_FLAG_FRIEND)         // if IsFriend()
         {
-            data << uint8(itr->second.Status);              // online/offline/etc?
-            if(itr->second.Status)                          // if online
+            data << uint8(friendInfo.Status);               // online/offline/etc?
+            if (friendInfo.Status)                          // if online
             {
-                data << uint32(itr->second.Area);           // player area
-                data << uint32(itr->second.Level);          // player level
-                data << uint32(itr->second.Class);          // player class
+                data << uint32(friendInfo.Area);            // player area
+                data << uint32(friendInfo.Level);           // player level
+                data << uint32(friendInfo.Class);           // player class
             }
         }
     }
@@ -205,7 +209,7 @@ FriendInfo SocialMgr::GetFriendInfo(Player* player, ObjectGuid const& friend_gui
     if (pFriend && 
         pFriend->IsInWorld() &&
         pFriend->GetName() &&
-        (security > pFriend->GetSession()->GetSecurity() ||
+        ((security > SEC_PLAYER && security > pFriend->GetSession()->GetSecurity()) ||
         ((pFriend->GetTeam() == team || allowTwoSideWhoList) && 
         (pFriend->GetSession()->GetSecurity() <= gmLevelInWhoList))) &&
         pFriend->IsVisibleGloballyFor(player))

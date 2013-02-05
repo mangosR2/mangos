@@ -194,7 +194,7 @@ void WaypointMovementGenerator<Creature>::StartMove(Creature& creature)
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 
     const WaypointNode &node = i_path->at(i_currentNode);
-    Movement::MoveSplineInit init(creature);
+    Movement::MoveSplineInit<Unit*> init(creature);
     init.MoveTo(node.x, node.y, node.z, true);
 
     if (node.orientation != 100 && node.delay != 0)
@@ -320,7 +320,7 @@ void FlightPathMovementGenerator::_Interrupt(Player & player)
 
 void FlightPathMovementGenerator::_Reset(Player & player)
 {
-    Movement::MoveSplineInit init(player);
+    Movement::MoveSplineInit<Unit*> init(player);
     uint32 end = GetPathAtMapEnd();
     for (uint32 i = GetCurrentNode(); i != end; ++i)
     {
@@ -379,6 +379,103 @@ void FlightPathMovementGenerator::DoEventIfAny(Player& player, TaxiPathNodeEntry
 }
 
 bool FlightPathMovementGenerator::GetResetPosition(Player&, float& x, float& y, float& z)
+{
+    const TaxiPathNodeEntry& node = (*i_path)[i_currentNode];
+    x = node.x; y = node.y; z = node.z;
+    return true;
+}
+
+//----------------------------------------------------//
+uint32 TransportPathMovementGenerator::GetPathAtMapEnd() const
+{
+    if (i_currentNode >= i_path->size())
+        return i_path->size();
+
+    uint32 curMapId = (*i_path)[i_currentNode].mapid;
+
+    for(uint32 i = i_currentNode; i < i_path->size(); ++i)
+    {
+        if ((*i_path)[i].mapid != curMapId)
+            return i;
+    }
+
+    return i_path->size();
+}
+
+void TransportPathMovementGenerator::Initialize(GameObject& go)
+{
+}
+
+void TransportPathMovementGenerator::Finalize(GameObject& go)
+{
+    //go.StopMoving();
+}
+
+void TransportPathMovementGenerator::Interrupt(GameObject& go)
+{
+}
+
+void TransportPathMovementGenerator::Reset(GameObject& go)
+{
+    Movement::MoveSplineInit<GameObject*> init(go);
+    uint32 end = GetPathAtMapEnd();
+    for (uint32 i = GetCurrentNode(); i != end; ++i)
+    {
+        G3D::Vector3 vertice((*i_path)[i].x,(*i_path)[i].y,(*i_path)[i].z);
+        init.Path().push_back(vertice);
+    }
+    init.SetFirstPointId(GetCurrentNode());
+    init.SetFly();
+    init.SetVelocity(PLAYER_FLIGHT_SPEED);
+    init.Launch();
+}
+
+bool TransportPathMovementGenerator::Update(GameObject& go, uint32 const& diff)
+{
+    uint32 pointId = (uint32)go.movespline->currentPathIdx();
+    if (pointId > i_currentNode)
+    {
+        bool departureEvent = true;
+        do
+        {
+            DoEventIfAny(go,(*i_path)[i_currentNode],departureEvent);
+            if (pointId == i_currentNode)
+                break;
+            i_currentNode += (uint32)departureEvent;
+            departureEvent = !departureEvent;
+        } while(true);
+    }
+
+    return !(go.movespline->Finalized() || i_currentNode >= (i_path->size()-1));
+}
+
+void TransportPathMovementGenerator::SetCurrentNodeAfterTeleport()
+{
+    if (i_path->empty())
+        return;
+
+    uint32 map0 = (*i_path)[0].mapid;
+
+    for (size_t i = 1; i < i_path->size(); ++i)
+    {
+        if ((*i_path)[i].mapid != map0)
+        {
+            i_currentNode = i;
+            return;
+        }
+    }
+}
+
+void TransportPathMovementGenerator::DoEventIfAny(GameObject& go, TaxiPathNodeEntry const& node, bool departure)
+{
+    if (uint32 eventid = departure ? node.departureEventID : node.arrivalEventID)
+    {
+        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Transport %s event %u of node %u of path %u for GO %s", departure ? "departure" : "arrival", eventid, node.index, node.path, go.GetObjectGuid().GetString().c_str());
+//        StartEvents_Event(player.GetMap(), eventid, &player, &go, departure);
+    }
+}
+
+bool TransportPathMovementGenerator::GetResetPosition(GameObject& go, float& x, float& y, float& z)
 {
     const TaxiPathNodeEntry& node = (*i_path)[i_currentNode];
     x = node.x; y = node.y; z = node.z;

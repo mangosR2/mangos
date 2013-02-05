@@ -20,6 +20,7 @@
 #include "MoveSpline.h"
 #include "packet_builder.h"
 #include "../Unit.h"
+#include "../GameObject.h"
 #include "../TransportSystem.h"
 
 namespace Movement
@@ -51,7 +52,7 @@ namespace Movement
         return MOVE_RUN;
     }
 
-    int32 MoveSplineInit::Launch()
+    int32 MoveSplineInit<Unit*>::Launch()
     {
         MoveSpline& move_spline = *unit.movespline;
         TransportInfo* transportInfo = unit.GetTransportInfo();
@@ -113,22 +114,60 @@ namespace Movement
         return move_spline.Duration();
     }
 
-    MoveSplineInit::MoveSplineInit(Unit& m) : unit(m)
+    MoveSplineInit<Unit*>::MoveSplineInit(Unit& m) : unit(m)
     {
         // mix existing state into new
         args.flags.walkmode = unit.m_movementInfo.HasMovementFlag(MOVEFLAG_WALK_MODE);
         args.flags.flying = unit.m_movementInfo.HasMovementFlag((MovementFlags)(MOVEFLAG_FLYING | MOVEFLAG_LEVITATING));
     }
 
-    void MoveSplineInit::SetFacing(const Unit* target)
+    void MoveSplineInit<Unit*>::SetFacing(const Unit* target)
     {
         args.flags.EnableFacingTarget();
         args.facing.target = target->GetObjectGuid().GetRawValue();
     }
 
-    void MoveSplineInit::SetFacing(float angle)
+    void MoveSplineInit<Unit*>::SetFacing(float angle)
     {
         args.facing.angle = G3D::wrap(angle, 0.f, (float)G3D::twoPi());
         args.flags.EnableFacingAngle();
+    }
+
+    MoveSplineInit<GameObject*>::MoveSplineInit(GameObject& go) : gameobject(go)
+    {
+    }
+
+    int32 MoveSplineInit<GameObject*>::Launch()
+    {
+        MoveSpline& move_spline = *gameobject.movespline;
+        TransportInfo* transportInfo = gameobject.GetTransportInfo();
+
+        Location real_position(gameobject.GetPositionX(), gameobject.GetPositionY(), gameobject.GetPositionZ(), gameobject.GetOrientation());
+
+        // If boarded use current local position
+        if (transportInfo)
+            transportInfo->GetLocalPosition(real_position.x, real_position.y, real_position.z, real_position.orientation);
+
+        // there is a big chane that current position is unknown if current state is not finalized, need compute it
+        // this also allows calculate spline position and update map position in much greater intervals
+        if (!move_spline.Finalized())
+            real_position = move_spline.ComputePosition();
+
+        if (args.path.empty())
+        {
+            // should i do the things that user should do?
+            MoveTo(real_position);
+        }
+
+        // corrent first vertex
+        args.path[0] = real_position;
+        args.initialOrientation = real_position.orientation;
+
+        if (fabs(args.velocity) < M_NULL_F)
+            return 0;
+//            args.velocity = gameobject.GetSpeed();
+
+        move_spline.Initialize(args);
+        return move_spline.Duration();
     }
 }
