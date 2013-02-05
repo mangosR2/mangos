@@ -15,14 +15,10 @@ public:
     }
 
 protected:
-    virtual void CheckAttacker(Player* bot, Player* player, ThreatManager* threatManager)
+    virtual void CheckAttacker(Player* player, Unit* attacker, ThreatManager* threatManager)
     {
-        Unit* creature = threatManager->getOwner();
-        if (!creature)
-            return;
-
-        if (!result || result->GetHealth() > creature->GetHealth())
-            result = creature;
+        if (!result || result->GetHealth() > attacker->GetHealth())
+            result = attacker;
     }
 
 protected:

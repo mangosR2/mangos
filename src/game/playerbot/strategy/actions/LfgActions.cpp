@@ -59,6 +59,8 @@ bool LfgJoinAction::SetRoles()
             state->SetRoles(LFG_ROLE_MASK_TANK);
         break;
     }
+
+	return true;
 }
 
 bool LfgJoinAction::JoinProposal()
@@ -82,7 +84,8 @@ bool LfgJoinAction::JoinProposal()
         if (!dungeon || (dungeon->type != LFG_TYPE_RANDOM_DUNGEON && dungeon->type != LFG_TYPE_DUNGEON && dungeon->type != LFG_TYPE_HEROIC_DUNGEON))
             continue;
 
-        if (dungeon->recminlevel && (int)dungeon->recminlevel > (int)bot->getLevel())
+        if (dungeon->recminlevel &&
+                ((int)dungeon->recminlevel > (int)bot->getLevel() || (int)dungeon->recminlevel + 10 < (int)bot->getLevel()))
             continue;
 
         if ((int)bot->getLevel() > (int)dungeon->maxlevel)
@@ -140,6 +143,10 @@ bool LfgAcceptAction::Execute(Event event)
     uint8 state;
     uint32 id;
     p >> dungeon >> state >> id;
+
+    LFGPlayerState* botState = bot->GetLFGPlayerState();
+    if (!botState || botState->GetState() != LFG_STATE_PROPOSAL)
+        return false;
 
     sLFGMgr.UpdateProposal(id, bot->GetObjectGuid(), true);
     return true;

@@ -9,6 +9,7 @@ bool QuestAction::Execute(Event event)
 {
     ObjectGuid guid = event.getObject();
 
+    Player* master = GetMaster();
     if (!master)
         return false;
 

@@ -14,6 +14,8 @@ bool BuyAction::Execute(Event event)
     if (itemIds.empty())
         return false;
 
+    Player* master = GetMaster();
+
     if (!master)
         return false;
 

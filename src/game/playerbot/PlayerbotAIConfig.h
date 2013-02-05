@@ -18,13 +18,13 @@ public:
 
     bool enabled;
     bool allowGuildBots;
-    uint32 globalCoolDown, reactDelay, teleportDelay;
-    float sightDistance, spellDistance, reactDistance, grindDistance, lootDistance, fleeDistance, tooCloseDistance, meleeDistance, followDistance;
+    uint32 globalCoolDown, reactDelay, maxWaitForMove;
+    float sightDistance, spellDistance, reactDistance, grindDistance, lootDistance,
+        fleeDistance, tooCloseDistance, meleeDistance, followDistance, whisperDistance;
     uint32 criticalHealth, lowHealth, mediumHealth, almostFullHealth;
     uint32 lowMana, mediumMana;
 
     bool randomBotAutologin;
-    bool randomBotGrinding;
     std::string randomBotMapsAsString;
     std::vector<uint32> randomBotMaps;
     std::list<uint32> randomBotQuestItems;
@@ -34,12 +34,15 @@ public:
     float randomGearLoweringChance;
     float randomBotMaxLevelChance;
     uint32 minRandomBots, maxRandomBots;
-    uint32 randomBotUpdateInterval, randomBotCountChangeInterval;
+    uint32 randomBotUpdateInterval, randomBotCountChangeMinInterval, randomBotCountChangeMaxInterval;
     uint32 minRandomBotInWorldTime, maxRandomBotInWorldTime;
     uint32 minRandomBotRandomizeTime, maxRandomRandomizeTime;
     uint32 minRandomBotPvpTime, maxRandomBotPvpTime;
     uint32 minRandomBotsPerInterval, maxRandomBotsPerInterval;
     bool randomBotJoinLfg;
+    bool logInGroupOnly, logValuesPerTick;
+    bool fleeingEnabled;
+    std::string randomBotCombatStrategies, randomBotNonCombatStrategies;
 
     uint32 iterationsPerTick;
 

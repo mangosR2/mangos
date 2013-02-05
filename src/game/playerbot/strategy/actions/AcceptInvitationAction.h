@@ -10,6 +10,8 @@ namespace ai
 
         virtual bool Execute(Event event)
         {
+            Player* master = GetMaster();
+
             Group* grp = bot->GetGroupInvite();
             if (!grp)
                 return false;
@@ -23,7 +25,7 @@ namespace ai
                 WorldPacket data(SMSG_GROUP_DECLINE, 10);
                 data << bot->GetName();
                 inviter->GetSession()->SendPacket(&data);
-                if (inviter == master) bot->UninviteFromGroup();
+                bot->UninviteFromGroup();
                 return false;
             }
 

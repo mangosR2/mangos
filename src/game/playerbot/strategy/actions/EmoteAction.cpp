@@ -25,6 +25,7 @@ bool EmoteAction::Execute(Event event)
         emote = emotes[param];
     }
 
+    Player* master = GetMaster();
 	if (master)
 	{
         ObjectGuid masterSelection = master->GetSelectionGuid();

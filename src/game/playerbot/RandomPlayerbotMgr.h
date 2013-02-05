@@ -31,6 +31,8 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotHolder
         void HandleCommand(uint32 type, const string& text, Player& fromPlayer);
         void OnPlayerLogout(Player* player);
         void OnPlayerLogin(Player* player);
+        Player* GetRandomPlayer();
+        void PrintStats();
 
 	protected:
 	    virtual void OnBotLoginInternal(Player * const bot) {}
@@ -48,6 +50,9 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotHolder
         void RandomTeleport(Player* bot, vector<WorldLocation> &locs);
         void Refresh(Player* bot);
         uint32 GetZoneLevel(uint32 mapId, float teleX, float teleY, float teleZ);
+
+    private:
+        vector<Player*> players;
 };
 
 #define sRandomPlayerbotMgr MaNGOS::Singleton<RandomPlayerbotMgr>::Instance()

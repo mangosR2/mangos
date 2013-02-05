@@ -120,6 +120,13 @@ namespace ai
         virtual NextAction** getPrerequisites();
     END_SPELL_ACTION()
 
+    class CastRendOnAttackerAction : public CastDebuffSpellOnAttackerAction
+    {
+    public:
+        CastRendOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "rend") {}
+        virtual NextAction** getPrerequisites();
+    };
+
     BEGIN_DEBUFF_ACTION(CastDisarmAction, "disarm")
         virtual NextAction** getPrerequisites();
     END_SPELL_ACTION()

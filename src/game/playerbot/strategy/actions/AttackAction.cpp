@@ -19,6 +19,7 @@ bool AttackAction::Execute(Event event)
 
 bool AttackMyTargetAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 

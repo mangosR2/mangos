@@ -3,14 +3,14 @@
 
 namespace ai
 {
-    class CurrentTargetValue : public ManualSetValue<Unit*>
+    class CurrentTargetValue : public UnitManualSetValue
 	{
 	public:
-        CurrentTargetValue(PlayerbotAI* ai) : ManualSetValue<Unit*>(ai, NULL) {}
+        CurrentTargetValue(PlayerbotAI* ai) : UnitManualSetValue(ai, NULL) {}
 
         virtual Unit* Get();
         virtual void Set(Unit* unit);
-	
+
     private:
         ObjectGuid selection;
     };

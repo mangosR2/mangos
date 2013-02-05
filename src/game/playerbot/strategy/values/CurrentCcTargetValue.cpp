@@ -13,12 +13,10 @@ public:
     }
 
 protected:
-    virtual void CheckAttacker(Player* bot, Player* player, ThreatManager* threatManager)
+    virtual void CheckAttacker(Player* player, Unit* attacker, ThreatManager* threatManager)
     {
-        float threat = threatManager->getThreat(bot);
-        Unit* creature = threatManager->getOwner();
-        if (ai->HasAura(spell, creature))
-            result = creature;
+        if (ai->HasAura(spell, attacker))
+            result = attacker;
     }
 
 private:

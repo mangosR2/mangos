@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class SelfTargetValue : public CalculatedValue<Unit*>
+    class SelfTargetValue : public UnitCalculatedValue
 	{
 	public:
-        SelfTargetValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai) {}
+        SelfTargetValue(PlayerbotAI* ai) : UnitCalculatedValue(ai) {}
 
         virtual Unit* Calculate() { return ai->GetBot(); }
     };

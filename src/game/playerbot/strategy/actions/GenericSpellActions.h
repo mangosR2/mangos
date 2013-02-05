@@ -99,6 +99,18 @@ namespace ai
         CastDebuffSpellAction(PlayerbotAI* ai, string spell) : CastAuraSpellAction(ai, spell) {}
     };
 
+    class CastDebuffSpellOnAttackerAction : public CastAuraSpellAction
+    {
+    public:
+        CastDebuffSpellOnAttackerAction(PlayerbotAI* ai, string spell) : CastAuraSpellAction(ai, spell) {}
+        Value<Unit*>* GetTargetValue()
+        {
+            return context->GetValue<Unit*>("attacker without aura", spell);
+        }
+        virtual string getName() { return spell + " on attacker"; }
+        virtual ActionThreatType getThreatType() { return ACTION_THREAT_AOE; }
+    };
+
 	class CastBuffSpellAction : public CastAuraSpellAction
 	{
 	public:

@@ -396,7 +396,7 @@ class MANGOS_DLL_SPEC Object
             float  *m_floatValues;
         };
 
-        uint32 *m_uint32Values_mirror;
+        std::vector<bool> m_changedValues;
 
         uint16 m_valuesCount;
         uint16 m_fieldNotifyFlags;
@@ -461,17 +461,16 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         void Relocate(float x, float y, float z, float orientation);
         void Relocate(float x, float y, float z);
+        void Relocate(WorldLocation const& location);
 
         void SetOrientation(float orientation);
 
-        float GetPositionX( ) const { return m_position.x; }
-        float GetPositionY( ) const { return m_position.y; }
-        float GetPositionZ( ) const { return m_position.z; }
-        void GetPosition( float &x, float &y, float &z ) const
-            { x = m_position.x; y = m_position.y; z = m_position.z; }
-        void GetPosition( WorldLocation &loc ) const
-            { loc.mapid = m_mapId; GetPosition(loc.coord_x, loc.coord_y, loc.coord_z); loc.orientation = GetOrientation(); }
-        float GetOrientation( ) const { return m_position.o; }
+        float const& GetPositionX() const     { return m_position.x; }
+        float const& GetPositionY() const     { return m_position.y; }
+        float const& GetPositionZ() const     { return m_position.z; }
+        float const& GetOrientation() const   { return m_position.orientation; }
+        void GetPosition(float &x, float &y, float &z ) const { x = m_position.x; y = m_position.y; z = m_position.z; }
+        WorldLocation const& GetPosition() const { return m_position; };
 
         virtual Transport* GetTransport() const { return NULL; }
         virtual float GetTransOffsetX() const { return 0.0f; }
@@ -500,11 +499,11 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         void GetRandomPoint( float x, float y, float z, float distance, float &rand_x, float &rand_y, float &rand_z ) const;
 
-        uint32 GetMapId() const { return m_mapId; }
-        uint32 GetInstanceId() const { return m_InstanceId; }
+        uint32 GetMapId() const { return m_position.GetMapId(); }
+        uint32 GetInstanceId() const { return m_position.GetInstanceId(); }
 
         virtual void SetPhaseMask(uint32 newPhaseMask, bool update);
-        uint32 GetPhaseMask() const { return m_phaseMask; }
+        uint32 GetPhaseMask() const { return m_position.GetPhaseMask(); }
         bool InSamePhase(WorldObject const* obj) const { return InSamePhase(obj->GetPhaseMask()); }
         bool InSamePhase(uint32 phasemask) const { return (GetPhaseMask() & phasemask); }
 
@@ -518,6 +517,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void SetName(const std::string& newname) { m_name=newname; }
 
         virtual const char* GetNameForLocaleIdx(int32 /*locale_idx*/) const { return GetName(); }
+
+        float GetDistance(WorldLocation const& loc) const;
 
         float GetDistance( const WorldObject* obj ) const;
         float GetDistance(float x, float y, float z) const;
@@ -669,8 +670,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         //these functions are used mostly for Relocate() and Corpse/Player specific stuff...
         //use them ONLY in LoadFromDB()/Create() funcs and nowhere else!
         //mapId/instanceId should be set in SetMap() function!
-        void SetLocationMapId(uint32 _mapId) { m_mapId = _mapId; }
-        void SetLocationInstanceId(uint32 _instanceId) { m_InstanceId = _instanceId; }
+        void SetLocationMapId(uint32 _mapId)           { m_position.SetMapId(_mapId); }
+        void SetLocationInstanceId(uint32 _instanceId) { m_position.SetInstanceId(_instanceId); }
 
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
         uint32 m_groupLootId;                               // used to find group which is looting corpse
@@ -683,13 +684,10 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         TransportInfo* m_transportInfo;
 
     private:
-        Map * m_currMap;                                    //current object's Map location
+        Map* m_currMap;                                     //current object's Map location
 
-        uint32 m_mapId;                                     // object at map with map_id
-        uint32 m_InstanceId;                                // in map copy with instance id
-        uint32 m_phaseMask;                                 // in area phase state
+        WorldLocation m_position;                           // Contains all needed coords for object
 
-        Position m_position;
         ViewPoint m_viewPoint;
         WorldUpdateCounter m_updateTracker;
         bool m_isActiveObject;

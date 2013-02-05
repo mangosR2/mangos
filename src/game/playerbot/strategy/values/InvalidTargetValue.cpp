@@ -10,8 +10,15 @@ bool InvalidTargetValue::Calculate()
     Unit* target = AI_VALUE(Unit*, qualifier);
     if (qualifier == "current target")
     {
-        return !target || target->GetMapId() != bot->GetMapId() ||
-                !target->isAlive() || target->IsFriendlyTo(bot) ||
+        return !target ||
+                target->GetMapId() != bot->GetMapId() ||
+                target->isDead() ||
+                target->IsPolymorphed() ||
+                target->isFrozen() ||
+                target->isCharmed() ||
+                target->isFeared() ||
+                target->hasUnitState(UNIT_STAT_ISOLATED) ||
+                target->IsFriendlyTo(bot) ||
                 !bot->IsWithinDistInMap(target, sPlayerbotAIConfig.sightDistance) ||
                 !bot->IsWithinLOSInMap(target);
     }

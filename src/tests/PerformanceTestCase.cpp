@@ -2,7 +2,6 @@
 
 #include "aitest.h"
 #include "EngineTestBase.h"
-#include <time.inl>
 #include "../game/playerbot/strategy/druid/DruidAiObjectContext.h"
 #include "../game/playerbot/strategy/paladin/PaladinAiObjectContext.h"
 #include "../game/playerbot/strategy/warrior/WarriorAiObjectContext.h"
@@ -14,6 +13,35 @@
 #include "../game/playerbot/PlayerbotAIConfig.h"
 
 using namespace ai;
+
+#define MAX_TICKS 20
+
+class EverythingFailedActionExecutionListener : public ActionExecutionListener
+{
+public:
+    EverythingFailedActionExecutionListener(MockPlayerbotAIBase *ai) : ai(ai) {}
+
+    virtual bool Before(Action* action, Event event)
+    {
+        string name = action->getName();
+        if (name == "melee" ||
+                name == "shoot" ||
+                name == "auto shot" ||
+                name == "reach melee" ||
+                name == "reach spell")
+            return true;
+
+        return false;
+    }
+
+    virtual bool AllowExecution(Action* action, Event event) { return false; }
+    virtual bool OverrideResult(Action* action, bool executed, Event event) { return executed; }
+    virtual void After(Action* action, Event event) {}
+
+private:
+    MockPlayerbotAIBase *ai;
+};
+
 
 
 class PerformanceTestCase : public EngineTestBase
@@ -41,18 +69,26 @@ protected:
     void run()
     {
         time_t timestamp = time(0);
-        for (int i=0; i<100; i++) 
+        int i = 0;
+        for (; i<sPlayerbotAIConfig.iterationsPerTick; ++i)
         {
             tick();
+
+            if (!ai->buffer.empty())
+                break;
         }
 
-        cout << "Time: " << (time(0) - timestamp);
+        CPPUNIT_ASSERT(!ai->buffer.empty());
+
+        cout << ai->buffer << " - " << i << "ticks, time: " << (time(0) - timestamp);
     }
 
     void druidBear()
     {
         setupEngine(new DruidAiObjectContext(ai), "tank", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
@@ -60,7 +96,9 @@ protected:
     void paladin()
     {
         setupEngine(new PaladinAiObjectContext(ai), "tank", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
@@ -68,7 +106,9 @@ protected:
     void priest()
     {
         setupEngine(new PriestAiObjectContext(ai), "heal", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
@@ -76,7 +116,9 @@ protected:
     void mage()
     {
         setupEngine(new MageAiObjectContext(ai), "frost", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
@@ -84,7 +126,9 @@ protected:
     void hunter()
     {
         setupEngine(new HunterAiObjectContext(ai), "dps", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
@@ -92,31 +136,39 @@ protected:
     void warrior()
     {
         setupEngine(new WarriorAiObjectContext(ai), "tank", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
 
     void druidCat()
     {
-        setupEngine(new DruidAiObjectContext(ai), "dps", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        setupEngine(new DruidAiObjectContext(ai), "cat", NULL);
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
 
     void warlock()
     {
-        setupEngine(new WarlockAiObjectContext(ai), "tank", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        setupEngine(new WarlockAiObjectContext(ai), "dps", NULL);
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }
 
     void shaman()
     {
-        setupEngine(new ShamanAiObjectContext(ai), "heal", NULL);
-        sPlayerbotAIConfig.iterationsPerTick = 100;
+        setupEngine(new ShamanAiObjectContext(ai), "melee", NULL);
+        engine->AddActionExecutionListener(new EverythingFailedActionExecutionListener(ai));
+
+        sPlayerbotAIConfig.iterationsPerTick = MAX_TICKS;
         run();
         sPlayerbotAIConfig.iterationsPerTick = 10;
     }

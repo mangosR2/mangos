@@ -25,10 +25,12 @@ namespace ai
             {
                 creators["nc"] = &warrior::StrategyFactoryInternal::nc;
                 creators["pull"] = &warrior::StrategyFactoryInternal::pull;
+                creators["aoe"] = &warrior::StrategyFactoryInternal::aoe;
             }
 
         private:
             static Strategy* nc(PlayerbotAI* ai) { return new GenericWarriorNonCombatStrategy(ai); }
+            static Strategy* aoe(PlayerbotAI* ai) { return new DpsWarrirorAoeStrategy(ai); }
             static Strategy* pull(PlayerbotAI* ai) { return new PullStrategy(ai, "shoot"); }
         };
 
@@ -64,6 +66,7 @@ namespace ai
                 creators["death wish"] = &TriggerFactoryInternal::death_wish;
                 creators["battle shout"] = &TriggerFactoryInternal::battle_shout;
                 creators["rend"] = &TriggerFactoryInternal::rend;
+                creators["rend on attacker"] = &TriggerFactoryInternal::rend_on_attacker;
                 creators["bloodrage"] = &TriggerFactoryInternal::bloodrage;
                 creators["shield bash"] = &TriggerFactoryInternal::shield_bash;
                 creators["disarm"] = &TriggerFactoryInternal::disarm;
@@ -78,6 +81,7 @@ namespace ai
             static Trigger* death_wish(PlayerbotAI* ai) { return new DeathWishTrigger(ai); }
             static Trigger* battle_shout(PlayerbotAI* ai) { return new BattleShoutTrigger(ai); }
             static Trigger* rend(PlayerbotAI* ai) { return new RendDebuffTrigger(ai); }
+            static Trigger* rend_on_attacker(PlayerbotAI* ai) { return new RendDebuffOnAttackerTrigger(ai); }
             static Trigger* bloodrage(PlayerbotAI* ai) { return new BloodrageDebuffTrigger(ai); }
             static Trigger* shield_bash(PlayerbotAI* ai) { return new ShieldBashInterruptSpellTrigger(ai); }
             static Trigger* disarm(PlayerbotAI* ai) { return new DisarmDebuffTrigger(ai); }
@@ -104,6 +108,7 @@ namespace ai
                 creators["charge"] = &AiObjectContextInternal::charge;
                 creators["bloodthirst"] = &AiObjectContextInternal::bloodthirst;
                 creators["rend"] = &AiObjectContextInternal::rend;
+                creators["rend on attacker"] = &AiObjectContextInternal::rend_on_attacker;
                 creators["mocking blow"] = &AiObjectContextInternal::mocking_blow;
                 creators["death wish"] = &AiObjectContextInternal::death_wish;
                 creators["berserker rage"] = &AiObjectContextInternal::berserker_rage;
@@ -150,6 +155,7 @@ namespace ai
             static Action* charge(PlayerbotAI* ai) { return new CastChargeAction(ai); }
             static Action* bloodthirst(PlayerbotAI* ai) { return new CastBloodthirstAction(ai); }
             static Action* rend(PlayerbotAI* ai) { return new CastRendAction(ai); }
+            static Action* rend_on_attacker(PlayerbotAI* ai) { return new CastRendOnAttackerAction(ai); }
             static Action* mocking_blow(PlayerbotAI* ai) { return new CastMockingBlowAction(ai); }
             static Action* death_wish(PlayerbotAI* ai) { return new CastDeathWishAction(ai); }
             static Action* berserker_rage(PlayerbotAI* ai) { return new CastBerserkerRageAction(ai); }

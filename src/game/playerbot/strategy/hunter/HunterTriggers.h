@@ -8,24 +8,24 @@ namespace ai
     END_TRIGGER()
 
     class HunterAspectOfTheHawkTrigger : public BuffTrigger
-    { 
-    public: 
+    {
+    public:
         HunterAspectOfTheHawkTrigger(PlayerbotAI* ai) : BuffTrigger(ai, "aspect of the hawk") {
 			checkInterval = 1;
 		}
     };
 
 	class HunterAspectOfTheWildTrigger : public BuffTrigger
-	{ 
-	public: 
+	{
+	public:
 		HunterAspectOfTheWildTrigger(PlayerbotAI* ai) : BuffTrigger(ai, "aspect of the wild") {
 			checkInterval = 1;
 		}
 	};
 
     class HunterAspectOfTheViperTrigger : public BuffTrigger
-    { 
-    public: 
+    {
+    public:
         HunterAspectOfTheViperTrigger(PlayerbotAI* ai) : BuffTrigger(ai, "aspect of the viper") {}
         virtual bool IsActive()
         {
@@ -34,8 +34,8 @@ namespace ai
     };
 
     class HunterAspectOfThePackTrigger : public BuffTrigger
-    { 
-    public: 
+    {
+    public:
         HunterAspectOfThePackTrigger(PlayerbotAI* ai) : BuffTrigger(ai, "aspect of the pack") {}
         virtual bool IsActive() {
 			return BuffTrigger::IsActive() && !ai->HasAura("aspect of the cheetah", GetTarget());
@@ -49,32 +49,38 @@ namespace ai
     END_TRIGGER()
 
     class BlackArrowTrigger : public DebuffTrigger
-    { 
-    public: 
+    {
+    public:
         BlackArrowTrigger(PlayerbotAI* ai) : DebuffTrigger(ai, "black arrow") {}
     };
 
     class HuntersMarkTrigger : public DebuffTrigger
-    { 
-    public: 
+    {
+    public:
         HuntersMarkTrigger(PlayerbotAI* ai) : DebuffTrigger(ai, "hunter's mark") {}
     };
-    
+
     class FreezingTrapTrigger : public HasCcTargetTrigger
-    { 
-    public: 
+    {
+    public:
         FreezingTrapTrigger(PlayerbotAI* ai) : HasCcTargetTrigger(ai, "freezing trap") {}
     };
 
     class RapidFireTrigger : public BoostTrigger
-    { 
-    public: 
+    {
+    public:
         RapidFireTrigger(PlayerbotAI* ai) : BoostTrigger(ai, "rapid fire") {}
     };
-    
+
     class TrueshotAuraTrigger : public BuffTrigger
-    { 
-    public: 
+    {
+    public:
         TrueshotAuraTrigger(PlayerbotAI* ai) : BuffTrigger(ai, "trueshot aura") {}
+    };
+
+    class SerpentStingOnAttackerTrigger : public DebuffOnAttackerTrigger
+    {
+    public:
+        SerpentStingOnAttackerTrigger(PlayerbotAI* ai) : DebuffOnAttackerTrigger(ai, "serpent sting") {}
     };
 }

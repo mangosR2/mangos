@@ -61,6 +61,11 @@ Value<Unit*>* BuffOnPartyTrigger::GetTargetValue()
 	return context->GetValue<Unit*>("party member without aura", spell);
 }
 
+Value<Unit*>* DebuffOnAttackerTrigger::GetTargetValue()
+{
+	return context->GetValue<Unit*>("attacker without aura", spell);
+}
+
 bool NoAttackersTrigger::IsActive()
 {
     return !AI_VALUE(Unit*, "current target") && AI_VALUE(uint8, "attacker count") > 0;
@@ -196,6 +201,13 @@ bool NotLeastHpTargetActiveTrigger::IsActive()
     Unit* leastHp = AI_VALUE(Unit*, "least hp target");
     Unit* target = AI_VALUE(Unit*, "current target");
     return leastHp && target != leastHp;
+}
+
+bool EnemyPlayerIsAttacking::IsActive()
+{
+    Unit* enemyPlayer = AI_VALUE(Unit*, "enemy player target");
+    Unit* target = AI_VALUE(Unit*, "current target");
+    return enemyPlayer && target != enemyPlayer;
 }
 
 bool IsSwimmingTrigger::IsActive()

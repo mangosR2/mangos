@@ -5,10 +5,10 @@
 
 namespace ai
 {
-    class HasTotemValue : public CalculatedValue<bool>, public Qualified
+    class HasTotemValue : public BoolCalculatedValue, public Qualified
 	{
 	public:
-        HasTotemValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        HasTotemValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
     public:
         bool Calculate()

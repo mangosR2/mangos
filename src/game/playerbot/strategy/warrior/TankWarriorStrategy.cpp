@@ -16,6 +16,7 @@ public:
         creators["revenge"] = &revenge;
         creators["devastate"] = &devastate;
         creators["shockwave"] = &shockwave;
+        creators["taunt"] = &taunt;
     }
 private:
     static ActionNode* melee(PlayerbotAI* ai)
@@ -60,6 +61,13 @@ private:
             /*A*/ NextAction::array(0, new NextAction("cleave"), NULL),
             /*C*/ NULL);
     }
+    static ActionNode* taunt(PlayerbotAI* ai)
+    {
+        return new ActionNode ("taunt",
+            /*P*/ NULL,
+            /*A*/ NextAction::array(0, new NextAction("mocking blow"), NULL),
+            /*C*/ NULL);
+    }
 };
 
 TankWarriorStrategy::TankWarriorStrategy(PlayerbotAI* ai) : GenericWarriorStrategy(ai)
@@ -101,8 +109,8 @@ void TankWarriorStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 		NextAction::array(0, new NextAction("shockwave", ACTION_HIGH + 2), NULL)));
 
 	triggers.push_back(new TriggerNode(
-		"light aoe",
-		NextAction::array(0, new NextAction("cleave", ACTION_HIGH + 1), NULL)));
+        "light aoe",
+        NextAction::array(0, new NextAction("thunder clap", ACTION_HIGH + 2), new NextAction("demoralizing shout", ACTION_HIGH + 2),  new NextAction("cleave", ACTION_HIGH + 1), NULL)));
 
     triggers.push_back(new TriggerNode(
         "high aoe",

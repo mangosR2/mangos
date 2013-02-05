@@ -42,7 +42,7 @@ bool PlayerbotAIConfig::Initialize()
         sLog.outString("AI Playerbot is Disabled in aiplayerbot.conf");
 
     globalCoolDown = (uint32) config.GetIntDefault("AiPlayerbot.GlobalCooldown", 500);
-    teleportDelay = config.GetIntDefault("AiPlayerbot.TeleportDelay", 10000);
+    maxWaitForMove = config.GetIntDefault("AiPlayerbot.MaxWaitForMove", 5000);
     reactDelay = (uint32) config.GetIntDefault("AiPlayerbot.ReactDelay", 100);
 
     sightDistance = config.GetFloatDefault("AiPlayerbot.SightDistance", 50.0f);
@@ -50,10 +50,11 @@ bool PlayerbotAIConfig::Initialize()
     reactDistance = config.GetFloatDefault("AiPlayerbot.ReactDistance", 100.0f);
     grindDistance = config.GetFloatDefault("AiPlayerbot.GrindDistance", 75.0f);
     lootDistance = config.GetFloatDefault("AiPlayerbot.LootDistance", 20.0f);
-    fleeDistance = config.GetFloatDefault("AiPlayerbot.FleeDistance", 15.0f);
+    fleeDistance = config.GetFloatDefault("AiPlayerbot.FleeDistance", 20.0f);
     tooCloseDistance = config.GetFloatDefault("AiPlayerbot.TooCloseDistance", 7.0f);
     meleeDistance = config.GetFloatDefault("AiPlayerbot.MeleeDistance", 2.0f);
     followDistance = config.GetFloatDefault("AiPlayerbot.FollowDistance", 2.0f);
+    whisperDistance = config.GetFloatDefault("AiPlayerbot.WhisperDistance", 300.0f);
 
     criticalHealth = config.GetIntDefault("AiPlayerbot.CriticalHealth", 25);
     lowHealth = config.GetIntDefault("AiPlayerbot.LowHealth", 45);
@@ -62,10 +63,10 @@ bool PlayerbotAIConfig::Initialize()
     lowMana = config.GetIntDefault("AiPlayerbot.LowMana", 15);
     mediumMana = config.GetIntDefault("AiPlayerbot.MediumMana", 40);
 
-    randomGearLoweringChance = config.GetFloatDefault("AiPlayerbot.RandomGearLoweringChance", 0.25);
-    randomBotMaxLevelChance = config.GetFloatDefault("AiPlayerbot.RandomBotMaxLevelChance", 0.25);
+    randomGearLoweringChance = config.GetFloatDefault("AiPlayerbot.RandomGearLoweringChance", 0.15);
+    randomBotMaxLevelChance = config.GetFloatDefault("AiPlayerbot.RandomBotMaxLevelChance", 0.4);
 
-    iterationsPerTick = config.GetIntDefault("AiPlayerbot.IterationsPerTick", 10);
+    iterationsPerTick = config.GetIntDefault("AiPlayerbot.IterationsPerTick", 4);
 
     allowGuildBots = config.GetBoolDefault("AiPlayerbot.AllowGuildBots", true);
 
@@ -75,21 +76,25 @@ bool PlayerbotAIConfig::Initialize()
     LoadList<list<uint32> >(config.GetStringDefault("AiPlayerbot.RandomBotSpellIds", "54197"), randomBotSpellIds);
 
     randomBotAutologin = config.GetBoolDefault("AiPlayerbot.RandomBotAutologin", true);
-    randomBotGrinding = config.GetBoolDefault("AiPlayerbot.RandomBotGrinding", true);
     minRandomBots = config.GetIntDefault("AiPlayerbot.MinRandomBots", 50);
     maxRandomBots = config.GetIntDefault("AiPlayerbot.MaxRandomBots", 200);
     randomBotUpdateInterval = config.GetIntDefault("AiPlayerbot.RandomBotUpdateInterval", 60);
-    randomBotCountChangeInterval = config.GetIntDefault("AiPlayerbot.RandomBotCountChangeInterval", 5 * 24 * 3600);
+    randomBotCountChangeMinInterval = config.GetIntDefault("AiPlayerbot.RandomBotCountChangeMinInterval", 24 * 3600);
+    randomBotCountChangeMaxInterval = config.GetIntDefault("AiPlayerbot.RandomBotCountChangeMaxInterval", 3 * 24 * 3600);
     minRandomBotInWorldTime = config.GetIntDefault("AiPlayerbot.MinRandomBotInWorldTime", 2 * 3600);
     maxRandomBotInWorldTime = config.GetIntDefault("AiPlayerbot.MaxRandomBotInWorldTime", 14 * 24 * 3600);
     minRandomBotRandomizeTime = config.GetIntDefault("AiPlayerbot.MinRandomBotRandomizeTime", 2 * 3600);
     maxRandomRandomizeTime = config.GetIntDefault("AiPlayerbot.MaxRandomRandomizeTime", 14 * 24 * 3600);
-    minRandomBotPvpTime = config.GetIntDefault("AiPlayerbot.MinRandomBotPvpTime", 120);
-    maxRandomBotPvpTime = config.GetIntDefault("AiPlayerbot.MaxRandomBotPvpTime", 3 * 3600);
     randomBotTeleportDistance = config.GetIntDefault("AiPlayerbot.RandomBotTeleportDistance", 400);
     minRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MinRandomBotsPerInterval", 50);
     maxRandomBotsPerInterval = config.GetIntDefault("AiPlayerbot.MaxRandomBotsPerInterval", 100);
     randomBotJoinLfg = config.GetBoolDefault("AiPlayerbot.RandomBotJoinLfg", false);
+    logInGroupOnly = config.GetBoolDefault("AiPlayerbot.LogInGroupOnly", true);
+    logValuesPerTick = config.GetBoolDefault("AiPlayerbot.LogValuesPerTick", false);
+    fleeingEnabled = config.GetBoolDefault("AiPlayerbot.FleeingEnabled", true);
+
+    randomBotCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotCombatStrategies", "+dps,+attack weak");
+    randomBotNonCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotNonCombatStrategies", "+grind,+move random");
 
     CreateRandomBots();
     sLog.outString("AI Playerbot configuration loaded");
@@ -114,8 +119,6 @@ string PlayerbotAIConfig::GetValue(string name)
 
     if (name == "GlobalCooldown")
         out << globalCoolDown;
-    else if (name == "TeleportDelay")
-        out << teleportDelay;
     else if (name == "ReactDelay")
         out << reactDelay;
 
@@ -155,8 +158,6 @@ void PlayerbotAIConfig::SetValue(string name, string value)
 
     if (name == "GlobalCooldown")
         out >> globalCoolDown;
-    else if (name == "TeleportDelay")
-        out >> teleportDelay;
     else if (name == "ReactDelay")
         out >> reactDelay;
 

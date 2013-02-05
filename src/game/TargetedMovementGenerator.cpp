@@ -281,7 +281,7 @@ void ChaseMovementGenerator<T>::Interrupt(T& owner)
 {
     if (!owner.movespline->Finalized())
     {
-        Movement::Location loc = owner.movespline->ComputePosition();
+        Location loc = owner.movespline->ComputePosition();
         owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
         owner.movespline->_Interrupt();
     }
@@ -349,7 +349,7 @@ void FollowMovementGenerator<T>::Interrupt(T& owner)
 {
     if (!owner.movespline->Finalized())
     {
-        Movement::Location loc = owner.movespline->ComputePosition();
+        Location loc = owner.movespline->ComputePosition();
         owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
         owner.movespline->_Interrupt();
     }

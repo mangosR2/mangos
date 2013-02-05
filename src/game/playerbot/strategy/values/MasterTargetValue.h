@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class MasterTargetValue : public CalculatedValue<Unit*>
+    class MasterTargetValue : public UnitCalculatedValue
 	{
 	public:
-        MasterTargetValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai) {}
+        MasterTargetValue(PlayerbotAI* ai) : UnitCalculatedValue(ai) {}
 
         virtual Unit* Calculate() { return ai->GetMaster(); }
     };

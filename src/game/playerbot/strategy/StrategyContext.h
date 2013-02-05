@@ -34,6 +34,7 @@
 #include "generic/CastTimeStrategy.h"
 #include "generic/ThreatStrategy.h"
 #include "generic/TellTargetStrategy.h"
+#include "generic/AttackEnemyPlayersStrategy.h"
 
 namespace ai
 {
@@ -60,6 +61,7 @@ namespace ai
             creators["cast time"] = &StrategyContext::cast_time;
             creators["threat"] = &StrategyContext::threat;
             creators["tell target"] = &StrategyContext::tell_target;
+            creators["pvp"] = &StrategyContext::pvp;
         }
 
     private:
@@ -81,6 +83,7 @@ namespace ai
         static Strategy* chat(PlayerbotAI* ai) { return new ChatCommandHandlerStrategy(ai); }
         static Strategy* world_packet(PlayerbotAI* ai) { return new WorldPacketHandlerStrategy(ai); }
         static Strategy* ready_check(PlayerbotAI* ai) { return new ReadyCheckStrategy(ai); }
+        static Strategy* pvp(PlayerbotAI* ai) { return new AttackEnemyPlayersStrategy(ai); }
     };
 
     class MovementStrategyContext : public NamedObjectContext<Strategy>

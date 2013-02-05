@@ -13,12 +13,12 @@ namespace ai
         }
 
     public:
-        void CheckAttackers(Player* bot, Player* player);
+        void CheckAttackers(Player* player);
         Unit* GetResult() { return result; }
 
     protected:
-        virtual void CheckAttacker(Player* bot, Player* player, ThreatManager* threatManager) = 0;
-        void GetPlayerCount(Player* bot, Unit* creature, int* tankCount, int* dpsCount);
+        virtual void CheckAttacker(Player* player, Unit* attacker, ThreatManager* threatManager) = 0;
+        void GetPlayerCount(Unit* creature, int* tankCount, int* dpsCount);
 
     protected:
         Unit* result;
@@ -30,10 +30,10 @@ namespace ai
         set<Unit*> alreadyChecked;
     };
 
-    class TargetValue : public CalculatedValue<Unit*>
+    class TargetValue : public UnitCalculatedValue
 	{
 	public:
-        TargetValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai) {}
+        TargetValue(PlayerbotAI* ai) : UnitCalculatedValue(ai) {}
 
     protected:
         Unit* FindTarget(FindTargetStrategy* strategy);

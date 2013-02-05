@@ -418,6 +418,23 @@ void PlayerbotAI::DoNextAction()
     {
         ChangeEngine(BOT_STATE_DEAD);
     }
+
+    Group *group = bot->GetGroup();
+    if (!master && group)
+    {
+        for (GroupReference *gref = group->GetFirstMember(); gref; gref = gref->next())
+        {
+            Player* member = gref->getSource();
+            PlayerbotAI* ai = bot->GetPlayerbotAI();
+            if (member && member->IsInWorld() && !member->GetPlayerbotAI() && (!master || master->GetPlayerbotAI()))
+            {
+                ai->SetMaster(member);
+                ai->ResetStrategies();
+                ai->TellMaster("Hello");
+                break;
+            }
+        }
+    }
 }
 
 void PlayerbotAI::ReInitCurrentEngine()
@@ -432,26 +449,7 @@ void PlayerbotAI::ChangeStrategy(string names, BotState type)
     if (!e)
         return;
 
-    vector<string> splitted = split(names, ',');
-    for (vector<string>::iterator i = splitted.begin(); i != splitted.end(); i++)
-    {
-        const char* name = i->c_str();
-        switch (name[0])
-        {
-        case '+':
-            e->addStrategy(name+1);
-            break;
-        case '-':
-            e->removeStrategy(name+1);
-            break;
-        case '~':
-            e->toggleStrategy(name+1);
-            break;
-        case '?':
-            TellMaster(e->ListStrategies());
-            break;
-        }
-    }
+    e->ChangeStrategy(names);
 }
 
 void PlayerbotAI::DoSpecificAction(string name)
@@ -656,6 +654,11 @@ void PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
     if (!GetSecurity()->CheckLevelFor(securityLevel, true, master))
         return;
 
+    if (sPlayerbotAIConfig.whisperDistance && !bot->GetGroup() && sRandomPlayerbotMgr.IsRandomBot(bot) &&
+            master->GetSession()->GetSecurity() < SEC_GAMEMASTER &&
+            (bot->GetMapId() != master->GetMapId() || bot->GetDistance(master) > sPlayerbotAIConfig.whisperDistance))
+        return;
+
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
     bot->BuildPlayerChat(&data, *aiObjectContext->GetValue<ChatMsg>("chat"), text, LANG_UNIVERSAL);
     master->GetSession()->SendPacket(&data);
@@ -741,7 +744,7 @@ bool PlayerbotAI::HasAura(string name, Unit* unit)
 
     for (uint32 auraType = SPELL_AURA_BIND_SIGHT; auraType < TOTAL_AURAS; auraType++)
     {
-        Unit::AuraList auras = unit->GetAurasByType((AuraType)auraType);
+        Unit::AuraList& auras = unit->GetAurasByType((AuraType)auraType);
         for (Unit::AuraList::iterator i = auras.begin(); i != auras.end(); i++)
         {
             AuraPair aura = *i;
@@ -1033,7 +1036,7 @@ bool PlayerbotAI::HasAuraToDispel(Unit* target, uint32 dispelType)
 {
     for (uint32 type = SPELL_AURA_NONE; type < TOTAL_AURAS; ++type)
     {
-        Unit::AuraList auras = target->GetAurasByType((AuraType)type);
+        Unit::AuraList& auras = target->GetAurasByType((AuraType)type);
         for (Unit::AuraList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
         {
             const AuraPair aura = *itr;

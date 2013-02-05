@@ -769,7 +769,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
 
         ((Creature*)pVictim)->SetLootRecipient(this);
 
-        JustKilledCreature((Creature*)pVictim);
+        JustKilledCreature((Creature*)pVictim, NULL);
 
         pVictim->SetDeathState(JUST_DIED);
         pVictim->SetHealth(0);
@@ -1074,7 +1074,7 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         }
         else                                                // Killed creature
         {
-            JustKilledCreature((Creature*)pVictim);
+            JustKilledCreature((Creature*)pVictim, player_tap);
 
             DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE,"Unit::DealDamage %s JUST_DIED", pVictim->GetGuidStr().c_str());
             pVictim->SetDeathState(JUST_DIED);              // if !spiritOfRedemtionTalentReady always true for unit
@@ -1229,7 +1229,7 @@ struct PetOwnerKilledUnitHelper
     Unit* m_victim;
 };
 
-void Unit::JustKilledCreature(Creature* victim)
+void Unit::JustKilledCreature(Creature* victim, Player* responsiblePlayer)
 {
     if (!victim)
         return;
@@ -1300,6 +1300,9 @@ void Unit::JustKilledCreature(Creature* victim)
     // Notify the outdoor pvp script
     if (OutdoorPvP* outdoorPvP = sOutdoorPvPMgr.GetScript(GetZoneId()))
         outdoorPvP->HandleCreatureDeath(victim);
+
+    // Start creature death script
+    GetMap()->ScriptsStart(sCreatureDeathScripts, victim->GetEntry(), victim, responsiblePlayer ? responsiblePlayer : this);
 
     if (victim->IsLinkingEventTrigger())
         victim->GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_DIE, victim);
@@ -3749,7 +3752,7 @@ uint32 Unit::CalculateBaseSpellHitChance(Unit* pVictim)
 //   Parry
 // For spells
 //   Resist
-SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool CanReflect)
+SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell)
 {
     // Return evade for units in evade mode
     if (pVictim->GetTypeId()==TYPEID_UNIT && ((Creature*)pVictim)->IsInEvadeMode())
@@ -3768,7 +3771,7 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
     }
 
     // Try victim reflect spell
-    if (CanReflect)
+    if (SpellMgr::IsReflectableSpell(spell))
     {
         int32 reflectchance = pVictim->GetTotalAuraModifier(SPELL_AURA_REFLECT_SPELLS);
         Unit::AuraList const& mReflectSpellsSchool = pVictim->GetAurasByType(SPELL_AURA_REFLECT_SPELLS_SCHOOL);
@@ -6314,6 +6317,24 @@ void Unit::RemoveAllDynObjects()
             dynObj->Delete();
         m_dynObjGUIDs.erase(m_dynObjGUIDs.begin());
     }
+}
+
+DynamicObject* Unit::GetEffectiveDynObject(uint32 spellId, SpellEffectIndex effIndex, Unit* pTarget)
+{
+    for (GuidList::iterator itr = m_dynObjGUIDs.begin(); itr != m_dynObjGUIDs.end();)
+    {
+        DynamicObject* dynObj = GetMap()->GetDynamicObject(*itr);
+        if(!dynObj)
+        {
+            itr = m_dynObjGUIDs.erase(itr);
+            continue;
+        }
+
+        if (dynObj->GetSpellId() == spellId && dynObj->GetEffIndex() == effIndex && dynObj->IsWithinDistInMap(pTarget, dynObj->GetRadius()))
+            return dynObj;
+        ++itr;
+    }
+    return NULL;
 }
 
 DynamicObject * Unit::GetDynObject(uint32 spellId, SpellEffectIndex effIndex)
@@ -10480,6 +10501,8 @@ void Unit::TauntFadeOut(Unit *taunter)
 
     if (m_ThreatManager.isThreatListEmpty())
     {
+        m_fixateTargetGuid.Clear();
+
         AddEvent(new EvadeDelayEvent(*this), EVADE_TIME_DELAY_MIN);
 
         if (m_isCreatureLinkingTrigger)
@@ -10498,6 +10521,27 @@ void Unit::TauntFadeOut(Unit *taunter)
         if (((Creature*)this)->AI())
             ((Creature*)this)->AI()->AttackStart(target);
     }
+}
+
+//======================================================================
+/// if pVictim is given, the npc will fixate onto pVictim, if NULL it will remove current fixation
+void Unit::FixateTarget(Unit* pVictim)
+{
+    if (!pVictim)                                           // Remove Fixation
+        m_fixateTargetGuid.Clear();
+    else if (pVictim->isTargetableForAttack())              // Apply Fixation
+        m_fixateTargetGuid = pVictim->GetObjectGuid();
+
+    // Start attacking the fixated target or the next proper one
+    SelectHostileTarget();
+}
+
+Unit* Unit::GetFixatedTarget()
+{
+    if (!GetMap() || m_fixateTargetGuid.IsEmpty())
+        return NULL;
+
+    return GetMap()->GetUnit(m_fixateTargetGuid);
 }
 
 //======================================================================
@@ -10532,12 +10576,26 @@ bool Unit::SelectHostileTarget(bool withEvade)
     Unit* target = NULL;
     Unit* oldTarget = getVictim();
 
-    // First checking if we have some taunt on us
+    // first check if we should fixate a target
+    if (m_fixateTargetGuid)
+    {
+        if (oldTarget && oldTarget->GetObjectGuid() == m_fixateTargetGuid)
+            target = oldTarget;
+        else
+        {
+            Unit* pFixateTarget = GetMap()->GetUnit(m_fixateTargetGuid);
+            if (pFixateTarget && pFixateTarget->isAlive() && !IsSecondChoiceTarget(pFixateTarget, true))
+                target = pFixateTarget;
+        }
+    }
+
+    // then checking if we have some taunt on us
+    if (!target)
     {
         AuraList const& tauntAuras = GetAurasByType(SPELL_AURA_MOD_TAUNT);
         if (!tauntAuras.empty())
         {
-            Unit* caster;
+            Unit* caster = NULL;
 
             // Find first available taunter target
             // Auras are pushed_back, last caster will be on the end
@@ -10555,7 +10613,7 @@ bool Unit::SelectHostileTarget(bool withEvade)
         }
     }
 
-    // No taunt aura or taunt aura caster is dead, standard target selection
+    // No valid fixate target, taunt aura or taunt aura caster is dead, standard target selection
     if (!target && !m_ThreatManager.isThreatListEmpty())
         target = m_ThreatManager.getHostileTarget();
 
@@ -10621,6 +10679,8 @@ bool Unit::SelectHostileTarget(bool withEvade)
         return false;
 
     // enter in evade mode in other case
+    m_fixateTargetGuid.Clear();
+
     AddEvent(new EvadeDelayEvent(*this), EVADE_TIME_DELAY_MIN);
 
     if (m_isCreatureLinkingTrigger)
@@ -12038,21 +12098,23 @@ uint32 createProcExtendMask(DamageInfo *damageInfo, SpellMissInfo missCondition)
     uint32 procEx = PROC_EX_NONE;
     // Check victim state
     if (missCondition!=SPELL_MISS_NONE)
-    switch (missCondition)
     {
-        case SPELL_MISS_MISS:    procEx|=PROC_EX_MISS;   break;
-        case SPELL_MISS_RESIST:  procEx|=PROC_EX_RESIST; break;
-        case SPELL_MISS_DODGE:   procEx|=PROC_EX_DODGE;  break;
-        case SPELL_MISS_PARRY:   procEx|=PROC_EX_PARRY;  break;
-        case SPELL_MISS_BLOCK:   procEx|=PROC_EX_BLOCK;  break;
-        case SPELL_MISS_EVADE:   procEx|=PROC_EX_EVADE;  break;
-        case SPELL_MISS_IMMUNE:  procEx|=PROC_EX_IMMUNE; break;
-        case SPELL_MISS_IMMUNE2: procEx|=PROC_EX_IMMUNE; break;
-        case SPELL_MISS_DEFLECT: procEx|=PROC_EX_DEFLECT;break;
-        case SPELL_MISS_ABSORB:  procEx|=PROC_EX_ABSORB; break;
-        case SPELL_MISS_REFLECT: procEx|=PROC_EX_REFLECT;break;
-        default:
-            break;
+        switch (missCondition)
+        {
+            case SPELL_MISS_MISS:    procEx|=PROC_EX_MISS;   break;
+            case SPELL_MISS_RESIST:  procEx|=PROC_EX_RESIST; break;
+            case SPELL_MISS_DODGE:   procEx|=PROC_EX_DODGE;  break;
+            case SPELL_MISS_PARRY:   procEx|=PROC_EX_PARRY;  break;
+            case SPELL_MISS_BLOCK:   procEx|=PROC_EX_BLOCK;  break;
+            case SPELL_MISS_EVADE:   procEx|=PROC_EX_EVADE;  break;
+            case SPELL_MISS_IMMUNE:  procEx|=PROC_EX_IMMUNE; break;
+            case SPELL_MISS_IMMUNE2: procEx|=PROC_EX_IMMUNE; break;
+            case SPELL_MISS_DEFLECT: procEx|=PROC_EX_DEFLECT;break;
+            case SPELL_MISS_ABSORB:  procEx|=PROC_EX_ABSORB; break;
+            case SPELL_MISS_REFLECT: procEx|=PROC_EX_REFLECT;break;
+            default:
+                break;
+        }
     }
     else
     {
@@ -13675,16 +13737,10 @@ void Unit::ScheduleAINotify(uint32 delay)
 
 void Unit::OnRelocated()
 {
-    // switch to use G3D::Vector3 is good idea, maybe
-    float dx = m_last_notified_position.x - GetPositionX();
-    float dy = m_last_notified_position.y - GetPositionY();
-    float dz = m_last_notified_position.z - GetPositionZ();
-    float distsq = dx*dx+dy*dy+dz*dz;
-    if (distsq > World::GetRelocationLowerLimitSq())
+    float dist = GetDistance(m_last_notified_position);
+    if (dist > World::GetRelocationLowerLimit())
     {
-        m_last_notified_position.x = GetPositionX();
-        m_last_notified_position.y = GetPositionY();
-        m_last_notified_position.z = GetPositionZ();
+        m_last_notified_position = GetPosition();
 
         GetViewPoint().Call_UpdateVisibilityForOwner();
         UpdateObjectVisibility();
@@ -13855,7 +13911,7 @@ bool Unit::IsVisibleTargetForSpell(WorldObject const* caster, SpellEntry const* 
     {
         DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Unit::IsVisibleTargetForSpell check LOS for spell %u, caster %s, location %f %f %f, target %s",
             spellInfo->Id, caster->GetObjectGuid().GetString().c_str(), location->x, location->y, location->z, GetObjectGuid().GetString().c_str());
-        return ((GetMapId() == location->mapid) && IsWithinLOS(location->x, location->y, location->z));
+        return ((GetMapId() == location->GetMapId()) && IsWithinLOS(location->x, location->y, location->z));
     }
     else
     {
@@ -13973,7 +14029,7 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     if (m_movesplineTimer.Passed() || arrived)
     {
         m_movesplineTimer.Reset(POSITION_UPDATE_DELAY);
-        Movement::Location loc = movespline->ComputePosition();
+        Location loc = movespline->ComputePosition();
 
         if (IsBoarded())
         {
@@ -14001,7 +14057,7 @@ uint32 Unit::GetResistance(SpellSchoolMask schoolMask) const
         {
             int32 schoolRes = (GetObjectGuid().IsPlayer() || (GetObjectGuid().IsPet() && GetOwner() && GetOwner()->GetObjectGuid().IsPlayer())) ?
                               GetResistance(SpellSchools(i)) :
-                              floor(GetResistanceBuffMods(SpellSchools(i), true) - GetResistanceBuffMods(SpellSchools(i), false));
+                              floor(GetResistanceBuffMods(SpellSchools(i), true) + GetResistanceBuffMods(SpellSchools(i), false));
             if (resistance < schoolRes)
                 resistance = schoolRes;
             // Use maximal resistance from mask (not lower then 0)

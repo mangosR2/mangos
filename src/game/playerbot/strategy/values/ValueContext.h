@@ -47,6 +47,8 @@
 #include "ThreatValues.h"
 #include "DuelTargetValue.h"
 #include "InvalidTargetValue.h"
+#include "EnemyPlayerValue.h"
+#include "AttackerWithoutAuraTargetValue.h"
 
 namespace ai
 {
@@ -62,6 +64,7 @@ namespace ai
             creators["nearest corpses"] = &ValueContext::nearest_corpses;
             creators["log level"] = &ValueContext::log_level;
             creators["party member without aura"] = &ValueContext::party_member_without_aura;
+            creators["attacker without aura"] = &ValueContext::attacker_without_aura;
             creators["party member to heal"] = &ValueContext::party_member_to_heal;
             creators["party member to resurrect"] = &ValueContext::party_member_to_resurrect;
             creators["current target"] = &ValueContext::current_target;
@@ -71,6 +74,7 @@ namespace ai
             creators["tank target"] = &ValueContext::tank_target;
             creators["dps target"] = &ValueContext::dps_target;
             creators["least hp target"] = &ValueContext::least_hp_target;
+            creators["enemy player target"] = &ValueContext::enemy_player_target;
             creators["cc target"] = &ValueContext::cc_target;
             creators["current cc target"] = &ValueContext::current_cc_target;
             creators["pet target"] = &ValueContext::pet_target;
@@ -174,6 +178,7 @@ namespace ai
         static UntypedValue* possible_targets(PlayerbotAI* ai) { return new PossibleTargetsValue(ai); }
         static UntypedValue* nearest_adds(PlayerbotAI* ai) { return new NearestAdsValue(ai); }
         static UntypedValue* party_member_without_aura(PlayerbotAI* ai) { return new PartyMemberWithoutAuraValue(ai); }
+        static UntypedValue* attacker_without_aura(PlayerbotAI* ai) { return new AttackerWithoutAuraTargetValue(ai); }
         static UntypedValue* party_member_to_heal(PlayerbotAI* ai) { return new PartyMemberToHeal(ai); }
         static UntypedValue* party_member_to_resurrect(PlayerbotAI* ai) { return new PartyMemberToResurrect(ai); }
         static UntypedValue* party_member_to_dispel(PlayerbotAI* ai) { return new PartyMemberToDispel(ai); }
@@ -185,6 +190,7 @@ namespace ai
         static UntypedValue* tank_target(PlayerbotAI* ai) { return new TankTargetValue(ai); }
         static UntypedValue* dps_target(PlayerbotAI* ai) { return new DpsTargetValue(ai); }
         static UntypedValue* least_hp_target(PlayerbotAI* ai) { return new LeastHpTargetValue(ai); }
+        static UntypedValue* enemy_player_target(PlayerbotAI* ai) { return new EnemyPlayerValue(ai); }
         static UntypedValue* cc_target(PlayerbotAI* ai) { return new CcTargetValue(ai); }
         static UntypedValue* current_cc_target(PlayerbotAI* ai) { return new CurrentCcTargetValue(ai); }
         static UntypedValue* pet_target(PlayerbotAI* ai) { return new PetTargetValue(ai); }

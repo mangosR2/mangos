@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class LineTargetValue : public CalculatedValue<Unit*>
+    class LineTargetValue : public UnitCalculatedValue
 	{
 	public:
-        LineTargetValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai) {}
+        LineTargetValue(PlayerbotAI* ai) : UnitCalculatedValue(ai) {}
 
     public:
         virtual Unit* Calculate();

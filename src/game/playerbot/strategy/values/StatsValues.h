@@ -5,81 +5,107 @@ class Unit;
 
 namespace ai
 {
-    template<class T>
-    class QualifiedStatsValue : public CalculatedValue<T>, public Qualified
-	{
-	public:
-        QualifiedStatsValue(PlayerbotAI* ai) : CalculatedValue<T>(ai) {}
+    class HealthValue : public Uint8CalculatedValue, public Qualified
+    {
+    public:
+        HealthValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
-    protected:
         Unit* GetTarget()
         {
             AiObjectContext* ctx = AiObject::context;
             return ctx->GetValue<Unit*>(qualifier)->Get();
         }
-    };
-
-    class HealthValue : public QualifiedStatsValue<uint8>
-    {
-    public:
-        HealthValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
-
         virtual uint8 Calculate();
     };
 
-    class IsDeadValue : public QualifiedStatsValue<bool>
+    class IsDeadValue : public BoolCalculatedValue, public Qualified
     {
     public:
-        IsDeadValue(PlayerbotAI* ai) : QualifiedStatsValue<bool>(ai) {}
+        IsDeadValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual bool Calculate();
     };
 
-    class RageValue : public QualifiedStatsValue<uint8>
+    class RageValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        RageValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        RageValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class EnergyValue : public QualifiedStatsValue<uint8>
+    class EnergyValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        EnergyValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        EnergyValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class ManaValue : public QualifiedStatsValue<uint8>
+    class ManaValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        ManaValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        ManaValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class HasManaValue : public QualifiedStatsValue<bool>
+    class HasManaValue : public BoolCalculatedValue, public Qualified
     {
     public:
-        HasManaValue(PlayerbotAI* ai) : QualifiedStatsValue<bool>(ai) {}
+        HasManaValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual bool Calculate();
     };
 
-    class ComboPointsValue : public QualifiedStatsValue<uint8>
+    class ComboPointsValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        ComboPointsValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        ComboPointsValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class IsMountedValue : public QualifiedStatsValue<bool>
+    class IsMountedValue : public BoolCalculatedValue, public Qualified
     {
     public:
-        IsMountedValue(PlayerbotAI* ai) : QualifiedStatsValue<bool>(ai) {}
+        IsMountedValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual bool Calculate();
     };
 

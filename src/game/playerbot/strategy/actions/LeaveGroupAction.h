@@ -48,6 +48,7 @@ namespace ai
             if (operation != PARTY_OP_LEAVE)
                 return false;
 
+            Player* master = GetMaster();
             if (master && member == master->GetName())
                 return LeaveGroupAction::Execute(event);
 

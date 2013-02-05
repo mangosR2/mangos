@@ -21,19 +21,10 @@
 
 #include "spline.h"
 #include "MoveSplineInitArgs.h"
+#include "WorldLocation.h"
 
 namespace Movement
 {
-    struct Location : public Vector3
-    {
-        Location() : orientation(0) {}
-        Location(float x, float y, float z, float o) : Vector3(x, y, z), orientation(o) {}
-        Location(const Vector3& v) : Vector3(v), orientation(0) {}
-        Location(const Vector3& v, float o) : Vector3(v), orientation(o) {}
-
-        float orientation;
-    };
-
     // MoveSpline represents smooth catmullrom or linear curve and point that moves belong it
     // curve can be cyclic - in this case movement will be cyclic
     // point can have vertical acceleration motion componemt(used in fall, parabolic movement)

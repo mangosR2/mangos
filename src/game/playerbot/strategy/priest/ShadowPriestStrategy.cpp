@@ -50,3 +50,10 @@ void ShadowPriestStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         "low mana",
         NextAction::array(0, new NextAction("dispersion", ACTION_EMERGENCY + 5), NULL)));
 }
+
+void ShadowPriestAoeStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
+{
+    triggers.push_back(new TriggerNode(
+        "shadow word: pain on attacker",
+        NextAction::array(0, new NextAction("shadow word: pain on attacker", 11.0f), NULL)));
+}

@@ -8,6 +8,7 @@ uint64 extractGuid(WorldPacket& packet);
 
 bool CheckMountStateAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!bot->GetGroup() || !master)
         return false;
 
@@ -30,6 +31,7 @@ bool CheckMountStateAction::Execute(Event event)
 
 bool CheckMountStateAction::Mount()
 {
+    Player* master = GetMaster();
     ai->RemoveShapeshift();
 
     const SpellEntry* masterSpell = master->GetAurasByType(SPELL_AURA_MOUNTED).front()->GetSpellProto();

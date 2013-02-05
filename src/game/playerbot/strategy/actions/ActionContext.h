@@ -55,6 +55,7 @@ namespace ai
             creators["stay combat"] = &ActionContext::stay_combat;
             creators["attack anything"] = &ActionContext::attack_anything;
             creators["attack least hp target"] = &ActionContext::attack_least_hp_target;
+            creators["attack enemy player"] = &ActionContext::enemy_player_target;
             creators["emote"] = &ActionContext::emote;
             creators["suggest what to do"] = &ActionContext::suggest_what_to_do;
             creators["move random"] = &ActionContext::move_random;
@@ -88,6 +89,7 @@ namespace ai
         static Action* suggest_what_to_do(PlayerbotAI* ai) { return new SuggestWhatToDoAction(ai); }
         static Action* attack_anything(PlayerbotAI* ai) { return new AttackAnythingAction(ai); }
         static Action* attack_least_hp_target(PlayerbotAI* ai) { return new AttackLeastHpTargetAction(ai); }
+        static Action* enemy_player_target(PlayerbotAI* ai) { return new AttackEnemyPlayerAction(ai); }
         static Action* stay_combat(PlayerbotAI* ai) { return new StayCombatAction(ai); }
         static Action* stay_line(PlayerbotAI* ai) { return new StayLineAction(ai); }
         static Action* stay_circle(PlayerbotAI* ai) { return new StayCircleAction(ai); }

@@ -111,7 +111,7 @@ bool ItemBag::Add(ItemPrototype const* proto)
         proto->Bonding == BIND_QUEST_ITEM)
         return false;
 
-    if (proto->RequiredLevel > sAhBotConfig.maxItemLevel || proto->ItemLevel > sAhBotConfig.maxItemLevel)
+    if (proto->RequiredLevel > sAhBotConfig.maxRequiredLevel || proto->ItemLevel > sAhBotConfig.maxItemLevel)
         return false;
 
     for (int i = 0; i < CategoryList::instance.size(); i++)

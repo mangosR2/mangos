@@ -18,16 +18,8 @@ public:
         creators["mocking blow"] = &mocking_blow;
         creators["death wish"] = &death_wish;
         creators["execute"] = &execute;
-        creators["reach melee"] = &reach_melee;
     }
 private:
-    static ActionNode* reach_melee(PlayerbotAI* ai)
-    {
-        return new ActionNode ("reach melee",
-            /*P*/ NextAction::array(0, new NextAction("charge"), NULL),
-            /*A*/ NULL,
-            /*C*/ NULL);
-    }
     static ActionNode* overpower(PlayerbotAI* ai)
     {
         return new ActionNode ("overpower",
@@ -101,8 +93,8 @@ void DpsWarriorStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     GenericWarriorStrategy::InitTriggers(triggers);
 
     triggers.push_back(new TriggerNode(
-        "lose aggro",
-        NextAction::array(0, new NextAction("mocking blow", ACTION_HIGH + 2), NULL)));
+        "enemy out of melee",
+        NextAction::array(0, new NextAction("charge", ACTION_NORMAL + 9), NULL)));
 
     triggers.push_back(new TriggerNode(
         "target critical health",
@@ -119,4 +111,20 @@ void DpsWarriorStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode(
         "death wish",
         NextAction::array(0, new NextAction("death wish", ACTION_HIGH + 2), NULL)));
+}
+
+
+void DpsWarrirorAoeStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
+{
+    triggers.push_back(new TriggerNode(
+        "rend on attacker",
+        NextAction::array(0, new NextAction("rend on attacker", ACTION_HIGH + 1), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "light aoe",
+        NextAction::array(0, new NextAction("thunder clap", ACTION_HIGH + 2), new NextAction("demoralizing shout", ACTION_HIGH + 2), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "medium aoe",
+        NextAction::array(0, new NextAction("cleave", ACTION_HIGH + 3), NULL)));
 }

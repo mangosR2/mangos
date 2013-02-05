@@ -17,6 +17,7 @@ bool FollowMasterAction::Execute(Event event)
 
 bool FollowMasterRandomAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 

@@ -67,6 +67,7 @@ namespace ai
                 creators["no firestone"] = &TriggerFactoryInternal::HasFirestone;
                 creators["no spellstone"] = &TriggerFactoryInternal::HasSpellstone;
                 creators["corruption"] = &TriggerFactoryInternal::corruption;
+                creators["corruption on attacker"] = &TriggerFactoryInternal::corruption_on_attacker;
                 creators["curse of agony"] = &TriggerFactoryInternal::curse_of_agony;
                 creators["banish"] = &TriggerFactoryInternal::banish;
                 creators["spellstone"] = &TriggerFactoryInternal::spellstone;
@@ -84,6 +85,7 @@ namespace ai
             static Trigger* HasFirestone(PlayerbotAI* ai) { return new HasFirestoneTrigger(ai); }
             static Trigger* HasSpellstone(PlayerbotAI* ai) { return new HasSpellstoneTrigger(ai); }
             static Trigger* corruption(PlayerbotAI* ai) { return new CorruptionTrigger(ai); }
+            static Trigger* corruption_on_attacker(PlayerbotAI* ai) { return new CorruptionOnAttackerTrigger(ai); }
             static Trigger* curse_of_agony(PlayerbotAI* ai) { return new CurseOfAgonyTrigger(ai); }
             static Trigger* banish(PlayerbotAI* ai) { return new BanishTrigger(ai); }
             static Trigger* spellstone(PlayerbotAI* ai) { return new SpellstoneTrigger(ai); }
@@ -118,6 +120,7 @@ namespace ai
                 creators["summon felguard"] = &AiObjectContextInternal::summon_felguard;
                 creators["immolate"] = &AiObjectContextInternal::immolate;
                 creators["corruption"] = &AiObjectContextInternal::corruption;
+                creators["corruption on attacker"] = &AiObjectContextInternal::corruption_on_attacker;
                 creators["curse of agony"] = &AiObjectContextInternal::curse_of_agony;
                 creators["shadow bolt"] = &AiObjectContextInternal::shadow_bolt;
                 creators["drain soul"] = &AiObjectContextInternal::drain_soul;
@@ -149,6 +152,7 @@ namespace ai
             static Action* summon_voidwalker(PlayerbotAI* ai) { return new CastSummonVoidwalkerAction(ai); }
             static Action* summon_felguard(PlayerbotAI* ai) { return new CastSummonFelguardAction(ai); }
             static Action* corruption(PlayerbotAI* ai) { return new CastCorruptionAction(ai); }
+            static Action* corruption_on_attacker(PlayerbotAI* ai) { return new CastCorruptionOnAttackerAction(ai); }
             static Action* curse_of_agony(PlayerbotAI* ai) { return new CastCurseOfAgonyAction(ai); }
             static Action* shadow_bolt(PlayerbotAI* ai) { return new CastShadowBoltAction(ai); }
             static Action* drain_soul(PlayerbotAI* ai) { return new CastDrainSoulAction(ai); }

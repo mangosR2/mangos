@@ -35,6 +35,7 @@ bool ReadyCheckAction::ReadyCheck()
         return false;
     }
 
+    Player* master = GetMaster();
     if (master)
     {
         bool distance = bot->GetDistance(master) <= sPlayerbotAIConfig.sightDistance;

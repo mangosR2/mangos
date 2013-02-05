@@ -25,10 +25,13 @@ namespace ai
             {
                 creators["nc"] = &priest::StrategyFactoryInternal::nc;
                 creators["pull"] = &priest::StrategyFactoryInternal::pull;
+                creators["aoe"] = &priest::StrategyFactoryInternal::shadow_aoe;
+                creators["shadow aoe"] = &priest::StrategyFactoryInternal::shadow_aoe;
             }
 
         private:
             static Strategy* nc(PlayerbotAI* ai) { return new PriestNonCombatStrategy(ai); }
+            static Strategy* shadow_aoe(PlayerbotAI* ai) { return new ShadowPriestAoeStrategy(ai); }
             static Strategy* pull(PlayerbotAI* ai) { return new PullStrategy(ai, "shoot"); }
         };
 
@@ -64,6 +67,7 @@ namespace ai
             {
                 creators["devouring plague"] = &TriggerFactoryInternal::devouring_plague;
                 creators["shadow word: pain"] = &TriggerFactoryInternal::shadow_word_pain;
+                creators["shadow word: pain on attacker"] = &TriggerFactoryInternal::shadow_word_pain_on_attacker;
                 creators["dispel magic"] = &TriggerFactoryInternal::dispel_magic;
                 creators["dispel magic on party"] = &TriggerFactoryInternal::dispel_magic_party_member;
                 creators["cure disease"] = &TriggerFactoryInternal::cure_disease;
@@ -85,6 +89,7 @@ namespace ai
             static Trigger* vampiric_touch(PlayerbotAI* ai) { return new VampiricTouchTrigger(ai); }
             static Trigger* devouring_plague(PlayerbotAI* ai) { return new DevouringPlagueTrigger(ai); }
             static Trigger* shadow_word_pain(PlayerbotAI* ai) { return new PowerWordPainTrigger(ai); }
+            static Trigger* shadow_word_pain_on_attacker(PlayerbotAI* ai) { return new PowerWordPainOnAttackerTrigger(ai); }
             static Trigger* dispel_magic(PlayerbotAI* ai) { return new DispelMagicTrigger(ai); }
             static Trigger* dispel_magic_party_member(PlayerbotAI* ai) { return new DispelMagicPartyMemberTrigger(ai); }
             static Trigger* cure_disease(PlayerbotAI* ai) { return new CureDiseaseTrigger(ai); }
@@ -112,6 +117,7 @@ namespace ai
             AiObjectContextInternal()
             {
                 creators["shadow word: pain"] = &AiObjectContextInternal::shadow_word_pain;
+                creators["shadow word: pain on attacker"] = &AiObjectContextInternal::shadow_word_pain_on_attacker;
                 creators["devouring plague"] = &AiObjectContextInternal::devouring_plague;
                 creators["mind flay"] = &AiObjectContextInternal::mind_flay;
                 creators["holy fire"] = &AiObjectContextInternal::holy_fire;
@@ -161,6 +167,7 @@ namespace ai
             static Action* circle_of_healing(PlayerbotAI* ai) { return new CastCircleOfHealingAction(ai); }
             static Action* resurrection(PlayerbotAI* ai) { return new CastResurrectionAction(ai); }
             static Action* shadow_word_pain(PlayerbotAI* ai) { return new CastPowerWordPainAction(ai); }
+            static Action* shadow_word_pain_on_attacker(PlayerbotAI* ai) { return new CastPowerWordPainOnAttackerAction(ai); }
             static Action* devouring_plague(PlayerbotAI* ai) { return new CastDevouringPlagueAction(ai); }
             static Action* mind_flay(PlayerbotAI* ai) { return new CastMindFlayAction(ai); }
             static Action* holy_fire(PlayerbotAI* ai) { return new CastHolyFireAction(ai); }

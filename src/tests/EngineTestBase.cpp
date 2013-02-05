@@ -9,9 +9,9 @@ class TestActionExecutionListener : public ActionExecutionListener
 public:
     TestActionExecutionListener(MockPlayerbotAIBase *ai) : ai(ai) {}
 
-    virtual void Before(Action* action, Event event) {}
+    virtual bool Before(Action* action, Event event) { return true; }
     virtual bool AllowExecution(Action* action, Event event) { return false; }
-    virtual bool OverrideResult(bool executed, Event event) { return true; }
+    virtual bool OverrideResult(Action* action, bool executed, Event event) { return executed; }
     virtual void After(Action* action, Event event)
     {
         string name = action->getName();

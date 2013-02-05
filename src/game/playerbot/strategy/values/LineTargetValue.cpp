@@ -6,6 +6,7 @@ using namespace ai;
 
 Unit* LineTargetValue::Calculate()
 {
+    Player* master = GetMaster();
     if (!master)
         return NULL;
 

@@ -12,16 +12,22 @@ PlayerbotSecurity::PlayerbotSecurity(Player* const bot) : bot(bot)
         account = sObjectMgr.GetPlayerAccountIdByGUID(bot->GetObjectGuid());
 }
 
-PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from)
+PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* reason)
 {
     if (from->GetSession()->GetSecurity() >= SEC_GAMEMASTER)
         return PLAYERBOT_SECURITY_ALLOW_ALL;
 
     if (from->GetPlayerbotAI())
+    {
+        if (reason) *reason = PLAYERBOT_DENY_IS_BOT;
         return PLAYERBOT_SECURITY_DENY_ALL;
+    }
 
     if (bot->GetPlayerbotAI()->IsOpposing(from))
+    {
+        if (reason) *reason = PLAYERBOT_DENY_OPPOSING;
         return PLAYERBOT_SECURITY_DENY_ALL;
+    }
 
     if (sPlayerbotAIConfig.IsInRandomAccountList(account))
     {
@@ -29,7 +35,10 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from)
         if (master)
         {
             if (bot->GetPlayerbotAI()->IsOpposing(master))
+            {
+                if (reason) *reason = PLAYERBOT_DENY_OPPOSING;
                 return PLAYERBOT_SECURITY_DENY_ALL;
+            }
 
             Group* group = master->GetGroup();
             if (group)
@@ -47,23 +56,39 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from)
         }
 
         if ((int)bot->getLevel() - (int)from->getLevel() > 5)
+        {
+            if (reason) *reason = PLAYERBOT_DENY_LOW_LEVEL;
             return PLAYERBOT_SECURITY_TALK;
+        }
 
         int botGS = (int)bot->GetEquipGearScore(false, false);
         int fromGS = (int)from->GetEquipGearScore(false, false);
         if (botGS && bot->getLevel() > 15 && 100 * (botGS - fromGS) / botGS >= (10 + (91 - (int)bot->getLevel()) / 4))
+        {
+            if (reason) *reason = PLAYERBOT_DENY_GEARSCORE;
             return PLAYERBOT_SECURITY_TALK;
+        }
 
         if (bot->isDead())
+        {
+            if (reason) *reason = PLAYERBOT_DENY_DEAD;
             return PLAYERBOT_SECURITY_TALK;
+        }
 
         Group* group = bot->GetGroup();
         if (!group)
+        {
+            if (reason) *reason = PLAYERBOT_DENY_INVITE;
             return PLAYERBOT_SECURITY_INVITE;
+        }
 
         if (group->IsFull())
+        {
+            if (reason) *reason = PLAYERBOT_DENY_FULL_GROUP;
             return PLAYERBOT_SECURITY_TALK;
+        }
 
+        if (reason) *reason = PLAYERBOT_DENY_INVITE;
         return PLAYERBOT_SECURITY_INVITE;
     }
 
@@ -72,7 +97,8 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from)
 
 bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent, Player* from)
 {
-    PlayerbotSecurityLevel realLevel = LevelFor(from);
+    DenyReason reason = PLAYERBOT_DENY_NONE;
+    PlayerbotSecurityLevel realLevel = LevelFor(from, &reason);
     if (realLevel >= level)
         return true;
 
@@ -80,10 +106,7 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
         return false;
 
     Player* master = bot->GetPlayerbotAI()->GetMaster();
-    if (!master)
-        return PLAYERBOT_SECURITY_TALK;
-
-    if (bot->GetPlayerbotAI() && bot->GetPlayerbotAI()->IsOpposing(master) && master->GetSession()->GetSecurity() < SEC_GAMEMASTER)
+    if (master && bot->GetPlayerbotAI() && bot->GetPlayerbotAI()->IsOpposing(master) && master->GetSession()->GetSecurity() < SEC_GAMEMASTER)
         return false;
 
     ostringstream out;
@@ -93,7 +116,36 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
         out << "I'm kind of busy now";
         break;
     case PLAYERBOT_SECURITY_TALK:
-        out << "I can't do that";
+        switch (reason)
+        {
+        case PLAYERBOT_DENY_NONE:
+            out << "I'll do it later";
+            break;
+        case PLAYERBOT_DENY_LOW_LEVEL:
+            out << "You are too low level";
+            break;
+        case PLAYERBOT_DENY_GEARSCORE:
+            out << "Your gearscore is too low";
+            break;
+        case PLAYERBOT_DENY_NOT_YOURS:
+            out << "I have a master already";
+            break;
+        case PLAYERBOT_DENY_IS_BOT:
+            out << "You are a bot";
+            break;
+        case PLAYERBOT_DENY_OPPOSING:
+            out << "You are the enemy";
+            break;
+        case PLAYERBOT_DENY_DEAD:
+            out << "I'm dead. Will do it later";
+            break;
+        case PLAYERBOT_DENY_INVITE:
+            out << "Invite me to your group first";
+            break;
+        default:
+            out << "I can't do that";
+            break;
+        }
         break;
     case PLAYERBOT_SECURITY_INVITE:
         out << "Invite me to your group first";

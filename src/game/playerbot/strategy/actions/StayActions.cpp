@@ -99,6 +99,7 @@ bool StayCircleAction::Execute(Event event)
     float range = 2.0f;
 
     Unit* target = AI_VALUE(Unit*, "current target");
+    Player* master = GetMaster();
     if (!target)
         target = master;
 
@@ -139,6 +140,7 @@ bool StayLineAction::Execute(Event event)
 
     float range = 2.0f;
 
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -171,6 +173,7 @@ bool StayCombatAction::Execute(Event event)
 
     float range = 2.0f;
 
+    Player* master = GetMaster();
     if (!master)
         return false;
 

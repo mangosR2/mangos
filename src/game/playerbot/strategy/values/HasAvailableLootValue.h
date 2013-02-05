@@ -4,10 +4,10 @@
 
 namespace ai
 {
-    class HasAvailableLootValue : public CalculatedValue<bool>
+    class HasAvailableLootValue : public BoolCalculatedValue
 	{
 	public:
-        HasAvailableLootValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        HasAvailableLootValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
     public:
         virtual bool Calculate()

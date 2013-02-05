@@ -22,6 +22,6 @@ void FollowMasterRandomStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 void MoveRandomStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 {
     triggers.push_back(new TriggerNode(
-        "random",
+        "often",
         NextAction::array(0, new NextAction("move random", 5.0f), NULL)));
 }

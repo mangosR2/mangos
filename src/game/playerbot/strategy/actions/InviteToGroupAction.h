@@ -11,6 +11,7 @@ namespace ai
 
         virtual bool Execute(Event event)
         {
+            Player* master = event.getOwner();
             if (!master)
                 return false;
 

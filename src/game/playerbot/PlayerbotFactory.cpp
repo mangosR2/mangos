@@ -11,6 +11,24 @@
 using namespace ai;
 using namespace std;
 
+uint32 PlayerbotFactory::tradeSkills[] =
+{
+    SKILL_ALCHEMY,
+    SKILL_ENCHANTING,
+    SKILL_SKINNING,
+    SKILL_JEWELCRAFTING,
+    SKILL_INSCRIPTION,
+    SKILL_TAILORING,
+    SKILL_LEATHERWORKING,
+    SKILL_ENGINEERING,
+    SKILL_HERBALISM,
+    SKILL_MINING,
+    SKILL_BLACKSMITHING,
+    SKILL_COOKING,
+    SKILL_FIRST_AID,
+    SKILL_FISHING
+};
+
 void PlayerbotFactory::Randomize(bool incremental)
 {
     if (!itemQuality)
@@ -50,10 +68,12 @@ void PlayerbotFactory::Randomize(bool incremental)
 
     InitAvailableSpells();
     InitSkills();
+    InitTradeSkills();
     InitTalents();
     InitAvailableSpells();
     InitSpecialSpells();
     InitMounts();
+    UpdateTradeSkills();
     bot->SaveToDB();
 
     InitEquipment(incremental);
@@ -88,12 +108,21 @@ void PlayerbotFactory::InitPet()
             if (!co || !co->isTameable(false))
                 continue;
 
+            if (co->minlevel > bot->getLevel())
+                continue;
+
 			PetLevelInfo const* petInfo = sObjectMgr.GetPetLevelInfo(co->Entry, bot->getLevel());
             if (!petInfo)
                 continue;
 
 			ids.push_back(id);
 		}
+
+        if (ids.empty())
+        {
+            sLog.outError("No pets available for bot %s (%d level)", bot->GetName(), bot->getLevel());
+            return;
+        }
 
 		for (int i = 0; i < 100; i++)
 		{
@@ -120,6 +149,7 @@ void PlayerbotFactory::InitPet()
             pet->SetLevel(bot->getLevel());
             bot->SetPet(pet);
 
+            sLog.outDetail("Bot %s: assign pet %d (%d level)", bot->GetName(), co->Entry, bot->getLevel());
             pet->Summon();
             pet->SavePetToDB(PET_SAVE_AS_CURRENT);
             break;
@@ -736,6 +766,9 @@ void PlayerbotFactory::EnchantItem(Item* item)
             if (!enchant || enchant->slot != PERM_ENCHANTMENT_SLOT)
                 continue;
 
+            if (enchant->requiredLevel && enchant->requiredLevel > level)
+                continue;
+
             uint8 sp = 0, ap = 0, tank = 0;
             for (int i = 0; i < 3; ++i)
             {
@@ -766,6 +799,11 @@ void PlayerbotFactory::EnchantItem(Item* item)
 
     int index = urand(0, ids.size() - 1);
     uint32 id = ids[index];
+
+    SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(id);
+    if (!enchant)
+        return;
+
     bot->ApplyEnchantment(item, PERM_ENCHANTMENT_SLOT, false);
     item->SetEnchantment(PERM_ENCHANTMENT_SLOT, id, 0, 0);
     bot->ApplyEnchantment(item, PERM_ENCHANTMENT_SLOT, true);
@@ -786,6 +824,68 @@ bool PlayerbotFactory::CanEquipUnseenItem(uint8 slot, uint16 &dest, uint32 item)
     return false;
 }
 
+void PlayerbotFactory::InitTradeSkills()
+{
+    for (int i = 0; i < sizeof(tradeSkills) / sizeof(uint32); ++i)
+    {
+        bot->SetSkill(tradeSkills[i], 0, 0);
+    }
+
+    vector<uint32> firstSkills;
+    vector<uint32> secondSkills;
+    switch (bot->getClass())
+    {
+    case CLASS_WARRIOR:
+    case CLASS_PALADIN:
+        firstSkills.push_back(SKILL_MINING);
+        secondSkills.push_back(SKILL_BLACKSMITHING);
+        secondSkills.push_back(SKILL_ENGINEERING);
+        break;
+    case CLASS_SHAMAN:
+    case CLASS_DRUID:
+    case CLASS_HUNTER:
+    case CLASS_ROGUE:
+        firstSkills.push_back(SKILL_SKINNING);
+        secondSkills.push_back(SKILL_LEATHERWORKING);
+        break;
+    default:
+        firstSkills.push_back(SKILL_TAILORING);
+        secondSkills.push_back(SKILL_ENCHANTING);
+    }
+
+    SetRandomSkill(SKILL_FIRST_AID);
+    SetRandomSkill(SKILL_FISHING);
+    SetRandomSkill(SKILL_COOKING);
+
+    switch (urand(0, 3))
+    {
+    case 0:
+        SetRandomSkill(SKILL_HERBALISM);
+        SetRandomSkill(SKILL_ALCHEMY);
+        break;
+    case 1:
+        SetRandomSkill(SKILL_HERBALISM);
+        SetRandomSkill(SKILL_INSCRIPTION);
+        break;
+    case 2:
+        SetRandomSkill(SKILL_MINING);
+        SetRandomSkill(SKILL_JEWELCRAFTING);
+        break;
+    case 3:
+        SetRandomSkill(firstSkills[urand(0, firstSkills.size() - 1)]);
+        SetRandomSkill(secondSkills[urand(0, secondSkills.size() - 1)]);
+        break;
+    }
+}
+
+void PlayerbotFactory::UpdateTradeSkills()
+{
+    for (int i = 0; i < sizeof(tradeSkills) / sizeof(uint32); ++i)
+    {
+        if (bot->GetSkillValue(tradeSkills[i]) == 1)
+            bot->SetSkill(tradeSkills[i], 0, 0);
+    }
+}
 
 void PlayerbotFactory::InitSkills()
 {
@@ -847,7 +947,13 @@ void PlayerbotFactory::InitAvailableSpells()
     for (uint32 id = 0; id < sCreatureStorage.GetMaxEntry(); ++id)
     {
         CreatureInfo const* co = sCreatureStorage.LookupEntry<CreatureInfo>(id);
-        if (!co ||co->trainer_type != TRAINER_TYPE_CLASS || co->trainer_class != bot->getClass())
+        if (!co)
+            continue;
+
+        if (co->trainer_type != TRAINER_TYPE_TRADESKILLS && co->trainer_type != TRAINER_TYPE_CLASS)
+            continue;
+
+        if (co->trainer_type == TRAINER_TYPE_CLASS && co->trainer_class != bot->getClass())
             continue;
 
         uint32 trainerId = co->trainerId;

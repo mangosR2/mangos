@@ -45,6 +45,25 @@ namespace ai
             return strategyContexts.supports();
         }
 
+        string FormatValues()
+        {
+            ostringstream out;
+            set<string>& names = valueContexts.GetCreated();
+            for (set<string>::iterator i = names.begin(); i != names.end(); ++i)
+            {
+                UntypedValue* value = GetUntypedValue(*i);
+                if (!value)
+                    continue;
+
+                string text = value->Format();
+                if (text == "?")
+                    continue;
+
+                out << "{" << *i << "=" << text << "} ";
+            }
+            return out.str();
+        }
+
     public:
         virtual void Update();
         virtual void Reset();

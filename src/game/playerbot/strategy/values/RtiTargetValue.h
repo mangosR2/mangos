@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class RtiTargetValue : public CalculatedValue<Unit*>
+    class RtiTargetValue : public UnitCalculatedValue
     {
     public:
-        RtiTargetValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai)
+        RtiTargetValue(PlayerbotAI* ai) : UnitCalculatedValue(ai)
         {}
 
     public:

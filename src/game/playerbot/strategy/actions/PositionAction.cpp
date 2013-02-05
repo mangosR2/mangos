@@ -11,6 +11,7 @@ bool PositionAction::Execute(Event event)
 	if (qualifier.empty())
 		return false;
 
+    Player* master = GetMaster();
     if (!master)
         return false;
 

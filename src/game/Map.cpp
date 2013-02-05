@@ -2438,8 +2438,7 @@ void Map::ForcedUnload()
 
         if (player->IsBeingTeleportedFar())
         {
-            WorldLocation old_loc;
-            player->GetPosition(old_loc);
+            WorldLocation old_loc = player->GetPosition();
             if (!player->TeleportTo(old_loc, TELE_TO_NODELAY))
             {
                 DETAIL_LOG("Map::ForcedUnload: %s is in teleport state, cannot be ported to his previous place, teleporting him to his homebind place...",
@@ -2582,6 +2581,8 @@ template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, Battl
 
     if (bg)
         bg->OnObjectDBLoad(obj);
+
+    obj->UpdateObjectVisibility();
 }
 
 WorldObjectEventProcessor* Map::GetEvents()

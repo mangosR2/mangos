@@ -14,7 +14,7 @@ namespace ai
 
     protected:
         Player* bot;
-        Player* master;
+        Player* GetMaster();
         AiObjectContext* context;
         ChatHelper* chat;
 	};

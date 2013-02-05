@@ -1,6 +1,8 @@
 #include "../../../pchdef.h"
 #include "../../playerbot.h"
 #include "QueryItemUsageAction.h"
+#include "../../../ahbot/AhBot.h"
+#include "../../RandomPlayerbotMgr.h"
 
 
 using namespace ai;
@@ -105,6 +107,23 @@ bool QueryItemUsageAction::QueryItemUsage(ItemPrototype const *item)
     return false;
 }
 
+void QueryItemUsageAction::QueryItemPrice(ItemPrototype const *item)
+{
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
+        return;
+
+    if (item->Bonding == BIND_WHEN_PICKED_UP)
+        return;
+
+    int32 price = auctionbot.GetSellPrice(item);
+    if (price)
+    {
+        ostringstream out;
+        out << "Will trade for " << chat->formatMoney(price);
+        ai->TellMaster(out.str());
+    }
+}
+
 void QueryItemUsageAction::QueryItemsUsage(ItemIds items)
 {
     for (ItemIds::iterator i = items.begin(); i != items.end(); i++)
@@ -112,6 +131,7 @@ void QueryItemUsageAction::QueryItemsUsage(ItemIds items)
         ItemPrototype const *item = sItemStorage.LookupEntry<ItemPrototype>(*i);
         QueryItemUsage(item);
         QueryQuestItem(*i);
+        QueryItemPrice(item);
     }
 }
 

@@ -14,4 +14,14 @@ namespace ai
         virtual string getName() { return "dps"; }
         virtual NextAction** getDefaultActions();
     };
+
+    class DpsWarrirorAoeStrategy : public CombatStrategy
+    {
+    public:
+        DpsWarrirorAoeStrategy(PlayerbotAI* ai) : CombatStrategy(ai) {}
+
+    public:
+        virtual void InitTriggers(std::list<TriggerNode*> &triggers);
+        virtual string getName() { return "aoe"; }
+    };
 }

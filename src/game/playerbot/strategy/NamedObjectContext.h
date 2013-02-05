@@ -109,6 +109,14 @@ namespace ai
         bool IsShared() { return shared; }
         bool IsSupportsSiblings() { return supportsSiblings; }
 
+        set<string> GetCreated()
+        {
+            set<string> keys;
+            for (typename map<string, T*>::iterator it = created.begin(); it != created.end(); it++)
+                keys.insert(it->first);
+            return keys;
+        }
+
     protected:
         map<string, T*> created;
         bool shared;
@@ -188,6 +196,20 @@ namespace ai
                 set<string> supported = (*i)->supports();
 
                 for (set<string>::iterator j = supported.begin(); j != supported.end(); j++)
+                    result.insert(*j);
+            }
+            return result;
+        }
+
+        set<string> GetCreated()
+        {
+            set<string> result;
+
+            for (typename list<NamedObjectContext<T>*>::iterator i = contexts.begin(); i != contexts.end(); i++)
+            {
+                set<string> createdKeys = (*i)->GetCreated();
+
+                for (set<string>::iterator j = createdKeys.begin(); j != createdKeys.end(); j++)
                     result.insert(*j);
             }
             return result;

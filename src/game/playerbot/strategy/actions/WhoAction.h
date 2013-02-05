@@ -11,6 +11,7 @@ namespace ai
 
     public:
         virtual bool Execute(Event event);
+        static map<uint32, string> skills;
     };
 
 }

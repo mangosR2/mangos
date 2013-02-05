@@ -45,17 +45,17 @@ namespace ai
         MockLogicalValue(PlayerbotAI* const ai) : ManualSetValue<bool>(ai, false) {}
     };
 
-    class AlwaysTrueValue : public CalculatedValue<bool>, public Qualified
+    class AlwaysTrueValue : public BoolCalculatedValue, public Qualified
     {
     public:
-        AlwaysTrueValue(PlayerbotAI* const ai) : CalculatedValue<bool>(ai) {}
+        AlwaysTrueValue(PlayerbotAI* const ai) : BoolCalculatedValue(ai) {}
         virtual bool Calculate() { return true; }
     };
 
-    class MockPartyMemberWithoutAuraValue : public CalculatedValue<Unit*>, public Qualified
+    class MockPartyMemberWithoutAuraValue : public UnitCalculatedValue, public Qualified
     {
     public:
-        MockPartyMemberWithoutAuraValue(PlayerbotAI* const ai) : CalculatedValue<Unit*>(ai) {}
+        MockPartyMemberWithoutAuraValue(PlayerbotAI* const ai) : UnitCalculatedValue(ai) {}
 
         virtual Unit* Calculate()
         {
@@ -65,10 +65,10 @@ namespace ai
         }
     };
 
-    class MockPartyMemberToHeal : public CalculatedValue<Unit*>
+    class MockPartyMemberToHeal : public UnitCalculatedValue
     {
     public:
-        MockPartyMemberToHeal(PlayerbotAI* const ai) : CalculatedValue<Unit*>(ai) {}
+        MockPartyMemberToHeal(PlayerbotAI* const ai) : UnitCalculatedValue(ai) {}
 
         virtual Unit* Calculate()
         {
@@ -77,10 +77,10 @@ namespace ai
         }
     };
 
-    class MockPartyMemberToDispel : public CalculatedValue<Unit*>, public Qualified
+    class MockPartyMemberToDispel : public UnitCalculatedValue, public Qualified
     {
     public:
-        MockPartyMemberToDispel(PlayerbotAI* const ai) : CalculatedValue<Unit*>(ai) {}
+        MockPartyMemberToDispel(PlayerbotAI* const ai) : UnitCalculatedValue(ai) {}
 
         virtual Unit* Calculate()
         {
@@ -111,6 +111,7 @@ namespace ai
     public:
         MockValueContext() : NamedObjectContext<UntypedValue>()
         {
+            creators["attacker without aura"] = &MockValueContext::mock;
             creators["party member without aura"] = &MockValueContext::party_member_without_aura;
             creators["party member to heal"] = &MockValueContext::party_member_to_heal;
             creators["party member to dispel"] = &MockValueContext::party_member_to_dispel;
@@ -129,6 +130,7 @@ namespace ai
             creators["least hp target"] = &MockValueContext::mock;
             creators["rti target"] = &MockValueContext::mock;
             creators["duel target"] = &MockValueContext::mock;
+            creators["enemy player target"] = &MockValueContext::mock;
 
             creators["health"] = &MockValueContext::stats;
             creators["rage"] = &MockValueContext::stats;
@@ -158,6 +160,7 @@ namespace ai
 
             creators["possible targets"] = &MockValueContext::units;
             creators["nearest adds"] = &MockValueContext::units;
+            creators["attackers"] = &MockValueContext::units;
             creators["has totem"] = &MockValueContext::logical;
             creators["aoe heal"] = &MockValueContext::stats;
 
@@ -199,6 +202,8 @@ namespace ai
               GetValue<Unit*>("pet target")->Set(MockedTargets::GetPet());
               GetValue<Unit*>("least hp target")->Set(MockedTargets::GetLeastHpTarget());
               GetValue<Unit*>("rti target")->Set(MockedTargets::GetRtiTarget());
+              GetValue<Unit*>("enemy player target")->Set(MockedTargets::GetEnemyPlayer());
+              GetValue<Unit*>("attacker without aura")->Set(NULL);
 
               GetValue<uint8>("health", "self target")->Set(100);
               GetValue<uint8>("health", "current target")->Set(100);

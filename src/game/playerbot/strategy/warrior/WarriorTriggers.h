@@ -9,17 +9,23 @@ namespace ai
     DEBUFF_TRIGGER(DisarmDebuffTrigger, "disarm", "disarm")
     DEBUFF_TRIGGER(SunderArmorDebuffTrigger, "sunder armor", "sunder armor")
 
+    class RendDebuffOnAttackerTrigger : public DebuffOnAttackerTrigger
+    {
+    public:
+        RendDebuffOnAttackerTrigger(PlayerbotAI* ai) : DebuffOnAttackerTrigger(ai, "rend") {}
+    };
+
 	class RevengeAvailableTrigger : public SpellCanBeCastTrigger
 	{
 	public:
 		RevengeAvailableTrigger(PlayerbotAI* ai) : SpellCanBeCastTrigger(ai, "revenge") {}
 	};
 
-    class BloodrageDebuffTrigger : public DebuffTrigger 
+    class BloodrageDebuffTrigger : public DebuffTrigger
     {
     public:
         BloodrageDebuffTrigger(PlayerbotAI* ai) : DebuffTrigger(ai, "bloodrage") {}
-        virtual bool IsActive() 
+        virtual bool IsActive()
         {
             return DebuffTrigger::IsActive() &&
                 AI_VALUE2(uint8, "health", "self target") >= 75 &&
@@ -63,5 +69,5 @@ namespace ai
         DeathWishTrigger(PlayerbotAI* ai) : BoostTrigger(ai, "death wish") {}
     };
 
-    
+
 }

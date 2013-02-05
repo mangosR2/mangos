@@ -5,10 +5,10 @@
 namespace ai
 {
    
-    class SpellCastUsefulValue : public CalculatedValue<bool>, public Qualified
+    class SpellCastUsefulValue : public BoolCalculatedValue, public Qualified
 	{
 	public:
-        SpellCastUsefulValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        SpellCastUsefulValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
       
     public:
         virtual bool Calculate();

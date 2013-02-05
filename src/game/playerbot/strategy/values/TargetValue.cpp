@@ -11,7 +11,7 @@ Unit* TargetValue::FindTarget(FindTargetStrategy* strategy)
     Group* group = bot->GetGroup();
     if (!group)
     {
-        strategy->CheckAttackers(bot, bot);
+        strategy->CheckAttackers(bot);
         return strategy->GetResult();
     }
 
@@ -21,15 +21,16 @@ Unit* TargetValue::FindTarget(FindTargetStrategy* strategy)
         if (!member || !member->isAlive() || !member->IsWithinLOSInMap(member))
             continue;
 
-        strategy->CheckAttackers(bot, member);
+        strategy->CheckAttackers(member);
     }
 
     return strategy->GetResult();
 }
 
 
-void FindTargetStrategy::CheckAttackers(Player* bot, Player* player)
+void FindTargetStrategy::CheckAttackers(Player* player)
 {
+    Player* bot = ai->GetBot();
     for (HostileReference* ref = player->getHostileRefManager().getFirst(); ref; ref = ref->next())
     {
         ThreatManager* threatManager = ref->getSource();
@@ -44,16 +45,15 @@ void FindTargetStrategy::CheckAttackers(Player* bot, Player* player)
             !attacker->IsFriendlyTo(bot) &&
             bot->IsWithinLOSInMap(attacker))
         {
-            CheckAttacker(bot, player, threatManager);
+            CheckAttacker(player, attacker, threatManager);
             alreadyChecked.insert(attacker);
-            if (alreadyChecked.size() > 5)
-                break;
         }
     }
 }
 
-void FindTargetStrategy::GetPlayerCount(Player* bot, Unit* creature, int* tankCount, int* dpsCount)
+void FindTargetStrategy::GetPlayerCount(Unit* creature, int* tankCount, int* dpsCount)
 {
+    Player* bot = ai->GetBot();
     if (tankCountCache.find(creature) != tankCountCache.end())
     {
         *tankCount = tankCountCache[creature];

@@ -60,11 +60,6 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z)
     return true;
 }
 
-bool MovementAction::MoveTo(WorldObject* target)
-{
-    return MoveTo(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ());
-}
-
 bool MovementAction::MoveTo(Unit* target, float distance)
 {
     if (!IsMovingAllowed(target))
@@ -96,18 +91,20 @@ bool MovementAction::MoveTo(Unit* target, float distance)
 
 float MovementAction::GetFollowAngle()
 {
+    Player* master = GetMaster();
     Group* group = master ? master->GetGroup() : bot->GetGroup();
     if (!group)
         return 0.0f;
 
-    GroupReference *gref = group->GetFirstMember();
     int index = 1;
-    while( gref )
+    for (GroupReference *ref = group->GetFirstMember(); ref; ref = ref->next())
     {
-        if( gref->getSource() == bot)
+        if( ref->getSource() == master)
+            continue;
+
+        if( ref->getSource() == bot)
             return 2 * M_PI / (group->GetMembersCount() -1) * index;
 
-        gref = gref->next();
         index++;
     }
     return 0;
@@ -141,7 +138,9 @@ bool MovementAction::IsMovingAllowed()
 {
     if (bot->isFrozen() || bot->IsPolymorphed() ||
             (bot->isDead() && !bot->GetCorpse()) ||
-            bot->IsBeingTeleported() || bot->isInRoots() || bot->HasAuraType(SPELL_AURA_MOD_CONFUSE) || bot->isCharmed())
+            bot->IsBeingTeleported() || bot->isInRoots() ||
+            bot->HasAuraType(SPELL_AURA_MOD_CONFUSE) || bot->isCharmed() ||
+            bot->HasAuraType(SPELL_AURA_MOD_STUN))
         return false;
 
     MotionMaster &mm = *bot->GetMotionMaster();
@@ -196,7 +195,12 @@ void MovementAction::WaitForReach(float distance)
 {
     float delay = 1000.0f * distance / bot->GetSpeed(MOVE_RUN) + sPlayerbotAIConfig.reactDelay;
 
-    if (delay > sPlayerbotAIConfig.globalCoolDown)
+    if (delay > sPlayerbotAIConfig.maxWaitForMove)
+        delay = sPlayerbotAIConfig.maxWaitForMove;
+
+    Unit* target = *ai->GetAiObjectContext()->GetValue<Unit*>("current target");
+    Unit* player = *ai->GetAiObjectContext()->GetValue<Unit*>("enemy player target");
+    if ((player || target) && delay > sPlayerbotAIConfig.globalCoolDown)
         delay = sPlayerbotAIConfig.globalCoolDown;
 
     ai->SetNextCheckDelay((uint32)delay);
@@ -204,10 +208,14 @@ void MovementAction::WaitForReach(float distance)
 
 bool MovementAction::Flee(Unit *target)
 {
+    Player* master = GetMaster();
     if (!target)
         target = master;
 
     if (!target)
+        return false;
+
+    if (!sPlayerbotAIConfig.fleeingEnabled)
         return false;
 
     if (!IsMovingAllowed())
@@ -245,19 +253,15 @@ bool MoveRandomAction::Execute(Event event)
     if (!(rand() % 3))
     {
         list<ObjectGuid> npcs = AI_VALUE(list<ObjectGuid>, "nearest npcs");
-        if (!npcs.empty())
+        for (list<ObjectGuid>::iterator i = npcs.begin(); i != npcs.end(); i++)
         {
-            size_t pos = rand() % npcs.size();
-            for (list<ObjectGuid>::iterator i = npcs.begin(); i != npcs.end() && pos; i++)
-            {
-                target = ai->GetUnit(*i);
-                pos--;
+            target = ai->GetUnit(*i);
 
-                if (target && !pos)
-                {
-                    ostringstream out; out << "I will check " << target->GetName();
-                    ai->TellMaster(out);
-                }
+            if (target && bot->GetDistance(target) > sPlayerbotAIConfig.tooCloseDistance)
+            {
+                ostringstream out; out << "I will check " << target->GetName();
+                ai->TellMaster(out);
+                break;
             }
         }
     }
@@ -265,38 +269,44 @@ bool MoveRandomAction::Execute(Event event)
     if (!target || !(rand() % 3))
     {
         list<ObjectGuid> gos = AI_VALUE(list<ObjectGuid>, "nearest game objects");
-        if (!gos.empty())
+        for (list<ObjectGuid>::iterator i = gos.begin(); i != gos.end(); i++)
         {
-            size_t pos = rand() % gos.size();
-            for (list<ObjectGuid>::iterator i = gos.begin(); i != gos.end() && pos; i++)
-            {
-                target = ai->GetGameObject(*i);
-                pos--;
+            target = ai->GetGameObject(*i);
 
-                if (target && !pos)
-                {
-                    AI_VALUE(LootObjectStack*, "available loot")->Add(target->GetObjectGuid());
-                    ostringstream out; out << "I will check " << chat->formatGameobject((GameObject*)target);
-                    ai->TellMaster(out);
-                }
+            if (target && bot->GetDistance(target) > sPlayerbotAIConfig.tooCloseDistance)
+            {
+                AI_VALUE(LootObjectStack*, "available loot")->Add(target->GetObjectGuid());
+                ostringstream out; out << "I will check " << chat->formatGameobject((GameObject*)target);
+                ai->TellMaster(out);
+                break;
             }
         }
     }
 
-    float distance = (rand() % 15) / 10.0f;
+    float distance = sPlayerbotAIConfig.tooCloseDistance + sPlayerbotAIConfig.grindDistance * urand(3, 10) / 10.0f;
 
-    if (!target || !(rand() % 3))
+    if (target)
+    {
+        return MoveNear(target);
+    }
+
+    for (int i = 0; i < 10; ++i)
     {
         float x = bot->GetPositionX();
         float y = bot->GetPositionY();
         float z = bot->GetPositionZ();
-        x += urand(0, sPlayerbotAIConfig.sightDistance) - sPlayerbotAIConfig.sightDistance / 2;
-        y += urand(0, sPlayerbotAIConfig.sightDistance) - sPlayerbotAIConfig.sightDistance / 2;
+        x += urand(0, distance) - distance / 2;
+        y += urand(0, distance) - distance / 2;
         bot->UpdateGroundPositionZ(x, y, z);
-        return MoveNear(bot->GetMapId(), x, y, z, distance);
+        bool moved = MoveNear(bot->GetMapId(), x, y, z);
+        if (moved)
+        {
+            ai->TellMaster("I will check out there");
+            return true;
+        }
     }
 
-    return MoveNear(target);
+    return false;
 }
 
 bool MoveToLootAction::Execute(Event event)

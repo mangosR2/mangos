@@ -112,4 +112,8 @@ void DpsAoeHunterStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 	triggers.push_back(new TriggerNode(
 		"high aoe",
 		NextAction::array(0, new NextAction("volley", 20.0f), NULL)));
+
+	triggers.push_back(new TriggerNode(
+		"serpent sting on attacker",
+		NextAction::array(0, new NextAction("serpent sting on attacker", 49.0f), NULL)));
 }

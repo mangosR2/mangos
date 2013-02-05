@@ -11,6 +11,8 @@ void AcceptAllQuestsAction::ProcessQuest(Quest const* quest, WorldObject* questG
 
 bool AcceptQuestAction::Execute(Event event)
 {
+    Player* master = GetMaster();
+
     if (!master)
         return false;
 
@@ -52,7 +54,7 @@ bool AcceptQuestAction::Execute(Event event)
 
 bool AcceptQuestShareAction::Execute(Event event)
 {
-
+    Player* master = GetMaster();
     Player *bot = ai->GetBot();
 
     WorldPacket& p = event.getPacket();

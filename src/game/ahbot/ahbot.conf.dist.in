@@ -20,8 +20,10 @@ AhBot.Enabled = 1
 AhBot.Account = 1
 AhBot.GUID = 1
 
-AhBot.UpdateIntervalInSeconds = 300
-AhBot.MaxItemLevel = 9999
+# 199 for 80, 80 for 70, 70 for 60, ..., 25 for 20
+AhBot.MaxItemLevel = 199
+# Same as level cap
+AhBot.MaxRequiredLevel = 80
 
 AhBot.PriceMultiplier = 1.0
 AhBot.DefaultMinPrice = 20

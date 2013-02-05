@@ -7,6 +7,7 @@ using namespace ai;
 
 bool FollowChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -24,6 +25,7 @@ bool FollowChatShortcutAction::Execute(Event event)
 
 bool StayChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -36,6 +38,7 @@ bool StayChatShortcutAction::Execute(Event event)
 
 bool FleeChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -53,6 +56,7 @@ bool FleeChatShortcutAction::Execute(Event event)
 
 bool GoawayChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -65,6 +69,7 @@ bool GoawayChatShortcutAction::Execute(Event event)
 
 bool GrindChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -76,6 +81,7 @@ bool GrindChatShortcutAction::Execute(Event event)
 
 bool TankAttackChatShortcutAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 

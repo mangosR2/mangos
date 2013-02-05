@@ -6,7 +6,7 @@
 
 using namespace ai;
 
-
+map<uint32, string> WhoAction::skills;
 
 bool WhoAction::Execute(Event event)
 {
@@ -49,8 +49,73 @@ bool WhoAction::Execute(Event event)
         out << " gear (|h|cff00ff00" << bot->GetEquipGearScore(false, false) << "|h|cffffffff GS)";
     }
 
-    if (bot->GetGroup())
-        out << " invited";
+    if (skills.empty())
+    {
+        skills[SKILL_ALCHEMY] = "Alchemy";
+        skills[SKILL_ENCHANTING] = "Enchanting";
+        skills[SKILL_SKINNING] = "Skinning";
+        skills[SKILL_JEWELCRAFTING] = "Jewelcrafting";
+        skills[SKILL_INSCRIPTION] = "Inscription";
+        skills[SKILL_TAILORING] = "Tailoring";
+        skills[SKILL_LEATHERWORKING] = "Leatherworking";
+        skills[SKILL_ENGINEERING] = "Engineering";
+        skills[SKILL_HERBALISM] = "Herbalism";
+        skills[SKILL_MINING] = "Mining";
+        skills[SKILL_BLACKSMITHING] = "Blacksmithing";
+        skills[SKILL_COOKING] = "Cooking";
+        skills[SKILL_FIRST_AID] = "First Aid";
+        skills[SKILL_FISHING] = "Fishing";
+    }
+
+    ObjectGuid guid = bot->GetObjectGuid();
+    for (map<uint32, string>::iterator i = skills.begin(); i != skills.end(); ++i)
+    {
+        uint16 skill = i->first;
+        if (!bot->HasSkill(skill))
+            continue;
+
+        string skillName = i->second;
+        uint32 spellId = AI_VALUE2(uint32, "spell id", skillName);
+        uint16 value = bot->GetSkillValue(skill);
+        uint16 maxSkill = bot->GetMaxSkillValue(skill);
+		string data = "0";
+        out << " |cFFFFFF00|Htrade:" << spellId << ":" << value << ":" << maxSkill << ":"
+                << std::hex << std::uppercase << guid.GetRawValue()
+                << std::nouppercase << std::dec << ":" << data
+                << "|h[" << skills[skill] << "]|h|r"
+                << " |h|cff00ff00" << value << "|h|cffffffff/"
+                << "|h|cff00ff00" << maxSkill < "|h|cffffffff ";
+    }
+
+    Player* master = GetMaster();
+    Group* group = master ? master->GetGroup() : bot->GetGroup();
+    if (group)
+    {
+        out << " in " << (int)group->GetMembersCount() <<  "-party with (";
+        int index = 1, followIndex = -1;
+        for (GroupReference *ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* player = ref->getSource();
+            if (!player)
+                out << "?";
+            else if (player == master)
+                out << "!" << player->GetName() << "!";
+            else
+                out << player->GetName();
+
+            if (ref->next())
+                out << ", ";
+
+            if(ref->getSource() == master)
+                continue;
+
+            if(ref->getSource() == bot)
+                followIndex = index;
+
+            index++;
+        }
+        out << ") " << followIndex << "th";
+    }
 
     // ignore random bot chat filter
     WorldPacket data(SMSG_MESSAGECHAT, 1024);

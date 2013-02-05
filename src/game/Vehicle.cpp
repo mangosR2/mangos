@@ -237,8 +237,8 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
         // make passenger attackable in some vehicles and allow him to cast when sitting on vehicle
         switch (GetBase()->GetEntry())
         {
-            case 30234:        // Nexus Lord's Hover Disk (Eye ofEternity, Malygos Encounter)
-            case 30248:        // Scion's of Eternity Hover Disk (Eye ofEternity, Malygos Encounter)
+            case 30234:        // Nexus Lord's Hover Disk (Eye of Eternity, Malygos Encounter)
+            case 30248:        // Scion's of Eternity Hover Disk (Eye of Eternity, Malygos Encounter)
             case 33118:        // Ignis (Ulduar)
             case 33432:        // Leviathan MX
             case 33651:        // VX 001

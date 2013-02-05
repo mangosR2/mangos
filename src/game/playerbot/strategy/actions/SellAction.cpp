@@ -40,6 +40,7 @@ public:
 
 bool SellAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -74,6 +75,7 @@ void SellAction::Sell(FindItemVisitor* visitor)
 
 void SellAction::Sell(Item* item)
 {
+    Player* master = GetMaster();
     ObjectGuid vendorguid = master->GetSelectionGuid();
     if (!vendorguid)
     {

@@ -437,6 +437,10 @@
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\WhoAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\PlayerbotSecurity.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\LfgActions.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\generic\AttackEnemyPlayersStrategy.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\values\EnemyPlayerValue.cpp" />
+    <ClCompile Include="..\..\src\game\WorldLocation.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\ahbot\AhBot.h" />
@@ -945,6 +949,9 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\WhoAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\PlayerbotSecurity.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\LfgActions.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\generic\AttackEnemyPlayersStrategy.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\values\EnemyPlayerValue.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\game\Player.h.orig" />

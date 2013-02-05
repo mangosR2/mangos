@@ -141,4 +141,10 @@ namespace ai
     public:
         CastWingClipAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "wing clip") {}
     };
+
+    class CastSerpentStingOnAttackerAction : public CastDebuffSpellOnAttackerAction
+    {
+    public:
+        CastSerpentStingOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "serpent sting") {}
+    };
 }

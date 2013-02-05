@@ -28,6 +28,7 @@ Unit* PartyMemberValue::FindPartyMember(list<Player*>* party, FindPlayerPredicat
 
 Unit* PartyMemberValue::FindPartyMember(FindPlayerPredicate &predicate)
 {
+    Player* master = GetMaster();
     Group* group = bot->GetGroup();
     if (!group)
         return NULL;

@@ -16,11 +16,11 @@ public:
     uint32 account;
     uint64 guid;
     uint32 updateInterval;
-    uint32 historyDays;
+    uint32 historyDays, itemBuyInterval;
     uint32 alwaysAvailableMoney;
     float priceMultiplier, priceQualityMultiplier;
     uint32 defaultMinPrice;
-    uint32 maxItemLevel;
+    uint32 maxItemLevel, maxRequiredLevel;
     float underPriceProbability;
     float buyProbability;
     float sellProbability;
@@ -42,7 +42,7 @@ public:
 
     int32 GetMaxAllowedAuctionCount(string category)
     {
-        return (int32)GetCategoryParameter(maxAuctionCount, "MaxAuctionCount", category, 0);
+        return (int32)GetCategoryParameter(maxAuctionCount, "MaxAuctionCount", category, 5);
     }
 
     std::string GetStringDefault(const char* name, const char* def)

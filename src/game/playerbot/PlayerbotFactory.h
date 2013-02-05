@@ -24,6 +24,8 @@ private:
     bool CanEquipItem(ItemPrototype const* proto, uint32 desiredQuality);
     bool CanEquipUnseenItem(uint8 slot, uint16 &dest, uint32 item);
     void InitSkills();
+    void InitTradeSkills();
+    void UpdateTradeSkills();
     void SetRandomSkill(uint16 id);
     void InitSpells();
     void ClearSpells();
@@ -52,4 +54,5 @@ private:
     Player* bot;
     uint32 level;
     uint32 itemQuality;
+    static uint32 tradeSkills[];
 };

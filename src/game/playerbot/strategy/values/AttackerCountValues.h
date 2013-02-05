@@ -3,36 +3,56 @@
 
 namespace ai
 {
-   
-    class AttackerCountValue : public QualifiedStatsValue<uint8>
+
+    class AttackerCountValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        AttackerCountValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        AttackerCountValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class MyAttackerCountValue : public QualifiedStatsValue<uint8>
+    class MyAttackerCountValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        MyAttackerCountValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        MyAttackerCountValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 
-    class HasAggroValue : public QualifiedStatsValue<bool>
+    class HasAggroValue : public BoolCalculatedValue, public Qualified
     {
     public:
-        HasAggroValue(PlayerbotAI* ai) : QualifiedStatsValue<bool>(ai) {}
+        HasAggroValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual bool Calculate();
     };
-    
-    class BalancePercentValue : public QualifiedStatsValue<uint8>
+
+    class BalancePercentValue : public Uint8CalculatedValue, public Qualified
     {
     public:
-        BalancePercentValue(PlayerbotAI* ai) : QualifiedStatsValue<uint8>(ai) {}
+        BalancePercentValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
+        Unit* GetTarget()
+        {
+            AiObjectContext* ctx = AiObject::context;
+            return ctx->GetValue<Unit*>(qualifier)->Get();
+        }
         virtual uint8 Calculate();
     };
 

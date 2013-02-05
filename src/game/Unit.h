@@ -1492,7 +1492,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         float  MeleeSpellMissChance(Unit* pVictim, WeaponAttackType attType, int32 skillDiff, SpellEntry const *spell);
         SpellMissInfo MeleeSpellHitResult(Unit* pVictim, SpellEntry const* spell);
         SpellMissInfo MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell);
-        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool canReflect = false);
+        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell);
         SpellMissInfo SpellResistResult(Unit* pVictim, SpellEntry const* spell);
         uint32 CalculateBaseSpellHitChance(Unit* pVictim);
 
@@ -1915,6 +1915,11 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool SelectHostileTarget(bool withEvade = true);
         bool TauntApply(Unit* pVictim, bool isSingleEffect = false);
         void TauntFadeOut(Unit *taunter);
+
+        void FixateTarget(Unit* pVictim);
+        ObjectGuid const& GetFixatedTargetGuid() { return m_fixateTargetGuid; };
+        Unit* GetFixatedTarget();
+
         ThreatManager& getThreatManager() { return m_ThreatManager; }
         ThreatManager const& getThreatManager() const { return m_ThreatManager; }
         void addHatedBy(HostileReference* pHostileReference) { m_HostileRefManager->insertFirst(pHostileReference); };
@@ -1988,6 +1993,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         // at any changes to scale and/or displayId
         void UpdateModelData();
 
+        DynamicObject* GetEffectiveDynObject(uint32 spellId, SpellEffectIndex effIndex, Unit* pTarget);
         DynamicObject* GetDynObject(uint32 spellId, SpellEffectIndex effIndex);
         DynamicObject* GetDynObject(uint32 spellId);
         void AddDynObject(DynamicObject* dynObj);
@@ -2279,7 +2285,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         Unit* _GetTotem(TotemSlot slot) const;              // for templated function without include need
         Pet* _GetPet(ObjectGuid guid) const;                // for templated function without include need
 
-        void JustKilledCreature(Creature* victim);          // Wrapper called by DealDamage when a creature is killed
+        // Wrapper called by DealDamage when a creature is killed
+        void JustKilledCreature(Creature* victim, Player* responsiblePlayer);
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
@@ -2288,7 +2295,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         uint32 m_castCounter;                               // count casts chain of triggered spells for prevent infinity cast crashes
 
         UnitVisibility m_Visibility;
-        Position m_last_notified_position;
+        WorldLocation m_last_notified_position;
         bool m_AINotifyScheduled;
         ShortTimeTracker m_movesplineTimer;
 
@@ -2312,6 +2319,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
         UnitStateMgr m_stateMgr;
+
+        ObjectGuid m_fixateTargetGuid;                      //< Stores the Guid of a fixated target
 
     private:                                                // Error traps for some wrong args using
         // this will catch and prevent build for any cases when all optional args skipped and instead triggered used non boolean type

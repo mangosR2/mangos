@@ -30,6 +30,7 @@ namespace MaNGOS
 
 bool UseMeetingStoneAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -77,6 +78,7 @@ bool UseMeetingStoneAction::Execute(Event event)
 
 bool SummonAction::Execute(Event event)
 {
+    Player* master = GetMaster();
     if (!master)
         return false;
 
@@ -91,6 +93,7 @@ bool SummonAction::Execute(Event event)
 
 bool SummonAction::Teleport()
 {
+    Player* master = GetMaster();
     if (!master->IsBeingTeleported())
     {
         float followAngle = GetFollowAngle();

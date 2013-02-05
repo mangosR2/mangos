@@ -12,6 +12,7 @@ bool GossipHelloAction::Execute(Event event)
     WorldPacket &p = event.getPacket();
     if (p.empty())
     {
+        Player* master = GetMaster();
         if (master)
             guid = master->GetSelectionGuid();
     }

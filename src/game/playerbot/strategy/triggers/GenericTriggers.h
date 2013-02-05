@@ -267,6 +267,15 @@ namespace ai
         virtual bool IsActive();
     };
 
+    class DebuffOnAttackerTrigger : public DebuffTrigger
+    {
+    public:
+        DebuffOnAttackerTrigger(PlayerbotAI* ai, string spell) : DebuffTrigger(ai, spell) {}
+    public:
+        virtual Value<Unit*>* GetTargetValue();
+        virtual string getName() { return spell + " on attacker"; }
+    };
+
 	class BoostTrigger : public BuffTrigger
 	{
 	public:
@@ -301,6 +310,13 @@ namespace ai
     public:
         SeldomTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 9000) {}
         virtual string getName() { return "seldom"; }
+    };
+
+    class OftenTrigger : public RandomTrigger
+    {
+    public:
+        OftenTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 2) {}
+        virtual string getName() { return "often"; }
     };
 
     class AndTrigger : public Trigger
@@ -458,6 +474,15 @@ namespace ai
     {
     public:
         NotLeastHpTargetActiveTrigger(PlayerbotAI* ai) : Trigger(ai, "not least hp target active") {}
+
+    public:
+        virtual bool IsActive();
+    };
+
+    class EnemyPlayerIsAttacking : public Trigger
+    {
+    public:
+        EnemyPlayerIsAttacking(PlayerbotAI* ai) : Trigger(ai, "enemy player is attacking") {}
 
     public:
         virtual bool IsActive();

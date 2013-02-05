@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class IsMovingValue : public CalculatedValue<bool>, public Qualified
+    class IsMovingValue : public BoolCalculatedValue, public Qualified
 	{
 	public:
-        IsMovingValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        IsMovingValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
         virtual bool Calculate()
         {
@@ -24,10 +24,10 @@ namespace ai
         }
     };
 
-    class IsSwimmingValue : public CalculatedValue<bool>, public Qualified
+    class IsSwimmingValue : public BoolCalculatedValue, public Qualified
 	{
 	public:
-        IsSwimmingValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        IsSwimmingValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
         virtual bool Calculate()
         {

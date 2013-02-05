@@ -13,6 +13,7 @@ class NonCombatEngineTestCase2 : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( emote );
       CPPUNIT_TEST( ready_check );
       CPPUNIT_TEST( followMasterRandom );
+      CPPUNIT_TEST( move_random );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -48,6 +49,16 @@ protected:
         tickWithTrigger("target in sight");
 
         assertActions(">S:move random>S:stay combat");
+    }
+
+    void move_random()
+    {
+        engine->removeStrategy("emote");
+        engine->addStrategy("move random");
+
+        tickWithTrigger("often");
+
+        assertActions(">S:move random");
     }
 };
 

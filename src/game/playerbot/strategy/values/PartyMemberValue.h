@@ -15,10 +15,10 @@ namespace ai
         virtual bool Check(SpellEntry const*) = 0;
     };
 
-    class PartyMemberValue : public CalculatedValue<Unit*>
+    class PartyMemberValue : public UnitCalculatedValue
 	{
 	public:
-        PartyMemberValue(PlayerbotAI* ai) : CalculatedValue<Unit*>(ai) {}
+        PartyMemberValue(PlayerbotAI* ai) : UnitCalculatedValue(ai) {}
 
     public:
         bool IsTargetOfSpellCast(Player* target, SpellEntryPredicate &predicate);

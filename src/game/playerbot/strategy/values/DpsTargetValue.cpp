@@ -15,14 +15,13 @@ public:
     }
 
 protected:
-    virtual void CheckAttacker(Player* bot, Player* player, ThreatManager* threatManager)
+    virtual void CheckAttacker(Player* player, Unit* creature, ThreatManager* threatManager)
     {
-        float threat = threatManager->getThreat(bot);
-        Unit* creature = threatManager->getOwner();
+        float threat = threatManager->getThreat(ai->GetBot());
         int tankCount, dpsCount;
-        GetPlayerCount(bot, creature, &tankCount, &dpsCount);
+        GetPlayerCount(creature, &tankCount, &dpsCount);
 
-        if (!result || 
+        if (!result ||
             minThreat >= threat && (maxTankCount <= tankCount || minDpsCount >= dpsCount))
         {
             minThreat = threat;

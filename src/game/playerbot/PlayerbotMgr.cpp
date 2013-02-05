@@ -103,16 +103,15 @@ void PlayerbotHolder::OnBotLogin(Player * const bot)
     ai->TellMaster("Hello!");
 }
 
-bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
+bool PlayerbotHolder::ProcessBotCommand(string cmd, ObjectGuid guid, bool admin, uint32 masterAccountId)
 {
-    if (!sPlayerbotAIConfig.enabled || guid.IsEmpty() || (guid == session->GetPlayer()->GetObjectGuid()))
+    if (!sPlayerbotAIConfig.enabled || guid.IsEmpty())
         return false;
 
-    PlayerbotMgr* mgr = session->GetPlayer()->GetPlayerbotMgr();
     bool isRandomBot = sRandomPlayerbotMgr.IsRandomBot(guid);
     bool isRandomAccount = sPlayerbotAIConfig.IsInRandomAccountList(sObjectMgr.GetPlayerAccountIdByGUID(guid));
 
-    if (isRandomAccount && !isRandomBot && session->GetSecurity() < SEC_GAMEMASTER)
+    if (isRandomAccount && !isRandomBot && !admin)
         return false;
 
     if (cmd == "add" || cmd == "login")
@@ -120,51 +119,60 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
         if (sObjectMgr.GetPlayer(guid, true))
             return false;
 
-        mgr->AddPlayerBot(guid.GetRawValue(), session->GetAccountId());
+        AddPlayerBot(guid.GetRawValue(), masterAccountId);
         return true;
     }
     else if (cmd == "remove" || cmd == "logout" || cmd == "rm")
     {
-        if (!mgr->GetPlayerBot(guid.GetRawValue()))
+        if (!GetPlayerBot(guid.GetRawValue()))
             return false;
 
-        mgr->LogoutPlayerBot(guid.GetRawValue());
+        LogoutPlayerBot(guid.GetRawValue());
         return true;
     }
 
-    if (session->GetSecurity() >= SEC_GAMEMASTER)
+    if (admin)
     {
-        Player* bot = mgr->GetPlayerBot(guid.GetRawValue());
+        Player* bot = GetPlayerBot(guid.GetRawValue());
         if (!bot)
             return false;
 
-        if (cmd == "init=white" || cmd == "init=common")
+        Player* master = bot->GetPlayerbotAI()->GetMaster();
+        if (master)
         {
-            mgr->RandomizePlayerBot(guid.GetRawValue(), session->GetPlayer()->getLevel(), ITEM_QUALITY_NORMAL);
-            return true;
+            if (cmd == "init=white" || cmd == "init=common")
+            {
+                PlayerbotFactory factory(bot, master->getLevel(), ITEM_QUALITY_NORMAL);
+                factory.Randomize(false);
+                return true;
+            }
+            else if (cmd == "init=green" || cmd == "init=uncommon")
+            {
+                PlayerbotFactory factory(bot, master->getLevel(), ITEM_QUALITY_UNCOMMON);
+                factory.Randomize(false);
+                return true;
+            }
+            else if (cmd == "init=blue" || cmd == "init=rare")
+            {
+                PlayerbotFactory factory(bot, master->getLevel(), ITEM_QUALITY_RARE);
+                factory.Randomize(false);
+                return true;
+            }
+            else if (cmd == "init=epic" || cmd == "init=purple")
+            {
+                PlayerbotFactory factory(bot, master->getLevel(), ITEM_QUALITY_EPIC);
+                factory.Randomize(false);
+                return true;
+            }
         }
-        else if (cmd == "init=green" || cmd == "init=uncommon")
-        {
-            mgr->RandomizePlayerBot(guid.GetRawValue(), session->GetPlayer()->getLevel(), ITEM_QUALITY_UNCOMMON);
-            return true;
-        }
-        else if (cmd == "init=blue" || cmd == "init=rare")
-        {
-            mgr->RandomizePlayerBot(guid.GetRawValue(), session->GetPlayer()->getLevel(), ITEM_QUALITY_RARE);
-            return true;
-        }
-        else if (cmd == "init=epic" || cmd == "init=purple")
-        {
-            mgr->RandomizePlayerBot(guid.GetRawValue(), session->GetPlayer()->getLevel(), ITEM_QUALITY_EPIC);
-            return true;
-        }
-        else if (cmd == "update")
+
+        if (cmd == "update")
         {
             PlayerbotFactory factory(bot, bot->getLevel());
             factory.Randomize(true);
             return true;
         }
-        else if (cmd == "random" && mgr->GetMaster())
+        else if (cmd == "random")
         {
             sRandomPlayerbotMgr.Randomize(bot);
             return true;
@@ -176,56 +184,18 @@ bool processBotCommand(WorldSession* session, string cmd, ObjectGuid guid)
 
 bool ChatHandler::HandlePlayerbotCommand(char* args)
 {
-	if(sConfig.GetBoolDefault("PlayerbotAI.DisableBots", false))
+	if (!sPlayerbotAIConfig.enabled)
 	{
 		PSendSysMessage("|cffff0000Playerbot system is currently disabled!");
         SetSentErrorMessage(true);
         return false;
 	}
 
-    if (! m_session)
+    if (!m_session)
     {
         PSendSysMessage("You may only add bots from an active session");
         SetSentErrorMessage(true);
         return false;
-    }
-
-    if (!*args)
-    {
-        PSendSysMessage("usage: add/init/remove PLAYERNAME or option or option=value");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    char *cmd = strtok ((char*)args, " ");
-    char *charname = strtok (NULL, " ");
-    if (!cmd || !charname)
-    {
-        PSendSysMessage("usage: add/init/remove PLAYERNAME or option or option=value");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    std::string cmdStr = cmd;
-    std::string charnameStr = charname;
-
-    if (cmdStr == "option" && m_session->GetSecurity() >= SEC_GAMEMASTER)
-    {
-        if (charnameStr.find("=") == string::npos)
-        {
-            string value = sPlayerbotAIConfig.GetValue(charnameStr);
-            ostringstream out; out << charnameStr << " = " << value;
-            PSendSysMessage(out.str().c_str());
-        }
-        else
-        {
-            string value = charnameStr.substr(charnameStr.find("=") + 1);
-            string option = charnameStr.substr(0, charnameStr.find("="));
-            sPlayerbotAIConfig.SetValue(option, value);
-            ostringstream out; out << charnameStr << " set to " << value;
-            PSendSysMessage(out.str().c_str());
-        }
-        return true;
     }
 
     Player* player = m_session->GetPlayer();
@@ -237,15 +207,47 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         return false;
     }
 
-    set<string> bots;
-    if (charnameStr == "*")
+    list<string> messages = mgr->HandlePlayerbotCommand(args, player);
+    if (messages.empty())
+        return true;
+
+    for (list<string>::iterator i = messages.begin(); i != messages.end(); ++i)
     {
-        Group* group = player->GetGroup();
+        PSendSysMessage(i->c_str());
+    }
+    SetSentErrorMessage(true);
+    return false;
+}
+
+list<string> PlayerbotHolder::HandlePlayerbotCommand(char* args, Player* master)
+{
+    list<string> messages;
+
+    if (!*args)
+    {
+        messages.push_back("usage: add/init/remove PLAYERNAME");
+        return messages;
+    }
+
+    char *cmd = strtok ((char*)args, " ");
+    char *charname = strtok (NULL, " ");
+    if (!cmd || !charname)
+    {
+        messages.push_back("usage: add/init/remove PLAYERNAME");
+        return messages;
+    }
+
+    std::string cmdStr = cmd;
+    std::string charnameStr = charname;
+
+    set<string> bots;
+    if (charnameStr == "*" && master)
+    {
+        Group* group = master->GetGroup();
         if (!group)
         {
-            PSendSysMessage("you must be in group");
-            SetSentErrorMessage(true);
-            return false;
+            messages.push_back("you must be in group");
+            return messages;
         }
 
         Group::MemberSlotList slots = group->GetMemberSlots();
@@ -253,7 +255,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         {
 			ObjectGuid member = i->guid;
 
-			if (member == m_session->GetPlayer()->GetObjectGuid())
+			if (member == master->GetObjectGuid())
 				continue;
 
 			string bot;
@@ -262,9 +264,9 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         }
     }
 
-    if (charnameStr == "!" && player->GetSession()->GetSecurity() > SEC_GAMEMASTER)
+    if (charnameStr == "!" && master && master->GetSession()->GetSecurity() > SEC_GAMEMASTER)
     {
-        for (PlayerBotMap::const_iterator i = mgr->GetPlayerBotsBegin(); i != mgr->GetPlayerBotsEnd(); ++i)
+        for (PlayerBotMap::const_iterator i = GetPlayerBotsBegin(); i != GetPlayerBotsEnd(); ++i)
         {
             Player* bot = i->second;
             if (bot && bot->IsInWorld())
@@ -277,7 +279,7 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
     {
         string s = *i;
 
-        uint32 accountId = mgr->GetAccountId(s);
+        uint32 accountId = GetAccountId(s);
         if (!accountId)
         {
             bots.insert(s);
@@ -300,24 +302,45 @@ bool ChatHandler::HandlePlayerbotCommand(char* args)
         }
 	}
 
-    bool res = false;
     for (set<string>::iterator i = bots.begin(); i != bots.end(); ++i)
     {
         string bot = *i;
-        if (mgr->ProcessBot(bot, cmdStr))
+        ostringstream out;
+        out << cmdStr << ": " << bot << " - ";
+
+        ObjectGuid member = sObjectMgr.GetPlayerGuidByName(bot);
+        bool result = false;
+        if (master && member != master->GetObjectGuid())
         {
-            PSendSysMessage("%s: %s - ok", cmdStr.c_str(), bot.c_str());
-            res = true;
+            result = ProcessBotCommand(cmdStr, member, master->GetSession()->GetSecurity() >= SEC_GAMEMASTER, master->GetSession()->GetAccountId());
         }
-        else
+        else if (!master)
         {
-            PSendSysMessage("%s: %s - now allowed", cmdStr.c_str(), bot.c_str());
+            result = ProcessBotCommand(cmdStr, member, true, -1);
         }
+
+        out << (result ? "ok" : "not allowed");
+        messages.push_back(out.str());
     }
 
-    SetSentErrorMessage(true);
-    return res;
+    return messages;
 }
+
+uint32 PlayerbotHolder::GetAccountId(string name)
+{
+    uint32 accountId = 0;
+
+    QueryResult *results = LoginDatabase.PQuery("SELECT id FROM account WHERE username = '%s'", name.c_str());
+    if(results)
+    {
+        Field* fields = results->Fetch();
+        accountId = fields[0].GetUInt32();
+        delete results;
+    }
+
+    return accountId;
+}
+
 
 
 PlayerbotMgr::PlayerbotMgr(Player* const master) : PlayerbotHolder(),  master(master)
@@ -402,31 +425,6 @@ void PlayerbotMgr::RandomizePlayerBot(uint64 guid, uint32 level, uint32 itemQual
 
     PlayerbotFactory factory(bot, level, itemQuality);
     factory.Randomize(false);
-}
-
-uint32 PlayerbotMgr::GetAccountId(string name)
-{
-    uint32 accountId = 0;
-
-    QueryResult *results = LoginDatabase.PQuery("SELECT id FROM account WHERE username = '%s'", name.c_str());
-    if(results)
-    {
-        Field* fields = results->Fetch();
-        accountId = fields[0].GetUInt32();
-        delete results;
-    }
-
-    return accountId;
-}
-
-bool PlayerbotMgr::ProcessBot(string name, string cmdStr)
-{
-    ObjectGuid member = sObjectMgr.GetPlayerGuidByName(name);
-	if (GetMaster() && member != GetMaster()->GetObjectGuid())
-    {
-		return processBotCommand(GetMaster()->GetSession(), cmdStr, member);
-    }
-    return false;
 }
 
 void PlayerbotMgr::SaveToDB()

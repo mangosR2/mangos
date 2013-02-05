@@ -36,13 +36,15 @@ protected:
 
 		tick();
 		itemAvailable("spellstone", 1);
-        
+
         tick();
         addAura("spellstone");
 
-        assertActions(">S:fel armor>S:demon armor>S:demon skin>S:create healthstone>S:create firestone>S:create spellstone>S:spellstone");
+        tickWithNoPet();
+
+        assertActions(">S:fel armor>S:demon armor>S:demon skin>S:create healthstone>S:create firestone>S:create spellstone>S:spellstone>S:summon imp");
     }
-    
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION( WarlockNonCombatTestCase );

@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class IsBehindValue : public CalculatedValue<bool>, public Qualified
+    class IsBehindValue : public BoolCalculatedValue, public Qualified
 	{
 	public:
-        IsBehindValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        IsBehindValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
         virtual bool Calculate() 
         {

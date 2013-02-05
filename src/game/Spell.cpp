@@ -466,41 +466,7 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
 
     m_needAliveTargetMask = 0;
 
-    // determine reflection
-    m_canReflect = false;
-
     m_spellFlags = SPELL_FLAG_NORMAL;
-
-//    if(m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_CANT_REFLECTED))
-
-    // AoE spells, spells with non-magic DmgClass or SchoolMask or with SPELL_ATTR_EX2_CANT_REFLECTED cannot be reflected
-    if (m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MAGIC &&
-        m_spellInfo->SchoolMask != SPELL_SCHOOL_MASK_NORMAL &&
-        !m_spellInfo->HasAttribute(SPELL_ATTR_EX2_IGNORE_LOS) &&
-        !IsAreaOfEffectSpell(m_spellInfo))
-    {
-        for(int j = 0; j < MAX_EFFECT_INDEX; ++j)
-        {
-            if (m_spellInfo->Effect[j] == SPELL_EFFECT_NONE)
-                continue;
-
-            if (IsPositiveTarget(m_spellInfo->EffectImplicitTargetA[j], m_spellInfo->EffectImplicitTargetB[j]) && !m_spellInfo->HasAttribute(SPELL_ATTR_EX_NEGATIVE))
-/*            if(!IsPositiveTarget(m_spellInfo->EffectImplicitTargetA[j], m_spellInfo->EffectImplicitTargetB[j]))
-                m_canReflect = true;
-            else
-                m_canReflect = m_spellInfo->HasAttribute(SPELL_ATTR_EX_NEGATIVE);
-
-            if(m_canReflect)
-*/
-                continue;
-            else
-                m_canReflect = true;
-
-            if (m_canReflect)
-                break;
-        }
-    }
-
     CleanupTargetList();
 }
 
@@ -960,7 +926,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
     target.processed  = false;                              // Effects not applied on target
 
     // Calculate hit result
-    target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo, m_canReflect);
+    target.missCondition = m_caster->SpellHitResult(pVictim, m_spellInfo);
 
     // spell fly from visual cast object
     WorldObject* affectiveObject = GetAffectiveCasterObject();
@@ -1017,7 +983,7 @@ this piece of code make delayed stun and other effects for charge-like spells. s
     if (target.missCondition == SPELL_MISS_REFLECT)
     {
         // Calculate reflected spell result on caster
-        target.reflectResult =  m_caster->SpellHitResult(m_caster, m_spellInfo, m_canReflect);
+        target.reflectResult =  m_caster->SpellHitResult(m_caster, m_spellInfo);
 
         if (target.reflectResult == SPELL_MISS_REFLECT)     // Impossible reflect again, so simply deflect spell
             target.reflectResult = SPELL_MISS_PARRY;
@@ -5479,8 +5445,8 @@ SpellCastResult Spell::CheckCast(bool strict)
                 !m_caster->IsIgnoreUnitState(m_spellInfo, m_spellInfo->TargetAuraState == AURA_STATE_FROZEN ? IGNORE_UNIT_TARGET_NON_FROZEN : IGNORE_UNIT_TARGET_STATE))
                 return SPELL_FAILED_TARGET_AURASTATE;
 
-            // Not allow casting on flying player
-            if (target->IsTaxiFlying())
+            // Not allow direct casting on flying player (enable only server-side casts)
+            if (target->IsTaxiFlying() && !m_spellInfo->HasAttribute(SPELL_ATTR_HIDE_IN_COMBAT_LOG))
                 return SPELL_FAILED_BAD_TARGETS;
 
             if(!m_IsTriggeredSpell && !target->IsVisibleTargetForSpell(m_caster, m_spellInfo))
@@ -5865,6 +5831,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                             break;
                         }
                     }
+
+                    if (creatureScriptTarget || goScriptTarget)
+                        break;
                 }
 
                 if (creatureScriptTarget)
@@ -8710,6 +8679,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 59796:
         case 63023: // Searing Light (normal&heroic) (XT-002 in Ulduar)
         case 65120:
+        case 72456: // Mutated Slime (ICC - Professor Putricide)
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_HOSTILE);
             break;

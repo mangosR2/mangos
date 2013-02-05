@@ -52,7 +52,7 @@ void PointMovementGenerator<T>::Interrupt(T &unit)
 {
     if (!unit.movespline->Finalized())
     {
-        Movement::Location loc = unit.movespline->ComputePosition();
+        Location loc = unit.movespline->ComputePosition();
         unit.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
         unit.movespline->_Interrupt();
     }

@@ -94,7 +94,7 @@ void RandomMovementGenerator<Creature>::Interrupt(Creature &creature)
 {
     if (!creature.movespline->Finalized())
     {
-        Movement::Location loc = creature.movespline->ComputePosition();
+        Location loc = creature.movespline->ComputePosition();
         creature.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
         creature.movespline->_Interrupt();
     }

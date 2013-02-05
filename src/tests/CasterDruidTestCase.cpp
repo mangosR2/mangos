@@ -34,6 +34,8 @@ protected:
 		tick();
 		addAura("moonkin form");
 
+		tickOutOfSpellRange();
+
 		tickInSpellRange();
 		addTargetAura("faerie fire");
 
@@ -59,7 +61,7 @@ protected:
         addAura("eclipse (solar)");
         tick();
 
-		assertActions(">S:moonkin form>T:faerie fire>T:insect swarm>T:moonfire>T:starfire>T:wrath>T:starfire>S:nature's grasp>T:starfire>T:wrath");
+		assertActions(">S:moonkin form>T:reach spell>T:faerie fire>T:insect swarm>T:moonfire>T:starfire>T:wrath>T:starfire>S:nature's grasp>T:starfire>T:wrath");
     }
 
 	void healHimself()

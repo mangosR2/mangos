@@ -11,12 +11,11 @@ class DpsWarriorTestCase : public EngineTestBase
     CPPUNIT_TEST_SUITE( DpsWarriorTestCase );
     CPPUNIT_TEST( buff );
     CPPUNIT_TEST( combatVsMelee );
-    CPPUNIT_TEST( warriorMustHoldAggro );
-    CPPUNIT_TEST( aoe );
     CPPUNIT_TEST( boost );
     CPPUNIT_TEST( execute );
     CPPUNIT_TEST( hamstring );
 	CPPUNIT_TEST( victoryRush );
+	CPPUNIT_TEST( aoe );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -41,26 +40,6 @@ protected:
 
 		assertActions(">S:battle shout>S:battle stance>T:charge");
 
-    }
-
-    void aoe()
-    {
-        tickInMeleeRange();
-
-		tickWithAttackerCount(3);
-		tickWithAttackerCount(3);
-		tickWithAttackerCount(3);
-
-		assertActions(">S:battle stance>T:cleave>T:thunder clap>T:demoralizing shout");
-    }
-
-    void warriorMustHoldAggro()
-    {
-        tickInMeleeRange(); // melee
-
-		tickWithNoAggro();
-
-		assertActions(">S:battle stance>T:mocking blow");
     }
 
     void combatVsMelee()
@@ -125,6 +104,24 @@ protected:
 		assertActions(">S:battle stance>T:victory rush");
 	}
 
+    void aoe()
+    {
+        engine->addStrategy("aoe");
+
+        tickInMeleeRange();
+
+        tickWithAttackerCount(3);
+        tickWithAttackerCount(3);
+        tickWithAttackerCount(3);
+
+        set<Unit*>("attacker without aura", "rend", MockedTargets::GetAttackerWithoutAura());
+        tickInMeleeRange();
+
+        set<Unit*>("attacker without aura", "rend", NULL);
+        tickInMeleeRange();
+
+        assertActions(">S:battle stance>T:cleave>T:thunder clap>T:demoralizing shout>A:rend on attacker>T:bloodthirst");
+    }
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION( DpsWarriorTestCase );

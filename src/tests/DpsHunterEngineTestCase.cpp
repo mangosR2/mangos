@@ -112,7 +112,13 @@ protected:
         tickWithAttackerCount(3);
 		tickWithAttackerCount(4);
 
-		assertActions(">T:multi-shot>T:volley");
+        set<Unit*>("attacker without aura", "serpent sting", MockedTargets::GetAttackerWithoutAura());
+        tick();
+
+        set<Unit*>("attacker without aura", "serpent sting", NULL);
+        tick();
+
+		assertActions(">T:multi-shot>T:volley>A:serpent sting on attacker>T:explosive shot");
     }
 
 	void buff()

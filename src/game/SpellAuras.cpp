@@ -979,18 +979,10 @@ void Aura::PersistentAreaAuraUpdate(uint32 diff)
 
     // remove the aura if its caster or the dynamic object causing it was removed
     // or if the target moves too far from the dynamic object
-    if (Unit *caster = GetCaster())
+    if (Unit* pCaster = GetCaster())
     {
-        DynamicObject *dynObj = caster->GetDynObject(GetId(), GetEffIndex());
-        if (dynObj)
-        {
-            if (!GetTarget()->IsWithinDistInMap(dynObj, dynObj->GetRadius()))
-            {
-                remove = true;
-                dynObj->RemoveAffected(GetTarget());        // let later reapply if target return to range
-            }
-        }
-        else
+        DynamicObject* dynObj = pCaster->GetEffectiveDynObject(GetId(), GetEffIndex(), GetTarget());
+        if (!dynObj)
             remove = true;
     }
     else
@@ -1751,8 +1743,17 @@ void Aura::TriggerSpell()
 //                    case 36556: break;
 //                    // Cursed Scarab Despawn Periodic
 //                    case 36561: break;
-//                    // Vision Guide
-//                    case 36573: break;
+                    case 36573:                             // Vision Guide
+                    {
+                    // FIXME - this must be maked over 37715 reconstruction (spell_dbc)
+                        if (GetAuraTicks() == 10 && target->GetTypeId() == TYPEID_PLAYER)
+                        {
+                            ((Player*)target)->AreaExploredOrEventHappens(10525);
+                            target->RemoveAurasDueToSpell(36573);
+                        }
+
+                        return;
+                    }
 //                    // Cannon Charging (platform)
 //                    case 36785: break;
 //                    // Cannon Charging (self)
@@ -2514,6 +2515,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         target->RemoveAurasDueToSpell(32346);
                         return;
                     }
+                    case 36587:                             // Vision Guide
+                    {
+                        target->CastSpell(target, 36573, true, NULL, this);
+                        return;
+                    }
                     // Gender spells
                     case 38224:                             // Illidari Agent Illusion
                     case 37096:                             // Blood Elf Illusion
@@ -2650,6 +2656,9 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         return;
                     case 58591:                                 // Stoneclaw Totem X
                         target->CastSpell(target, 58585, true);
+                        return;
+                    case 58983:                                 // Big Blizzard Bear
+                        Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 58997, 58999, 0, 0, 0);
                         return;
                     case 61187:                                 // Twilight Shift
                         target->CastSpell(target, 61885, true);
@@ -3109,6 +3118,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             {
                 // Defensive Aura
                 target->RemoveAurasDueToSpell(41105);
+                return;
+            }
+            case 42385:                                     // Alcaz Survey Aura
+            {
+                target->CastSpell(target, 42316, true, NULL, this);
                 return;
             }
             case 42454:                                     // Captured Totem
@@ -8526,7 +8540,7 @@ void Aura::PeriodicTick()
                 return;
 
             if (spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
-                pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
+                pCaster->SpellHitResult(target, spellProto) != SPELL_MISS_NONE)
                 return;
 
             // Check for immune (not use charges)
@@ -8769,7 +8783,7 @@ void Aura::PeriodicTick()
                 return;
 
             if (spellProto->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
-                pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
+                pCaster->SpellHitResult(target, spellProto) != SPELL_MISS_NONE)
                 return;
 
             // Check for immune
@@ -8995,7 +9009,7 @@ void Aura::PeriodicTick()
                 return;
 
             if (GetSpellProto()->Effect[GetEffIndex()] == SPELL_EFFECT_PERSISTENT_AREA_AURA &&
-                pCaster->SpellHitResult(target, spellProto, false) != SPELL_MISS_NONE)
+                pCaster->SpellHitResult(target, spellProto) != SPELL_MISS_NONE)
                 return;
 
             // Check for immune (not use charges)
@@ -10540,7 +10554,7 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
     m_duration = m_maxDuration = CalculateSpellDuration(spellproto, unitCaster);
 
     if (m_maxDuration == -1 || (m_isPassive && spellproto->DurationIndex == 0))
-        m_permanent = true;
+        SetPermanent(true);
 
     if (unitCaster)
     {
@@ -10570,6 +10584,9 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
         case 71564:                                         // Deadly Precision
         case 74396:                                         // Fingers of Frost
         case 70672:                                         // Gaseous Bloat (Putricide)
+        case 72455:
+        case 72832:
+        case 72833:
             m_stackAmount = m_spellProto->StackAmount;
             break;
     }
@@ -11698,25 +11715,8 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
         }
         case SPELLFAMILY_DRUID:
         {
-            // Rejuvenation
-            if (GetSpellProto()->GetSpellFamilyFlags().test<CF_DRUID_REJUVENATION>())
-            {
-                Unit* caster = GetCaster();
-                if (!caster)
-                    return;
-
-                if (caster->HasAura(64760))                 // Item - Druid T8 Restoration 4P Bonus
-                {
-                    Aura* aura = GetAuraByEffectIndex(EFFECT_INDEX_0);
-                    if (!aura)
-                        return;
-
-                    int32 heal = aura->GetModifier()->m_amount;
-                    caster->CastCustomSpell(m_target, 64801, &heal, NULL, NULL, true, NULL);
-                }
-            }
             // Rip
-            else if (GetSpellProto()->GetSpellFamilyFlags().test<CF_DRUID_RIP>())
+            if (GetSpellProto()->GetSpellFamilyFlags().test<CF_DRUID_RIP>())
             {
                 Unit* caster = GetCaster();
                 if (!caster)

@@ -151,9 +151,17 @@ namespace ai
 		CastDivineSpiritOnPartyAction(PlayerbotAI* ai) : BuffOnPartyAction(ai, "divine spirit") {}
 	};
 
+	class CastPowerWordPainAction : public CastDebuffSpellAction
+	{
+    public:
+	    CastPowerWordPainAction(PlayerbotAI* ai) : CastDebuffSpellAction(ai, "shadow word: pain") {}
+	};
 
-    BEGIN_DEBUFF_ACTION(CastPowerWordPainAction, "shadow word: pain")
-    END_SPELL_ACTION()
+	class CastPowerWordPainOnAttackerAction : public CastDebuffSpellOnAttackerAction
+	{
+    public:
+	    CastPowerWordPainOnAttackerAction(PlayerbotAI* ai) : CastDebuffSpellOnAttackerAction(ai, "shadow word: pain") {}
+	};
 
     BEGIN_DEBUFF_ACTION(CastDevouringPlagueAction, "devouring plague")
     END_SPELL_ACTION()

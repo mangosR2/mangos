@@ -3,10 +3,10 @@
 
 namespace ai
 {
-    class AoeHealValue : public CalculatedValue<uint8>, public Qualified
+    class AoeHealValue : public Uint8CalculatedValue, public Qualified
 	{
 	public:
-    	AoeHealValue(PlayerbotAI* ai) : CalculatedValue<uint8>(ai) {}
+    	AoeHealValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
 
     public:
     	virtual uint8 Calculate();

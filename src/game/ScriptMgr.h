@@ -429,6 +429,7 @@ extern ScriptMapMapName sGameObjectScripts;
 extern ScriptMapMapName sGameObjectTemplateScripts;
 extern ScriptMapMapName sEventScripts;
 extern ScriptMapMapName sGossipScripts;
+extern ScriptMapMapName sCreatureDeathScripts;
 extern ScriptMapMapName sCreatureMovementScripts;
 
 enum ScriptLoadResult
@@ -452,6 +453,7 @@ class ScriptMgr
         void LoadEventScripts();
         void LoadSpellScripts();
         void LoadGossipScripts();
+        void LoadCreatureDeathScripts();
         void LoadCreatureMovementScripts();
 
         void LoadDbScriptStrings();

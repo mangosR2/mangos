@@ -321,6 +321,7 @@ namespace ahbot
         virtual uint32 GetMaxAllowedAuctionCount();
         virtual string GetName() { return category->GetName(); }
         virtual string GetDisplayName() { return combinedName; }
+        virtual uint32 GetMaxAllowedItemAuctionCount(ItemPrototype const* proto);
 
     private:
         uint32 quality;

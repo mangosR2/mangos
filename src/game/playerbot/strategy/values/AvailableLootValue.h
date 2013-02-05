@@ -26,10 +26,10 @@ namespace ai
         LootTargetValue(PlayerbotAI* ai) : ManualSetValue<LootObject>(ai, LootObject()) {}
     };
 
-    class CanLootValue : public CalculatedValue<bool>
+    class CanLootValue : public BoolCalculatedValue
     {
     public:
-        CanLootValue(PlayerbotAI* ai) : CalculatedValue<bool>(ai) {}
+        CanLootValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
         virtual bool Calculate()
         {

@@ -76,10 +76,11 @@ void AttackersValue::RemoveNonThreating(set<Unit*>& targets)
 bool AttackersValue::hasRealThreat(Unit *attacker)
 {
     return attacker &&
-        !attacker->isDead() &&
+        attacker->IsInWorld() &&
+        attacker->isAlive() &&
         !attacker->IsPolymorphed() &&
         !attacker->isFrozen() &&
         !attacker->isInRoots() &&
-        !attacker->IsFriendlyTo(master) &&
+        !attacker->IsFriendlyTo(bot) &&
         (attacker->getThreatManager().getCurrentVictim() || attacker->GetObjectGuid().IsPlayer());
 }

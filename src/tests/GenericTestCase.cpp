@@ -102,7 +102,7 @@ protected:
 	{
 	    engine->addStrategy("threat");
 
-        set<uint8>("threat", 100);
+        set<uint8>("threat", "current target", 100);
 	    tick();
 
 		assertActions(">T:reach melee");

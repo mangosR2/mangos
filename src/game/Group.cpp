@@ -80,10 +80,10 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 //============== Group ==============================
 //===================================================
 
-Group::Group(GroupType type) : m_groupType(type), m_Guid(ObjectGuid()),
-    m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON),
-    m_subGroupsCounts(NULL),
-    m_LFGState(LFGGroupState(this)), m_Difficulty(0)
+Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
+    m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL), 
+    m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
+    m_LFGState(LFGGroupState(this))
 {
 }
 
@@ -1263,7 +1263,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
     if (player && player->IsInWorld())
         lastMap = player->GetMapId();
     else if (player && player->IsBeingTeleported())
-        lastMap = player->GetTeleportDest().mapid;
+        lastMap = player->GetTeleportDest().GetMapId();
 
     MemberSlot member;
     member.guid      = guid;

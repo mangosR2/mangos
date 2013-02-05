@@ -8,6 +8,7 @@ bool CastCustomSpellAction::Execute(Event event)
 {
     Unit* target = NULL;
 
+    Player* master = GetMaster();
     if (master && master->GetSelectionGuid())
         target = ai->GetUnit(master->GetSelectionGuid());
 

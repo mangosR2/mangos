@@ -2181,7 +2181,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 44997:                                 // Converting Sentry
                 {
-                    //Converted Sentry Credit
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                        return;
+
+                    Creature* creatureTarget = (Creature*)unitTarget;
+
+                    creatureTarget->ForcedDespawn(500);
+
+                    // Converted Sentry Credit
                     m_caster->CastSpell(m_caster, 45009, true);
                     return;
                 }
@@ -4724,7 +4731,7 @@ void Spell::EffectForceCast(SpellEffectIndex eff_idx)
         if (spellInfo->Effect[i] == SPELL_EFFECT_NONE)
             continue;
 
-        if (spellInfo->EffectImplicitTargetA[i] == TARGET_DUELVSPLAYER && 
+        if (spellInfo->EffectImplicitTargetA[i] == TARGET_DUELVSPLAYER &&
             spellInfo->EffectImplicitTargetB[i] == TARGET_NONE)
         {
             b_castBack = true;
@@ -5240,7 +5247,7 @@ void Spell::EffectApplyAura(SpellEffectIndex eff_idx)
 
     if (!aura)
     {
-        sLog.outError("Spell::EffectApplyAura cannot create aura, caster %s, spell %u effect %u", 
+        sLog.outError("Spell::EffectApplyAura cannot create aura, caster %s, spell %u effect %u",
             caster ?  caster->GetObjectGuid().GetString().c_str() : "<none>", m_spellInfo->Id, eff_idx);
         return;
     }
@@ -6728,7 +6735,9 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     m_targets.getDestination(center_x, center_y, center_z);
 
     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
-    TempSummonType summonType = (m_duration == 0) ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT;
+    TempSummonType summonType = m_duration <= 0 ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT;
+
+    uint32 uDuration = m_duration > 0 ? uint32(m_duration) : 0;
 
     int32 amount = m_spellInfo->EffectRealPointsPerLevel[eff_idx] ? m_spellInfo->EffectRealPointsPerLevel[eff_idx] : m_currentBasePoints[eff_idx];
     if (amount <= 0)
@@ -6765,7 +6774,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
             }
         }
 
-        if (Creature* summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->GetOrientation(), summonType, m_duration))
+        if (Creature* summon = m_caster->SummonCreature(creature_entry, px, py, pz, m_caster->GetOrientation(), summonType, uDuration))
         {
             summon->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
 
@@ -9659,7 +9668,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 {
                     if (!unitTarget)
                         return;
-                    
+
                     unitTarget->CastSpell(unitTarget, 58648, true);
                     unitTarget->CastSpell(unitTarget, 57398, true);
                     break;
@@ -10290,6 +10299,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         {
                             // third Inhale
                             m_caster->RemoveAurasDueToSpell(69164);
+                            m_caster->CastSpell(m_caster, 69171, true);
                         }
                     }
 
@@ -10303,6 +10313,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 69201, true);
                     return;
                 }
+                case 69171:                                 // Low Plague Blight Visual Cancel (Festergut)
                 case 69298:                                 // Cancel Resistant to Blight (Festergut)
                 {
                     if (unitTarget)
@@ -11274,7 +11285,7 @@ void Spell::EffectSummonPlayer(SpellEffectIndex /*eff_idx*/)
     float x, y, z;
     m_caster->GetClosePoint(x, y, z, unitTarget->GetObjectBoundingRadius());
 
-    ((Player*)unitTarget)->SetSummonPoint(m_caster->GetMapId(),x,y,z);
+    ((Player*)unitTarget)->SetSummonPoint(WorldLocation(m_caster->GetMapId(), x, y, z));
 
     WorldPacket data(SMSG_SUMMON_REQUEST, 8+4+4);
     data << m_caster->GetObjectGuid();                      // summoner guid
@@ -11689,7 +11700,7 @@ void Spell::EffectLeapForward(SpellEffectIndex eff_idx)
         float x,y,z;
         m_targets.getDestination(x,y,z);
 
-        // Try to normalize Z coord 
+        // Try to normalize Z coord
         m_caster->UpdateGroundPositionZ(x, y, z);
         z += 0.2f;
 
@@ -11844,9 +11855,9 @@ void Spell::EffectCharge(SpellEffectIndex /*eff_idx*/)
     float speed = m_spellInfo->speed ? m_spellInfo->speed : BASE_CHARGE_SPEED;
 
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell::EffectCharge spell %u caster %s target %s speed %f dest. point %f %f %f",
-             m_spellInfo->Id, 
-             m_caster ? m_caster->GetObjectGuid().GetString().c_str() : "<none>", 
-             unitTarget ? unitTarget->GetObjectGuid().GetString().c_str() : "<none>", 
+             m_spellInfo->Id,
+             m_caster ? m_caster->GetObjectGuid().GetString().c_str() : "<none>",
+             unitTarget ? unitTarget->GetObjectGuid().GetString().c_str() : "<none>",
              speed, z, y, z);
 
     if (m_caster->IsFalling())
@@ -12630,7 +12641,6 @@ void Spell::EffectBind(SpellEffectIndex eff_idx)
 
     Player* player = (Player*)unitTarget;
 
-    uint32 area_id;
     WorldLocation loc;
     if (m_spellInfo->EffectImplicitTargetA[eff_idx] == TARGET_TABLE_X_Y_Z_COORDINATES ||
         m_spellInfo->EffectImplicitTargetB[eff_idx] == TARGET_TABLE_X_Y_Z_COORDINATES)
@@ -12642,41 +12652,37 @@ void Spell::EffectBind(SpellEffectIndex eff_idx)
             return;
         }
 
-        loc.mapid       = st->target_mapId;
-        loc.coord_x     = st->target_X;
-        loc.coord_y     = st->target_Y;
-        loc.coord_z     = st->target_Z;
+        loc.SetMapId(st->target_mapId);
+        loc.x           = st->target_X;
+        loc.y           = st->target_Y;
+        loc.z           = st->target_Z;
         loc.orientation = st->target_Orientation;
-        area_id = sTerrainMgr.GetAreaId(loc.mapid, loc.coord_x, loc.coord_y, loc.coord_z);
     }
     else
-    {
-        player->GetPosition(loc);
-        area_id = player->GetAreaId();
-    }
+        loc = player->GetPosition();
 
-    player->SetHomebindToLocation(loc,area_id);
-
+    player->SetHomebindToLocation(loc);
+    uint32 area_id = loc.GetAreaId();
     // binding
     WorldPacket data( SMSG_BINDPOINTUPDATE, (4+4+4+4+4) );
-    data << float(loc.coord_x);
-    data << float(loc.coord_y);
-    data << float(loc.coord_z);
-    data << uint32(loc.mapid);
+    data << float(loc.x);
+    data << float(loc.y);
+    data << float(loc.z);
+    data << uint32(loc.GetMapId());
     data << uint32(area_id);
     player->SendDirectMessage( &data );
 
-    DEBUG_LOG("New Home Position X is %f", loc.coord_x);
-    DEBUG_LOG("New Home Position Y is %f", loc.coord_y);
-    DEBUG_LOG("New Home Position Z is %f", loc.coord_z);
-    DEBUG_LOG("New Home MapId is %u", loc.mapid);
+    DEBUG_LOG("New Home Position X is %f", loc.x);
+    DEBUG_LOG("New Home Position Y is %f", loc.y);
+    DEBUG_LOG("New Home Position Z is %f", loc.z);
+    DEBUG_LOG("New Home MapId is %u", loc.GetMapId());
     DEBUG_LOG("New Home AreaId is %u", area_id);
 
     // zone update
     data.Initialize(SMSG_PLAYERBOUND, 8+4);
     data << player->GetObjectGuid();
     data << uint32(area_id);
-    player->SendDirectMessage( &data );
+    player->SendDirectMessage(&data);
 }
 
 void Spell::EffectRestoreItemCharges( SpellEffectIndex eff_idx )

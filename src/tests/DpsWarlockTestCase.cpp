@@ -10,7 +10,6 @@ class DpsWarlockTestCase : public EngineTestBase
 {
   CPPUNIT_TEST_SUITE( DpsWarlockTestCase );
       CPPUNIT_TEST( combatVsMelee );
-      CPPUNIT_TEST( summonPet );
       CPPUNIT_TEST( aoe );
       CPPUNIT_TEST( low_mana );
   CPPUNIT_TEST_SUITE_END();
@@ -30,16 +29,16 @@ protected:
 
  	    tick();
 
-        tick(); 
+        tick();
         addTargetAura("corruption");
-        tick(); 
+        tick();
         addTargetAura("curse of agony");
 
         tick();
-        
+
         tickWithLowHealth(49);
 
-        tick(); 
+        tick();
 
 		tickWithTargetLowHealth(19);
 
@@ -58,13 +57,6 @@ protected:
 		assertActions(">T:immolate>T:conflagrate>T:corruption>T:curse of agony>T:incinirate>T:drain life>T:shadow bolt>T:drain soul>T:shoot>T:shadow bolt>T:shadow bolt");
 	}
 
-    void summonPet()
-    {
-        tickWithNoPet();
-
-		assertActions(">S:summon imp");
-    }
-
     void low_mana()
     {
         tickWithLowMana(1);
@@ -80,7 +72,13 @@ protected:
         tickWithAttackerCount(3);
         tickWithAttackerCount(4);
 
-		assertActions(">T:shadowfury>T:seed of corruption>T:rain of fire");
+        set<Unit*>("attacker without aura", "corruption", MockedTargets::GetAttackerWithoutAura());
+        tick();
+
+        set<Unit*>("attacker without aura", "corruption", NULL);
+        tick();
+
+		assertActions(">T:shadowfury>T:seed of corruption>T:rain of fire>A:corruption on attacker>T:immolate");
     }
 };
 

@@ -78,9 +78,11 @@ namespace ai
                 creators["aspect of the wild"] = &TriggerFactoryInternal::aspect_of_the_wild;
                 creators["aspect of the viper"] = &TriggerFactoryInternal::aspect_of_the_viper;
                 creators["trueshot aura"] = &TriggerFactoryInternal::trueshot_aura;
+                creators["serpent sting on attacker"] = &TriggerFactoryInternal::serpent_sting_on_attacker;
             }
 
         private:
+            static Trigger* serpent_sting_on_attacker(PlayerbotAI* ai) { return new SerpentStingOnAttackerTrigger(ai); }
             static Trigger* trueshot_aura(PlayerbotAI* ai) { return new TrueshotAuraTrigger(ai); }
             static Trigger* aspect_of_the_viper(PlayerbotAI* ai) { return new HunterAspectOfTheViperTrigger(ai); }
             static Trigger* black_arrow(PlayerbotAI* ai) { return new BlackArrowTrigger(ai); }
@@ -120,6 +122,7 @@ namespace ai
                 creators["multi-shot"] = &AiObjectContextInternal::multi_shot;
                 creators["volley"] = &AiObjectContextInternal::volley;
                 creators["serpent sting"] = &AiObjectContextInternal::serpent_sting;
+                creators["serpent sting on attacker"] = &AiObjectContextInternal::serpent_sting_on_attacker;
                 creators["wyvern sting"] = &AiObjectContextInternal::wyvern_sting;
                 creators["viper sting"] = &AiObjectContextInternal::viper_sting;
                 creators["scorpid sting"] = &AiObjectContextInternal::scorpid_sting;
@@ -155,6 +158,7 @@ namespace ai
             static Action* multi_shot(PlayerbotAI* ai) { return new CastMultiShotAction(ai); }
             static Action* volley(PlayerbotAI* ai) { return new CastVolleyAction(ai); }
             static Action* serpent_sting(PlayerbotAI* ai) { return new CastSerpentStingAction(ai); }
+            static Action* serpent_sting_on_attacker(PlayerbotAI* ai) { return new CastSerpentStingOnAttackerAction(ai); }
             static Action* wyvern_sting(PlayerbotAI* ai) { return new CastWyvernStingAction(ai); }
             static Action* viper_sting(PlayerbotAI* ai) { return new CastViperStingAction(ai); }
             static Action* scorpid_sting(PlayerbotAI* ai) { return new CastScorpidStingAction(ai); }

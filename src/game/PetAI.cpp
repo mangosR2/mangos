@@ -455,7 +455,7 @@ void PetAI::UpdateAI(const uint32 diff)
             m_creature->InterruptNonMeleeSpells(false);
             _stopAttack();
             return;
-         }
+        }
         else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && IsInCombat() && m_creature->getVictim() && m_creature->getVictim()->IsCrowdControlled())  // Stop attack if target under CC effect
         {
             m_savedTargetGuid = m_creature->getVictim()->GetObjectGuid();

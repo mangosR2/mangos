@@ -6125,6 +6125,8 @@ AreaTrigger const* ObjectMgr::GetMapEntranceTrigger(uint32 mapId) const
 
             if (mEntry->Instanceable())
             {
+                if (!atEntry || atEntry->mapid == mapId)
+                    continue;
                 // Remark that IsLessOrEqualThan is no total order, and a->IsLeQ(b) != !b->IsLeQ(a)
                 if (!compareTrigger || compareTrigger->IsLessOrEqualThan(&itr->second))
                     compareTrigger = &itr->second;

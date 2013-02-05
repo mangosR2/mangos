@@ -75,6 +75,7 @@ bool TrainerAction::Execute(Event event)
 {
     string text = event.getParam();
 
+    Player* master = GetMaster();
     if (!master)
         return false;
 

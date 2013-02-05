@@ -68,3 +68,8 @@ uint32 QualityCategoryWrapper::GetMaxAllowedAuctionCount()
     uint32 count = sAhBotConfig.GetMaxAllowedAuctionCount(combinedName);
     return count > 0 ? count : category->GetMaxAllowedAuctionCount();
 }
+
+uint32 QualityCategoryWrapper::GetMaxAllowedItemAuctionCount(ItemPrototype const* proto)
+{
+    return category->GetMaxAllowedItemAuctionCount(proto);
+}
