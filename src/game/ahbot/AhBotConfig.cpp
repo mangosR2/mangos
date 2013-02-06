@@ -1,6 +1,7 @@
 #include "../pchdef.h"
 #include "AhBotConfig.h"
 #include "Policies/SingletonImp.h"
+#include "SystemConfig.h"
 
 using namespace std;
 
@@ -12,7 +13,7 @@ AhBotConfig::AhBotConfig()
 
 bool AhBotConfig::Initialize()
 {
-    if (!config.SetSource("ahbot.conf"))
+    if (!config.SetSource(_AUCTIONHOUSEBOT_CONFIG))
     {
         sLog.outString("AhBot is Disabled. Unable to open configuration file ahbot.conf");
         return false;
