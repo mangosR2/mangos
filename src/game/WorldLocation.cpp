@@ -43,6 +43,11 @@ float Location::GetDistance(Location const& loc) const
     return (*this - loc).magnitude();
 };
 
+bool Location::IsEmpty() const
+{
+    return fabs(x) < M_NULL_F && fabs(y) < M_NULL_F && fabs(z) < M_NULL_F;
+}
+
 Position& Position::operator = (Position const& pos)
 {
     x           = pos.x;

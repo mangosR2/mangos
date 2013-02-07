@@ -50,11 +50,7 @@ class SQLStorage;
 
 struct GameTele
 {
-    float  position_x;
-    float  position_y;
-    float  position_z;
-    float  orientation;
-    uint32 mapId;
+    WorldLocation loc;
     std::string name;
     std::wstring wnameLow;
 };
@@ -92,11 +88,7 @@ struct AreaTrigger
     uint32 achiev0;
     uint32 achiev1;
     uint32 combatMode;
-    uint32 target_mapId;
-    float  target_X;
-    float  target_Y;
-    float  target_Z;
-    float  target_Orientation;
+    WorldLocation loc;
 
     // Operators
     bool IsMinimal() const { return (requiredLevel == 0 
@@ -116,7 +108,7 @@ struct AreaTrigger
 
     bool IsLessOrEqualThan(AreaTrigger const* l) const      // Expected to have same map
     {
-        MANGOS_ASSERT(target_mapId == l->target_mapId);
+        MANGOS_ASSERT(loc.GetMapId() == l->loc.GetMapId());
         return (requiredLevel <= l->requiredLevel
                 && requiredItem <= l->requiredItem
                 && requiredItem2 <= l->requiredItem2

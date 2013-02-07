@@ -748,12 +748,12 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket & recv_data)
     if (!at)
         return;
 
-    MapEntry const* targetMapEntry = sMapStore.LookupEntry(at->target_mapId);
+    MapEntry const* targetMapEntry = sMapStore.LookupEntry(at->loc.GetMapId());
     if (!targetMapEntry)
         return;
 
     if (GetPlayer()->CheckTransferPossibility(at))
-        GetPlayer()->TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, at->target_Orientation, TELE_TO_NOT_LEAVE_TRANSPORT|TELE_TO_CHECKED);
+        GetPlayer()->TeleportTo(at->loc.GetMapId(), at->loc.x, at->loc.y, at->loc.z, at->loc.orientation, TELE_TO_NOT_LEAVE_TRANSPORT|TELE_TO_CHECKED);
 }
 
 void WorldSession::HandleUpdateAccountData(WorldPacket &recv_data)
