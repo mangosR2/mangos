@@ -3136,10 +3136,10 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
             GameTele const* tele = sObjectMgr.GetGameTele(id);
             if (!tele)
                 return false;
-            mapid = tele->mapId;
-            x = tele->position_x;
-            y = tele->position_y;
-            z = tele->position_z;
+            mapid = tele->loc.GetMapId();
+            x = tele->loc.x;
+            y = tele->loc.y;
+            z = tele->loc.z;
             return true;
         }
         case LOCATION_LINK_TAXINODE:
@@ -3284,10 +3284,10 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
                 return false;
             }
 
-            mapid = at->target_mapId;
-            x = at->target_X;
-            y = at->target_Y;
-            z = at->target_Z;
+            mapid = at->loc.GetMapId();
+            x = at->loc.x;
+            y = at->loc.y;
+            z = at->loc.z;
             return true;
         }
     }

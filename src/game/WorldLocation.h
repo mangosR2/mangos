@@ -55,6 +55,8 @@ struct MANGOS_DLL_SPEC Location : public Vector3
 
     float GetDistance(Location const& loc) const;
 
+    bool IsEmpty() const;
+
     union
     {
         float orientation;

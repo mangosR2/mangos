@@ -4876,12 +4876,8 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
         return false;
     }
 
-    GameTele tele;
-    tele.position_x  = player->GetPositionX();
-    tele.position_y  = player->GetPositionY();
-    tele.position_z  = player->GetPositionZ();
-    tele.orientation = player->GetOrientation();
-    tele.mapId       = player->GetMapId();
+    GameTele tele; 
+    tele.loc         = player->GetPosition();
     tele.name        = name;
 
     if (sObjectMgr.AddGameTele(tele))
