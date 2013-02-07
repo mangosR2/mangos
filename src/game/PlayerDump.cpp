@@ -389,7 +389,7 @@ std::string PlayerDumpWriter::GetDump(uint32 guid)
 
 DumpReturn PlayerDumpWriter::WriteDump(const std::string& file, uint32 guid)
 {
-    FILE *fout = fopen(file.c_str(), "w");
+    FILE *fout = fopen(file.c_str(), "wb");
     if (!fout)
         return DUMP_FILE_OPEN_ERROR;
 
