@@ -4051,7 +4051,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     for (SpellCooldowns::const_iterator itr = cm->begin(); itr != cm->end();itr = next)
                     {
                         next = itr;
-                        ++itr;
+                        ++next;
                         SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
 
                         if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE && spellInfo->GetSpellFamilyFlags().test<CF_ROGUE_EVASION, CF_ROGUE_SPRINT, CF_ROGUE_VANISH, CF_ROGUE_COLD_BLOOD, CF_ROGUE_SHADOWSTEP>())
