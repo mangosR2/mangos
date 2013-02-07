@@ -8,13 +8,13 @@ namespace ai
 	public:
         IsFacingValue(PlayerbotAI* ai) : BoolCalculatedValue(ai) {}
 
-        virtual bool Calculate() 
+        virtual bool Calculate()
         {
             Unit* target = AI_VALUE(Unit*, qualifier);
             if (!target)
                 return false;
 
-            return bot->isInFront(target, sPlayerbotAIConfig.reactDistance);
+            return bot->isInFront(target, sPlayerbotAIConfig.sightDistance);
         }
     };
 }

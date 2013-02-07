@@ -231,16 +231,20 @@ bool Engine::MultiplyAndPush(NextAction** actions, float forceRelevance, bool sk
 
                 float k = nextAction->getRelevance();
                 if (forceRelevance > 0.0f)
-                    k = forceRelevance;
-
-                for (list<Multiplier*>::iterator i = multipliers.begin(); i!= multipliers.end(); i++)
                 {
-                    Multiplier* multiplier = *i;
-                    k *= multiplier->GetValue(action->getAction());
-                    if (!k)
+                    k = forceRelevance;
+                }
+                else
+                {
+                    for (list<Multiplier*>::iterator i = multipliers.begin(); i!= multipliers.end(); i++)
                     {
-                        LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
-                        break;
+                        Multiplier* multiplier = *i;
+                        k *= multiplier->GetValue(action->getAction());
+                        if (!k)
+                        {
+                            LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
+                            break;
+                        }
                     }
                 }
 
