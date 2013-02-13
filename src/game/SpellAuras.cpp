@@ -10582,6 +10582,7 @@ m_permanent(false), m_isRemovedOnShapeLost(true), m_deleted(false), m_in_use(0)
         case 67107:                                         // Nether Power (ToC: Lord Jaraxxus)
         case 67108:                                         // Nether Power (ToC: Lord Jaraxxus)
         case 71564:                                         // Deadly Precision
+        case 71756:                                         // Ball of Flames Proc (Blood Prince Council)
         case 74396:                                         // Fingers of Frost
         case 70672:                                         // Gaseous Bloat (Putricide)
         case 72455:

@@ -6718,12 +6718,24 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     if (!creature_entry)
         return;
 
+    SummonPropertiesEntry const* propEntry = sSummonPropertiesStore.LookupEntry(m_spellInfo->EffectMiscValueB[eff_idx]);
+    if (!propEntry)
+        return;
+
+    TempSummonType summonType = TEMPSUMMON_DEAD_DESPAWN;
+    if (m_duration > 0)
+    {
+        if (propEntry->HasFlag(SUMMON_PROP_FLAG_NOT_DESPAWN_IN_COMBAT))
+            summonType = TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT;
+        else
+            summonType = TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
+    }
+
     // select center of summon position
     float center_x, center_y, center_z;
     m_targets.getDestination(center_x, center_y, center_z);
 
     float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[eff_idx]));
-    TempSummonType summonType = m_duration <= 0 ? TEMPSUMMON_DEAD_DESPAWN : TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT;
 
     uint32 uDuration = m_duration > 0 ? uint32(m_duration) : 0;
 

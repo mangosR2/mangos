@@ -292,7 +292,7 @@ struct WorldState
 typedef UNORDERED_MULTIMAP<uint32 /* state id */, WorldState> WorldStateMap;
 typedef std::pair<WorldStateMap::const_iterator, WorldStateMap::const_iterator> WorldStateBounds;
 
-#define MAX_WORD_STATE_SET_COUNT 126
+#define MAX_WORD_STATE_SET_COUNT 254
 
 class WorldStateSet
 {

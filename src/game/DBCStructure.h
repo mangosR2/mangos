@@ -2360,6 +2360,8 @@ struct SummonPropertiesEntry
                                                             //      if title = UNITNAME_SUMMON_TITLE_COMPANION, slot=6 -> defensive guardian, in other cases criter/minipet
                                                             //      Slot may have other uses, selection of pet type in some cases?
     uint32  Flags;                                          // 5        m_flags (enum SummonPropFlags)
+
+    bool HasFlag(uint32 flag) const { return bool(Flags & flag); }
 };
 
 #define MAX_TALENT_RANK 5
