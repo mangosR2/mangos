@@ -295,13 +295,13 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
         for(GameTeleMap::const_iterator itr = teleMap.begin(); itr != teleMap.end(); ++itr)
         {
             GameTele const* tele = &itr->second;
-            if (tele->mapId == mapId)
+            if (tele->loc.GetMapId() == mapId)
                 locs.push_back(tele);
         }
 
         index = urand(0, locs.size() - 1);
         GameTele const* tele = locs[index];
-        uint32 level = GetZoneLevel(tele->mapId, tele->position_x, tele->position_y, tele->position_z);
+        uint32 level = GetZoneLevel(tele->loc.GetMapId(), tele->loc.coord_x, tele->loc.coord_y, tele->loc.coord_z);
         if (level > maxLevel + 5)
             continue;
 
@@ -313,7 +313,7 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
         PlayerbotFactory factory(bot, level);
         factory.Randomize(false);
-        RandomTeleport(bot, tele->mapId, tele->position_x, tele->position_y, tele->position_z);
+        RandomTeleport(bot, tele->loc.GetMapId(), tele->loc.coord_x, tele->loc.coord_y, tele->loc.coord_z);
         break;
     }
 }
