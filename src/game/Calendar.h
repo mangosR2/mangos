@@ -18,6 +18,7 @@
 
 #ifndef MANGOS_CALENDAR_H
 #define MANGOS_CALENDAR_H
+
 #include "Policies/Singleton.h"
 #include "Common.h"
 #include "ObjectGuid.h"
@@ -233,6 +234,8 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         };
         typedef std::pair<uint32, uint32> TRemapGee;
         typedef std::list<TRemapGee> TRemapData;
+
+        struct IsNotRemap { bool operator() (const TRemapGee& gee) { return gee.first == gee.second; } };
 
         bool IsEventReadyForRemove(time_t eventTime)
         {
