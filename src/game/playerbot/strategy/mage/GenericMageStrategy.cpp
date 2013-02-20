@@ -18,6 +18,7 @@ public:
         creators["combustion"] = &combustion;
         creators["evocation"] = &evocation;
         creators["dragon's breath"] = &dragons_breath;
+        creators["blast wave"] = &blast_wave;
     }
 private:
     static ActionNode* frostbolt(PlayerbotAI* ai)
@@ -74,7 +75,14 @@ private:
         return new ActionNode ("dragon's breath",
             /*P*/ NULL,
             /*A*/ NextAction::array(0, new NextAction("blast wave"), NULL),
-            /*C*/ NULL);
+            /*C*/ NextAction::array(0, new NextAction("flamestrike", 71.0f), NULL));
+    }
+    static ActionNode* blast_wave(PlayerbotAI* ai)
+    {
+        return new ActionNode ("blast wave",
+            /*P*/ NULL,
+            /*A*/ NextAction::array(0, new NextAction("frost nova"), NULL),
+            /*C*/ NextAction::array(0, new NextAction("flamestrike", 71.0f), NULL));
     }
 };
 

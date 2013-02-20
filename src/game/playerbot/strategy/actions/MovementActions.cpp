@@ -140,7 +140,7 @@ bool MovementAction::IsMovingAllowed()
             (bot->isDead() && !bot->GetCorpse()) ||
             bot->IsBeingTeleported() || bot->isInRoots() ||
             bot->HasAuraType(SPELL_AURA_MOD_CONFUSE) || bot->isCharmed() ||
-            bot->HasAuraType(SPELL_AURA_MOD_STUN))
+            bot->HasAuraType(SPELL_AURA_MOD_STUN) || bot->IsTaxiFlying())
         return false;
 
     MotionMaster &mm = *bot->GetMotionMaster();

@@ -22,6 +22,7 @@ CategoryList::CategoryList()
     Add(new Equip());
     Add(new ahbot::Quest());
     Add(new Quiver());
+    Add(new Projectile());
 
     Add(new Recipe());
     Add(new Container());

@@ -19,7 +19,7 @@ void FireMageStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("living bomb", 15.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
-        "pyroblast", 
+        "pyroblast",
         NextAction::array(0, new NextAction("pyroblast", 10.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
@@ -32,7 +32,7 @@ void FireMageStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "enemy too close for spell",
-        NextAction::array(0, new NextAction("dragon's breath", 70.0f), new NextAction("flamestrike", 70.0f), new NextAction("frost nova", 69.0f), NULL)));
+        NextAction::array(0, new NextAction("dragon's breath", 70.0f), NULL)));
 }
 
 void FireMageAoeStrategy::InitTriggers(std::list<TriggerNode*> &triggers)

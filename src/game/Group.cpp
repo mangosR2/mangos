@@ -81,7 +81,7 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 //===================================================
 
 Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
-    m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL), 
+    m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
     m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
     m_LFGState(LFGGroupState(this))
 {

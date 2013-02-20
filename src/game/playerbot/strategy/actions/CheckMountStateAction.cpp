@@ -12,6 +12,9 @@ bool CheckMountStateAction::Execute(Event event)
     if (!bot->GetGroup() || !master)
         return false;
 
+    if (bot->IsTaxiFlying())
+        return false;
+
     if (master->IsMounted() && !bot->IsMounted())
     {
         if (!master->GetAurasByType(SPELL_AURA_MOUNTED).empty())

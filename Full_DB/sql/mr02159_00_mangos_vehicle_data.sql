@@ -114,7 +114,8 @@ INSERT INTO `npc_spellclick_spells` VALUES
 (27354, 48533, 12270, 1, 12270, 1);
 
 DELETE FROM `spell_script_target` WHERE `entry` IN (48610);
-INSERT INTO `spell_script_target` VALUES (48610, 1, 27423), (48610, 1, 27371);
+INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
+(48610, 1, 27423), (48610, 1, 27371);
 
 /* Forsaken Blight Spreader */
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (26523);
@@ -166,7 +167,8 @@ UPDATE `creature_template` SET `InhabitType` = 3 WHERE `entry` = 28670;
 
 -- from lanc
 -- Infected Kodo fix quest (11690)
-INSERT IGNORE INTO `spell_script_target` VALUES (45877, 1, 25596);
+INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
+(45877, 1, 25596);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (25334, 27107);
 INSERT INTO npc_spellclick_spells VALUES
@@ -186,7 +188,8 @@ INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `f
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27061);
 INSERT INTO npc_spellclick_spells VALUES (27061, 47920, 0, 0, 0, 1);
-REPLACE INTO spell_script_target VALUES (47939, 0, 188539);
+REPLACE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES 
+(47939, 0, 188539);
 
 -- Argent Cannon (quest 13086)
 UPDATE `creature_template` SET `vehicle_id` = 244 WHERE `entry` IN (30236);
@@ -197,7 +200,7 @@ INSERT INTO npc_spellclick_spells VALUES
 (27996, 50343, 12498, 1, 12498, 1);
 
 -- Quest 13236 Gift of the Lich King
-REPLACE INTO `spell_script_target` VALUES
+REPLACE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 (58916, 2, 31254),
 (58917, 1, 31276);
 

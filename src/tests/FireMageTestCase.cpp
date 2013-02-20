@@ -11,6 +11,7 @@ class FireMageTestCase : public EngineTestBase
   CPPUNIT_TEST_SUITE( FireMageTestCase );
   CPPUNIT_TEST( combatVsMelee );
   CPPUNIT_TEST( avoid_melee );
+  CPPUNIT_TEST( avoid_melee_low_level );
   CPPUNIT_TEST( panic );
   CPPUNIT_TEST( boost );
   CPPUNIT_TEST( aoe );
@@ -60,6 +61,16 @@ protected:
 		assertActions(">T:dragon's breath>T:flamestrike>T:blast wave>T:flamestrike>T:frost nova>S:flee");
 	}
 
+ 	void avoid_melee_low_level()
+ 	{
+ 	    spellUnavailable("dragon's breath");
+ 	    spellUnavailable("blast wave");
+		tickInMeleeRange();
+		tickInMeleeRange();
+
+		assertActions(">T:frost nova>S:flee");
+	}
+
  	void panic()
  	{
         tickWithLowHealth(19);
@@ -67,14 +78,14 @@ protected:
         assertActions(">S:ice block");
  	}
 
-    void boost() 
+    void boost()
     {
 		tickWithBalancePercent(1);
 
 		assertActions(">S:combustion");
     }
 
-    void aoe() 
+    void aoe()
     {
         engine->addStrategy("fire aoe");
 

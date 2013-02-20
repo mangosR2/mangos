@@ -36,7 +36,7 @@ bool AttackMyTargetAction::Execute(Event event)
 bool AttackAction::Attack(Unit* target)
 {
     MotionMaster &mm = *bot->GetMotionMaster();
-    if (mm.GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
+    if (mm.GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE || bot->IsTaxiFlying())
     {
         ai->TellMaster(verbose, "I cannot attack in flight");
         return false;

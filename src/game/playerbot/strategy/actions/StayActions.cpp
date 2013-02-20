@@ -11,7 +11,7 @@ void StayActionBase::Stay()
     AI_VALUE(LastMovement&, "last movement").Set(NULL);
 
     MotionMaster &mm = *bot->GetMotionMaster();
-    if (mm.GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE)
+    if (mm.GetCurrentMovementGeneratorType() == FLIGHT_MOTION_TYPE || bot->IsTaxiFlying())
         return;
 
     mm.Clear();

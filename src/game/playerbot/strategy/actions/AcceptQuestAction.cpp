@@ -59,10 +59,8 @@ bool AcceptQuestShareAction::Execute(Event event)
 
     WorldPacket& p = event.getPacket();
     p.rpos(0);
-    uint64 skip;
-    uint64 guid;
     uint32 quest;
-    p >> guid >> skip >> quest;
+    p >> quest;
     Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest);
 
     if (!qInfo || !bot->GetDividerGuid())

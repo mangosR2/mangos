@@ -190,3 +190,7 @@ AhBot.PriceMultiplier.Buy.SocketGems = 1.0
 AhBot.MaxAuctionCount.OtherTrade.white = 10
 AhBot.PriceMultiplier.Sell.OtherTrade = 1.0
 AhBot.PriceMultiplier.Buy.OtherTrade = 1.0
+
+AhBot.PriceMultiplier.Sell.projectile = 1.0
+AhBot.PriceMultiplier.Buy.projectile = 1.0
+AhBot.PricingStrategy.projectile = buyOnlyRare

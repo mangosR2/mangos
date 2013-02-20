@@ -674,7 +674,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                     }
                     case 72506: // 10hero
                     {
-                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72745))
+                        if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(72671))
                         {
                             uint32 stack = holder->GetStackAmount();
                             switch(stack)
@@ -721,7 +721,7 @@ void Spell::EffectSchoolDMG(SpellEffectIndex effect_idx)
                                     damage = urand(4500, 5500);
                                     break;
                                 case 5:
-                                    damage = urand(10000, 1200);
+                                    damage = urand(10000, 12000);
                                     break;
                                 default:
                                     damage = 4000 * stack;
@@ -3624,6 +3624,10 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 case 71908:
                 case 72270:
                 case 72271:
+                case 72295:                                 // Malleable Goo (ICC -Professor Putricide)
+                case 72615:
+                case 74280:
+                case 74281:
                 {
                     if (unitTarget)
                         m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
@@ -6726,7 +6730,7 @@ void Spell::DoSummonWild(SpellEffectIndex eff_idx, uint32 forceFaction)
     if (m_duration > 0)
     {
         if (propEntry->HasFlag(SUMMON_PROP_FLAG_NOT_DESPAWN_IN_COMBAT))
-            summonType = TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT;
+            summonType = TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT_OR_DEAD_DESPAWN;
         else
             summonType = TEMPSUMMON_TIMED_OR_DEAD_DESPAWN;
     }
@@ -8026,16 +8030,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                 case 2270:                                          // Spells 73142 , 73143 , 73144 , 73145
                 {
                     if (unitTarget)
-                    {
-                        float x, y, z;
-                        unitTarget->GetPosition(x, y, z);
-
-                        if (Creature *pSpike = unitTarget->SummonCreature(38711, x, y, z, 0.0f, TEMPSUMMON_DEAD_DESPAWN, 2000))
-                        {
-                            unitTarget->CastSpell(pSpike, 46598, true); // enter vehicle
-                            pSpike->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(EFFECT_INDEX_1), true, 0, 0, m_caster->GetObjectGuid(), m_spellInfo);
-                        }
-                    }
+                        unitTarget->CastSpell(unitTarget, 69062, true); // enter vehicle
                     return;
                 }
                 case 1988:                                          // Pungent Blight (Festergut) - Spells 69195 , 71219 , 73031 , 73032
@@ -10446,6 +10441,9 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                 }
                 case 69782:                                 // Ooze Flood (Rotface)
+                case 69796:
+                case 69798:
+                case 69801:
                 {
                     // targets Puddle Stalker which casts slime AoE
                     if (unitTarget)

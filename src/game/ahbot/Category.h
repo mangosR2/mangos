@@ -263,6 +263,30 @@ namespace ahbot
         }
     };
 
+    class Projectile : public Category
+    {
+    public:
+        Projectile() : Category() {}
+
+    public:
+        virtual bool Contains(ItemPrototype const* proto)
+        {
+            return proto->Class == ITEM_CLASS_PROJECTILE;
+        }
+
+        virtual string GetName() { return "projectile"; }
+
+        virtual uint32 GetMaxAllowedItemAuctionCount(ItemPrototype const* proto)
+        {
+            return 5;
+        }
+
+        virtual uint32 GetStackCount(ItemPrototype const* proto)
+        {
+            return proto->GetMaxStackSize();
+        }
+    };
+
     class Container : public Category
     {
     public:
