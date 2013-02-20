@@ -3156,6 +3156,17 @@ enum ConditionSource                                        // From where was th
     CONDITION_FROM_GOSSIP_MENU      = 2,                    // Used to check a gossip menu menu-text
     CONDITION_FROM_GOSSIP_OPTION    = 3,                    // Used to check a gossip menu option-item
     CONDITION_FROM_EVENTAI          = 4,                    // Used to check EventAI Event "On Receive Emote"
+    CONDITION_FROM_HARDCODED        = 5,                    // Used to check a hardcoded event - not actually a condition
+    CONDITION_FROM_VENDOR           = 6,                    // Used to check a condition from a vendor
+};
+
+enum Expansions
+{
+    EXPANSION_NONE                      = 0,                // classic
+    EXPANSION_TBC                       = 1,                // TBC
+    EXPANSION_WOTLK                     = 2,                // WotLK
+    EXPANSION_CATA                      = 3,                // Cata
+    EXPANSION_MOP                       = 4,                // MoP
 };
 
 #endif

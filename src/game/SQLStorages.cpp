@@ -46,6 +46,7 @@ const char SpellDbcTemplatedstfmt[] = "iiiiiiiiiiiiiiixixiiiiiiiiiiiiixiiiiiiiii
 
 const char VehicleAccessorySrcFmt[] = "iiiiffffx";
 const char VehicleAccessoryDstFmt[] = "iiiiffff";
+const char SpellScriptTargetFmt[] = "iiii";
 
 SQLStorage sCreatureStorage(CreatureInfosrcfmt, CreatureInfodstfmt, "entry", "creature_template");
 SQLStorage sCreatureDataAddonStorage(CreatureDataAddonInfofmt, "guid", "creature_addon");
@@ -65,3 +66,4 @@ SQLHashStorage sGOStorage(GameObjectInfosrcfmt, GameObjectInfodstfmt, "entry", "
 SQLHashStorage sSpellTemplate(SpellTemplatesrcfmt, SpellTemplatedstfmt, "id", "spell_template");
 //SQLHashStorage sCreatureTemplateSpellsStorage(CreatureTemplateSpellsFmt, "entry", "creature_template_spells");
 
+SQLMultiStorage sSpellScriptTargetStorage(SpellScriptTargetFmt, "entry", "spell_script_target");
