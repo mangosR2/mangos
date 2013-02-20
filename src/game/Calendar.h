@@ -235,7 +235,7 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         typedef std::pair<uint32, uint32> TRemapGee;
         typedef std::list<TRemapGee> TRemapData;
 
-        struct IsNotRemap { bool operator() (const TRemapGee& gee) { return gee.first == gee.second; } };
+        struct IsNotRemap { bool operator() (const TRemapGee& gee) { return gee.first == gee.second || gee.second == DELETED_ID; } };
 
         bool IsEventReadyForRemove(time_t eventTime)
         {
@@ -243,7 +243,7 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
             return delaySec < 0 ? false : eventTime + time_t(delaySec) <= time(NULL);
         }
         void DBRemap(TRemapAction remapAction, TRemapData& remapData, bool& dbTransactionUsed);
-        void RemoveExpiredEventsAndRemapData();
+        void DBRemoveExpiredEventsAndRemapData();
 
         // utils
         inline bool IsDeletedEvent(CalendarEventStore::const_iterator iter) { return iter->second.HasFlag(CALENDAR_STATE_FLAG_DELETED); }

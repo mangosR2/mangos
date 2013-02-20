@@ -591,10 +591,13 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
 
     float ox, oy, oz/*, oo*/;
 
-    Unit* base = GetBase()->GetVehicle() ? GetBase()->GetVehicle()->GetBase() : GetBase();
+    Unit* base = (GetBase()->GetVehicle() && GetBase()->GetVehicle()->GetBase()) ? GetBase()->GetVehicle()->GetBase() : GetBase();
 
     base->GetPosition(ox, oy, oz);
     // oo = base->GetOrientation();
+    float tRadius = base->GetObjectBoundingRadius();
+    if (tRadius < 1.0f || tRadius > 10.0f)
+        tRadius = 1.0f;
 
     if (b_dstSet)
     {
@@ -617,7 +620,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
             horisontalSpeed = BASE_CHARGE_SPEED;
 
         // may be under water
-        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), frand(2.0f, 3.0f), frand(M_PI_F / 2.0f, 3.0f * M_PI_F / 2.0f), passenger);
+        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, frand(2.0f, 3.0f), frand(M_PI_F / 2.0f, 3.0f * M_PI_F / 2.0f), passenger);
         if (m_dst_z < oz)
             m_dst_z = oz;
 
@@ -626,7 +629,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
     else
     {
         // jump from vehicle without seatInfo (? error case)
-        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, base->GetObjectBoundingRadius(), 2.0f, M_PI_F, passenger);
+        base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, 2.0f, M_PI_F, passenger);
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
         if (m_dst_z < oz)
             m_dst_z = oz;

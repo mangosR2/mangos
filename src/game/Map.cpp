@@ -861,7 +861,6 @@ void Map::Relocation(GameObject* go, float x, float y, float z, float orientatio
 
     Cell old_cell(old_val);
     Cell new_cell(new_val);
-    bool same_cell = (new_cell == old_cell);
 
     go->Relocate(x, y, z, orientation);
 

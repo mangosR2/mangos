@@ -1809,7 +1809,7 @@ void GameObject::DealGameObjectDamage(uint32 damage, uint32 spellId, Unit* caste
         || !caster
         || !sSpellStore.LookupEntry(spellId))
     {
-        sLog.outError("GameObject::DealGameObjectDamage not valid damage method for %s, spell %u, damage %u, caster %s", 
+        sLog.outError("GameObject::DealGameObjectDamage not valid damage method for %s, spell %u, damage %u, caster %s",
             GetObjectGuid().GetString().c_str(),spellId, damage, caster ? caster->GetObjectGuid().GetString().c_str() : "<none>");
         return;
     }
@@ -2375,11 +2375,10 @@ float GameObject::GetDeterminativeSize(bool b_priorityZ) const
     if (!info)
         return 0.0f;
 
-    float dx = info->maxX - info->minX;
-    float dy = info->maxY - info->minY;
-    float dz = info->maxZ - info->minZ;
+    if (b_priorityZ)
+        return info->maxZ - info->minZ;
 
-    return b_priorityZ ? dz : sqrt(dx*dx + dy*dy +dz*dz);
+    return Location(info->maxX, info->maxY, info->maxZ).GetDistance(Location(info->minX, info->minY, info->minZ));
 }
 
 void GameObject::SetCapturePointSlider(int8 value)
@@ -2629,7 +2628,7 @@ uint32 GameObject::GetLinkedWorldState(bool stateId)
         case GAMEOBJECT_TYPE_CAPTURE_POINT:
         {
             if (GetGOInfo()->capturePoint.worldState2)
-                return stateId ? 
+                return stateId ?
                     GetGOInfo()->capturePoint.worldState2 :
                     sWorldStateMgr.GetWorldStateValueFor(this,GetGOInfo()->capturePoint.worldState2);
             break;

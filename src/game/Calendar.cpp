@@ -509,7 +509,8 @@ void CalendarMgr::RemoveGuildCalendar(ObjectGuid const& playerGuid, uint32 Guild
 
 void CalendarMgr::DBRemap(TRemapAction remapAction, TRemapData& remapData, bool& dbTransactionUsed)
 {
-    // use not static SqlStatementID because this function used only on core start and not needed after
+    // use not static SqlStatementID because this function
+    // used only on core start and not needed after
     SqlStatementID stmtEventID;
     SqlStatementID stmtInviteID;
 
@@ -525,16 +526,12 @@ void CalendarMgr::DBRemap(TRemapAction remapAction, TRemapData& remapData, bool&
         {
             SqlStatement delEventStmt = CharacterDatabase.CreateStatement(stmtEventID, "DELETE FROM calendar_events WHERE eventId = ?");
             SqlStatement delInviteStmt = CharacterDatabase.CreateStatement(stmtInviteID, "DELETE FROM calendar_invites WHERE eventId = ?");
-            for (TRemapData::iterator itr = remapData.begin(); itr != remapData.end();)
+            for (TRemapData::const_iterator itr = remapData.begin(); itr != remapData.end(); ++itr)
             {
-                if (itr->second == DELETED_ID)
-                {
-                    delEventStmt.PExecute(itr->first);
-                    delInviteStmt.PExecute(itr->first);
-                    itr = remapData.erase(itr);
-                }
-                else
-                    ++itr;
+                if (itr->second != DELETED_ID)
+                    continue;
+                delEventStmt.PExecute(itr->first);
+                delInviteStmt.PExecute(itr->first);
             }
             break;
         }
@@ -559,7 +556,7 @@ void CalendarMgr::DBRemap(TRemapAction remapAction, TRemapData& remapData, bool&
     }
 }
 
-void CalendarMgr::RemoveExpiredEventsAndRemapData()
+void CalendarMgr::DBRemoveExpiredEventsAndRemapData()
 {
     QueryResult* result = CharacterDatabase.Query("SELECT eventTime, eventId FROM calendar_events ORDER BY eventId");
     if (!result)
@@ -624,7 +621,7 @@ void CalendarMgr::LoadFromDB()
     m_InviteStore.clear();
 
     // before fill
-    RemoveExpiredEventsAndRemapData();
+    DBRemoveExpiredEventsAndRemapData();
 
     sLog.outString("Loading Calendar Events...");
     //                                                          0        1            2        3     4      5          6          7      8
