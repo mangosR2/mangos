@@ -8735,13 +8735,6 @@ void Aura::PeriodicTick()
             damageInfo.procVictim   = PROC_FLAG_ON_TAKE_PERIODIC;// | PROC_FLAG_TAKEN_HARMFUL_SPELL_HIT;
             damageInfo.procEx = isCrit ? PROC_EX_CRITICAL_HIT : PROC_EX_NORMAL_HIT;
 
-            damageInfo.damage = (damageInfo.damage <= damageInfo.absorb + damageInfo.resist) ? 0 : (damageInfo.damage - damageInfo.absorb - damageInfo.resist);
-
-            if (damageInfo.damage <= 0)
-                damageInfo.procEx &= ~PROC_EX_DIRECT_DAMAGE;
-            else
-                damageInfo.procEx |= PROC_EX_DIRECT_DAMAGE;
-
             uint32 overkill = damageInfo.damage > target->GetHealth() ? damageInfo.damage - target->GetHealth() : 0;
             SpellPeriodicAuraLogInfo pInfo(this, damageInfo.damage, overkill, damageInfo.absorb, damageInfo.resist, 0.0f, isCrit);
             target->SendPeriodicAuraLog(&pInfo);
