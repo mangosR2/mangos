@@ -8730,20 +8730,25 @@ void Aura::PeriodicTick()
 
             pCaster->DealDamageMods(&damageInfo);
 
+            uint32 overkill = damageInfo.damage > target->GetHealth() ? damageInfo.damage - target->GetHealth() : 0;
+            SpellPeriodicAuraLogInfo pInfo(this, damageInfo.damage, overkill, damageInfo.absorb, damageInfo.resist, 0.0f, isCrit);
+            target->SendPeriodicAuraLog(&pInfo);
+
             // Set trigger flag
             damageInfo.procAttacker = PROC_FLAG_ON_DO_PERIODIC; //  | PROC_FLAG_SUCCESSFUL_HARMFUL_SPELL_HIT;
             damageInfo.procVictim   = PROC_FLAG_ON_TAKE_PERIODIC;// | PROC_FLAG_TAKEN_HARMFUL_SPELL_HIT;
             damageInfo.procEx = isCrit ? PROC_EX_CRITICAL_HIT : PROC_EX_NORMAL_HIT;
 
-            uint32 overkill = damageInfo.damage > target->GetHealth() ? damageInfo.damage - target->GetHealth() : 0;
-            SpellPeriodicAuraLogInfo pInfo(this, damageInfo.damage, overkill, damageInfo.absorb, damageInfo.resist, 0.0f, isCrit);
-            target->SendPeriodicAuraLog(&pInfo);
-
-            if (damageInfo.damage)
+            // damage may be changed in DealDamageMods above, so change flags
+            if (!damageInfo.damage)
+                damageInfo.procEx     &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+            {
                 damageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+                damageInfo.procEx     |= PROC_EX_DIRECT_DAMAGE;
+            }
 
             pCaster->ProcDamageAndSpell(&damageInfo);
-
             pCaster->DealDamage(target, &damageInfo, true);
 
             // Drain Soul (chance soul shard)
@@ -8822,16 +8827,19 @@ void Aura::PeriodicTick()
 
             pCaster->SendSpellNonMeleeDamageLog(target, GetId(), damageInfo.damage, damageInfo.SchoolMask(), damageInfo.absorb, damageInfo.resist, false, 0, isCrit);
 
-            float multiplier = spellProto->EffectMultipleValue[GetEffIndex()] > 0 ? spellProto->EffectMultipleValue[GetEffIndex()] : 1;
-
             // Set trigger flag
             damageInfo.procAttacker = PROC_FLAG_ON_DO_PERIODIC; //  | PROC_FLAG_SUCCESSFUL_HARMFUL_SPELL_HIT;
             damageInfo.procVictim   = PROC_FLAG_ON_TAKE_PERIODIC;// | PROC_FLAG_TAKEN_HARMFUL_SPELL_HIT;
             damageInfo.procEx = isCrit ? PROC_EX_CRITICAL_HIT : PROC_EX_NORMAL_HIT;
 
-            damageInfo.damage = (damageInfo.damage <= damageInfo.absorb + damageInfo.resist) ? 0 : (damageInfo.damage - damageInfo.absorb - damageInfo.resist);
-            if (damageInfo.damage)
+            // damage may be changed in DealDamageMods above, so change flags
+            if (!damageInfo.damage)
+                damageInfo.procEx     &= ~PROC_EX_DIRECT_DAMAGE;
+            else
+            {
                 damageInfo.procVictim |= PROC_FLAG_TAKEN_ANY_DAMAGE;
+                damageInfo.procEx     |= PROC_EX_DIRECT_DAMAGE;
+            }
 
             pCaster->ProcDamageAndSpell(&damageInfo);
             int32 new_damage = pCaster->DealDamage(target, &damageInfo, false);
@@ -8842,7 +8850,9 @@ void Aura::PeriodicTick()
                         if (spell->m_spellInfo->Id == GetId())
                             spell->cancel();
 
-            if (Player *modOwner = pCaster->GetSpellModOwner())
+            float multiplier = spellProto->EffectMultipleValue[GetEffIndex()] > 0 ? spellProto->EffectMultipleValue[GetEffIndex()] : 1;
+
+            if (Player* modOwner = pCaster->GetSpellModOwner())
                 modOwner->ApplySpellMod(GetId(), SPELLMOD_MULTIPLE_VALUE, multiplier);
 
             int32 heal = pCaster->SpellHealingBonusTaken(pCaster, spellProto, int32(new_damage * multiplier), DOT, GetStackAmount());

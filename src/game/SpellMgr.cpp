@@ -2752,11 +2752,11 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                         {
                             case RAID_DIFFICULTY_10MAN_NORMAL:
                             case RAID_DIFFICULTY_10MAN_HEROIC:
-                                unMaxTargets = 3;
+                                unMaxTargets = 2;
                                 break;
                             case RAID_DIFFICULTY_25MAN_NORMAL:
                             case RAID_DIFFICULTY_25MAN_HEROIC:
-                                unMaxTargets = 6;
+                                unMaxTargets = 5;
                                 break;
                         }
                     }

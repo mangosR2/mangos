@@ -984,6 +984,12 @@ LexicsCutterNoActionOnGM = 1
 #        Default: 0 - false
 #                 1 - true -> not blizzlike
 #
+#    ResistanceCalculationMethod
+#        Method of resistance calculation.
+#        Default: 0 (TBC, default mangos style)
+#                 1 (WoTLK, test, variant 1)
+#                 2 (WoTLK, test, variant 2)
+#
 ###################################################################################################################
 
 GameType = 1
@@ -1068,6 +1074,7 @@ AllowTransferToCustomMap = 0
 ResilenceAlternativeCalculation = 0
 BlinkAnimationType = 0
 FactiomAndRaceChangeWithoutRenaming = 0
+ResistanceCalculationMethod = 0
 
 ###################################################################################################################
 # PLAYER INTERACTION
