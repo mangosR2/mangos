@@ -2235,7 +2235,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo,
             float ran = (float)urand(0, 100);
             int maxcoeff = (int)(tmpvalue2*10)+2;
 
-            for (uint8 i = 0; i < 5; ++i) //Inverser la resist
+            for (uint8 i = 0; i < 4; ++i) //Inverser la resist
             {
                 float resis = 0.1f * (float)(maxcoeff-i);
                 float proba = 0.5f - 2.5f * abs(resis - tmpvalue2);
@@ -2267,8 +2267,8 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo,
         else if (calcMethod == 2)
         {
             // Get levels
-            float selfLevel = float(GetLevelForTarget(pCaster));
-            float levelDiff = selfLevel - float(pCaster->GetLevelForTarget(this));
+            float casterLevel = float(pCaster->GetLevelForTarget(this));
+            float levelDiff = casterLevel - float(GetLevelForTarget(pCaster));
 
             // Get base resistance for schoolmask
             float resistance = float(GetResistance(damageInfo->SchoolMask()));
@@ -2280,7 +2280,7 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo,
             float effResist = resistance + std::max(levelDiff * 5.0f, 0.0f) - std::min(casterPen, resistance);
 
             // Calculate mitigation
-            float magicK = selfLevel > 80 ? 400.0f + ceil(36.6f * float(selfLevel - 80)) : 400.0f;
+            float magicK = casterLevel > 80 ? 400.0f + ceil(36.6f * float(casterLevel - 80)) : 400.0f;
             float avrgMitigation = effResist / (magicK + effResist);
 
             // Search applicable section 100%, 90%, 80% ... 10%
@@ -2288,7 +2288,9 @@ void Unit::CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo,
             uint32 resPct = 100;
             do
             {
-                if (0.5f - 2.5f * (0.01f * float(resPct) - avrgMitigation) >= chance)
+                float probability = 0.5f - 2.5f * abs(0.01f * float(resPct) - avrgMitigation);
+                chance -= probability>0?probability:0;
+                if (chance < 0)
                     break;
                 resPct -= 10;
             }
