@@ -188,7 +188,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void SetUnloadLock(const GridPair &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadExplicitLock(on); }
         void LoadGrid(const Cell& cell, bool no_unload = false);
         bool UnloadGrid(const uint32 &x, const uint32 &y, bool pForce);
-        bool IsInUnloading() const { return m_Unloading; }
         virtual void UnloadAll(bool pForce);
 
         void ResetGridExpiry(NGridType &grid, float factor = 1) const
@@ -406,7 +405,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         uint32 i_id;
         uint32 i_InstanceId;
         uint32 m_unloadTimer;
-        bool m_Unloading;
         float m_VisibleDistance;
 
         MapRefManager m_mapRefManager;
@@ -416,8 +414,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         ActiveNonPlayers m_activeNonPlayers;
         ActiveNonPlayers::iterator m_activeNonPlayersIter;
         MapStoredObjectTypesContainer m_objectsStore;
-
-        void SetIsInUnloading() { m_Unloading = true; }
 
     private:
         time_t i_gridExpiry;

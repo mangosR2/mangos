@@ -589,19 +589,18 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
     if (!passenger || !passenger->IsInWorld() || !GetBase()->IsInWorld())
         return;
 
-    float ox, oy, oz/*, oo*/;
-
     Unit* base = (GetBase()->GetVehicle() && GetBase()->GetVehicle()->GetBase()) ? GetBase()->GetVehicle()->GetBase() : GetBase();
 
-    base->GetPosition(ox, oy, oz);
+    WorldLocation const& pos = base->GetPosition();
     // oo = base->GetOrientation();
     float tRadius = base->GetObjectBoundingRadius();
     if (tRadius < 1.0f || tRadius > 10.0f)
         tRadius = 1.0f;
 
-    if (base->GetMap()->IsInUnloading())
+    // Check for tru dismount while grid unload
+    if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(pos.x, pos.y))
     {
-        // Do not change passenger location, changing to unloaded gride cause crash.
+        passenger->Relocate(pos);
     }
     else if (b_dstSet)
     {
@@ -613,7 +612,13 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         float moveTimeHalf =  verticalSpeed / ((seatInfo && seatInfo->m_exitGravity > 0.0f) ? seatInfo->m_exitGravity : Movement::gravity);
         float max_height = - Movement::computeFallElevation(moveTimeHalf, false, -verticalSpeed);
 
-        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z, passenger->GetOrientation(), horisontalSpeed, max_height, true);
+        // Check for tru move unit/creature to unloaded grid (for players check maked in Map class)
+        if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(m_dst_x, m_dst_y))
+        {
+            passenger->Relocate(pos);
+        }
+        else
+            passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z, passenger->GetOrientation(), horisontalSpeed, max_height, true);
     }
     else if (seatInfo)
     {
@@ -625,26 +630,36 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
 
         // may be under water
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, frand(2.0f, 3.0f), frand(M_PI_F / 2.0f, 3.0f * M_PI_F / 2.0f), passenger);
-        if (m_dst_z < oz)
-            m_dst_z = oz;
+        if (m_dst_z < pos.z)
+            m_dst_z = pos.z;
 
-        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f);
+        if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(m_dst_x, m_dst_y))
+        {
+            passenger->Relocate(pos);
+        }
+        else
+            passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), horisontalSpeed, 0.0f);
     }
     else
     {
         // jump from vehicle without seatInfo (? error case)
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, 2.0f, M_PI_F, passenger);
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
-        if (m_dst_z < oz)
-            m_dst_z = oz;
+        if (m_dst_z < pos.z)
+            m_dst_z = pos.z;
 
-        passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), BASE_CHARGE_SPEED, 0.0f);
+        if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(m_dst_x, m_dst_y))
+        {
+            passenger->Relocate(pos);
+        }
+        else
+            passenger->GetMotionMaster()->MoveSkyDiving(m_dst_x, m_dst_y, m_dst_z + 0.1f, passenger->GetOrientation(), BASE_CHARGE_SPEED, 0.0f);
     }
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "VehicleKit::Dismount %s from %s (%f %f %f), destination point is %f %f %f",
         passenger->GetGuidStr().c_str(),
         base->GetGuidStr().c_str(),
-        ox, oy, oz,
+        pos.x, pos.y, pos.z,
         m_dst_x, m_dst_y, m_dst_z);
     SetDestination();
 }

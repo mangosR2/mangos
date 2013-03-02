@@ -2098,9 +2098,10 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
                                                             // redefined in Creature
 
         uint32 CalcArmorReducedDamage(Unit* pVictim, const uint32 damage);
-        void CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo, bool canReflect = false);
-        void CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, SpellEntry const* spellProto, WeaponAttackType attType = BASE_ATTACK);
-        void CalculateHealAbsorb(uint32 heal, uint32 *absorb);
+        void CalculateResistance(Unit* pCaster, DamageInfo* damageInfo);
+        void CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo, bool canReflect = false);
+        void CalculateAbsorbResistBlock(Unit* pCaster, DamageInfo* damageInfo, SpellEntry const* spellProto, WeaponAttackType attType = BASE_ATTACK);
+        void CalculateHealAbsorb(uint32 heal, uint32* absorb);
 
         void  UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f);
         float GetSpeed( UnitMoveType mtype ) const;
