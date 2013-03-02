@@ -2238,22 +2238,18 @@ void Unit::CalculateResistance(Unit* pCaster, DamageInfo* damageInfo)
             float avrgMitigation = float(effResist) / (magicK + effResist);
 
             // Search applicable section 100%, 90%, 80% ... 10%
-            float globalChance = rand_norm_f();
-            if (avrgMitigation > globalChance)
+            float chance = rand_norm_f();
+
+            float maxRes = std::min(1.0f, floor(10.0f * avrgMitigation + 2.0f)/10.0f);
+            for (float resPct = maxRes; resPct > 0.0f; resPct -= 0.1f)
             {
-                float maxProb = FLT_MIN;
-                for (float resPct = 1.0f; resPct > 0.0f; resPct -= 0.1f)
+                float probability = 0.5f - 2.5f * abs(resPct - avrgMitigation);
+                if (probability > chance)
                 {
-                    float probability = 0.5f - 2.5f * abs(resPct - avrgMitigation);
-                    if (probability < maxProb)
-                        break;
-                    if (probability > globalChance)
-                    {
-                        damageInfo->resist = uint32(float(damageInfo->damage) * resPct);
-                        break;
-                    }
-                    maxProb = probability;
+                    damageInfo->resist = uint32(float(damageInfo->damage) * resPct);
+                    break;
                 }
+                else chance -= probability;
             }
         }
     }
