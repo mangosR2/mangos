@@ -190,9 +190,9 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, vector<WorldLocation> &locs
     {
         int index = urand(0, locs.size() - 1);
         WorldLocation loc = locs[index];
-        float x = loc.coord_x + urand(0, sPlayerbotAIConfig.grindDistance) - sPlayerbotAIConfig.grindDistance / 2;
-        float y = loc.coord_y + urand(0, sPlayerbotAIConfig.grindDistance) - sPlayerbotAIConfig.grindDistance / 2;
-        float z = loc.coord_z;
+        float x = loc.getX() + urand(0, sPlayerbotAIConfig.grindDistance) - sPlayerbotAIConfig.grindDistance / 2;
+        float y = loc.getY() + urand(0, sPlayerbotAIConfig.grindDistance) - sPlayerbotAIConfig.grindDistance / 2;
+        float z = loc.getZ();
 
         Map* map = sMapMgr.FindMap(loc.GetMapId());
         if (!map)
@@ -301,7 +301,7 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
         index = urand(0, locs.size() - 1);
         GameTele const* tele = locs[index];
-        uint32 level = GetZoneLevel(tele->loc.GetMapId(), tele->loc.coord_x, tele->loc.coord_y, tele->loc.coord_z);
+        uint32 level = GetZoneLevel(tele->loc.GetMapId(), tele->loc.getX(), tele->loc.getY(), tele->loc.getZ());
         if (level > maxLevel + 5)
             continue;
 
@@ -313,7 +313,7 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
         PlayerbotFactory factory(bot, level);
         factory.Randomize(false);
-        RandomTeleport(bot, tele->loc.GetMapId(), tele->loc.coord_x, tele->loc.coord_y, tele->loc.coord_z);
+        RandomTeleport(bot, tele->loc.GetMapId(), tele->loc.getX(), tele->loc.getY(), tele->loc.getZ());
         break;
     }
 }

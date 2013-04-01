@@ -17,7 +17,7 @@
  */
 
 #include "Common.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "SharedDefines.h"
 #include "ObjectMgr.h"
 #include "ProgressBar.h"

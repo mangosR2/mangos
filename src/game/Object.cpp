@@ -1249,8 +1249,13 @@ float WorldObject::GetDistanceZ(const WorldObject* obj) const
 
 bool WorldObject::IsWithinDist3d(float x, float y, float z, float dist2compare) const
 {
+    return IsWithinDist3d(Location(x, y, z), dist2compare);
+}
+
+bool WorldObject::IsWithinDist3d(Location const& loc, float dist2compare) const
+{
     float sizefactor = GetObjectBoundingRadius();
-    float dist = GetPosition().GetDistance(Location(x, y, z));
+    float dist = GetPosition().GetDistance(loc);
     float maxdist = dist2compare + sizefactor;
 
     return dist < maxdist;

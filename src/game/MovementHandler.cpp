@@ -117,7 +117,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     }
 
     GetPlayer()->SetMap(map);
-    GetPlayer()->Relocate(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation);
+    GetPlayer()->Relocate(loc.getX(), loc.getY(), loc.getZ(), loc.orientation);
 
     GetPlayer()->SendInitialPacketsBeforeAddToMap();
     // the CanEnter checks are done in TeleporTo but conditions may change
@@ -241,7 +241,7 @@ void WorldSession::HandleMoveTeleportAckOpcode(WorldPacket& recv_data)
 
     WorldLocation const& dest = plMover->GetTeleportDest();
 
-    plMover->SetPosition(dest.coord_x, dest.coord_y, dest.coord_z, dest.orientation, true);
+    plMover->SetPosition(dest.getX(), dest.getY(), dest.getZ(), dest.orientation, true);
 
     uint32 newzone, newarea;
     plMover->GetZoneAndAreaId(newzone, newarea);
@@ -406,10 +406,10 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
     recv_data.hexlike();
 
     ObjectGuid old_mover_guid;
-    MovementInfo mi;
+    MovementInfo movementInfo;
 
     recv_data >> old_mover_guid.ReadAsPacked();
-    recv_data >> mi;
+    recv_data >> movementInfo;
 
     ObjectGuid moverGuid = GetPlayer()->GetMover() ? GetPlayer()->GetMover()->GetObjectGuid() : ObjectGuid();
 
@@ -425,7 +425,7 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
         return;
     }
 
-    _player->m_movementInfo = mi;
+    _player->m_movementInfo = movementInfo;
 }
 
 void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket& /*recvdata*/)

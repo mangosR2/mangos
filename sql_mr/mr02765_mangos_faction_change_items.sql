@@ -758,3 +758,11 @@ INSERT INTO `player_factionchange_items` VALUES ('0', '17903', 'Stormpike Insign
 INSERT INTO `player_factionchange_items` VALUES ('0', '17904', 'Stormpike Insignia Rank 6', '0', '17909', 'Frostwolf Insignia Rank 6');
 INSERT INTO `player_factionchange_items` VALUES ('0', '15198', 'Knight\'s Colors', '0', '15199', 'Stone Guard\'s Herald');
 INSERT INTO `player_factionchange_items` VALUES ('0', '35467', 'Mooncloth Vestments(115)', '0', '35337', 'Mooncloth Vestments(115)');
+
+INSERT IGNORE INTO `player_factionchange_items` (`race_A`, `alliance_id`, `commentA`, `race_H`, `horde_id`, `commentH`) VALUES 
+(0, 44235, 'Reins of the Traveler\'s Tundra Mammoth', 0, 44234, 'Reins of the Traveler\'s Tundra Mammoth'),
+(0, 48073, 'Velen\'s Circlet of Conquest',   0, 48098, 'Zabra\'s Circlet of Conquest'),
+(0, 48072, 'Velen\'s Handwraps of Conquest', 0, 48097, 'Zabra\'s Handwraps of Conquest'),
+(0, 48074, 'Velen\'s Pants of Conquest',     0, 48099, 'Zabra\'s Pants of Conquest'),
+(0, 48075, 'Velen\'s Raiments of Conquest',  0, 48100, 'Zabra\'s Raiments of Conquest'),
+(0, 48076, 'Velen\'s Mantle of Conquest',    0, 48101, 'Zabra\'s Mantle of Conquest');

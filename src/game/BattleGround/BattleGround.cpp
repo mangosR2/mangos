@@ -1453,6 +1453,12 @@ void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_gu
 {
     if (Group* group = GetBgRaid(team))                     // raid already exist
     {
+        if (group->isLFDGroup())
+        {
+            sLog.outError("BattleGround::AddOrSetPlayerToCorrectBgGroup cheat attempt: try add player %s to %s for BG, but group is LFG type!", plr_guid.GetString().c_str(), group->GetObjectGuid().GetString().c_str());
+            return;
+        }
+
         if (group->IsMember(plr_guid))
         {
             uint8 subgroup = group->GetMemberGroup(plr_guid);

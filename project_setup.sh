@@ -16,7 +16,7 @@ mkdir build &&
 cd build &&
 
 cmake .. ${CONF_OPTS} \
-    -DPREFIX="${PREFIX}" \
+    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
     -DCMAKE_C_FLAGS="${CFLAGS}" \
     -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
     -DCMAKE_C_COMPILER="gcc" \

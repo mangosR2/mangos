@@ -2,7 +2,6 @@
 #include "ItemBag.h"
 #include "AhBot.h"
 #include "../World.h"
-#include "Policies/SingletonImp.h"
 #include "Config/Config.h"
 #include "../Chat.h"
 #include "AhBotConfig.h"

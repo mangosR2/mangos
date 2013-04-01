@@ -505,6 +505,9 @@ class MANGOS_DLL_SPEC Aura
         bool IsLastAuraOnHolder();
 
         bool HasMechanic(uint32 mechanic) const;
+
+        bool IsActive() const { return m_isActive; }
+
     protected:
         Aura(AuraClassType type,SpellEntry const* spellproto, SpellEffectIndex eff, int32 *currentBasePoints, SpellAuraHolderPtr holder, Unit *target, Unit *caster = NULL, Item* castItem = NULL);
         void AreaAura(SpellEntry const* spellproto, SpellEffectIndex eff, int32 *currentBasePoints, SpellAuraHolderPtr holder, Unit *target, Unit *caster = NULL, Item* castItem = NULL);
@@ -542,6 +545,7 @@ class MANGOS_DLL_SPEC Aura
         bool m_isAreaAura:1;
         bool m_isPersistent:1;
         bool m_stacking:1;                                  // Aura is not overwritten, but effects are not cumulative with similar effects
+        bool m_isActive:1;                                  // Aura activated/not activated (temporary disabled)
 
         bool IsEffectStacking();
 

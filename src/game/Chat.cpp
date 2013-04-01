@@ -3502,6 +3502,18 @@ bool ChatHandler::ExtractRaceMask(char** text, uint32& raceMask, char const** ma
     return true;
 }
 
+bool ChatHandler::ExtractGender(char** text, Gender& gender)
+{
+    if (ExtractLiteralArg(text, "male"))
+        gender = GENDER_MALE;
+    else if (ExtractLiteralArg(text, "female"))
+        gender = GENDER_FEMALE;
+    else
+        gender = GENDER_NONE;
+
+    return gender != GENDER_NONE;
+}
+
 std::string ChatHandler::GetNameLink(Player* chr) const
 {
     return playerLink(chr->GetName());

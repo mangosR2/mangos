@@ -681,6 +681,7 @@ class MANGOS_DLL_SPEC ChatHandler
         GameTele const* ExtractGameTeleFromLink(char** text);
         bool   ExtractLocationFromLink(char** text, uint32& mapid, float& x, float& y, float& z);
         bool   ExtractRaceMask(char** text, uint32& raceMask, char const** maskName = NULL);
+        bool   ExtractGender(char** text, Gender& gender);
         std::string ExtractPlayerNameFromLink(char** text);
         bool ExtractPlayerTarget(char** args, Player** player, ObjectGuid* player_guid = NULL, std::string* player_name = NULL);
         // select by arg (name/link) or in-game selection online/offline player

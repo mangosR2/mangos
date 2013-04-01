@@ -476,6 +476,7 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
                 }
 
                 pPlayer->SetDividerGuid(_player->GetObjectGuid());
+                pPlayer->PlayerTalkClass->SendQuestGiverQuestDetails(pQuest, _player->GetObjectGuid(), true);
             }
         }
     }

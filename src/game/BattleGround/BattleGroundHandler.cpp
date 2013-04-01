@@ -173,7 +173,7 @@ void WorldSession::HandleBattlemasterJoinOpcode(WorldPacket& recv_data)
     {
         grp = _player->GetGroup();
         // no group found, error
-        if (!grp)
+        if (!grp || grp->isLFDGroup())
             return;
         if (grp->GetLeaderGuid() != _player->GetObjectGuid())
             return;
@@ -744,7 +744,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recv_data)
     {
         grp = _player->GetGroup();
         // no group found, error
-        if (!grp)
+        if (!grp || grp->isLFDGroup())
             return;
         if (grp->GetLeaderGuid() != _player->GetObjectGuid())
             return;

@@ -59,7 +59,8 @@ struct FriendInfo
         Flags(0),
         Area(0),
         Level(0),
-        Class(0)
+        Class(0),
+        Note("")
     {}
 
     FriendInfo(uint32 flags, const std::string& note) :

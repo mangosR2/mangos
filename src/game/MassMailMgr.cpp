@@ -26,7 +26,7 @@
  */
 
 #include "MassMailMgr.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "Database/DatabaseEnv.h"
 #include "Database/DatabaseImpl.h"
 #include "SharedDefines.h"
@@ -35,33 +35,33 @@
 
 INSTANTIATE_SINGLETON_1(MassMailMgr);
 
-void MassMailMgr::AddMassMailTask(MailDraft* mailProto, MailSender sender, uint32 raceMask)
+void MassMailMgr::AddMassMailTask(MailDraft* mailProto, MailSender sender, uint32 raceMask, Gender gender/*= GENDER_NONE*/)
 {
+    std::ostringstream ss;
+    ss << "SELECT guid FROM characters WHERE deleteDate IS NULL";
+
     if (RACEMASK_ALL_PLAYABLE & ~raceMask)                  // have races not included in mask
-    {
-        std::ostringstream ss;
-        ss << "SELECT guid FROM characters WHERE (1 << (race - 1)) & " << raceMask << " AND deleteDate IS NULL";
-        AddMassMailTask(mailProto, sender, ss.str().c_str());
-    }
-    else
-        AddMassMailTask(mailProto, sender, "SELECT guid FROM characters WHERE deleteDate IS NULL");
+        ss << " AND (1 << (race - 1)) & " << raceMask;
+
+    if (gender != GENDER_NONE)
+        ss << " AND gender = " << uint32(gender);
+
+    AddMassMailTask(mailProto, sender, ss.str().c_str());
 }
 
 struct MassMailerQueryHandler
 {
-    void HandleQueryCallback(QueryResult * result, MailDraft* mailProto, MailSender sender)
+    void HandleQueryCallback(QueryResult* result, MailDraft* mailProto, MailSender sender)
     {
         if (!result)
             return;
 
         MassMailMgr::ReceiversList& recievers = sMassMailMgr.AddMassMailTask(mailProto, sender);
-
         do
         {
-            Field *fields = result->Fetch();
-            recievers.insert(fields[0].GetUInt32());
-
-        } while (result->NextRow());
+            recievers.insert(result->Fetch()[0].GetUInt32());
+        }
+        while (result->NextRow());
         delete result;
     }
 } massMailerQueryHandler;

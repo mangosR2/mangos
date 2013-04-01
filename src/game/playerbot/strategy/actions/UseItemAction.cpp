@@ -173,7 +173,6 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget)
 
     MotionMaster &mm = *bot->GetMotionMaster();
     mm.Clear();
-    mm.MoveIdle();
     bot->clearUnitState( UNIT_STAT_CHASE );
     bot->clearUnitState( UNIT_STAT_FOLLOW );
 
@@ -232,12 +231,10 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget)
 
     if (item->GetProto()->Class == ITEM_CLASS_CONSUMABLE && item->GetProto()->SubClass == ITEM_SUBCLASS_FOOD)
     {
-        bot->SetStandState(UNIT_STAND_STATE_SIT);
+        if (bot->isInCombat())
+            return false;
+
         ai->SetNextCheckDelay(30000);
-    }
-    else
-    {
-        bot->SetStandState(UNIT_STAND_STATE_STAND);
     }
 
     ai->TellMaster(out);

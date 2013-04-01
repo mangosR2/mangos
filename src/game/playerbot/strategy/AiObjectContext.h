@@ -48,7 +48,7 @@ namespace ai
         string FormatValues()
         {
             ostringstream out;
-            set<string>& names = valueContexts.GetCreated();
+            set<string> names = valueContexts.GetCreated();
             for (set<string>::iterator i = names.begin(); i != names.end(); ++i)
             {
                 UntypedValue* value = GetUntypedValue(*i);

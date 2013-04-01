@@ -84,7 +84,7 @@ bool WhoAction::Execute(Event event)
                 << std::nouppercase << std::dec << ":" << data
                 << "|h[" << skills[skill] << "]|h|r"
                 << " |h|cff00ff00" << value << "|h|cffffffff/"
-                << "|h|cff00ff00" << maxSkill < "|h|cffffffff ";
+                << "|h|cff00ff00" << maxSkill << "|h|cffffffff ";
     }
 
     Player* master = GetMaster();

@@ -70,8 +70,7 @@ void Map::LoadMapAndVMap(int gx,int gy)
     if (m_bLoadedGrids[gx][gy])
         return;
 
-    GridMap * pInfo = m_TerrainData->Load(gx, gy);
-    if(pInfo)
+    if (m_TerrainData->Load(gx, gy))
         m_bLoadedGrids[gx][gy] = true;
 }
 
@@ -951,9 +950,9 @@ bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
         if (!pForce && ActiveObjectsNearGrid(x, y))
             return false;
 
-        DEBUG_LOG("Map::UnloadGrid Unloading grid[%u,%u] for map %u", x,y, GetId());
-
         SetGridObjectDataLoaded(false, grid);
+
+        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Unloading grid[%u,%u] for map %u", x, y, GetId());
         ObjectGridUnloader unloader(*grid);
 
         // Finish remove and delete all creatures with delayed remove before moving to respawn grids
@@ -971,6 +970,7 @@ bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
         WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
         delete getNGrid(x, y);
         setNGrid(NULL, x, y);
+        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Unloading grid[%u,%u] for map %u finished", x, y, GetId());
     }
     else
         sLog.outError("Map::UnloadGrid trying unload grid[%u,%u] for map %u, but grid not created!", x,y, GetId());
@@ -985,6 +985,7 @@ bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
         m_bLoadedGrids[gx][gy] = false;
         m_TerrainData->Unload(gx, gy);
     }
+
     return true;
 }
 
@@ -1933,7 +1934,7 @@ void Map::EraseObject(WorldObject* object)
     EraseObject(object->GetObjectGuid());
 }
 
-void Map::EraseObject(ObjectGuid guid)
+void Map::EraseObject(ObjectGuid const& guid)
 {
     if (guid.IsEmpty())
         return;
@@ -1942,7 +1943,7 @@ void Map::EraseObject(ObjectGuid guid)
     m_objectsStore.erase(guid);
 }
 
-WorldObject* Map::FindObject(ObjectGuid guid)
+WorldObject* Map::FindObject(ObjectGuid const& guid)
 {
     if (guid.IsEmpty())
         return NULL;
@@ -1952,8 +1953,6 @@ WorldObject* Map::FindObject(ObjectGuid guid)
     return (itr == m_objectsStore.end()) ? NULL : itr->second;
 }
 
-
-
 /**
  * Function return player that in world at CURRENT map
  *
@@ -1962,7 +1961,7 @@ WorldObject* Map::FindObject(ObjectGuid guid)
  *
  * @param guid must be player guid (HIGHGUID_PLAYER)
  */
-Player* Map::GetPlayer(ObjectGuid guid, bool globalSearch)
+Player* Map::GetPlayer(ObjectGuid const& guid, bool globalSearch)
 {
     if (globalSearch)                                           // possible obsolete
     {
@@ -1978,7 +1977,7 @@ Player* Map::GetPlayer(ObjectGuid guid, bool globalSearch)
  *
  * @param guid must be creature or vehicle guid (HIGHGUID_UNIT HIGHGUID_VEHICLE)
  */
-Creature* Map::GetCreature(ObjectGuid guid)
+Creature* Map::GetCreature(ObjectGuid const& guid)
 {
     return (Creature*)FindObject(guid);
 }
@@ -1988,7 +1987,7 @@ Creature* Map::GetCreature(ObjectGuid guid)
  *
  * @param guid must be pet guid (HIGHGUID_PET)
  */
-Pet* Map::GetPet(ObjectGuid guid)
+Pet* Map::GetPet(ObjectGuid const& guid)
 {
     return (Pet*)FindObject(guid);
 }
@@ -2000,9 +1999,9 @@ Pet* Map::GetPet(ObjectGuid guid)
  *
  * @param guid must be corpse guid (HIGHGUID_CORPSE)
  */
-Corpse* Map::GetCorpse(ObjectGuid guid)
+Corpse* Map::GetCorpse(ObjectGuid const& guid)
 {
-    Corpse * ret = ObjectAccessor::GetCorpseInMap(guid,GetId());
+    Corpse * ret = ObjectAccessor::GetCorpseInMap(guid, GetId());
     return ret && ret->GetInstanceId() == GetInstanceId() ? ret : NULL;
 }
 
@@ -2011,7 +2010,7 @@ Corpse* Map::GetCorpse(ObjectGuid guid)
  *
  * @param guid must be non-player unit guid (HIGHGUID_PET HIGHGUID_UNIT HIGHGUID_VEHICLE)
  */
-Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
+Creature* Map::GetAnyTypeCreature(ObjectGuid const& guid)
 {
     switch (guid.GetHigh())
     {
@@ -2030,7 +2029,7 @@ Creature* Map::GetAnyTypeCreature(ObjectGuid guid)
  *
  * @param guid must be gameobject guid (HIGHGUID_GAMEOBJECT)
  */
-GameObject* Map::GetGameObject(ObjectGuid guid)
+GameObject* Map::GetGameObject(ObjectGuid const& guid)
 {
     return (GameObject*)FindObject(guid);
 }
@@ -2040,7 +2039,7 @@ GameObject* Map::GetGameObject(ObjectGuid guid)
  *
  * @param guid must be dynamic object guid (HIGHGUID_DYNAMICOBJECT)
  */
-DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
+DynamicObject* Map::GetDynamicObject(ObjectGuid const& guid)
 {
     return (DynamicObject*)FindObject(guid);
 }
@@ -2050,7 +2049,7 @@ DynamicObject* Map::GetDynamicObject(ObjectGuid guid)
  *
  * @param guid must be dynamic object guid (HIGHGUID_MO_TRANSPORT)
  */
-Transport* Map::GetTransport(ObjectGuid guid)
+Transport* Map::GetTransport(ObjectGuid const& guid)
 {
     return (Transport*)FindObject(guid);
 }
@@ -2063,7 +2062,7 @@ Transport* Map::GetTransport(ObjectGuid guid)
  *
  * @param guid must be unit guid (HIGHGUID_PLAYER HIGHGUID_PET HIGHGUID_UNIT HIGHGUID_VEHICLE)
  */
-Unit* Map::GetUnit(ObjectGuid guid)
+Unit* Map::GetUnit(ObjectGuid const& guid)
 {
     if (guid.IsPlayer())
         return GetPlayer(guid);
@@ -2074,7 +2073,7 @@ Unit* Map::GetUnit(ObjectGuid guid)
 /**
  * Function return world object in world at CURRENT map, so any except transports
  */
-WorldObject* Map::GetWorldObject(ObjectGuid guid)
+WorldObject* Map::GetWorldObject(ObjectGuid const& guid)
 {
     switch(guid.GetHigh())
     {
@@ -2345,7 +2344,7 @@ void Map::UpdateWorldState(uint32 state, uint32 value)
  * @param targetGuid (attackerGuid)
  */
 
-void Map::AddAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid)
+void Map::AddAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid)
 {
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
@@ -2363,7 +2362,7 @@ void Map::AddAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid)
     }
 }
 
-void Map::RemoveAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid)
+void Map::RemoveAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid)
 {
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
@@ -2376,7 +2375,7 @@ void Map::RemoveAttackerFor(ObjectGuid targetGuid, ObjectGuid attackerGuid)
     }
 }
 
-void Map::RemoveAllAttackersFor(ObjectGuid targetGuid)
+void Map::RemoveAllAttackersFor(ObjectGuid const& targetGuid)
 {
     if (targetGuid.IsEmpty())
         return;
@@ -2389,13 +2388,13 @@ void Map::RemoveAllAttackersFor(ObjectGuid targetGuid)
     }
 }
 
-GuidSet& Map::GetAttackersFor(ObjectGuid targetGuid)
+GuidSet& Map::GetAttackersFor(ObjectGuid const& targetGuid)
 {
     ReadGuard Guard(GetLock());
     return m_attackersMap[targetGuid];
 }
 
-void Map::CreateAttackersStorageFor(ObjectGuid targetGuid)
+void Map::CreateAttackersStorageFor(ObjectGuid const& targetGuid)
 {
     if (targetGuid.IsEmpty())
         return;
@@ -2408,7 +2407,7 @@ void Map::CreateAttackersStorageFor(ObjectGuid targetGuid)
 
 }
 
-void Map::RemoveAttackersStorageFor(ObjectGuid targetGuid)
+void Map::RemoveAttackersStorageFor(ObjectGuid const& targetGuid)
 {
     if (targetGuid.IsEmpty())
         return;

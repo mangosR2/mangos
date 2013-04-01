@@ -7,7 +7,7 @@ using namespace ai;
 
 Unit* TargetValue::FindTarget(FindTargetStrategy* strategy)
 {
-    list<ObjectGuid>& attackers = ai->GetAiObjectContext()->GetValue<list<ObjectGuid> >("attackers")->Get();
+    list<ObjectGuid> attackers = ai->GetAiObjectContext()->GetValue<list<ObjectGuid> >("attackers")->Get();
     for (list<ObjectGuid>::iterator i = attackers.begin(); i != attackers.end(); ++i)
     {
         Unit* unit = ai->GetUnit(*i);

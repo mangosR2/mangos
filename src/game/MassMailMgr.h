@@ -35,6 +35,7 @@
 #define MANGOS_MASS_MAIL_MGR_H
 
 #include "Common.h"
+#include "SharedDefines.h"
 #include "Mail.h"
 #include "Policies/Singleton.h"
 
@@ -64,7 +65,7 @@ class MassMailMgr
          *
          * Note: this function safe to be called from Map::Update content/etc, real data add will executed in next tick after query results ready
          */
-        void AddMassMailTask(MailDraft* mailProto, MailSender sender, uint32 raceMask);
+        void AddMassMailTask(MailDraft* mailProto, MailSender sender, uint32 raceMask, Gender gender = GENDER_NONE);
 
         /**
          * And new mass mail task with SQL query text for fill receivers list.

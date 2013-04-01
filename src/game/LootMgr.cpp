@@ -566,7 +566,7 @@ QuestItemList* Loot::FillNonQuestNonFFAConditionalLoot(Player* player)
     for (uint8 i = 0; i < items.size(); ++i)
     {
         LootItem& item = items[i];
-        if (!item.is_looted && !item.freeforall && item.conditionId && item.AllowedForPlayer(player, m_lootTarget))
+        if (!item.is_looted && !item.freeforall && item.AllowedForPlayer(player, m_lootTarget))
         {
             ItemPrototype const* pProto = ObjectMgr::GetItemPrototype(item.itemid);
             if (pProto && !(pProto->Flags & ITEM_FLAG_LOOTABLE))

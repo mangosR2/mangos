@@ -491,11 +491,19 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         void GetNearPoint2D( float &x, float &y, float distance, float absAngle) const;
         void GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float searcher_bounding_radius, float distance2d, float absAngle) const;
-        void GetClosePoint(float &x, float &y, float &z, float bounding_radius, float distance2d = 0, float angle = 0, const WorldObject* obj = NULL ) const
+        void GetClosePoint(float &x, float &y, float &z, float bounding_radius, float distance2d = 0.0f, float angle = 0.0f, WorldObject const* obj = NULL) const
         {
             // angle calculated from current orientation
             GetNearPoint(obj, x, y, z, bounding_radius, distance2d, GetOrientation() + angle);
         }
+
+        WorldLocation GetClosePoint(float bounding_radius, float distance2d = 0.0f, float angle = 0.0f, WorldObject const* obj = NULL)
+        {
+            WorldLocation loc = GetPosition();
+            GetNearPoint(obj, loc.x, loc.y, loc.z, bounding_radius, distance2d, loc.o + angle);
+            return loc;
+        }
+
         void GetContactPoint( const WorldObject* obj, float &x, float &y, float &z, float distance2d = CONTACT_DISTANCE) const
         {
             // angle to face `obj` to `this` using distance includes size of `obj`
@@ -541,6 +549,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
             return IsInWorld() && obj->IsInWorld() && (GetMap() == obj->GetMap()) && InSamePhase(obj);
         }
         bool IsWithinDist3d(float x, float y, float z, float dist2compare) const;
+        bool IsWithinDist3d(Location const& loc, float dist2compare) const;
         bool IsWithinDist2d(float x, float y, float dist2compare) const;
         bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const;
 
@@ -629,7 +638,11 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void RemoveFromClientUpdateList() override;
         void BuildUpdateData(UpdateDataMapType &) override;
 
-        Creature* SummonCreature(uint32 id, float x, float y, float z, float ang,TempSummonType spwtype,uint32 despwtime, bool asActiveObject = false);
+        Creature* SummonCreature(uint32 id, float x, float y, float z, float ang, TempSummonType spwtype, uint32 despwtime, bool asActiveObject = false);
+        Creature* SummonCreature(uint32 id, TempSummonType spwType, uint32 despwTime, bool asActiveObject = false)
+        {
+            return SummonCreature(id, 0.0f, 0.0f, 0.0f, 0.0f, spwType, despwTime, asActiveObject);
+        }
 
         GameObject* SummonGameobject(uint32 id, float x, float y, float z, float angle, uint32 despwtime);
 

@@ -1,6 +1,5 @@
 #include "../pchdef.h"
 #include "AhBotConfig.h"
-#include "Policies/SingletonImp.h"
 #include "SystemConfig.h"
 
 using namespace std;

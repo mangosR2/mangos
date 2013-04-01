@@ -119,7 +119,7 @@ namespace ai
         virtual string Format()
         {
             ostringstream out; out << "{";
-            list<ObjectGuid>& guids = Calculate();
+            list<ObjectGuid> guids = Calculate();
             for (list<ObjectGuid>::iterator i = guids.begin(); i != guids.end(); ++i)
             {
                 ObjectGuid guid = *i;
