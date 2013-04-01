@@ -53,7 +53,7 @@
 #include "CreatureLinkingMgr.h"
 
 // apply implementation of the singletons
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 
 ObjectGuid CreatureData::GetObjectGuid(uint32 lowguid) const
 {
@@ -1909,7 +1909,7 @@ bool Creature::IsOutOfThreatArea(Unit* pVictim) const
     float ThreatRadius = sWorld.getConfig(CONFIG_FLOAT_THREAT_RADIUS);
 
     // Use AttackDistance in distance check if threat radius is lower. This prevents creature bounce in and out of combat every update tick.
-    return !pVictim->IsWithinDist3d(m_combatStartX, m_combatStartY, m_combatStartZ,
+    return !pVictim->IsWithinDist3d(m_combatStart.x, m_combatStart.y, m_combatStart.z,
                                     ThreatRadius > AttackDist ? ThreatRadius : AttackDist);
 }
 
@@ -2189,12 +2189,7 @@ void Creature::GetRespawnCoord(float& x, float& y, float& z, float* ori, float* 
 void Creature::ResetRespawnCoord()
 {
     if (CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow()))
-    {
-        m_respawnPos.x = data->posX;
-        m_respawnPos.y = data->posY;
-        m_respawnPos.z = data->posZ;
-        m_respawnPos.o = data->orientation;
-    }
+        m_respawnPos = WorldLocation(data->mapid, data->posX, data->posY, data->posZ, data->orientation, data->phaseMask);
 }
 
 void Creature::AllLootRemovedFromCorpse()

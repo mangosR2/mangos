@@ -83,9 +83,9 @@ class MANGOS_DLL_SPEC SqlConnection
     protected:
         SqlConnection(Database& db) : m_db(db) {}
 
-        virtual SqlPreparedStatement * CreateStatement(const std::string& fmt);
-        //allocate prepared statement and return statement ID
-        SqlPreparedStatement * GetStmt(int nIndex);
+        virtual SqlPreparedStatement* CreateStatement(const std::string& fmt);
+        // allocate prepared statement and return statement ID
+        SqlPreparedStatement* GetStmt(uint32 nIndex);
 
         Database& m_db;
 

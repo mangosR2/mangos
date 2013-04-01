@@ -218,9 +218,9 @@ inline bool IsExplicitDiscoverySpell(SpellEntry const *spellInfo)
 inline bool IsLootCraftingSpell(SpellEntry const *spellInfo)
 {
     return (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_RANDOM_ITEM ||
-        // different random cards from Inscription (121==Virtuoso Inking Set category) r without explicit item
-        (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2 &&
-        (spellInfo->TotemCategory[0] != 0 || spellInfo->EffectItemType[0]==0)));
+            // different random cards from Inscription (121==Virtuoso Inking Set category) or without explicit item or explicit spells
+            (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2 &&
+             (spellInfo->TotemCategory[0] != 0 || spellInfo->EffectItemType[0] == 0 || spellInfo->Id == 62941)));
 }
 
 int32 CompareAuraRanks(uint32 spellId_1, uint32 spellId_2);
@@ -658,12 +658,24 @@ inline Mechanics GetEffectMechanic(SpellEntry const* spellInfo, SpellEffectIndex
 
 inline bool IsBinaryResistedSpell(SpellEntry const* spellInfo) 
 {
-    return (GetAllSpellMechanicMask(spellInfo) != 0
+    if (!spellInfo)
+        return false;
+
+    if (IsAreaOfEffectSpell(spellInfo) ||
+            spellInfo->HasAttribute(SPELL_ATTR_EX6_EXPLICIT_NO_BINARY_RESIST) ||
+            spellInfo->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) || //???
+            spellInfo->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES) ||
+           (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) ||
+            spellInfo->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
+        return false;
+
+    if (GetAllSpellMechanicMask(spellInfo) != 0
             || IsDispelSpell(spellInfo)
-            || spellInfo->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES)
-            || spellInfo->HasAttribute(SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE)
-            );
-};
+            || spellInfo->HasAttribute(SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE))
+        return true;
+
+    return false;
+}
 
 inline uint32 GetDispellMask(DispelType dispel)
 {

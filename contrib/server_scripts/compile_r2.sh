@@ -22,7 +22,7 @@ if [ ! -d ./build ]; then
     cmake \
     -DACE_USE_EXTERNAL=1 \
     -DUSE_STD_MALLOC=1 \
-    -DPREFIX=/home/mangos \
+    -DCMAKE_INSTALL_PREFIX=/home/mangos \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -finput-charset=utf-8 -fexec-charset=utf-8" \
     -DCMAKE_CXX_FLAGS_RELEASE:STRING="-march=native -O2 -ggdb -pipe -D_LARGEFILE_SOURCE -frename-registers -fno-strict-aliasing -fno-strength-reduce -fno-delete-null-pointer-checks -finput-charset=utf-8 -fexec-charset=utf-8" \

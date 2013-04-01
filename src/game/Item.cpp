@@ -1434,7 +1434,7 @@ void Item::SetRefundable(Player* owner, uint32 paidCost, uint16 paidExtendedCost
         SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, owner->GetTotalPlayedTime());
         SaveRefundDataToDB();
     }
-    
+
     owner->AddItemWithTimeCheck(GetGUIDLow());
 }
 
@@ -1520,8 +1520,11 @@ bool Item::CheckRefundExpired(Player* owner)
 
 bool Item::IsEligibleForSoulboundTrade(AllowedLooterSet* allowedLooters) const
 {
+    if (!allowedLooters || allowedLooters->size() < 2)
+        return false;
+
     ItemPrototype const* proto = GetProto();
-    if (!proto || (proto->Flags & ITEM_FLAG_LOOTABLE) || (proto->GetMaxStackSize() != 1) || !allowedLooters || !IsSoulBound())
+    if (!proto || (proto->Flags & ITEM_FLAG_LOOTABLE) || (proto->GetMaxStackSize() != 1) || !IsSoulBound())
         return false;
 
     uint32 ownerGuid = GetOwnerGuid().GetCounter();

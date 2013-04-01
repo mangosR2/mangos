@@ -1052,7 +1052,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
-            return TeleportTo(WorldLocation(x, y, z, orientation, mapid, 0, sWorld.getConfig(CONFIG_UINT32_REALMID)), options);
+            return TeleportTo(WorldLocation(mapid, x, y, z, orientation, GetPhaseMask()), options);
         }
 
         bool TeleportTo(WorldLocation const& loc, uint32 options = 0);
@@ -1199,6 +1199,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetBankBagSlotCount(uint8 count) { SetByteValue(PLAYER_BYTES_2, 2, count); }
         bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const;
         bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = NULL);
+        bool HasItemFitToAreaTriggerReqirements(AreaTrigger const* at) const;
+        bool HasHeroicKeyFitToAreaTriggerReqirements(AreaTrigger const* at) const;
+        bool HasQuestFitToAreaTriggerReqirements(AreaTrigger const* at, bool isRegularTargetMap) const;
+        bool HasAchievementFitToAreaTriggerReqirements(AreaTrigger const* at, Difficulty difficulty);
         bool CanNoReagentCast(SpellEntry const* spellInfo) const;
         bool HasItemOrGemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot = NULL_SLOT) const;
         bool HasItemOrGemWithLimitCategoryEquipped(uint32 limitCategory, uint32 count, uint8 except_slot = NULL_SLOT) const;
@@ -1938,7 +1942,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetSemaphoreTeleportDelayEvent(bool semphsetting) { mSemaphoreTeleport_DelayEvent = semphsetting; }
         void ProcessDelayedOperations();
 
-        void CheckAreaExploreAndOutdoor(void);
+        void CheckAreaExploreAndOutdoor();
 
         static Team TeamForRace(uint8 race);
         Team GetTeam() const { return m_team; }
@@ -2253,11 +2257,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void   SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
         // Recall position
-        uint32 m_recallMap;
-        float  m_recallX;
-        float  m_recallY;
-        float  m_recallZ;
-        float  m_recallO;
+        WorldLocation m_recall;
         void   SaveRecallPosition();
 
         void SetHomebindToLocation(WorldLocation const& loc);
@@ -2337,7 +2337,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CheckTransferPossibility(uint32 mapId);
         bool CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq = false);
 
-        bool NeedGoingToHomebind();
+        bool NeedEjectFromThisMap();
 
         // LFG
         LFGPlayerState* GetLFGPlayerState() { return m_LFGState; }
@@ -2613,7 +2613,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_zoneUpdateId;
         uint32 m_zoneUpdateTimer;
         uint32 m_areaUpdateId;
-        uint32 m_liquidUpdateTimer;
+        uint32 m_positionStatusUpdateTimer;
 
         uint32 m_deathTimer;
         time_t m_deathExpireTime;

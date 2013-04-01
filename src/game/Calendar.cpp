@@ -581,12 +581,9 @@ void CalendarMgr::DBRemoveExpiredEventsAndRemapData()
         DBRemap(RA_DEL_EXPIRED, remapData, dbTransactionUsed);
 
     // remap eventId
+    remapData.remove_if(IsNotRemap());
     if (!remapData.empty())
-    {
-        remapData.remove_if(IsNotRemap());
-        if (!remapData.empty())
-            DBRemap(RA_REMAP_EVENTS, remapData, dbTransactionUsed);
-    }
+        DBRemap(RA_REMAP_EVENTS, remapData, dbTransactionUsed);
 
     // remap inviteId
     if (result = CharacterDatabase.Query("SELECT inviteId FROM calendar_invites ORDER BY inviteId"))

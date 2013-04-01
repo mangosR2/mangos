@@ -18,8 +18,8 @@
 
 #include "ObjectMgr.h"
 #include "Database/DatabaseEnv.h"
-#include "Policies/SingletonImp.h"
 #include "SystemConfig.h"
+#include "Policies/Singleton.h"
 
 #include "SQLStorages.h"
 #include "Log.h"
@@ -5989,34 +5989,26 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 mapId) const
         }
     }
 
-    AreaTrigger const* compareTrigger = NULL;
     for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
     {
-        if (itr->second.loc.GetMapId() == ghost_entrance_map)
-        {
-            if (!compareTrigger || itr->second.IsLessOrEqualThan(compareTrigger))
-            {
-                if (itr->second.IsMinimal())
-                    return &itr->second;
-
-                compareTrigger = &itr->second;
-            }
-        }
+        if (itr->second.loc.GetMapId() != ghost_entrance_map)
+            continue;
+        AreaTriggerEntry const* atEntry = sAreaTriggerStore.LookupEntry(itr->first);
+        if (!atEntry || atEntry->mapid != mapId)
+            continue;
+        return &itr->second;
     }
 
-    if (!compareTrigger && sWorld.getConfig(CONFIG_BOOL_ALLOW_CUSTOM_MAPS))
+    if (sWorld.getConfig(CONFIG_BOOL_ALLOW_CUSTOM_MAPS))
     {
         for (AreaTriggerMap::const_iterator itr = mAreaTriggers.begin(); itr != mAreaTriggers.end(); ++itr)
         {
             if (itr->second.loc.GetMapId() == ghost_entrance_map)
-            {
-                compareTrigger = &itr->second;
-                break;
-            }
+                return &itr->second;
         }
     }
 
-    return compareTrigger;
+    return NULL;
 }
 
 /**
@@ -8055,7 +8047,7 @@ char const* conditionSourceToStr[] =
 bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject const* source, ConditionSource conditionSourceType) const
 {
     DEBUG_LOG("Condition-System: Check condition %u, type %i - called from %s with params plr: %s, map %i, src %s",
-                                    m_entry, m_condition, conditionSourceToStr[conditionSourceType], player ? player->GetGuidStr().c_str() : "<NULL>", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "<NULL>");
+        m_entry, m_condition, conditionSourceToStr[conditionSourceType], player ? player->GetGuidStr().c_str() : "<NULL>", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "<NULL>");
 
     if (!CheckParamRequirements(player, map, source, conditionSourceType))
         return false;
@@ -8127,7 +8119,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
             return false;
         case CONDITION_LEVEL:
         {
-            switch(m_value2)
+            switch (m_value2)
             {
                 case 0: return player->getLevel() == m_value1;
                 case 1: return player->getLevel() >= m_value1;
@@ -8139,7 +8131,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
             return !player->HasItemCount(m_value1, m_value2);
         case CONDITION_SPELL:
         {
-            switch(m_value2)
+            switch (m_value2)
             {
                 case 0: return player->HasSpell(m_value1);
                 case 1: return !player->HasSpell(m_value1);
@@ -8149,10 +8141,17 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         case CONDITION_INSTANCE_SCRIPT:
         {
             if (!map)
-                map = player ? player->GetMap() : source->GetMap();
+                map = player ? player->GetMap() : source ? source->GetMap() : NULL;
+
+            if (!map)
+            {
+                sLog.outErrorDb("CONDITION_INSTANCE_SCRIPT (entry %u) is used without map by %s", m_entry, player ? player->GetGuidStr().c_str() : source ? source->GetGuidStr().c_str() : "<none>");
+                return false;
+            }
 
             if (InstanceData* data = map->GetInstanceData())
                 return data->CheckConditionCriteriaMeet(player, m_value1, source, conditionSourceType);
+
             return false;
         }
         case CONDITION_QUESTAVAILABLE:
@@ -8161,7 +8160,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         }
         case CONDITION_ACHIEVEMENT:
         {
-            switch(m_value2)
+            switch (m_value2)
             {
                 case 0: return player->GetAchievementMgr().HasAchievement(m_value1);
                 case 1: return !player->GetAchievementMgr().HasAchievement(m_value1);
@@ -8171,7 +8170,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         case CONDITION_ACHIEVEMENT_REALM:
         {
             AchievementEntry const* ach = sAchievementStore.LookupEntry(m_value1);
-            switch(m_value2)
+            switch (m_value2)
             {
                 case 0: return sAchievementMgr.IsRealmCompleted(ach);
                 case 1: return !sAchievementMgr.IsRealmCompleted(ach);
@@ -8214,7 +8213,7 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
 
             SkillLineAbilityMapBounds bounds = sSpellMgr.GetSkillLineAbilityMapBounds(m_value1);
 
-            for(SkillLineAbilityMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
+            for (SkillLineAbilityMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
             {
                 const SkillLineAbilityEntry* skillInfo = itr->second;
 
@@ -8261,7 +8260,14 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         case CONDITION_COMPLETED_ENCOUNTER:
         {
             if (!map)
-                map = player ? player->GetMap() : source->GetMap();
+                map = player ? player->GetMap() : source ? source->GetMap() : NULL;
+
+            if (!map)
+            {
+                sLog.outErrorDb("CONDITION_COMPLETED_ENCOUNTER (entry %u) is used without dungeon map by %s", m_entry, player ? player->GetGuidStr().c_str() : source ? source->GetGuidStr().c_str() : "<none>");
+                return false;
+            }
+
             if (!map->IsDungeon())
             {
                 sLog.outErrorDb("CONDITION_COMPLETED_ENCOUNTER (entry %u) is used outside of a dungeon (on Map %u) by %s", m_entry, player->GetMapId(), player->GetGuidStr().c_str());
@@ -8310,6 +8316,17 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
             }
             return false;
         }
+        case CONDITION_XP_USER:
+        {
+            switch (m_value1)
+            {
+                case 0: return player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_XP_USER_DISABLED);
+                case 1: return !player->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_XP_USER_DISABLED);
+            }
+            return false;
+        }
+        case CONDITION_GENDER:
+            return player->getGender() == m_value1;
         default:
             return false;
     }
@@ -8705,6 +8722,28 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
             if (value2 > 2)
             {
                 sLog.outErrorDb("Last Waypoint condition (entry %u, type %u) has an invalid value in value2. (Has %u, supported 0, 1, or 2), skipping.", entry, condition, value2);
+                return false;
+            }
+            break;
+        }
+        case CONDITION_XP_USER:
+        {
+            if (value1 > 1)
+            {
+                sLog.outErrorDb("XP user condition (entry %u, type %u) has invalid argument %u (must be 0..1), skipped", entry, condition, value1);
+                return false;
+            }
+
+            if (value2)
+                sLog.outErrorDb("XP user condition (entry %u, type %u) has useless data in value2 (%u)!", entry, condition, value2);
+
+            break;
+        }
+        case CONDITION_GENDER:
+        {
+            if (value1 >= MAX_GENDER)
+            {
+                sLog.outErrorDb("Gender condition (entry %u, type %u) has an invalid value in value1. (Has %u, must be smaller than %u), skipping.", entry, condition, value1, MAX_GENDER);
                 return false;
             }
             break;

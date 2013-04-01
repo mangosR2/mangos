@@ -4876,7 +4876,7 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
         return false;
     }
 
-    GameTele tele; 
+    GameTele tele;
     tele.loc         = player->GetPosition();
     tele.name        = name;
 
@@ -6883,6 +6883,9 @@ bool ChatHandler::HandleSendMassMailCommand(char* args)
     if (!ExtractRaceMask(&args, raceMask, &name))
         return false;
 
+    Gender gender;
+    ExtractGender(&args, gender);
+
     // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
 
@@ -6896,13 +6899,11 @@ bool ChatHandler::HandleSendMassMailCommand(char* args)
     // from console show nonexistent sender
     MailSender sender(MAIL_NORMAL, m_session ? m_session->GetPlayer()->GetObjectGuid().GetCounter() : 0, MAIL_STATIONERY_GM);
 
-    sMassMailMgr.AddMassMailTask(draft, sender, raceMask);
+    sMassMailMgr.AddMassMailTask(draft, sender, raceMask, gender);
 
     PSendSysMessage(LANG_MAIL_SENT, name);
     return true;
 }
-
-
 
 bool ChatHandler::HandleSendItemsHelper(MailDraft& draft, char* args)
 {
@@ -7018,9 +7019,11 @@ bool ChatHandler::HandleSendMassItemsCommand(char* args)
     if (!ExtractRaceMask(&args, raceMask, &name))
         return false;
 
+    Gender gender;
+    ExtractGender(&args, gender);
+
     // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
-
 
     // fill mail
     if (!HandleSendItemsHelper(*draft, args))
@@ -7032,7 +7035,7 @@ bool ChatHandler::HandleSendMassItemsCommand(char* args)
     // from console show nonexistent sender
     MailSender sender(MAIL_NORMAL, m_session ? m_session->GetPlayer()->GetObjectGuid().GetCounter() : 0, MAIL_STATIONERY_GM);
 
-    sMassMailMgr.AddMassMailTask(draft, sender, raceMask);
+    sMassMailMgr.AddMassMailTask(draft, sender, raceMask, gender);
 
     PSendSysMessage(LANG_MAIL_SENT, name);
     return true;
@@ -7099,6 +7102,9 @@ bool ChatHandler::HandleSendMassMoneyCommand(char* args)
     if (!ExtractRaceMask(&args, raceMask, &name))
         return false;
 
+    Gender gender;
+    ExtractGender(&args, gender);
+
     // need dynamic object because it trasfered to mass mailer
     MailDraft* draft = new MailDraft;
 
@@ -7112,7 +7118,7 @@ bool ChatHandler::HandleSendMassMoneyCommand(char* args)
     // from console show nonexistent sender
     MailSender sender(MAIL_NORMAL, m_session ? m_session->GetPlayer()->GetObjectGuid().GetCounter() : 0, MAIL_STATIONERY_GM);
 
-    sMassMailMgr.AddMassMailTask(draft, sender, raceMask);
+    sMassMailMgr.AddMassMailTask(draft, sender, raceMask, gender);
 
     PSendSysMessage(LANG_MAIL_SENT, name);
     return true;
