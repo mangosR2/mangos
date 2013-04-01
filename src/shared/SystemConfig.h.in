@@ -20,7 +20,7 @@
 #define MANGOS_SYSTEMCONFIG_H
 
 #ifndef _PACKAGENAME
-#define _PACKAGENAME "SPP-Emu"
+#define _PACKAGENAME "SingleCore"
 #endif
 
 #include "config.h"
