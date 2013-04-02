@@ -7991,26 +7991,26 @@ bool ObjectMgr::LoadMangosStrings(DatabaseType& db, char const* table, int32 min
     return true;
 }
 
-const char *ObjectMgr::GetMangosString(int32 entry, int locale_idx) const
+const char* ObjectMgr::GetMangosString(int32 entry, int locale_idx) const
 {
     // locale_idx==-1 -> default, locale_idx >= 0 in to idx+1
     // Content[0] always exist if exist MangosStringLocale
-    if(MangosStringLocale const *msl = GetMangosStringLocale(entry))
+    if (MangosStringLocale const* msl = GetMangosStringLocale(entry))
     {
-        if((int32)msl->Content.size() > locale_idx+1 && !msl->Content[locale_idx+1].empty())
+        if ((int32)msl->Content.size() > locale_idx+1 && !msl->Content[locale_idx+1].empty())
             return msl->Content[locale_idx+1].c_str();
         else
             return msl->Content[0].c_str();
     }
 
-    if(entry > MIN_DB_SCRIPT_STRING_ID)
-        sLog.outErrorDb("Entry %i not found in `db_script_string` table.",entry);
-    else if(entry > 0)
-        sLog.outErrorDb("Entry %i not found in `mangos_string` table.",entry);
-    else if(entry > MAX_CREATURE_AI_TEXT_STRING_ID)
-        sLog.outErrorDb("Entry %i not found in `creature_ai_texts` table.",entry);
+    if (entry > MIN_DB_SCRIPT_STRING_ID)
+        sLog.outErrorDb("Entry %i not found in `db_script_string` table.", entry);
+    else if (entry > 0)
+        sLog.outErrorDb("Entry %i not found in `mangos_string` table.", entry);
+    else if (entry > MAX_CREATURE_AI_TEXT_STRING_ID)
+        sLog.outErrorEventAI("Entry %i not found in `creature_ai_texts` table.", entry);
     else
-        sLog.outErrorDb("Mangos string entry %i not found in DB.",entry);
+        sLog.outErrorScriptLib("String entry %i not found in Database.", entry);
     return "<error>";
 }
 
