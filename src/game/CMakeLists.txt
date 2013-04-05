@@ -1120,3 +1120,6 @@ if(PCH)
     endif()
   endif()
 endif()
+
+install(FILES ahbot/ahbot.conf.dist.in DESTINATION ${CONF_DIR} RENAME ahbot.conf.dist)
+install(FILES playerbot/aiplayerbot.conf.dist.in DESTINATION ${CONF_DIR} RENAME aiplayerbot.conf.dist)
