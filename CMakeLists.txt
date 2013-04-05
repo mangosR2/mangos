@@ -139,11 +139,11 @@ if(PREFIX)
   message(FATAL_ERROR "The parameter PREFIX has been removed. Please re-run CMake and use CMAKE_INSTALL_PREFIX instead to define your installation location!")
 endif()
 
-set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
-set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/etc)
+set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
+set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/config)
 # If win32 put it in the bin dir not lib
 if(WIN32)
-  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
 else()
   set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
@@ -413,7 +413,7 @@ set(DEFINITIONS
   DO_MYSQL
   HAVE_CONFIG_H
   VERSION="${MANGOS_VERSION}"
-  SYSCONFDIR="${CONF_DIR}/"
+  SYSCONFDIR="config/"
 )
 set(DEFINITIONS_RELEASE NDEBUG)
 set(DEFINITIONS_DEBUG _DEBUG MANGOS_DEBUG)
