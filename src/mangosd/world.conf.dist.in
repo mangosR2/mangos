@@ -59,8 +59,8 @@ ConfVersion=2013012201
 ###################################################################################################################
 
 RealmID = 1
-DataDir = "."
-LogsDir = ""
+DataDir = "Data"
+LogsDir = "logs"
 LoginDatabaseInfo     = "127.0.0.1;3310;root;123456;realmd"
 WorldDatabaseInfo     = "127.0.0.1;3310;root;123456;mangos"
 CharacterDatabaseInfo = "127.0.0.1;3310;root;123456;characters"
