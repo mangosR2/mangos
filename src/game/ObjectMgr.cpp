@@ -3824,16 +3824,15 @@ void ObjectMgr::LoadGroups()
 
     // clean groups
     // TODO: maybe delete from the DB before loading in this case
-    for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end();)
+    for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end(); ++itr)
     {
         if (itr->second->GetMembersCount() < 2)
         {
             itr->second->Disband();
             delete itr->second;
-            mGroupMap.erase(itr++);
+            mGroupMap.erase(itr);
+            itr = mGroupMap.begin();
         }
-        else
-            ++itr;
     }
 
     // -- loading instances --
