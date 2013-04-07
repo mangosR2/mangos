@@ -958,15 +958,6 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             player_tap->SendDirectMessage(&data);
         }
 
-        // Reward player, his pets, and group/raid members
-        if (player_tap != pVictim)
-        {
-            if (group_tap)
-                group_tap->RewardGroupAtKill(pVictim, player_tap);
-            else if (player_tap)
-                player_tap->RewardSinglePlayerAtKill(pVictim);
-        }
-
         // stop combat
         DEBUG_FILTER_LOG(LOG_FILTER_DAMAGE, "Unit::DealDamage DealDamageAttackStop, %s stopped attack",GetGuidStr().c_str());
         pVictim->CombatStop();
@@ -1076,6 +1067,15 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
             if (player_tap)                                 // killedby Player
                 if (BattleGround* bg = player_tap->GetBattleGround())
                     bg->HandleKillUnit((Creature*)pVictim, player_tap);
+        }
+
+        // Reward player, his pets, and group/raid members
+        if (player_tap != pVictim)
+        {
+            if (group_tap)
+                group_tap->RewardGroupAtKill(pVictim, player_tap);
+            else if (player_tap)
+                player_tap->RewardSinglePlayerAtKill(pVictim);
         }
     }
     else                                                    // if (health <= damage)
@@ -13547,6 +13547,8 @@ void Unit::_ExitVehicle(bool forceDismount)
 {
     if (!GetVehicle())
         return;
+
+    DisableSpline();
 
     if (GetVehicle()->GetBase() && GetVehicle()->GetBase()->IsInWorld())
         GetVehicle()->RemovePassenger(this, !forceDismount);
