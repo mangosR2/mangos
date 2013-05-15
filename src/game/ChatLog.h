@@ -24,30 +24,36 @@
 #include "ObjectMgr.h"
 #include "Policies/Singleton.h"
 
-#define CHATLOG_CHAT_TYPES_COUNT 7
+enum ChatLogMethod
+{
+    CHAT_LOG_METHOD_NONE = 0,
+    CHAT_LOG_METHOD_FILE = 1,
+    CHAT_LOG_METHOD_SQL  = 2
+};
 
 enum ChatLogFiles
 {
     CHAT_LOG_CHAT = 0,
-    CHAT_LOG_PARTY = 1,
-    CHAT_LOG_GUILD = 2,
-    CHAT_LOG_WHISPER = 3,
-    CHAT_LOG_CHANNEL = 4,
-    CHAT_LOG_RAID = 5,
-    CHAT_LOG_BATTLEGROUND = 6,
+    CHAT_LOG_PARTY,
+    CHAT_LOG_GUILD,
+    CHAT_LOG_WHISPER,
+    CHAT_LOG_CHANNEL,
+    CHAT_LOG_RAID,
+    CHAT_LOG_BATTLEGROUND,
+    CHATLOG_CHAT_TYPES_COUNT
 };
 
 enum LexicsActions
 {
-    LEXICS_ACTION_LOG = 0,
-    LEXICS_ACTION_SHEEP = 1,
-    LEXICS_ACTION_STUN = 2,
-    LEXICS_ACTION_DIE = 3,
-    LEXICS_ACTION_DRAIN = 4,
-    LEXICS_ACTION_SILENCE = 5,
-    LEXICS_ACTION_STUCK = 6,
+    LEXICS_ACTION_LOG      = 0,
+    LEXICS_ACTION_SHEEP    = 1,
+    LEXICS_ACTION_STUN     = 2,
+    LEXICS_ACTION_DIE      = 3,
+    LEXICS_ACTION_DRAIN    = 4,
+    LEXICS_ACTION_SILENCE  = 5,
+    LEXICS_ACTION_STUCK    = 6,
     LEXICS_ACTION_SICKNESS = 7,
-    LEXICS_ACTION_SHEAR = 8,
+    LEXICS_ACTION_SHEAR    = 8,
 };
 
 class ChatLog : public MaNGOS::Singleton<ChatLog, MaNGOS::ClassLevelLockable<ChatLog, ACE_Thread_Mutex> >
@@ -59,40 +65,44 @@ class ChatLog : public MaNGOS::Singleton<ChatLog, MaNGOS::ClassLevelLockable<Cha
         void Initialize();
         void Uninitialize();
 
-        void ChatMsg(Player *player, std::string &msg, uint32 type);
-        void PartyMsg(Player *player, std::string &msg);
-        void GuildMsg(Player *player, std::string &msg, bool officer);
-        void WhisperMsg(Player *player, std::string &to, std::string &msg);
-        void ChannelMsg(Player *player, std::string &channel, std::string &msg);
-        void RaidMsg(Player *player, std::string &msg, uint32 type);
-        void BattleGroundMsg(Player *player, std::string &msg, uint32 type);
+        void ChatMsg(Player* player, std::string& msg, uint32 type);
+        void PartyMsg(Player* player, std::string& msg);
+        void GuildMsg(Player* player, std::string& msg, bool officer);
+        void WhisperMsg(Player* player, std::string& to, std::string& msg);
+        void ChannelMsg(Player* player, std::string& channel, std::string& msg);
+        void RaidMsg(Player* player, std::string& msg, uint32 type);
+        void BattleGroundMsg(Player* player, std::string& msg, uint32 type);
 
-        void ChatBadLexicsAction(Player *player, std::string &msg);
+        void ChatBadLexicsAction(Player* player, std::string& msg);
 
-        bool ChatLogEnable;
-        bool ChatLogDateSplit;
-        bool ChatLogUTFHeader;
-        bool ChatLogIgnoreUnprintable;
+        std::string m_sLogsDir;
 
-        std::string names[CHATLOG_CHAT_TYPES_COUNT];
-        bool screenflag[CHATLOG_CHAT_TYPES_COUNT];
-        bool cutflag[CHATLOG_CHAT_TYPES_COUNT];
+        ChatLogMethod m_uiChatLogMethod;
 
-        bool LexicsCutterEnable;
-        bool LexicsCutterInnormativeCut;
-        bool LexicsCutterNoActionOnGM;
-        bool LexicsCutterScreenLog;
-        std::string LexicsCutterCutReplacement;
-        int LexicsCutterAction;
-        int LexicsCutterActionDuration;
-        bool LexicsCutterIgnoreMiddleSpaces;
-        bool LexicsCutterIgnoreLetterRepeat;
+        bool m_bChatLogDateSplit;
+        bool m_bChatLogUTFHeader;
+        bool m_bChatLogIgnoreUnprintable;
 
-        std::string fn_analogsfile;
-        std::string fn_wordsfile;
-        std::string fn_innormative;
+        std::string m_sLogFileNames[CHATLOG_CHAT_TYPES_COUNT];
+        bool m_bScreenFlag[CHATLOG_CHAT_TYPES_COUNT];
+        bool m_bCutFlag[CHATLOG_CHAT_TYPES_COUNT];
+
+        bool m_bLexicsCutterEnable;
+        bool m_bLexicsCutterInnormativeCut;
+        bool m_bLexicsCutterNoActionOnGM;
+        bool m_bLexicsCutterScreenLog;
+        std::string m_sLexicsCutterCutReplacement;
+        int32 m_iLexicsCutterAction;
+        int32 m_iLexicsCutterActionDuration;
+        bool m_bLexicsCutterIgnoreMiddleSpaces;
+        bool m_bLexicsCutterIgnoreLetterRepeat;
+
+        std::string m_sAnalogsFileName;
+        std::string m_sWordsFileName;
+        std::string m_sInnormativeFileName;
+
     private:
-        bool _ChatCommon(int ChatType, Player *player, std::string &msg);
+        bool _ChatCommon(ChatLogFiles ChatType, Player* player, std::string& msg);
 
         FILE* files[CHATLOG_CHAT_TYPES_COUNT];
 
@@ -107,9 +117,9 @@ class ChatLog : public MaNGOS::Singleton<ChatLog, MaNGOS::ClassLevelLockable<Cha
         void CheckDateSwitch();
 
         void WriteInitStamps();
-        void OutTimestamp(FILE *file);
+        void OutTimestamp(FILE* file);
 };
 
 #define sChatLog MaNGOS::Singleton<ChatLog>::Instance()
-#endif
 
+#endif

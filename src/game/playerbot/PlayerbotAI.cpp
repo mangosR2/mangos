@@ -856,6 +856,8 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                     break;
                 case BUY_ERR_REPUTATION_REQUIRE:
                     break;
+                default:
+                    break;
             }
             return;
         }
@@ -899,6 +901,8 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
                     out << "|cffff0000|hI cannot bid on my own auctions!|h|r";
                     break;
                 }
+                default:
+                    break;
             }
             TellMaster(out.str().c_str());
             return;
@@ -1547,6 +1551,8 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
 
             return;
         }
+        default:
+            break;
 
             /* uncomment this and your bots will tell you all their outgoing packet opcode names
                case SMSG_MONSTER_MOVE:

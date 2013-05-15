@@ -68,7 +68,6 @@ public:
         if (!target)
             return;
 
-        target->StopMoving();
         target->addUnitState(UNIT_STAT_STUNNED);
         target->SetTargetGuid(ObjectGuid());
 
@@ -194,7 +193,7 @@ class TaxiState : public FlightPathMovementGenerator
 {
 public:
     TaxiState(uint32 mountDisplayId, uint32 path, uint32 startNode = 0) :
-        m_displayId(mountDisplayId), FlightPathMovementGenerator(sTaxiPathNodesByPath[path], startNode), m_previewDisplayId(0)
+        FlightPathMovementGenerator(sTaxiPathNodesByPath[path], startNode), m_displayId(mountDisplayId), m_previewDisplayId(0)
     {
     };
 

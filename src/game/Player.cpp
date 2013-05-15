@@ -413,6 +413,7 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
 
     m_zoneUpdateId = 0;
     m_zoneUpdateTimer = 0;
+    m_positionStatusUpdateTimer = 0;
 
     m_areaUpdateId = 0;
 
@@ -470,7 +471,6 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
 
     m_isInWater = false;
     m_drunkTimer = 0;
-    m_drunk = 0;
     m_restTime = 0;
     m_deathTimer = 0;
     m_deathExpireTime = 0;
@@ -619,8 +619,8 @@ Player::~Player ()
 
     delete PlayerTalkClass;
 
-    if (m_transport)
-        m_transport->RemovePassenger(this);
+    if (Transport* transport = GetTransport())
+        transport->RemovePassenger(this);
 
     for (size_t x = 0; x < ItemSetEff.size(); x++)
         if (ItemSetEff[x])
@@ -698,8 +698,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
         m_items[i] = NULL;
 
-    SetLocationMapId(info->mapId);
-    Relocate(info->positionX,info->positionY,info->positionZ, info->orientation);
+    Relocate(WorldLocation(info->mapId, info->positionX, info->positionY, info->positionZ, info->orientation));
 
     SetMap(sMapMgr.CreateMap(info->mapId, this));
 
@@ -736,7 +735,7 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     else
         SetByteValue(PLAYER_BYTES_2, 3, REST_STATE_NORMAL);
 
-    SetUInt16Value(PLAYER_BYTES_3, 0, gender);              // only GENDER_MALE/GENDER_FEMALE (1 bit) allowed, drunk state = 0
+    SetByteValue(PLAYER_BYTES_3, 0, gender);
     SetByteValue(PLAYER_BYTES_3, 3, 0);                     // BattlefieldArenaFaction (0 or 1)
 
     SetUInt32Value(PLAYER_GUILDID, 0);
@@ -1008,7 +1007,7 @@ uint32 Player::EnvironmentalDamage(EnviromentalDamage type, uint32 damage)
     data << GetObjectGuid();
     data << uint8(type != DAMAGE_FALL_TO_VOID ? type : DAMAGE_FALL);
     data << uint32(damageInfo.damage);
-    data << uint32(damageInfo.absorb);
+    data << uint32(damageInfo.GetAbsorb());
     data << uint32(damageInfo.resist);
     SendMessageToSet(&data, true);
 
@@ -1183,34 +1182,43 @@ void Player::HandleDrowning(uint32 time_diff)
     m_MirrorTimerFlagsLast = m_MirrorTimerFlags;
 }
 
-///The player sobers by 256 every 10 seconds
+/// The player sobers by 1% every 9 seconds
 void Player::HandleSobering()
 {
     m_drunkTimer = 0;
 
-    uint32 drunk = (m_drunk <= 256) ? 0 : (m_drunk - 256);
-    SetDrunkValue(drunk);
+    uint8 currentDrunkValue = GetDrunkValue();
+    if (currentDrunkValue)
+    {
+        --currentDrunkValue;
+        SetDrunkValue(currentDrunkValue);
+    }
 }
 
-DrunkenState Player::GetDrunkenstateByValue(uint16 value)
+DrunkenState Player::GetDrunkenstateByValue(uint8 value)
 {
-    if (value >= 23000)
+    if (value >= 90)
         return DRUNKEN_SMASHED;
-    if (value >= 12800)
+    if (value >= 50)
         return DRUNKEN_DRUNK;
-    if (value & 0xFFFE)
+    if (value)
         return DRUNKEN_TIPSY;
     return DRUNKEN_SOBER;
 }
 
-void Player::SetDrunkValue(uint16 newDrunkenValue, uint32 itemId)
+void Player::SetDrunkValue(uint8 newDrunkValue, uint32 itemId /*= 0*/)
 {
-    uint32 oldDrunkenState = Player::GetDrunkenstateByValue(m_drunk);
+    if (newDrunkValue > 100)
+        newDrunkValue = 100;
 
-    m_drunk = newDrunkenValue;
-    SetUInt16Value(PLAYER_BYTES_3, 0, uint16(getGender()) | (m_drunk & 0xFFFE));
+    if (newDrunkValue < GetDrunkValue())
+        m_drunkTimer = 0;   // reset sobering timer
 
-    uint32 newDrunkenState = Player::GetDrunkenstateByValue(m_drunk);
+    uint32 oldDrunkenState = Player::GetDrunkenstateByValue(GetDrunkValue());
+
+    SetByteValue(PLAYER_BYTES_3, 1, newDrunkValue);
+
+    uint32 newDrunkenState = Player::GetDrunkenstateByValue(newDrunkValue);
 
     // special drunk invisibility detection
     if (newDrunkenState >= DRUNKEN_DRUNK)
@@ -1332,6 +1340,14 @@ void Player::Update(uint32 update_diff, uint32 p_time)
             m_regenTimer -= update_diff;
     }
 
+    if (m_positionStatusUpdateTimer)
+    {
+        if (update_diff >= m_positionStatusUpdateTimer)
+            m_positionStatusUpdateTimer = 0;
+        else
+            m_positionStatusUpdateTimer -= update_diff;
+    }
+
     if (m_weaponChangeTimer > 0)
     {
         if (update_diff >= m_weaponChangeTimer)
@@ -1423,11 +1439,11 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         m_Last_tick = now;
     }
 
-    if (m_drunk)
+    if (GetDrunkValue())
     {
         m_drunkTimer += update_diff;
 
-        if (m_drunkTimer > 10*IN_MILLISECONDS)
+        if (m_drunkTimer > 9 * IN_MILLISECONDS)
             HandleSobering();
     }
 
@@ -1742,7 +1758,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
         {
             if (!CheckTransferPossibility(loc.GetMapId()))
             {
-                if (GetTransport())
+                if (IsOnTransport())
                     TeleportToHomebind();
 
                 DEBUG_LOG("Player::TeleportTo %s is NOT teleported to map %u (requirements check failed)", GetName(), loc.GetMapId());
@@ -1787,12 +1803,8 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
         grp->SetPlayerMap(GetObjectGuid(), loc.GetMapId());
 
     // if we were on a transport, leave
-    if (!(options & TELE_TO_NOT_LEAVE_TRANSPORT) && m_transport)
-    {
-        m_transport->RemovePassenger(this);
-        SetTransport(NULL);
-        m_movementInfo.ClearTransportData();
-    }
+    if (!(options & TELE_TO_NOT_LEAVE_TRANSPORT) && IsOnTransport())
+        GetTransport()->RemovePassenger(this);
 
     if (GetVehicleKit())
         GetVehicleKit()->RemoveAllPassengers();
@@ -1810,7 +1822,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
     m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
     DisableSpline();
 
-    if (GetMap() && GetMapId() == loc.GetMapId() && !m_transport)
+    if (GetMap() && GetMapId() == loc.GetMapId() && !IsOnTransport())
     {
         //lets reset far teleport flag if it wasn't reset during chained teleports
         SetSemaphoreTeleportFar(false);
@@ -1865,7 +1877,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
         if (!GetSession()->PlayerLogout())
         {
             WorldPacket data;
-            BuildTeleportAckMsg(data, loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation);
+            BuildTeleportAckMsg(data, loc.getX(), loc.getY(), loc.getZ(), loc.orientation);
             GetSession()->SendPacket(&data);
         }
     }
@@ -1908,7 +1920,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             if (!(options & TELE_TO_NODELAY) && !map->PreloadGrid(loc.x, loc.y))
             {
                 // If loading grid not finished, delay teleport 5 map update ticks
-                AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.x, loc.y, loc.z, loc.orientation, loc.GetMapId(), map->GetInstanceId(), sWorld.getConfig(CONFIG_UINT32_REALMID)), options),
+                AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.GetMapId(), loc.x, loc.y, loc.z, loc.orientation, GetPhaseMask(), map->GetInstanceId(), sWorld.getConfig(CONFIG_UINT32_REALMID)), options),
                     5 * sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 
                 DEBUG_LOG("Player::TeleportTo grid (map %u, instance %u, X%f Y%f) not fully loaded, far teleport %s delayed.", loc.GetMapId(), map->GetInstanceId(), loc.x, loc.y, GetName());
@@ -1969,9 +1981,9 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                 // send transfer packet to display load screen
                 WorldPacket data(SMSG_TRANSFER_PENDING, (4+4+4));
                 data << uint32(loc.GetMapId());
-                if (m_transport)
+                if (IsOnTransport())
                 {
-                    data << uint32(m_transport->GetEntry());
+                    data << uint32(GetTransport()->GetEntry());
                     data << uint32(GetMapId());
                 }
                 GetSession()->SendPacket(&data);
@@ -1982,21 +1994,12 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                 oldmap->Remove(this, false);
 
             // new final coordinates
-            float final_x = loc.x;
-            float final_y = loc.y;
-            float final_z = loc.z;
-            float final_o = loc.orientation;
+            WorldLocation final = loc;
+            if (IsOnTransport())
+                final += (*m_movementInfo.GetTransportPos());
 
-            if (m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
-            {
-                final_x += m_movementInfo.GetTransportPos()->x;
-                final_y += m_movementInfo.GetTransportPos()->y;
-                final_z += m_movementInfo.GetTransportPos()->z;
-                final_o += m_movementInfo.GetTransportPos()->o;
-            }
-
-            m_teleport_dest = WorldLocation(loc.GetMapId(), final_x, final_y, final_z, final_o);
-            SetFallInformation(0, final_z);
+            m_teleport_dest = final;
+            SetFallInformation(0, final.z);
             // if the player is saved before worldport ack (at logout for example)
             // this will be used instead of the current location in SaveToDB
 
@@ -2009,7 +2012,7 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                 // transfer finished, inform client to start load
                 WorldPacket data(SMSG_NEW_WORLD, (20));
                 data << uint32(loc.GetMapId());
-                if (m_transport)
+                if (IsOnTransport())
                 {
                     data << float(m_movementInfo.GetTransportPos()->x);
                     data << float(m_movementInfo.GetTransportPos()->y);
@@ -2018,10 +2021,10 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                 }
                 else
                 {
-                    data << float(final_x);
-                    data << float(final_y);
-                    data << float(final_z);
-                    data << float(final_o);
+                    data << float(final.x);
+                    data << float(final.y);
+                    data << float(final.z);
+                    data << float(final.o);
                 }
 
                 GetSession()->SendPacket(&data);
@@ -2116,7 +2119,6 @@ void Player::AddToWorld()
         if (m_items[i])
             m_items[i]->AddToWorld();
     }
-    SetViewPoint(NULL);
 }
 
 void Player::RemoveFromWorld(bool remove)
@@ -3030,7 +3032,8 @@ void Player::SendInitialSpells()
 
     uint16 spellCount = 0;
 
-    WorldPacket data(SMSG_INITIAL_SPELLS, (1+2+4*m_spells.size()+2+m_spellCooldowns.size()*(2+2+2+4+4)));
+    size_t cooldownMapSize = GetSpellCooldownMap()->size();
+    WorldPacket data(SMSG_INITIAL_SPELLS, (1+2+4*m_spells.size()+2+cooldownMapSize*(2+2+2+4+4)));
     data << uint8(0);
 
     size_t countPos = data.wpos();
@@ -3052,9 +3055,9 @@ void Player::SendInitialSpells()
 
     data.put<uint16>(countPos,spellCount);                  // write real count value
 
-    uint16 spellCooldowns = m_spellCooldowns.size();
+    uint16 spellCooldowns = GetSpellCooldownMap()->size();
     data << uint16(spellCooldowns);
-    for (SpellCooldowns::const_iterator itr=m_spellCooldowns.begin(); itr!=m_spellCooldowns.end(); ++itr)
+    for (SpellCooldowns::const_iterator itr= GetSpellCooldownMap()->begin(); itr!= GetSpellCooldownMap()->end(); ++itr)
     {
         SpellEntry const *sEntry = sSpellStore.LookupEntry(itr->first);
         if (!sEntry)
@@ -3817,47 +3820,12 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank, bo
     }
 }
 
-void Player::RemoveSpellCooldown(uint32 spell_id, bool update /* = false */)
-{
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-    m_spellCooldowns.erase(spell_id);
-
-    if (update)
-        SendClearCooldown(spell_id, this);
-}
-
-void Player::RemoveSpellCategoryCooldown(uint32 cat, bool update /* = false */)
-{
-    if (m_spellCooldowns.empty())
-        return;
-
-    SpellCategoryStore::const_iterator ct = sSpellCategoryStore.find(cat);
-    if (ct == sSpellCategoryStore.end())
-        return;
-
-    const SpellCategorySet& ct_set = ct->second;
-    SpellCategorySet current_set;
-    SpellCategorySet intersection_set;
-    {
-        MAPLOCK_READ(this, MAP_LOCK_TYPE_DEFAULT);
-        std::transform(m_spellCooldowns.begin(), m_spellCooldowns.end(), std::inserter(current_set, current_set.begin()), select1st<SpellCooldowns::value_type>());
-    }
-
-    std::set_intersection(ct_set.begin(),ct_set.end(), current_set.begin(),current_set.end(),std::inserter(intersection_set,intersection_set.begin()));
-
-    if (intersection_set.empty())
-        return;
-
-    for (SpellCategorySet::const_iterator itr = intersection_set.begin(); itr != intersection_set.end(); ++itr)
-        RemoveSpellCooldown(*itr, update);
-}
-
 void Player::RemoveArenaSpellCooldowns()
 {
     // remove cooldowns on spells that has < 15 min CD
-    SpellCooldowns::iterator itr, next;
+    SpellCooldowns::const_iterator itr, next;
     // iterate spell cooldowns
-    for (itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end(); itr = next)
+    for (itr = GetSpellCooldownMap()->begin();itr != GetSpellCooldownMap()->end(); itr = next)
     {
         next = itr;
         ++next;
@@ -3874,24 +3842,7 @@ void Player::RemoveArenaSpellCooldowns()
 
     if (Pet *pet = GetPet())
     {
-        // notify player
-        for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
-            SendClearCooldown(itr->first, pet);
-
-        // actually clear cooldowns
-        pet->m_CreatureSpellCooldowns.clear();
-    }
-}
-
-void Player::RemoveAllSpellCooldown()
-{
-    if (!m_spellCooldowns.empty())
-    {
-        for (SpellCooldowns::const_iterator itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end(); ++itr)
-            SendClearCooldown(itr->first, this);
-
-        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-        m_spellCooldowns.clear();
+        pet->RemoveAllSpellCooldown();
     }
 }
 
@@ -3945,21 +3896,14 @@ void Player::_SaveSpellCooldowns()
     time_t infTime = curTime + infinityCooldownDelayCheck;
 
     // remove outdated and save active
-    for (SpellCooldowns::iterator itr = m_spellCooldowns.begin();itr != m_spellCooldowns.end();)
+    RemoveOutdatedSpellCooldowns();
+    for (SpellCooldowns::const_iterator itr = GetSpellCooldownMap()->begin();itr != GetSpellCooldownMap()->end(); ++itr)
     {
-        if (itr->second.end <= curTime)
-        {
-            MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-            m_spellCooldowns.erase(itr++);
-        }
-        else if (itr->second.end <= infTime)                 // not save locked cooldowns, it will be reset or set at reload
+        if (itr->second.end <= infTime)                 // not save locked cooldowns, it will be reset or set at reload
         {
             stmt = CharacterDatabase.CreateStatement(insertSpellCooldown, "INSERT INTO character_spell_cooldown (guid,spell,item,time) VALUES(?, ?, ?, ?)");
             stmt.PExecute(GetGUIDLow(), itr->first, itr->second.itemid, uint64(itr->second.end));
-            ++itr;
         }
-        else
-            ++itr;
     }
 }
 
@@ -5013,7 +4957,7 @@ void Player::RepopAtGraveyard()
     AreaTableEntry const *zone = GetAreaEntryByAreaID(GetAreaId());
 
     // Such zones are considered unreachable as a ghost and the player must be automatically revived
-    if ((!isAlive() && zone && (zone->flags & AREA_FLAG_NEED_FLY)) || GetTransport() || GetPositionZ() < -500.0f)
+    if ((!isAlive() && zone && (zone->flags & AREA_FLAG_NEED_FLY)) || IsOnTransport() || GetPositionZ() < -500.0f)
     {
         ResurrectPlayer(0.5f);
         SpawnCorpseBones();
@@ -6326,20 +6270,28 @@ ActionButton const* Player::GetActionButton(uint8 button)
     return &buttonItr->second;
 }
 
-bool Player::SetPosition(float x, float y, float z, float orientation, bool teleport)
+bool Player::SetPosition(Position const& pos, bool teleport)
 {
-    if (!Unit::SetPosition(x, y, z, orientation, teleport))
-        return false;
+    bool groupUpdate = (GetGroup() && (teleport || abs(GetPositionX() - pos.x) > 1.0f || abs(GetPositionY() - pos.y) > 1.0f));
 
-    // group update
-    if (GetGroup())
-        SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
+    if (!Unit::SetPosition(pos, teleport))
+        return false;
 
     if (GetTrader() && !IsWithinDistInMap(GetTrader(), INTERACTION_DISTANCE))
         GetSession()->SendCancelTrade();   // will close both side trade windows
 
+    if (m_positionStatusUpdateTimer)                        // Update position's state only on interval
+        return true;
+    m_positionStatusUpdateTimer = 100;
+
+    // group update
+    if (groupUpdate)
+        SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
+
     // code block for underwater state update
-    UpdateUnderwaterState(GetMap(), x, y, z);
+    UpdateUnderwaterState(GetMap(), pos.x, pos.y, pos.z);
+
+    // code block for outdoor state and area-explore check
     CheckAreaExploreAndOutdoor();
 
     return true;
@@ -6347,11 +6299,7 @@ bool Player::SetPosition(float x, float y, float z, float orientation, bool tele
 
 void Player::SaveRecallPosition()
 {
-    m_recallMap = GetMapId();
-    m_recallX = GetPositionX();
-    m_recallY = GetPositionY();
-    m_recallZ = GetPositionZ();
-    m_recallO = GetOrientation();
+    m_recall = GetPosition();
 }
 
 void Player::SendMessageToSet(WorldPacket *data, bool self)
@@ -6426,7 +6374,10 @@ void Player::CheckAreaExploreAndOutdoor()
         }
     }
     else if (sWorld.getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK) && !isGameMaster())
-        RemoveAurasWithAttribute(SPELL_ATTR_OUTDOORS_ONLY);
+        RemoveAurasWithAttribute(SPELL_ATTR_OUTDOORS_ONLY, SPELL_ATTR_PASSIVE);
+
+    if (sWorld.getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK))
+        TriggerPassiveAurasWithAttribute(isOutdoor, SPELL_ATTR_OUTDOORS_ONLY);
 
     if (areaFlag==0xffff)
         return;
@@ -13263,14 +13214,17 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
     for (GossipMenuItemsMap::const_iterator itr = pMenuItemBounds.first; itr != pMenuItemBounds.second; ++itr)
     {
         bool hasMenuItem = true;
+        bool isGMSkipConditionCheck = false;
 
-        if (!isGameMaster())                                // Let GM always see menu items regardless of conditions
+        if (itr->second.conditionId && !sObjectMgr.IsPlayerMeetToCondition(itr->second.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_OPTION))
         {
-            if (itr->second.conditionId && !sObjectMgr.IsPlayerMeetToCondition(itr->second.conditionId, this, GetMap(), pSource, CONDITION_FROM_GOSSIP_OPTION))
+            if (isGameMaster())                             // Let GM always see menu items regardless of conditions
+                isGMSkipConditionCheck = true;
+            else
             {
                 if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
                     canSeeQuests = false;
-                continue;
+                continue;                                   // Skip this option
             }
         }
 
@@ -13396,6 +13350,13 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
                     if (no->BoxText.size() > (size_t)loc_idx && !no->BoxText[loc_idx].empty())
                         strBoxText = no->BoxText[loc_idx];
                 }
+            }
+
+            if (isGMSkipConditionCheck)
+            {
+                strOptionText.append(" (");
+                strOptionText.append(GetSession()->GetMangosString(LANG_GM_ON));
+                strOptionText.append(")");
             }
 
             pMenu->GetGossipMenu().AddMenuItem(itr->second.option_icon, strOptionText, 0, itr->second.option_id, strBoxText, itr->second.box_money, itr->second.box_coded);
@@ -14175,17 +14136,20 @@ void Player::AddQuest(Quest const *pQuest, Object *questGiver)
     AdjustQuestReqItemCount(pQuest, questStatusData);
 
     // Some spells applied at quest activation
-    SpellAreaForQuestMapBounds saBounds = sSpellMgr.GetSpellAreaForQuestMapBounds(quest_id,true);
-    if (saBounds.first != saBounds.second)
+    uint32 zone, area;
+    GetZoneAndAreaId(zone, area);
+    SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(zone);
+    for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
+        itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, true);
+    if (area != zone)
     {
-        uint32 zone, area;
-        GetZoneAndAreaId(zone,area);
-
+        saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(area);
         for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-            if (itr->second->autocast && itr->second->IsFitToRequirements(this,zone,area))
-                if (!HasAura(itr->second->spellId, EFFECT_INDEX_0))
-                    CastSpell(this,itr->second->spellId,true);
+            itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, true);
     }
+    saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(0);
+    for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
+        itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, true);
 
     UpdateForQuestWorldObjects();
 }
@@ -14385,32 +14349,22 @@ void Player::RewardQuest(Quest const *pQuest, uint32 reward, Object* questGiver,
     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT);
     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, pQuest->GetQuestId());
 
-    uint32 zone = 0;
-    uint32 area = 0;
-
     // remove auras from spells with quest reward state limitations
-    SpellAreaForQuestMapBounds saEndBounds = sSpellMgr.GetSpellAreaForQuestEndMapBounds(quest_id);
-    if (saEndBounds.first != saEndBounds.second)
-    {
-        GetZoneAndAreaId(zone,area);
-
-        for (SpellAreaForAreaMap::const_iterator itr = saEndBounds.first; itr != saEndBounds.second; ++itr)
-            if (!itr->second->IsFitToRequirements(this, zone, area))
-                RemoveAurasDueToSpell(itr->second->spellId);
-    }
-
     // Some spells applied at quest reward
-    SpellAreaForQuestMapBounds saBounds = sSpellMgr.GetSpellAreaForQuestMapBounds(quest_id, false);
-    if (saBounds.first != saBounds.second)
+    uint32 zone, area;
+    GetZoneAndAreaId(zone, area);
+    SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(zone);
+    for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
+        itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, false);
+    if (area != zone)
     {
-        if (!zone || !area)
-            GetZoneAndAreaId(zone, area);
-
+        saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(area);
         for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-            if (itr->second->autocast && itr->second->IsFitToRequirements(this, zone, area))
-                if (!HasAura(itr->second->spellId, EFFECT_INDEX_0))
-                    CastSpell(this, itr->second->spellId, true);
+            itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, false);
     }
+    saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(0);
+    for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
+        itr->second->ApplyOrRemoveSpellIfCan(this, zone, area, false);
 }
 
 void Player::FailQuest(uint32 questId)
@@ -15738,8 +15692,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     SetByteValue(UNIT_FIELD_BYTES_0,0,fields[3].GetUInt8());// race
     SetByteValue(UNIT_FIELD_BYTES_0,1,fields[4].GetUInt8());// class
 
-    uint8 gender = fields[5].GetUInt8() & 0x01;             // allowed only 1 bit values male/female cases (for fit drunk gender part)
-    SetByteValue(UNIT_FIELD_BYTES_0,2,gender);              // gender
+    uint8 gender = fields[5].GetUInt8() & 0x01;
+    SetByteValue(UNIT_FIELD_BYTES_0, 2, gender);            // gender
 
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[6].GetUInt8());
     SetUInt32Value(PLAYER_XP, fields[7].GetUInt32());
@@ -15763,9 +15717,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
     SetUInt32Value(PLAYER_BYTES, fields[9].GetUInt32());
     SetUInt32Value(PLAYER_BYTES_2, fields[10].GetUInt32());
 
-    m_drunk = fields[49].GetUInt16();
-
-    SetUInt16Value(PLAYER_BYTES_3, 0, (m_drunk & 0xFFFE) | gender);
+    SetByteValue(PLAYER_BYTES_3, 0, gender);
+    SetByteValue(PLAYER_BYTES_3, 1, fields[49].GetUInt8());
 
     SetUInt32Value(PLAYER_FLAGS, fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[48].GetInt32());
@@ -15874,6 +15827,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
         transGUID = 0;
         m_movementInfo.ClearTransportData();
+        ClearTransportData();
     }
 
     _LoadBGData(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBGDATA));
@@ -15971,8 +15925,8 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
                 }
                 else
                 {
-                    SetLocationMapId(at->target_mapId);
-                    Relocate(at->target_X, at->target_Y, at->target_Z, at->target_Orientation);
+                    SetLocationMapId(at->loc.GetMapId());
+                    Relocate(at->loc);
                 }
             }
             else
@@ -15987,59 +15941,49 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     if (transGUID != 0)
     {
-        m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT,transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0, -1);
+        ObjectGuid transportGuid = ObjectGuid(HIGHGUID_MO_TRANSPORT,transGUID);
+        Transport* transport = sObjectMgr.GetTransportByGuid(transportGuid);
 
-        if (!MaNGOS::IsValidMapCoord(
-            GetPositionX() + m_movementInfo.GetTransportPos()->x, GetPositionY() + m_movementInfo.GetTransportPos()->y,
-            GetPositionZ() + m_movementInfo.GetTransportPos()->z, GetOrientation() + m_movementInfo.GetTransportPos()->o) ||
-            // transport size limited
-            m_movementInfo.GetTransportPos()->x > 50 || m_movementInfo.GetTransportPos()->y > 50 || m_movementInfo.GetTransportPos()->z > 50)
+        if (transport)
         {
-            sLog.outError("%s have invalid transport coordinates (X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
-                guid.GetString().c_str(), GetPositionX() + m_movementInfo.GetTransportPos()->x, GetPositionY() + m_movementInfo.GetTransportPos()->y,
-                GetPositionZ() + m_movementInfo.GetTransportPos()->z, GetOrientation() + m_movementInfo.GetTransportPos()->o);
-
-            RelocateToHomebind();
-
-            m_movementInfo.ClearTransportData();
-
-            transGUID = 0;
-        }
-    }
-
-    if (transGUID != 0)
-    {
-        for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
-        {
-            Transport* transport = *iter;
-
-            if (transport->GetGUIDLow() == transGUID)
+            MapEntry const* transMapEntry = sMapStore.LookupEntry(transport->GetMapId());
+            // client without expansion support
+            if (GetSession()->Expansion() < transMapEntry->Expansion())
             {
-                MapEntry const* transMapEntry = sMapStore.LookupEntry(transport->GetMapId());
-                // client without expansion support
-                if (GetSession()->Expansion() < transMapEntry->Expansion())
-                {
-                    DEBUG_LOG("Player %s using client without required expansion tried login at transport at non accessible map %u", GetName(), transport->GetMapId());
-                    break;
-                }
-
-                SetTransport(transport);
-                transport->AddPassenger(this);
+                DEBUG_LOG("Player %s using client without required expansion tried login at transport at non accessible map %u", GetName(), transport->GetMapId());
+            }
+            else
+            {
+                Relocate(transport->GetPosition());
                 SetLocationMapId(transport->GetMapId());
-                break;
+                // AddPassenger not used, becoze need add passenger in correct position on transport
+                Position t_pos = Position(fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat());
+                transport->AddPassenger(this, t_pos);
+            }
+
+            if (!MaNGOS::IsValidMapCoord(
+                GetPositionX() + m_movementInfo.GetTransportPos()->x, GetPositionY() + m_movementInfo.GetTransportPos()->y,
+                GetPositionZ() + m_movementInfo.GetTransportPos()->z, GetOrientation() + m_movementInfo.GetTransportPos()->o) ||
+                // transport size limited
+                m_movementInfo.GetTransportPos()->x > 50 || m_movementInfo.GetTransportPos()->y > 50 || m_movementInfo.GetTransportPos()->z > 50)
+            {
+                sLog.outError("%s have invalid transport coordinates (X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.",
+                    guid.GetString().c_str(), GetPositionX() + m_movementInfo.GetTransportPos()->x, GetPositionY() + m_movementInfo.GetTransportPos()->y,
+                    GetPositionZ() + m_movementInfo.GetTransportPos()->z, GetOrientation() + m_movementInfo.GetTransportPos()->o);
+
+                transport->RemovePassenger(this);
             }
         }
 
-        if (!m_transport)
+        if (!IsOnTransport())
         {
             sLog.outError("%s have problems with transport guid (%u). Teleport to default race/class locations.",
                 guid.GetString().c_str(), transGUID);
 
-            RelocateToHomebind();
-
+            ClearTransportData();
             m_movementInfo.ClearTransportData();
-
             transGUID = 0;
+            RelocateToHomebind();
         }
     }
 
@@ -16062,13 +16006,11 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
 
     // set value, including drunk invisibility detection
     // calculate sobering. after 15 minutes logged out, the player will be sober again
-    float soberFactor;
-    if (time_diff > 15*MINUTE)
-        soberFactor = 0;
-    else
-        soberFactor = 1-time_diff/(15.0f*MINUTE);
-    uint16 newDrunkenValue = uint16(soberFactor* m_drunk);
-    SetDrunkValue(newDrunkenValue);
+    uint8 newDrunkValue = 0;
+    if (time_diff < uint32(GetDrunkValue()) * 9)
+        newDrunkValue = GetDrunkValue() - time_diff / 9;
+
+    SetDrunkValue(newDrunkValue);
 
     m_cinematic = fields[18].GetUInt32();
     m_Played_time[PLAYED_TIME_TOTAL]= fields[19].GetUInt32();
@@ -16252,8 +16194,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
         else                                                // have start node, to it
         {
             sLog.outError("Character %u have too short taxi destination list, teleport to original node.",GetGUIDLow());
-            SetLocationMapId(nodeEntry->map_id);
-            Relocate(nodeEntry->x, nodeEntry->y, nodeEntry->z,0.0f);
+            Relocate(WorldLocation(nodeEntry->map_id, nodeEntry->x, nodeEntry->y, nodeEntry->z, 0.0f, GetPhaseMask()));
         }
 
         //we can be relocated from taxi and still have an outdated Map pointer!
@@ -16273,11 +16214,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder *holder)
         // save source node as recall coord to prevent recall and fall from sky
         TaxiNodesEntry const* nodeEntry = sTaxiNodesStore.LookupEntry(node_id);
         MANGOS_ASSERT(nodeEntry);                           // checked in m_taxi.LoadTaxiDestinationsFromString
-        m_recallMap = nodeEntry->map_id;
-        m_recallX = nodeEntry->x;
-        m_recallY = nodeEntry->y;
-        m_recallZ = nodeEntry->z;
-
+        m_recall = WorldLocation(nodeEntry->map_id, nodeEntry->x, nodeEntry->y, nodeEntry->z);
         // flight will started later
     }
 
@@ -16481,7 +16418,7 @@ void Player::_LoadAuras(QueryResult *result, uint32 timediff)
 
             if (caster_guid.IsEmpty() || !caster_guid.IsUnit())
             {
-                sLog.outError("Player::LoadAuras Unknown caster %u, ignore.",fields[0].GetUInt64());
+                sLog.outError("Player::LoadAuras Unknown caster %lu, ignore.",fields[0].GetUInt64());
                 continue;
             }
 
@@ -17791,8 +17728,8 @@ void Player::SaveToDB()
     uberInsert.addFloat(finiteAlways(m_movementInfo.GetTransportPos()->y));
     uberInsert.addFloat(finiteAlways(m_movementInfo.GetTransportPos()->z));
     uberInsert.addFloat(finiteAlways(m_movementInfo.GetTransportPos()->o));
-    if (m_transport)
-        uberInsert.addUInt32(m_transport->GetGUIDLow());
+    if (IsOnTransport())
+        uberInsert.addUInt32(GetTransport()->GetGUIDLow());
     else
         uberInsert.addUInt32(0);
 
@@ -17830,7 +17767,7 @@ void Player::SaveToDB()
     // FIXME: at this moment send to DB as unsigned, including unit32(-1)
     uberInsert.addUInt32(GetUInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX));
 
-    uberInsert.addUInt16(uint16(GetUInt32Value(PLAYER_BYTES_3) & 0xFFFE));
+    uberInsert.addUInt8(GetDrunkValue());
 
     uberInsert.addUInt32(GetHealth());
 
@@ -18451,8 +18388,11 @@ void Player::_SaveSpells()
     SqlStatement stmtDel = CharacterDatabase.CreateStatement(delSpells, "DELETE FROM character_spell WHERE guid = ? and spell = ?");
     SqlStatement stmtIns = CharacterDatabase.CreateStatement(insSpells, "INSERT INTO character_spell (guid,spell,active,disabled) VALUES (?, ?, ?, ?)");
 
-    for (PlayerSpellMap::iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end();)
+    PlayerSpellMap::iterator itr, next;
+    for (itr = m_spells.begin(); itr != m_spells.end(); itr = next)
     {
+        next = itr;
+        ++next;
         uint32 talentCosts = GetTalentSpellCost(itr->first);
 
         if (!talentCosts)
@@ -18466,13 +18406,11 @@ void Player::_SaveSpells()
         }
 
         if (itr->second.state == PLAYERSPELL_REMOVED)
-            m_spells.erase(itr++);
+            m_spells.erase(itr);
         else
         {
             itr->second.state = PLAYERSPELL_UNCHANGED;
-            ++itr;
         }
-
     }
 }
 
@@ -19016,29 +18954,32 @@ void Player::PetSpellInitialize()
 
     data.put<uint8>(spellsCountPos, addlist);
 
-    uint8 cooldownsCount = pet->m_CreatureSpellCooldowns.size() + pet->m_CreatureCategoryCooldowns.size();
+    uint8 cooldownsCount = pet->GetSpellCooldownMap()->size();
     data << uint8(cooldownsCount);
 
     time_t curTime = time(NULL);
 
-    for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureSpellCooldowns.begin(); itr != pet->m_CreatureSpellCooldowns.end(); ++itr)
+    for (SpellCooldowns::const_iterator itr = pet->GetSpellCooldownMap()->begin(); itr != pet->GetSpellCooldownMap()->end(); ++itr)
     {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
+        SpellEntry const *sEntry = sSpellStore.LookupEntry(itr->first);
+        if (!sEntry)
+            continue;
+
+        time_t cooldown = (itr->second.end > curTime) ? (itr->second.end - curTime) * IN_MILLISECONDS : 0;
 
         data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(cooldown);                           // cooldown
-        data << uint32(0);                                  // category cooldown
-    }
+        data << uint16(sEntry->Category);                   // spell category
 
-    for (CreatureSpellCooldowns::const_iterator itr = pet->m_CreatureCategoryCooldowns.begin(); itr != pet->m_CreatureCategoryCooldowns.end(); ++itr)
-    {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
-
-        data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(0);                                  // cooldown
-        data << uint32(cooldown);                           // category cooldown
+        if (sEntry->Category)                                // may be wrong, but anyway better than nothing...
+        {
+            data << uint32(0);                              // cooldown
+            data << uint32(cooldown);                       // category cooldown
+        }
+        else
+        {
+            data << uint32(cooldown);                       // cooldown
+            data << uint32(0);                              // category cooldown
+        }
     }
 
     GetSession()->SendPacket(&data);
@@ -19101,7 +19042,7 @@ void Player::VehicleSpellInitialize()
         return;
     }
 
-    size_t cooldownsCount = charm->m_CreatureSpellCooldowns.size() + charm->m_CreatureCategoryCooldowns.size();
+    size_t cooldownsCount = charm->GetSpellCooldownMap()->size() + charm->GetSpellCooldownMap()->size();
 
     WorldPacket data(SMSG_PET_SPELLS, 8+2+4+4+4*MAX_UNIT_ACTION_BAR_INDEX+1+1+cooldownsCount*(4+2+4+4));
     data << charm->GetObjectGuid();
@@ -19116,24 +19057,27 @@ void Player::VehicleSpellInitialize()
 
     time_t curTime = time(NULL);
 
-    for (CreatureSpellCooldowns::const_iterator itr = charm->m_CreatureSpellCooldowns.begin(); itr != charm->m_CreatureSpellCooldowns.end(); ++itr)
+    for (SpellCooldowns::const_iterator itr = charm->GetSpellCooldownMap()->begin(); itr != charm->GetSpellCooldownMap()->end(); ++itr)
     {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
+        SpellEntry const *sEntry = sSpellStore.LookupEntry(itr->first);
+        if (!sEntry)
+            continue;
+
+        time_t cooldown = (itr->second.end > curTime) ? (itr->second.end - curTime) * IN_MILLISECONDS : 0;
 
         data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(cooldown);                           // cooldown
-        data << uint32(0);                                  // category cooldown
-    }
+        data << uint16(sEntry->Category);                   // spell category
 
-    for (CreatureSpellCooldowns::const_iterator itr = charm->m_CreatureCategoryCooldowns.begin(); itr != charm->m_CreatureCategoryCooldowns.end(); ++itr)
-    {
-        time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
-
-        data << uint32(itr->first);                         // spellid
-        data << uint16(0);                                  // spell category?
-        data << uint32(0);                                  // cooldown
-        data << uint32(cooldown);                           // category cooldown
+        if (sEntry->Category)                                // may be wrong, but anyway better than nothing...
+        {
+            data << uint32(0);                              // cooldown
+            data << uint32(cooldown);                       // category cooldown
+        }
+        else
+        {
+            data << uint32(cooldown);                       // cooldown
+            data << uint32(0);                              // category cooldown
+        }
     }
 
     GetSession()->SendPacket(&data);
@@ -19403,7 +19347,7 @@ void Player::HandleStealthedUnitsDetection()
         if ((*i)==this)
             continue;
 
-        bool hasAtClient = HaveAtClient((*i));
+        bool hasAtClient = HaveAtClient((*i)->GetObjectGuid());
         bool hasDetected = (*i)->isVisibleForOrDetect(this, viewPoint, true);
 
         if (hasDetected)
@@ -19412,13 +19356,13 @@ void Player::HandleStealthedUnitsDetection()
             {
                 ObjectGuid i_guid = (*i)->GetObjectGuid();
                 (*i)->SendCreateUpdateToPlayer(this);
-                m_clientGUIDs.insert(i_guid);
+                AddClientGuid(i_guid);
 
                 DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s is detected in stealth by player %u. Distance = %f",i_guid.GetString().c_str(),GetGUIDLow(),GetDistance(*i));
 
                 // target aura duration for caster show only if target exist at caster client
                 // send data at target visibility change (adding to client)
-                if ((*i)!=this && (*i)->isType(TYPEMASK_UNIT))
+                if ((*i) != this && (*i)->isType(TYPEMASK_UNIT))
                     SendAurasForTarget(*i);
             }
         }
@@ -19427,7 +19371,7 @@ void Player::HandleStealthedUnitsDetection()
             if (hasAtClient)
             {
                 (*i)->DestroyForPlayer(this);
-                m_clientGUIDs.erase((*i)->GetObjectGuid());
+                RemoveClientGuid((*i)->GetObjectGuid());
             }
         }
     }
@@ -19695,7 +19639,7 @@ void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
         if (spellInfo->HasAttribute(SPELL_ATTR_DISABLED_WHILE_ACTIVE))
             continue;
 
-        if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetSpellCooldownDelay(unSpellId) < unTimeMs)
+        if ((idSchoolMask & GetSpellSchoolMask(spellInfo)) && GetSpellCooldownDelay(spellInfo) < unTimeMs)
         {
             data << uint32(unSpellId);
             data << uint32(unTimeMs);                       // in m.secs
@@ -19711,7 +19655,7 @@ void Player::SendModifyCooldown(uint32 spell_id, int32 delta)
     if (!spellInfo)
         return;
 
-    uint32 cooldown = GetSpellCooldownDelay(spell_id);
+    uint32 cooldown = GetSpellCooldownDelay(spellInfo);
     if (cooldown == 0 && delta < 0)
         return;
 
@@ -19990,7 +19934,13 @@ bool Player::BuyItemFromVendorSlot(ObjectGuid vendorGuid, uint32 vendorslot, uin
         }
     }
 
-    uint32 price = (crItem->ExtendedCost == 0 || (pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD)) ? pProto->BuyPrice * count : 0;
+    if (crItem->conditionId && !isGameMaster() && !sObjectMgr.IsPlayerMeetToCondition(crItem->conditionId, this, pVendor->GetMap(), pVendor, CONDITION_FROM_VENDOR))
+    {
+        SendBuyError(BUY_ERR_CANT_FIND_ITEM, pVendor, item, 0);
+        return false;
+    }
+
+    uint32 price = (crItem->ExtendedCost == 0 || pProto->Flags2 & ITEM_FLAG2_EXT_COST_REQUIRES_GOLD) ? pProto->BuyPrice * count : 0;
 
     // reputation discount
     if (price)
@@ -20101,111 +20051,6 @@ void Player::UpdatePvP(bool state, bool ovrride)
         else
             SetPvP(state);
     }
-}
-
-void Player::AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, bool infinityCooldown)
-{
-    // init cooldown values
-    uint32 cat   = 0;
-    int32 rec    = -1;
-    int32 catrec = -1;
-
-    // some special item spells without correct cooldown in SpellInfo
-    // cooldown information stored in item prototype
-    // This used in same way in WorldSession::HandleItemQuerySingleOpcode data sending to client.
-
-    if (itemId)
-    {
-        if (ItemPrototype const* proto = ObjectMgr::GetItemPrototype(itemId))
-        {
-            for (int idx = 0; idx < MAX_ITEM_PROTO_SPELLS; ++idx)
-            {
-                if (proto->Spells[idx].SpellId == spellInfo->Id)
-                {
-                    cat    = proto->Spells[idx].SpellCategory;
-                    rec    = proto->Spells[idx].SpellCooldown;
-                    catrec = proto->Spells[idx].SpellCategoryCooldown;
-                    break;
-                }
-            }
-        }
-    }
-
-    // if no cooldown found above then base at DBC data
-    if (rec < 0 && catrec < 0)
-    {
-        cat = spellInfo->Category;
-        rec = spellInfo->RecoveryTime;
-        catrec = spellInfo->CategoryRecoveryTime;
-    }
-
-    time_t curTime = time(NULL);
-
-    time_t catrecTime;
-    time_t recTime;
-
-    // overwrite time for selected category
-    if (infinityCooldown)
-    {
-        // use +MONTH as infinity mark for spell cooldown (will checked as MONTH/2 at save ans skipped)
-        // but not allow ignore until reset or re-login
-        catrecTime = catrec > 0 ? curTime+infinityCooldownDelay : 0;
-        recTime    = rec    > 0 ? curTime+infinityCooldownDelay : catrecTime;
-    }
-    else
-    {
-        // shoot spells used equipped item cooldown values already assigned in GetAttackTime(RANGED_ATTACK)
-        // prevent 0 cooldowns set by another way
-        if (rec <= 0 && catrec <= 0 && (cat == 76 || (IsAutoRepeatRangedSpell(spellInfo) && spellInfo->Id != SPELL_ID_AUTOSHOT)))
-            rec = GetAttackTime(RANGED_ATTACK);
-
-        // Now we have cooldown data (if found any), time to apply mods
-        if (rec > 0)
-            ApplySpellMod(spellInfo->Id, SPELLMOD_COOLDOWN, rec);
-
-        if (catrec > 0)
-            ApplySpellMod(spellInfo->Id, SPELLMOD_COOLDOWN, catrec);
-
-        // replace negative cooldowns by 0
-        if (rec < 0) rec = 0;
-        if (catrec < 0) catrec = 0;
-
-        // no cooldown after applying spell mods
-        if (rec == 0 && catrec == 0)
-            return;
-
-        catrecTime = catrec ? curTime+catrec/IN_MILLISECONDS : 0;
-        recTime    = rec ? curTime+rec/IN_MILLISECONDS : catrecTime;
-    }
-
-    // self spell cooldown
-    if (recTime > 0)
-        AddSpellCooldown(spellInfo->Id, itemId, recTime);
-
-    // category spells
-    if (cat && catrec > 0)
-    {
-        SpellCategoryStore::const_iterator i_scstore = sSpellCategoryStore.find(cat);
-        if (i_scstore != sSpellCategoryStore.end())
-        {
-            for (SpellCategorySet::const_iterator i_scset = i_scstore->second.begin(); i_scset != i_scstore->second.end(); ++i_scset)
-            {
-                if (*i_scset == spellInfo->Id)              // skip main spell, already handled above
-                    continue;
-
-                AddSpellCooldown(*i_scset, itemId, catrecTime);
-            }
-        }
-    }
-}
-
-void Player::AddSpellCooldown(uint32 spellid, uint32 itemid, time_t end_time)
-{
-    SpellCooldown sc;
-    sc.end = end_time;
-    sc.itemid = itemid;
-    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
-    m_spellCooldowns[spellid] = sc;
 }
 
 void Player::SendCooldownEvent(SpellEntry const *spellInfo, uint32 itemId)
@@ -20584,29 +20429,53 @@ bool Player::IsVisibleGloballyFor(Player* u) const
     return true;
 }
 
-template<class T>
-inline void BeforeVisibilityDestroy(T* /*t*/, Player* /*p*/)
+bool Player::HaveAtClient(ObjectGuid const& guid) const
 {
+    return  guid == GetObjectGuid() || 
+            (IsBoarded() && GetTransportInfo()->GetTransportGuid() == guid) ||
+            HasClientGuid(guid);
 }
 
-template<>
-inline void BeforeVisibilityDestroy<Creature>(Creature* t, Player* p)
+void Player::AddClientGuid(ObjectGuid const& guid)
 {
-    if (p->GetPetGuid() == t->GetObjectGuid() && ((Creature*)t)->IsPet())
+    MAPLOCK_WRITE(this,MAP_LOCK_TYPE_MAPOBJECTS);
+    m_clientGUIDs.insert(guid);
+}
+
+void Player::RemoveClientGuid(ObjectGuid const& guid)
+{
+    MAPLOCK_WRITE(this,MAP_LOCK_TYPE_MAPOBJECTS);
+    m_clientGUIDs.erase(guid);
+}
+
+bool Player::HasClientGuid(ObjectGuid const& guid) const
+{
+    MAPLOCK_READ(const_cast<Player*>(this),MAP_LOCK_TYPE_MAPOBJECTS);
+    return (m_clientGUIDs.find(guid) != m_clientGUIDs.end());
+}
+
+void Player::BeforeVisibilityDestroy(WorldObject* t)
+{
+    if (GetPetGuid() == t->GetObjectGuid() && ((Creature*)t)->IsPet())
         ((Pet*)t)->Unsummon(PET_SAVE_REAGENTS);
 }
 
 void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target)
 {
-    if (HaveAtClient(target))
+    if (HaveAtClient(target->GetObjectGuid()))
     {
         if (!target->isVisibleForInState(this, viewPoint, true))
         {
             ObjectGuid t_guid = target->GetObjectGuid();
 
-            if (target->GetTypeId()==TYPEID_UNIT)
+            if (GetMap()->IsVisibleGlobally(t_guid))
             {
-                BeforeVisibilityDestroy<Creature>((Creature*)target,this);
+            // FIXME - this code block temporary, only on test phase (seems as not need, but...)
+                target->AddNotifiedClient(GetObjectGuid());
+            }
+            else if (target->GetTypeId() == TYPEID_UNIT)
+            {
+                BeforeVisibilityDestroy(target);
 
                 // at remove from map (destroy) show kill animation (in different out of range/stealth case)
                 target->DestroyForPlayer(this, !target->IsInWorld() && ((Creature*)target)->isDead());
@@ -20614,57 +20483,45 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* targe
             else
                 target->DestroyForPlayer(this);
 
-            m_clientGUIDs.erase(t_guid);
+            RemoveClientGuid(t_guid);
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s out of range for player %u. Distance = %f",t_guid.GetString().c_str(),GetGUIDLow(),GetDistance(target));
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Player::UpdateVisibilityOf (by viewPoint) %s out of range for %s, distance = %f",t_guid.GetString().c_str(),GetObjectGuid().GetString().c_str(), GetDistance(target));
         }
     }
     else
     {
         if (target->isVisibleForInState(this, viewPoint, false))
         {
-            target->SendCreateUpdateToPlayer(this);
-            if (target->GetTypeId()!=TYPEID_GAMEOBJECT||!((GameObject*)target)->IsTransport())
-                m_clientGUIDs.insert(target->GetObjectGuid());
+            if (!GetMap()->IsVisibleGlobally(target->GetObjectGuid()))
+            {
+                target->SendCreateUpdateToPlayer(this);
+                AddClientGuid(target->GetObjectGuid());
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Object %u (Type: %u) is visible now for player %u. Distance = %f",target->GetGUIDLow(),target->GetTypeId(),GetGUIDLow(),GetDistance(target));
+                DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Player::UpdateVisibilityOf (by viewPoint) %s is visible now for %s, distance = %f", target->GetObjectGuid().GetString().c_str(), GetObjectGuid().GetString().c_str(), GetDistance(target));
 
-            // target aura duration for caster show only if target exist at caster client
-            // send data at target visibility change (adding to client)
-            if (target!=this && target->isType(TYPEMASK_UNIT))
-                SendAurasForTarget((Unit*)target);
+                // target aura duration for caster show only if target exist at caster client
+                // send data at target visibility change (adding to client)
+                if (target != this && target->isType(TYPEMASK_UNIT))
+                    SendAurasForTarget((Unit*)target);
+            }
         }
     }
 }
 
-template<class T>
-inline void UpdateVisibilityOf_helper(GuidSet& s64, T* target)
+void Player::UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target, UpdateData& data, WorldObjectSet& visibleNow)
 {
-    s64.insert(target->GetObjectGuid());
-}
-
-template<>
-inline void UpdateVisibilityOf_helper(GuidSet& s64, GameObject* target)
-{
-    if (!target->IsTransport())
-        s64.insert(target->GetObjectGuid());
-}
-
-template<class T>
-void Player::UpdateVisibilityOf(WorldObject const* viewPoint, T* target, UpdateData& data, WorldObjectSet& visibleNow)
-{
-    if (HaveAtClient(target))
+    if (HaveAtClient(target->GetObjectGuid()))
     {
         if (!target->isVisibleForInState(this,viewPoint,true))
         {
-            BeforeVisibilityDestroy<T>(target,this);
+            BeforeVisibilityDestroy(target);
 
             ObjectGuid t_guid = target->GetObjectGuid();
 
             target->BuildOutOfRangeUpdateBlock(&data);
-            m_clientGUIDs.erase(t_guid);
+            RemoveClientGuid(t_guid);
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s is out of range for %s. Distance = %f", t_guid.GetString().c_str(), GetGuidStr().c_str(), GetDistance(target));
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Player::UpdateVisibilityOf %s is out of range for %s, distance = %f", t_guid.GetString().c_str(), GetGuidStr().c_str(), GetDistance(target));
         }
     }
     else
@@ -20673,18 +20530,12 @@ void Player::UpdateVisibilityOf(WorldObject const* viewPoint, T* target, UpdateD
         {
             visibleNow.insert(target);
             target->BuildCreateUpdateBlockForPlayer(&data, this);
-            UpdateVisibilityOf_helper(m_clientGUIDs,target);
+            AddClientGuid(target->GetObjectGuid());
 
-            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "%s is visible now for %s. Distance = %f", target->GetGuidStr().c_str(), GetGuidStr().c_str(), GetDistance(target));
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Player::UpdateVisibilityOf %s is visible now for %s, distance = %f", target->GetGuidStr().c_str(), GetGuidStr().c_str(), GetDistance(target));
         }
     }
 }
-
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Player*        target, UpdateData& data, WorldObjectSet& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Creature*      target, UpdateData& data, WorldObjectSet& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, Corpse*        target, UpdateData& data, WorldObjectSet& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, GameObject*    target, UpdateData& data, WorldObjectSet& visibleNow);
-template void Player::UpdateVisibilityOf(WorldObject const* viewPoint, DynamicObject* target, UpdateData& data, WorldObjectSet& visibleNow);
 
 void Player::SetPhaseMask(uint32 newPhaseMask, bool update)
 {
@@ -20807,6 +20658,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
         m_movementInfo.AddMovementFlag(MOVEFLAG_FLYING);
 
     SetMover(this);
+    SetViewPoint(NULL);
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
@@ -20850,8 +20702,8 @@ void Player::SendInitialPacketsAfterAddToMap()
     SendEnchantmentDurations();                             // must be after add to map
     SendItemDurations();                                    // must be after add to map
 
-    // "Fake movement" in current point - maked only for grid activating (seems not need make special method for this)
-    GetMap()->Relocation(this, GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
+    // only grid activating
+    GetMap()->ActivateGrid(GetPosition());
 }
 
 void Player::SendUpdateToOutOfRangeGroupMembers()
@@ -21308,12 +21160,12 @@ bool Player::HasQuestForGO(int32 GOId) const
 
 void Player::UpdateForQuestWorldObjects()
 {
-    if (m_clientGUIDs.empty() || !GetMap())
+    if (GetClientGuids().empty() || !GetMap())
         return;
 
     UpdateData udata;
     WorldPacket packet;
-    for (GuidSet::const_iterator itr=m_clientGUIDs.begin(); itr!=m_clientGUIDs.end(); ++itr)
+    for (GuidSet::const_iterator itr = GetClientGuids().begin(); itr != GetClientGuids().end(); ++itr)
     {
         if (itr->IsGameObject())
         {
@@ -21469,6 +21321,88 @@ bool Player::HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item cons
         default:
             sLog.outError("HasItemFitToSpellReqirements: Not handled spell requirement for item class %u",spellInfo->EquippedItemClass);
             break;
+    }
+
+    return false;
+}
+
+bool Player::HasItemFitToAreaTriggerReqirements(AreaTrigger const* at) const
+{
+    if (at->requiredItem)
+    {
+        if (!HasItemCount(at->requiredItem, 1) && (!at->requiredItem2 || !HasItemCount(at->requiredItem2, 1)))
+            return false;
+    }
+    else if (at->requiredItem2 && !HasItemCount(at->requiredItem2, 1))
+        return false;
+
+    return true;
+}
+
+bool Player::HasHeroicKeyFitToAreaTriggerReqirements(AreaTrigger const* at) const
+{
+    if (at->heroicKey)
+    {
+        if (!HasItemCount(at->heroicKey, 1) && (!at->heroicKey2 || !HasItemCount(at->heroicKey2, 1)))
+            return false;
+    }
+    else if (at->heroicKey2 && !HasItemCount(at->heroicKey2, 1))
+        return false;
+
+    return true;
+}
+
+bool Player::HasQuestFitToAreaTriggerReqirements(AreaTrigger const* at, bool isRegularTargetMap) const
+{
+    if (GetTeam() == ALLIANCE)
+    {
+        if ((!isRegularTargetMap &&
+            (at->requiredQuestHeroicA && !GetQuestRewardStatus(at->requiredQuestHeroicA))) ||
+            (isRegularTargetMap &&
+            (at->requiredQuestA && !GetQuestRewardStatus(at->requiredQuestA))))
+        {
+            return false;
+        }
+    }
+    else if (GetTeam() == HORDE)
+    {
+        if ((!isRegularTargetMap &&
+            (at->requiredQuestHeroicH && !GetQuestRewardStatus(at->requiredQuestHeroicH))) ||
+            (isRegularTargetMap &&
+            (at->requiredQuestH && !GetQuestRewardStatus(at->requiredQuestH))))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Player::HasAchievementFitToAreaTriggerReqirements(AreaTrigger const* at, Difficulty difficulty)
+{
+    uint32 uiAchievementID = 0;
+    if (difficulty == RAID_DIFFICULTY_10MAN_HEROIC)
+        uiAchievementID = at->achiev0;
+    else if (difficulty == RAID_DIFFICULTY_25MAN_HEROIC)
+        uiAchievementID = at->achiev1;
+
+    if (!uiAchievementID)
+        return true;
+
+    if (GetAchievementMgr().HasAchievement(uiAchievementID))
+        return true;
+
+    if (Group* group = GetGroup())
+    {
+        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+        {
+            Player* member = itr->getSource();
+            if (member && member->IsInWorld())
+            {
+                if (member->GetAchievementMgr().HasAchievement(uiAchievementID))
+                    return true;
+            }
+        }
     }
 
     return false;
@@ -21756,9 +21690,7 @@ void Player::UpdateZoneDependentAuras()
     // Some spells applied at enter into zone (with subzones), aura removed in UpdateAreaDependentAuras that called always at zone->area update
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_zoneUpdateId);
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-        if (itr->second->autocast && itr->second->IsFitToRequirements(this, m_zoneUpdateId, 0))
-            if (!HasAura(itr->second->spellId, EFFECT_INDEX_0))
-                CastSpell(this,itr->second->spellId,true);
+        itr->second->ApplyOrRemoveSpellIfCan(this, m_zoneUpdateId, 0, true);
 }
 
 void Player::UpdateAreaDependentAuras()
@@ -21783,9 +21715,7 @@ void Player::UpdateAreaDependentAuras()
     // some auras applied at subzone enter
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_areaUpdateId);
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-        if (itr->second->autocast && itr->second->IsFitToRequirements(this, m_zoneUpdateId, m_areaUpdateId))
-            if (!HasAura(itr->second->spellId, EFFECT_INDEX_0))
-                CastSpell(this,itr->second->spellId,true);
+        itr->second->ApplyOrRemoveSpellIfCan(this, m_zoneUpdateId, m_areaUpdateId, true);
 }
 
 struct UpdateZoneDependentPetsHelper
@@ -21973,10 +21903,10 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
         m_MirrorTimerFlags &= ~(UNDERWATER_INWATER | UNDERWATER_INLAVA | UNDERWATER_INSLIME | UNDERWATER_INDARKWATER);
         if (m_lastLiquid && m_lastLiquid->SpellId)
         {
-            RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            RemoveAurasDueToSpell(m_lastLiquid->SpellId == 37025 ? 37284 : m_lastLiquid->SpellId);
             if (GetVehicle() && GetVehicle()->GetBase())
             {
-                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+                GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId == 37025 ? 37284 : m_lastLiquid->SpellId);
             }
         }
         m_lastLiquid = NULL;
@@ -21999,21 +21929,43 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
 
         if (liquid && liquid->SpellId)
         {
+            // Exception for SSC water
+            uint32 liquidSpellId = liquid->SpellId == 37025 ? 37284 : liquid->SpellId;
+
             if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER))
             {
-                if (SpellEntry const *pSpellEntry = sSpellStore.LookupEntry(liquid->SpellId))
+                if (SpellEntry const* pSpellEntry = sSpellStore.LookupEntry(liquidSpellId))
                 {
-                    // check aura for no double cast
-                    if (!HasAura(liquid->SpellId))
+                    // check aura for no double cast (FIXME! seems as big hack...)
+                    if (!HasAura(liquidSpellId))
                     {
-                        if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, this))
+                        // Handle exception for SSC water
+                        if (liquid->SpellId == 37025)
+                        {
+                            if (InstanceData* pInst = GetInstanceData())
+                            {
+                                if (pInst->CheckConditionCriteriaMeet(this, INSTANCE_CONDITION_ID_LURKER, NULL, CONDITION_FROM_HARDCODED))
+                                {
+                                    if (pInst->CheckConditionCriteriaMeet(this, INSTANCE_CONDITION_ID_SCALDING_WATER, NULL, CONDITION_FROM_HARDCODED))
+                                        CastSpell(this, liquidSpellId, true);
+                                    else
+                                    {
+                                        SummonCreature(21508, TEMPSUMMON_TIMED_OOC_DESPAWN, 2000);
+                                        // Special update timer for the SSC water
+                                        m_positionStatusUpdateTimer = 2000;
+                                    }
+                                }
+                            }
+                        }
+                        else if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, this))
                         {
                             CastSpell(this, pSpellEntry, true);
                         }
                     }
+
                     if (GetVehicle() && GetVehicle()->GetBase())
                     {
-                        if (!GetVehicle()->GetBase()->HasAura(liquid->SpellId))
+                        if (!GetVehicle()->GetBase()->HasAura(liquidSpellId))
                         {
                             if (SpellMgr::IsTargetMatchedWithCreatureType(pSpellEntry, GetVehicle()->GetBase()))
                             {
@@ -22026,10 +21978,10 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
             else
             {
                 // Player is above Water or walk on Water
-                RemoveAurasDueToSpell(liquid->SpellId);
+                RemoveAurasDueToSpell(liquidSpellId);
                 if (GetVehicle() && GetVehicle()->GetBase())
                 {
-                    GetVehicle()->GetBase()->RemoveAurasDueToSpell(liquid->SpellId);
+                    GetVehicle()->GetBase()->RemoveAurasDueToSpell(liquidSpellId);
                 }
             }
         }
@@ -22039,11 +21991,12 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
     else if (m_lastLiquid && m_lastLiquid->SpellId)
     {
         // Player change to no specific LiquidEntry (= 0)
-        RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+        RemoveAurasDueToSpell(m_lastLiquid->SpellId == 37025 ? 37284 : m_lastLiquid->SpellId);
         if (GetVehicle() && GetVehicle()->GetBase())
         {
-            GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId);
+            GetVehicle()->GetBase()->RemoveAurasDueToSpell(m_lastLiquid->SpellId == 37025 ? 37284 : m_lastLiquid->SpellId);
         }
+        m_lastLiquid = NULL;
     }
 
     // All liquids type - check under water position
@@ -22056,7 +22009,7 @@ void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)
     }
 
     // Allow travel in dark water on taxi or transport
-    if ((liquid_status.type_flags & MAP_LIQUID_TYPE_DARK_WATER) && !IsTaxiFlying() && !GetTransport())
+    if ((liquid_status.type_flags & MAP_LIQUID_TYPE_DARK_WATER) && !IsTaxiFlying() && !IsOnTransport())
         m_MirrorTimerFlags |= UNDERWATER_INDARKWATER;
     else
         m_MirrorTimerFlags &= ~UNDERWATER_INDARKWATER;
@@ -23098,7 +23051,7 @@ bool Player::canSeeSpellClickOn(Creature const *c) const
 
     SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(c->GetEntry());
     for (SpellClickInfoMap::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
-        if (itr->second.IsFitToRequirements(this))
+        if (itr->second.IsFitToRequirements(this, c))
             return true;
 
     return false;
@@ -23770,8 +23723,16 @@ void Player::SetHomebindToLocation(WorldLocation const& loc)
     m_homebind = loc;
 
     // update sql homebind
-    CharacterDatabase.PExecute("UPDATE character_homebind SET map = '%u', zone = '%u', position_x = '%f', position_y = '%f', position_z = '%f' WHERE guid = '%u'",
-        m_homebind.GetMapId(), m_homebind.GetAreaId(), m_homebind.x, m_homebind.y, m_homebind.z, GetGUIDLow());
+    static SqlStatementID saveHomebind;
+    SqlStatement stmt = CharacterDatabase.CreateStatement(saveHomebind, "REPLACE INTO character_homebind (guid, map, zone, position_x, position_y, position_z) VALUES (?, ?, ?, ?, ?, ?)");
+
+    stmt.addUInt32(GetGUIDLow());
+    stmt.addUInt32(m_homebind.GetMapId());
+    stmt.addUInt32(m_homebind.GetAreaId());
+    stmt.addFloat(m_homebind.x);
+    stmt.addFloat(m_homebind.y);
+    stmt.addFloat(m_homebind.z);
+    stmt.Execute();
 }
 
 Object* Player::GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask)
@@ -24017,18 +23978,18 @@ void Player::LoadAccountLinkedState()
     if (referredAccounts)
     {
         if (referredAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS))
-            sLog.outError("Player:RAF:Warning: loaded %u referred accounts instead of %u for player %s",referredAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetString().c_str());
+            sLog.outError("Player:RAF:Warning: loaded "SIZEFMTD" referred accounts instead of %u for player %s",referredAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERERS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referred accounts for player %s",referredAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded "SIZEFMTD" referred accounts for player %s",referredAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 
     RafLinkedList const* referalAccounts = sAccountMgr.GetRAFAccounts(GetSession()->GetAccountId(), false);
     if (referalAccounts)
     {
         if (referalAccounts->size() > sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS))
-            sLog.outError("Player:RAF:Warning: loaded %u referal accounts instead of %u for player %s",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
+            sLog.outError("Player:RAF:Warning: loaded "SIZEFMTD" referal accounts instead of %u for player %s",referalAccounts->size(),sWorld.getConfig(CONFIG_UINT32_RAF_MAXREFERALS),GetObjectGuid().GetString().c_str());
         else
-            DEBUG_LOG("Player:RAF: loaded %u referal accounts for player %s",referalAccounts->size(),GetObjectGuid().GetString().c_str());
+            DEBUG_LOG("Player:RAF: loaded "SIZEFMTD" referal accounts for player %s",referalAccounts->size(),GetObjectGuid().GetString().c_str());
     }
 }
 
@@ -24060,11 +24021,11 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
     if (!at)
         return AREA_LOCKSTATUS_UNKNOWN_ERROR;
 
-    MapEntry const* mapEntry = sMapStore.LookupEntry(at->target_mapId);
+    MapEntry const* mapEntry = sMapStore.LookupEntry(at->loc.GetMapId());
     if (!mapEntry)
         return AREA_LOCKSTATUS_UNKNOWN_ERROR;
 
-    MapDifficultyEntry const* mapDiff = GetMapDifficultyData(at->target_mapId,difficulty);
+    MapDifficultyEntry const* mapDiff = GetMapDifficultyData(at->loc.GetMapId(),difficulty);
     if (mapEntry->IsDungeon() && !mapDiff)
         return AREA_LOCKSTATUS_MISSING_DIFFICULTY;
 
@@ -24082,74 +24043,23 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
             return AREA_LOCKSTATUS_RAID_LOCKED;
 
     // must have one or the other, report the first one that's missing
-    if (at->requiredItem)
-    {
-        if (!HasItemCount(at->requiredItem, 1) &&
-            (!at->requiredItem2 || !HasItemCount(at->requiredItem2, 1)))
-            return AREA_LOCKSTATUS_MISSING_ITEM;
-    }
-    else if (at->requiredItem2 && !HasItemCount(at->requiredItem2, 1))
+    if (!HasItemFitToAreaTriggerReqirements(at))
         return AREA_LOCKSTATUS_MISSING_ITEM;
 
     bool isRegularTargetMap = GetDifficulty(mapEntry->IsRaid()) == REGULAR_DIFFICULTY;
 
-    if (!isRegularTargetMap)
-    {
-        if (at->heroicKey)
-        {
-            if (!HasItemCount(at->heroicKey, 1) &&
-                (!at->heroicKey2 || !HasItemCount(at->heroicKey2, 1)))
-                return AREA_LOCKSTATUS_MISSING_ITEM;
-        }
-        else if (at->heroicKey2 && !HasItemCount(at->heroicKey2, 1))
-            return AREA_LOCKSTATUS_MISSING_ITEM;
-    }
+    if (!isRegularTargetMap && !HasHeroicKeyFitToAreaTriggerReqirements(at))
+        return AREA_LOCKSTATUS_MISSING_ITEM;
 
-    if (GetTeam() == ALLIANCE)
-    {
-        if ((!isRegularTargetMap &&
-            (at->requiredQuestHeroicA && !GetQuestRewardStatus(at->requiredQuestHeroicA))) ||
-            (isRegularTargetMap &&
-            (at->requiredQuestA && !GetQuestRewardStatus(at->requiredQuestA))))
-            return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
-    }
-    else if (GetTeam() == HORDE)
-    {
-        if ((!isRegularTargetMap &&
-            (at->requiredQuestHeroicH && !GetQuestRewardStatus(at->requiredQuestHeroicH))) ||
-            (isRegularTargetMap &&
-            (at->requiredQuestH && !GetQuestRewardStatus(at->requiredQuestH))))
-            return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
-    }
+    if (!HasQuestFitToAreaTriggerReqirements(at, isRegularTargetMap))
+        return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
 
-    uint32 achievCheck = 0;
-    if (difficulty == RAID_DIFFICULTY_10MAN_HEROIC)
-        achievCheck = at->achiev0;
-    else if (difficulty == RAID_DIFFICULTY_25MAN_HEROIC)
-        achievCheck = at->achiev1;
-
-    if (achievCheck)
-    {
-        bool bHasAchiev = false;
-        if (GetAchievementMgr().HasAchievement(achievCheck))
-            bHasAchiev = true;
-        else if (Group* group = GetGroup())
-        {
-            for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            {
-                Player* member = itr->getSource();
-                if (member && member->IsInWorld())
-                    if (member->GetAchievementMgr().HasAchievement(achievCheck))
-                        bHasAchiev = true;
-            }
-        }
-        if (!bHasAchiev)
-            return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
-    }
+    if (!HasAchievementFitToAreaTriggerReqirements(at, difficulty))
+        return AREA_LOCKSTATUS_QUEST_NOT_COMPLETED;
 
     // If the map is not created, assume it is possible to enter it.
-    DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(at->target_mapId);
-    Map* map = sMapMgr.FindMap(at->target_mapId, state ? state->GetInstanceId() : 0);
+    DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(at->loc.GetMapId());
+    Map* map = sMapMgr.FindMap(at->loc.GetMapId(), state ? state->GetInstanceId() : 0);
 
     if (map && at->combatMode == 1)
     {
@@ -24162,10 +24072,10 @@ AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, Difficult
     if (map && map->IsDungeon())
     {
         // cannot enter if the instance is full (player cap), GMs don't count
-        if (((DungeonMap*)map)->GetPlayersCountExceptGMs() >= ((DungeonMap*)map)->GetMaxPlayers())
+        if (((DungeonMap*)map)->isFull())
             return AREA_LOCKSTATUS_INSTANCE_IS_FULL;
 
-        InstancePlayerBind* pBind = GetBoundInstance(at->target_mapId, GetDifficulty(mapEntry->IsRaid()));
+        InstancePlayerBind* pBind = GetBoundInstance(at->loc.GetMapId(), GetDifficulty(mapEntry->IsRaid()));
         if (pBind && pBind->perm && pBind->state != state)
             return AREA_LOCKSTATUS_HAS_BIND;
 
@@ -24227,10 +24137,10 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
     if (!at)
         return false;
 
-    if (at->target_mapId == GetMapId())
+    if (at->loc.GetMapId() == GetMapId())
         return true;
 
-    MapEntry const* targetMapEntry = sMapStore.LookupEntry(at->target_mapId);
+    MapEntry const* targetMapEntry = sMapStore.LookupEntry(at->loc.GetMapId());
 
     if (!targetMapEntry)
         return false;
@@ -24266,11 +24176,11 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
             }
 
             // need find areatrigger to inner dungeon for landing point
-            if (at->target_mapId != corpseMapId)
+            if (at->loc.GetMapId() != corpseMapId)
             {
                 if (AreaTrigger const* corpseAt = sObjectMgr.GetMapEntranceTrigger(corpseMapId))
                 {
-                    targetMapEntry = sMapStore.LookupEntry(corpseAt->target_mapId);
+                    targetMapEntry = sMapStore.LookupEntry(corpseAt->loc.GetMapId());
                     at = corpseAt;
                 }
             }
@@ -24283,7 +24193,7 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
 
     AreaLockStatus status = GetAreaTriggerLockStatus(at, GetDifficulty(targetMapEntry->IsRaid()));
 
-    DEBUG_LOG("Player::CheckTransferPossibility %s check lock status of map %u (difficulty %u), result is %u", GetGuidStr().c_str(), at->target_mapId, GetDifficulty(targetMapEntry->IsRaid()), status);
+    DEBUG_LOG("Player::CheckTransferPossibility %s check lock status of map %u (difficulty %u), result is %u", GetGuidStr().c_str(), at->loc.GetMapId(), GetDifficulty(targetMapEntry->IsRaid()), status);
 
     if (b_onlyMainReq)
     {
@@ -24308,13 +24218,13 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
             GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_LEVEL_MINREQUIRED), at->requiredLevel);
             return false;
         case AREA_LOCKSTATUS_ZONE_IN_COMBAT:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_ZONE_IN_COMBAT);
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_ZONE_IN_COMBAT);
             return false;
         case AREA_LOCKSTATUS_INSTANCE_IS_FULL:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_MAX_PLAYERS);
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_MAX_PLAYERS);
             return false;
         case AREA_LOCKSTATUS_QUEST_NOT_COMPLETED:
-            if (at->target_mapId == 269)
+            if (at->loc.GetMapId() == 269)
             {
                 GetSession()->SendAreaTriggerMessage(GetSession()->GetMangosString(LANG_TELEREQ_QUEST_BLACK_MORASS));
                 return false;
@@ -24334,32 +24244,32 @@ bool Player::CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq
         case AREA_LOCKSTATUS_MISSING_DIFFICULTY:
             {
                 Difficulty difficulty = GetDifficulty(targetMapEntry->IsRaid());
-                SendTransferAborted(at->target_mapId, TRANSFER_ABORT_DIFFICULTY, difficulty > RAID_DIFFICULTY_10MAN_HEROIC ? RAID_DIFFICULTY_10MAN_HEROIC : difficulty);
+                SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_DIFFICULTY, difficulty > RAID_DIFFICULTY_10MAN_HEROIC ? RAID_DIFFICULTY_10MAN_HEROIC : difficulty);
                 return false;
             }
         case AREA_LOCKSTATUS_INSUFFICIENT_EXPANSION:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_INSUF_EXPAN_LVL, targetMapEntry->Expansion());
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_INSUF_EXPAN_LVL, targetMapEntry->Expansion());
             return false;
         case AREA_LOCKSTATUS_NOT_ALLOWED:
         case AREA_LOCKSTATUS_HAS_BIND:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_MAP_NOT_ALLOWED);
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_MAP_NOT_ALLOWED);
             return false;
         // TODO: messages for other cases
         case AREA_LOCKSTATUS_RAID_LOCKED:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_NEED_GROUP);
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_NEED_GROUP);
             return false;
         // TODO: messages for other cases
         case AREA_LOCKSTATUS_UNKNOWN_ERROR:
         default:
-            SendTransferAborted(at->target_mapId, TRANSFER_ABORT_ERROR);
-            sLog.outError("Player::CheckTransferPossibility player %s has unhandled AreaLockStatus %u in map %u (difficulty %u), do nothing", GetGuidStr().c_str(), status, at->target_mapId, GetDifficulty(targetMapEntry->IsRaid()));
+            SendTransferAborted(at->loc.GetMapId(), TRANSFER_ABORT_ERROR);
+            sLog.outError("Player::CheckTransferPossibility player %s has unhandled AreaLockStatus %u in map %u (difficulty %u), do nothing", GetGuidStr().c_str(), status, at->loc.GetMapId(), GetDifficulty(targetMapEntry->IsRaid()));
             return false;
     }
 
     return false;
 };
 
-bool Player::NeedGoingToHomebind()
+bool Player::NeedEjectFromThisMap()
 {
     MapEntry const* mapEntry = sMapStore.LookupEntry(GetMapId());
 
@@ -24389,7 +24299,7 @@ bool Player::NeedGoingToHomebind()
         if (!isAlive())
             return false;
 
-        if (((DungeonMap*)map)->GetPlayersCountExceptGMs() >= ((DungeonMap*)map)->GetMaxPlayers())
+        if (((DungeonMap*)map)->isFull())
             return true;
 
         InstancePlayerBind* pBind = GetBoundInstance(GetMapId(), GetDifficulty(mapEntry->IsRaid()));
@@ -24398,6 +24308,25 @@ bool Player::NeedGoingToHomebind()
 
         if ((mapEntry->IsRaid() && !sWorld.getConfig(CONFIG_BOOL_INSTANCE_IGNORE_RAID)) && (!GetGroup() || !GetGroup()->isRaidGroup()))
             return true;
+
+        AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(GetMapId());
+        if (at)
+        {
+            if (!HasItemFitToAreaTriggerReqirements(at))
+                return true;
+
+            Difficulty difficulty = GetDifficulty(mapEntry->IsRaid());
+
+            if (difficulty != REGULAR_DIFFICULTY && !HasHeroicKeyFitToAreaTriggerReqirements(at))
+                return true;
+
+            if (!HasQuestFitToAreaTriggerReqirements(at, difficulty == REGULAR_DIFFICULTY))
+                return true;
+
+            if (!HasAchievementFitToAreaTriggerReqirements(at, difficulty))
+                return true;
+        }
+
     }
 
     return false;

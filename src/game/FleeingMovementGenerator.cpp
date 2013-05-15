@@ -50,7 +50,7 @@ void FleeingMovementGenerator<T>::_setTargetLocation(T& owner)
         return;
     }
 
-    Movement::MoveSplineInit init(owner);
+    Movement::MoveSplineInit<Unit*> init(owner);
     init.MovebyPath(path.getPath());
     init.SetWalk(false);
     int32 traveltime = init.Launch();
@@ -129,6 +129,7 @@ void FleeingMovementGenerator<Creature>::Finalize(Creature& owner)
 template<class T>
 void FleeingMovementGenerator<T>::Interrupt(T& owner)
 {
+    owner.InterruptMoving();
     // flee state still applied while movegen disabled
     owner.clearUnitState(UNIT_STAT_FLEEING | UNIT_STAT_FLEEING_MOVE);
 }

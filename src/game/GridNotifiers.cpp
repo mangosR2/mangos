@@ -42,28 +42,33 @@ void VisibleNotifier::Notify()
     Player& player = *i_camera.GetOwner();
     // at this moment i_clientGUIDs have guids that not iterate at grid level checks
     // but exist one case when this possible and object not out of range: transports
+    // FIXME - need remove this hack after full repair per-grid visibility on transport!
     if (Transport* transport = player.GetTransport())
-    {
-        for (Transport::PlayerSet::const_iterator itr = transport->GetPassengers().begin(); itr != transport->GetPassengers().end(); ++itr)
-        {
-            if (i_clientGUIDs.find((*itr)->GetObjectGuid()) != i_clientGUIDs.end())
-            {
-                // ignore far sight case
-                (*itr)->UpdateVisibilityOf(*itr, &player);
-                player.UpdateVisibilityOf(&player, *itr, i_data, i_visibleNow);
-                i_clientGUIDs.erase((*itr)->GetObjectGuid());
-            }
-        }
-    }
+        transport->GetTransportBase()->CallForAllPassengers(UpdateVisibilityOfWithHelper(player, i_clientGUIDs, i_data, i_visibleNow));
 
     // generate outOfRange for not iterate objects
-    i_data.AddOutOfRangeGUID(i_clientGUIDs);
     for (GuidSet::iterator itr = i_clientGUIDs.begin(); itr != i_clientGUIDs.end(); ++itr)
     {
         ObjectGuid guid = *itr;
-        player.m_clientGUIDs.erase(guid);
-        DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify %s is out of range (no in active cells set) now for %s",
-                         guid.GetString().c_str(), player.GetGuidStr().c_str());
+        if (!player.GetMap()->IsVisibleGlobally(guid))
+        {
+            i_data.AddOutOfRangeGUID(guid);
+            player.RemoveClientGuid(guid);
+            DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify %s is out of range (no in active cells set) now for %s",
+                          guid.GetString().c_str(), player.GetGuidStr().c_str());
+        }
+        else
+        {
+            if (WorldObject* object = player.GetMap()->GetWorldObject(guid))
+            {
+                object->AddNotifiedClient(player.GetObjectGuid());
+                DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify try make %s is out of range for %s, but his visible globally (distance %f). Need check movement trajectory.",
+                        guid.GetString().c_str(), player.GetGuidStr().c_str(), player.GetDistance(object));
+            }
+            else
+                i_data.AddOutOfRangeGUID(guid);
+            player.RemoveClientGuid(guid);
+        }
     }
 
     if (i_data.HasData())
@@ -299,5 +304,4 @@ bool MaNGOS::AnyAssistCreatureInRangeCheck::operator()(Creature* u)
     return true;
 }
 
-template void ObjectUpdater::Visit<GameObject>(GameObjectMapType&);
 template void ObjectUpdater::Visit<DynamicObject>(DynamicObjectMapType&);

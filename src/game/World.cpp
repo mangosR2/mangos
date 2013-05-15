@@ -47,7 +47,7 @@
 #include "MapManager.h"
 #include "ScriptMgr.h"
 #include "CreatureAIRegistry.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "BattleGround/BattleGroundMgr.h"
 #include "Language.h"
 #include "OutdoorPvP/OutdoorPvP.h"
@@ -84,7 +84,7 @@ float World::m_MaxVisibleDistanceInFlight     = DEFAULT_VISIBILITY_DISTANCE;
 float World::m_VisibleUnitGreyDistance        = 0;
 float World::m_VisibleObjectGreyDistance      = 0;
 
-float  World::m_relocation_lower_limit_sq     = 10.f * 10.f;
+float  World::m_relocation_lower_limit        = 10.0f;
 uint32 World::m_relocation_ai_notify_delay    = 1000u;
 
 /// World constructor
@@ -471,7 +471,7 @@ void World::LoadConfigSettings(bool reload)
         setConfig(CONFIG_BOOL_VMSS_ENABLE, "fakeString", false);
     }
 #endif
- 
+
     setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
     setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
@@ -595,6 +595,8 @@ void World::LoadConfigSettings(bool reload)
     setConfigMinMax(CONFIG_UINT32_MAPUPDATE_MAXVISITORS, "MapUpdate.MaxVisitorsInUpdate", 9, 1, 50);
     setConfigMinMax(CONFIG_UINT32_MAPUPDATE_MAXVISITS, "MapUpdate.MaxVisitsInUpdate", 20, 10, 100);
 
+    setConfigMinMax(CONFIG_UINT32_POSITION_UPDATE_DELAY, "MapUpdate.PositionUpdateDelay", 400, 100, 2000);
+
     setConfigMinMax(CONFIG_UINT32_OBJECTLOADINGSPLITTER_ALLOWEDTIME, "ObjectLoadingSplitter.MaxAllowedTime", 10, 5, 1000);
 
     setConfig(CONFIG_UINT32_INTERVAL_CHANGEWEATHER, "ChangeWeatherInterval", 10 * MINUTE * IN_MILLISECONDS);
@@ -713,8 +715,9 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_INSTANCE_IGNORE_RAID,  "Instance.IgnoreRaid", false);
 
     setConfig(CONFIG_BOOL_CAST_UNSTUCK, "CastUnstuck", true);
-    setConfig(CONFIG_UINT32_MAX_SPELL_CASTS_IN_CHAIN, "MaxSpellCastsInChain", 10);
+    setConfig(CONFIG_UINT32_MAX_SPELL_CASTS_IN_CHAIN, "MaxSpellCastsInChain", 20);
     setConfig(CONFIG_UINT32_BIRTHDAY_TIME, "BirthdayTime", 1125180000);
+    setConfig(CONFIG_UINT32_RABBIT_DAY, "RabbitDay", 0);
 
     setConfig(CONFIG_UINT32_INSTANCE_RESET_TIME_HOUR, "Instance.ResetTimeHour", 4);
     setConfig(CONFIG_UINT32_INSTANCE_UNLOAD_DELAY,    "Instance.UnloadDelay", 30 * MINUTE * IN_MILLISECONDS);
@@ -922,8 +925,10 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_BOOL_ALLOW_FLIGHT_ON_OLD_MAPS, "AllowFlightOnOldMaps", false);
 
+    setConfig(CONFIG_BOOL_DYNAMIC_VMAP_DOUBLE_CHECK,"vmap.Dynamic.DoubleCheck", false);
+
     m_relocation_ai_notify_delay = sConfig.GetIntDefault("Visibility.AIRelocationNotifyDelay", 1000u);
-    m_relocation_lower_limit_sq  = pow(sConfig.GetFloatDefault("Visibility.RelocationLowerLimit",10), 2);
+    m_relocation_lower_limit     = sConfig.GetFloatDefault("Visibility.RelocationLowerLimit", 10.0f);
 
     m_VisibleUnitGreyDistance = sConfig.GetFloatDefault("Visibility.Distance.Grey.Unit", 1);
     if (m_VisibleUnitGreyDistance >  MAX_VISIBILITY_DISTANCE)
@@ -1051,58 +1056,71 @@ void World::LoadConfigSettings(bool reload)
     }
 
     // read chat log parameters
-    sChatLog.ChatLogEnable = sConfig.GetBoolDefault("ChatLogEnable", false);
-    sChatLog.ChatLogDateSplit = sConfig.GetBoolDefault("ChatLogDateSplit", false);
-    sChatLog.ChatLogUTFHeader = sConfig.GetBoolDefault("ChatLogUTFHeader", false);
-    sChatLog.ChatLogIgnoreUnprintable = sConfig.GetBoolDefault("ChatLogIgnoreUnprintable", false);
+    sChatLog.m_uiChatLogMethod = (ChatLogMethod)sConfig.GetIntDefault("ChatLogMethod", 0);
+
+    sChatLog.m_bChatLogDateSplit         = sConfig.GetBoolDefault("ChatLogDateSplit",         true);
+    sChatLog.m_bChatLogUTFHeader         = sConfig.GetBoolDefault("ChatLogUTFHeader",         true);
+    sChatLog.m_bChatLogIgnoreUnprintable = sConfig.GetBoolDefault("ChatLogIgnoreUnprintable", true);
 
     // read chat log file names
-    sChatLog.names[CHAT_LOG_CHAT] = sConfig.GetStringDefault("ChatLogChatFile", "");
-    sChatLog.names[CHAT_LOG_PARTY] = sConfig.GetStringDefault("ChatLogPartyFile", "");
-    sChatLog.names[CHAT_LOG_GUILD] = sConfig.GetStringDefault("ChatLogGuildFile", "");
-    sChatLog.names[CHAT_LOG_WHISPER] = sConfig.GetStringDefault("ChatLogWhisperFile", "");
-    sChatLog.names[CHAT_LOG_CHANNEL] = sConfig.GetStringDefault("ChatLogChannelFile", "");
-    sChatLog.names[CHAT_LOG_RAID] = sConfig.GetStringDefault("ChatLogRaidFile", "");
-    sChatLog.names[CHAT_LOG_BATTLEGROUND] = sConfig.GetStringDefault("ChatLogBattleGroundFile", "");
+    sChatLog.m_sLogsDir                             = sConfig.GetStringDefault("ChatLogsDirectory",       "");
+    sChatLog.m_sLogFileNames[CHAT_LOG_CHAT]         = sConfig.GetStringDefault("ChatLogChatFile",         "main_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_PARTY]        = sConfig.GetStringDefault("ChatLogPartyFile",        "party_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_GUILD]        = sConfig.GetStringDefault("ChatLogGuildFile",        "guild_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_WHISPER]      = sConfig.GetStringDefault("ChatLogWhisperFile",      "whisper_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_CHANNEL]      = sConfig.GetStringDefault("ChatLogChannelFile",      "channel_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_RAID]         = sConfig.GetStringDefault("ChatLogRaidFile",         "raid_chat-$d.log");
+    sChatLog.m_sLogFileNames[CHAT_LOG_BATTLEGROUND] = sConfig.GetStringDefault("ChatLogBattleGroundFile", "bg_chat-$d.log");
 
     // read screen log flags
-    sChatLog.screenflag[CHAT_LOG_CHAT] = sConfig.GetBoolDefault("ChatLogChatScreen", false);
-    sChatLog.screenflag[CHAT_LOG_PARTY] = sConfig.GetBoolDefault("ChatLogPartyScreen", false);
-    sChatLog.screenflag[CHAT_LOG_GUILD] = sConfig.GetBoolDefault("ChatLogGuildScreen", false);
-    sChatLog.screenflag[CHAT_LOG_WHISPER] = sConfig.GetBoolDefault("ChatLogWhisperScreen", false);
-    sChatLog.screenflag[CHAT_LOG_CHANNEL] = sConfig.GetBoolDefault("ChatLogChannelScreen", false);
-    sChatLog.screenflag[CHAT_LOG_RAID] = sConfig.GetBoolDefault("ChatLogRaidScreen", false);
-    sChatLog.screenflag[CHAT_LOG_BATTLEGROUND] = sConfig.GetBoolDefault("ChatLogBattleGroundScreen", false);
-
-    // lexics cutter
-    sChatLog.LexicsCutterEnable = sConfig.GetBoolDefault("LexicsCutterEnable", false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_CHAT]         = sConfig.GetBoolDefault("ChatLogChatScreen",         false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_PARTY]        = sConfig.GetBoolDefault("ChatLogPartyScreen",        false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_GUILD]        = sConfig.GetBoolDefault("ChatLogGuildScreen",        false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_WHISPER]      = sConfig.GetBoolDefault("ChatLogWhisperScreen",      false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_CHANNEL]      = sConfig.GetBoolDefault("ChatLogChannelScreen",      false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_RAID]         = sConfig.GetBoolDefault("ChatLogRaidScreen",         false);
+    sChatLog.m_bScreenFlag[CHAT_LOG_BATTLEGROUND] = sConfig.GetBoolDefault("ChatLogBattleGroundScreen", false);
 
     // initialize lexics cutter parameters
-    sChatLog.LexicsCutterInnormativeCut = sConfig.GetBoolDefault("LexicsCutterInnormativeCut", true);
-    sChatLog.LexicsCutterNoActionOnGM = sConfig.GetBoolDefault("LexicsCutterNoActionOnGM", true);
-    sChatLog.LexicsCutterScreenLog = sConfig.GetBoolDefault("LexicsCutterScreenLog", false);
-    sChatLog.LexicsCutterCutReplacement = sConfig.GetStringDefault("LexicsCutterCutReplacement", "&!@^%!^&*!!! [gibberish]");
-    sChatLog.LexicsCutterAction = sConfig.GetIntDefault("LexicsCutterAction", 0);
-    sChatLog.LexicsCutterActionDuration = sConfig.GetIntDefault("LexicsCutterActionDuration", 60000);
-    sChatLog.LexicsCutterIgnoreLetterRepeat = sConfig.GetBoolDefault("LexicsCutterIgnoreRepeats", true);
-    sChatLog.LexicsCutterIgnoreMiddleSpaces = sConfig.GetBoolDefault("LexicsCutterIgnoreSpaces", true);
-    sChatLog.fn_analogsfile = sConfig.GetStringDefault("LexicsCutterAnalogsFile", "");
-    sChatLog.fn_wordsfile = sConfig.GetStringDefault("LexicsCutterWordsFile", "");
-    sChatLog.fn_innormative = sConfig.GetStringDefault("LexicsCutterLogFile", "");
+    sChatLog.m_bLexicsCutterEnable         = sConfig.GetBoolDefault("LexicsCutterEnable",         false);
+    sChatLog.m_bLexicsCutterInnormativeCut = sConfig.GetBoolDefault("LexicsCutterInnormativeCut", true);
+    sChatLog.m_bLexicsCutterNoActionOnGM   = sConfig.GetBoolDefault("LexicsCutterNoActionOnGM",   true);
+    sChatLog.m_bLexicsCutterScreenLog      = sConfig.GetBoolDefault("LexicsCutterScreenLog",      false);
+
+    sChatLog.m_iLexicsCutterAction         = sConfig.GetIntDefault("LexicsCutterAction",         LEXICS_ACTION_LOG);
+    sChatLog.m_iLexicsCutterActionDuration = sConfig.GetIntDefault("LexicsCutterActionDuration", 60000);
+
+    sChatLog.m_bLexicsCutterIgnoreLetterRepeat = sConfig.GetBoolDefault("LexicsCutterIgnoreRepeats", true);
+    sChatLog.m_bLexicsCutterIgnoreMiddleSpaces = sConfig.GetBoolDefault("LexicsCutterIgnoreSpaces",  true);
+
+    sChatLog.m_sLexicsCutterCutReplacement = sConfig.GetStringDefault("LexicsCutterCutReplacement", "&!@^%!^&*!!!");
+    sChatLog.m_sAnalogsFileName            = sConfig.GetStringDefault("LexicsCutterAnalogsFile",    "letter_analogs.txt");
+    sChatLog.m_sWordsFileName              = sConfig.GetStringDefault("LexicsCutterWordsFile",      "innormative_words.txt");
+    sChatLog.m_sInnormativeFileName        = sConfig.GetStringDefault("LexicsCutterLogFile",        "innormative-$d.log");
 
     // read lexics cutter flags
-    sChatLog.cutflag[CHAT_LOG_CHAT] = sConfig.GetBoolDefault("LexicsCutInChat", true);
-    sChatLog.cutflag[CHAT_LOG_PARTY] = sConfig.GetBoolDefault("LexicsCutInParty", true);
-    sChatLog.cutflag[CHAT_LOG_GUILD] = sConfig.GetBoolDefault("LexicsCutInGuild", true);
-    sChatLog.cutflag[CHAT_LOG_WHISPER] = sConfig.GetBoolDefault("LexicsCutInWhisper", true);
-    sChatLog.cutflag[CHAT_LOG_CHANNEL] = sConfig.GetBoolDefault("LexicsCutInChannel", true);
-    sChatLog.cutflag[CHAT_LOG_RAID] = sConfig.GetBoolDefault("LexicsCutInRaid", true);
-    sChatLog.cutflag[CHAT_LOG_BATTLEGROUND] = sConfig.GetBoolDefault("LexicsCutInBattleGround", true);
+    sChatLog.m_bCutFlag[CHAT_LOG_CHAT]         = sConfig.GetBoolDefault("LexicsCutInChat",         true);
+    sChatLog.m_bCutFlag[CHAT_LOG_PARTY]        = sConfig.GetBoolDefault("LexicsCutInParty",        true);
+    sChatLog.m_bCutFlag[CHAT_LOG_GUILD]        = sConfig.GetBoolDefault("LexicsCutInGuild",        true);
+    sChatLog.m_bCutFlag[CHAT_LOG_WHISPER]      = sConfig.GetBoolDefault("LexicsCutInWhisper",      true);
+    sChatLog.m_bCutFlag[CHAT_LOG_CHANNEL]      = sConfig.GetBoolDefault("LexicsCutInChannel",      true);
+    sChatLog.m_bCutFlag[CHAT_LOG_RAID]         = sConfig.GetBoolDefault("LexicsCutInRaid",         true);
+    sChatLog.m_bCutFlag[CHAT_LOG_BATTLEGROUND] = sConfig.GetBoolDefault("LexicsCutInBattleGround", true);
 
     // initialize chat logs (and lexics cutter)
     sChatLog.Initialize();
+
+    // calendar
+    int32 delayHours = sConfig.GetIntDefault("Calendar.RemoveExpiredEvents", -1);
+    setConfig(CONFIG_INT32_CALENDAR_REMOVE_EXPIRED_EVENTS_DELAY, delayHours < 0 ? -1 : delayHours * HOUR /*convert to sec.*/);
+
+    // resistance calculation options
+    setConfigMinMax(CONFIG_UINT32_RESIST_CALC_METHOD, "Resistance.CalculationMethod", 1, 0, 1);
+    setConfig(CONFIG_BOOL_RESIST_ADD_BY_OVER_LEVEL, "Resistance.AddByOverLevel", false);
 }
+
 extern void LoadGameObjectModelList();
+
 /// Initialize the World
 void World::SetInitialWorldSettings()
 {
@@ -1126,8 +1144,10 @@ void World::SetInitialWorldSettings()
         !MapManager::ExistMapAndVMap(0, 1676.35f, 1677.45f) ||
         !MapManager::ExistMapAndVMap(1, 10311.3f, 832.463f) ||
         !MapManager::ExistMapAndVMap(1,-2917.58f,-257.98f) ||
-        (m_configUint32Values[CONFIG_UINT32_EXPANSION] &&
-        (!MapManager::ExistMapAndVMap(530,10349.6f,-6357.29f) || !MapManager::ExistMapAndVMap(530,-3961.64f,-13931.2f))))
+        (m_configUint32Values[CONFIG_UINT32_EXPANSION] >= EXPANSION_TBC &&
+        (!MapManager::ExistMapAndVMap(530,10349.6f,-6357.29f) || !MapManager::ExistMapAndVMap(530,-3961.64f,-13931.2f))) ||
+        (m_configUint32Values[CONFIG_UINT32_EXPANSION] >= EXPANSION_WOTLK &&
+        !MapManager::ExistMapAndVMap(609,2355.84f,-5664.77f)))
     {
         sLog.outError("Correct *.map files not found in path '%smaps' or *.vmtree/*.vmtile files in '%svmaps'. Please place *.map and vmap files in appropriate directories or correct the DataDir value in the mangosd.conf file.",m_dataPath.c_str(),m_dataPath.c_str());
         Log::WaitBeforeContinueIfNeed();
@@ -1525,13 +1545,14 @@ void World::SetInitialWorldSettings()
     ///- Load and initialize scripts
     sLog.outString( "Loading Scripts..." );
     sLog.outString();
-    sScriptMgr.LoadQuestStartScripts();                         // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
-    sScriptMgr.LoadQuestEndScripts();                           // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
-    sScriptMgr.LoadSpellScripts();                              // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadGameObjectScripts();                         // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadGameObjectTemplateScripts();                 // must be after load Creature/Gameobject(Template/Data)
-    sScriptMgr.LoadEventScripts();                              // must be after load Creature/Gameobject(Template/Data)
-    sLog.outString( ">>> Scripts loaded" );
+    sScriptMgr.LoadQuestStartScripts();                     // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
+    sScriptMgr.LoadQuestEndScripts();                       // must be after load Creature/Gameobject(Template/Data) and QuestTemplate
+    sScriptMgr.LoadSpellScripts();                          // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadGameObjectScripts();                     // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadGameObjectTemplateScripts();             // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadEventScripts();                          // must be after load Creature/Gameobject(Template/Data)
+    sScriptMgr.LoadCreatureDeathScripts();                  // must be after load Creature/Gameobject(Template/Data)
+    sLog.outString(">>> Scripts loaded");
     sLog.outString();
 
     sLog.outString( "Loading Scripts text locales..." );    // must be after Load*Scripts calls
@@ -1620,7 +1641,7 @@ void World::SetInitialWorldSettings()
 
     // Not sure if this can be moved up in the sequence (with static data loading) as it uses MapManager
     sLog.outString("Loading Transports...");
-    sMapMgr.LoadTransports();
+    sObjectMgr.LoadTransports();
 
     sLog.outString("Deleting expired bans..." );
     LoginDatabase.Execute("DELETE FROM ip_banned WHERE unbandate<=UNIX_TIMESTAMP() AND unbandate<>bandate");
@@ -2800,4 +2821,3 @@ bool World::IsDungeonMapIdDisable(uint32 mapId)
 {
     return disabledMapIdForDungeonFinder.find(mapId) != disabledMapIdForDungeonFinder.end();
 }
-

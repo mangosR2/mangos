@@ -45,7 +45,7 @@
 #include "Formulas.h"
 #include "WorldObjectEvents.h"
 
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 
 INSTANTIATE_SINGLETON_1(BattleGroundMgr);
 
@@ -1226,7 +1226,10 @@ void BattleGroundMgr::BuildPvpLogDataPacket(WorldPacket* data, BattleGround* bg)
     else
     {
         *data << uint8(1);                                  // bg ended
-        *data << uint8(bg->GetWinner());                    // who win
+        Team team = bg->GetWinner();
+        uint8 uWinner = team == ALLIANCE ? 1
+                      : team == HORDE ? 0 : 2;
+        *data << uint8(uWinner);                            // who win
     }
 
     *data << (int32)(bg->GetPlayerScoresSize());
@@ -1416,6 +1419,8 @@ BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId
         return NULL;
     }
 
+    bool isArena = false;
+
     // for arenas there is random map used
     if (bg_template->isArena())
     {
@@ -1427,6 +1432,7 @@ BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId
             sLog.outError("BattleGround: CreateNewBattleGround - bg template not found for %u", bgTypeId);
             return NULL;
         }
+        isArena = true;
     }
 
     bool isRandom = false;
@@ -1512,7 +1518,7 @@ BattleGround* BattleGroundMgr::CreateNewBattleGround(BattleGroundTypeId bgTypeId
     bg->SetArenaType(arenaType);
     bg->SetRated(isRated);
     bg->SetRandom(isRandom);
-    bg->SetTypeID(isRandom ? BATTLEGROUND_RB : bgTypeId);
+    bg->SetTypeID(isRandom ? BATTLEGROUND_RB : isArena ? BATTLEGROUND_AA : bgTypeId);
     bg->SetRandomTypeID(bgTypeId);
 
     return bg;

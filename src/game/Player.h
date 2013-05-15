@@ -121,14 +121,6 @@ struct PlayerTalent
 typedef UNORDERED_MAP<uint32, PlayerSpell> PlayerSpellMap;
 typedef UNORDERED_MAP<uint32, PlayerTalent> PlayerTalentMap;
 
-struct SpellCooldown
-{
-    time_t end;
-    uint16 itemid;
-};
-
-typedef std::map<uint32, SpellCooldown> SpellCooldowns;
-
 enum TrainerSpellState
 {
     TRAINER_SPELL_GREEN = 0,
@@ -1060,7 +1052,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
-            return TeleportTo(WorldLocation(x, y, z, orientation, mapid, 0, sWorld.getConfig(CONFIG_UINT32_REALMID)), options);
+            return TeleportTo(WorldLocation(mapid, x, y, z, orientation, GetPhaseMask()), options);
         }
 
         bool TeleportTo(WorldLocation const& loc, uint32 options = 0);
@@ -1207,6 +1199,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetBankBagSlotCount(uint8 count) { SetByteValue(PLAYER_BYTES_2, 2, count); }
         bool HasItemCount(uint32 item, uint32 count, bool inBankAlso = false) const;
         bool HasItemFitToSpellReqirements(SpellEntry const* spellInfo, Item const* ignoreItem = NULL);
+        bool HasItemFitToAreaTriggerReqirements(AreaTrigger const* at) const;
+        bool HasHeroicKeyFitToAreaTriggerReqirements(AreaTrigger const* at) const;
+        bool HasQuestFitToAreaTriggerReqirements(AreaTrigger const* at, bool isRegularTargetMap) const;
+        bool HasAchievementFitToAreaTriggerReqirements(AreaTrigger const* at, Difficulty difficulty);
         bool CanNoReagentCast(SpellEntry const* spellInfo) const;
         bool HasItemOrGemWithIdEquipped(uint32 item, uint32 count, uint8 except_slot = NULL_SLOT) const;
         bool HasItemOrGemWithLimitCategoryEquipped(uint32 limitCategory, uint32 count, uint8 except_slot = NULL_SLOT) const;
@@ -1666,40 +1662,20 @@ class MANGOS_DLL_SPEC Player : public Unit
         PlayerSpellMap const& GetSpellMap() const { return m_spells; }
         PlayerSpellMap      & GetSpellMap()       { return m_spells; }
 
-        SpellCooldowns const& GetSpellCooldownMap() const { return m_spellCooldowns; }
-
         PlayerTalent const* GetKnownTalentById(int32 talentId) const;
         SpellEntry const* GetKnownTalentRankById(int32 talentId) const;
 
         void AddSpellMod(Aura* aura, bool apply);
         template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T &basevalue);
 
-        static uint32 const infinityCooldownDelay = MONTH;  // used for set "infinity cooldowns" for spells and check
-        static uint32 const infinityCooldownDelayCheck = MONTH/2;
-        bool HasSpellCooldown(uint32 spell_id) const
-        {
-            SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
-            return itr != m_spellCooldowns.end() && itr->second.end > time(NULL);
-        }
-        time_t GetSpellCooldownDelay(uint32 spell_id) const
-        {
-            SpellCooldowns::const_iterator itr = m_spellCooldowns.find(spell_id);
-            time_t t = time(NULL);
-            return itr != m_spellCooldowns.end() && itr->second.end > t ? itr->second.end - t : 0;
-        }
-        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId, bool infinityCooldown = false );
-        void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time);
         void SendCooldownEvent(SpellEntry const *spellInfo, uint32 itemId = 0);
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
-        void RemoveSpellCooldown(uint32 spell_id, bool update = false);
-        void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
         void SendClearCooldown(uint32 spell_id, Unit* target);
         void SendModifyCooldown(uint32 spell_id, int32 delta);
 
         GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
 
         void RemoveArenaSpellCooldowns();
-        void RemoveAllSpellCooldown();
         void _LoadSpellCooldowns(QueryResult *result);
         void _SaveSpellCooldowns();
         void SetLastPotionId(uint32 item_id) { m_lastPotionId = item_id; }
@@ -1898,7 +1874,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
         void SendResetFailedNotify(uint32 mapid);
 
-        bool SetPosition(float x, float y, float z, float orientation, bool teleport = false);
+        bool SetPosition(Position const& pos, bool teleport = false);
         void UpdateUnderwaterState(Map * m, float x, float y, float z);
 
         void SendMessageToSet(WorldPacket *data, bool self);// overwrite Object::SendMessageToSet
@@ -1966,7 +1942,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetSemaphoreTeleportDelayEvent(bool semphsetting) { mSemaphoreTeleport_DelayEvent = semphsetting; }
         void ProcessDelayedOperations();
 
-        void CheckAreaExploreAndOutdoor(void);
+        void CheckAreaExploreAndOutdoor();
 
         static Team TeamForRace(uint8 race);
         Team GetTeam() const { return m_team; }
@@ -2009,9 +1985,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         //End of PvP System
 
-        void SetDrunkValue(uint16 newDrunkValue, uint32 itemid=0);
-        uint16 GetDrunkValue() const { return m_drunk; }
-        static DrunkenState GetDrunkenstateByValue(uint16 value);
+        void SetDrunkValue(uint8 newDrunkValue, uint32 itemId = 0);
+        uint8 GetDrunkValue() const { return GetByteValue(PLAYER_BYTES_3, 1); }
+        static DrunkenState GetDrunkenstateByValue(uint8 value);
 
         uint32 GetDeathTimer() const { return m_deathTimer; }
         uint32 GetCorpseReclaimDelay(bool pvp) const;
@@ -2281,11 +2257,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void   SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
         // Recall position
-        uint32 m_recallMap;
-        float  m_recallX;
-        float  m_recallY;
-        float  m_recallZ;
-        float  m_recallO;
+        WorldLocation m_recall;
         void   SaveRecallPosition();
 
         void SetHomebindToLocation(WorldLocation const& loc);
@@ -2294,18 +2266,18 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
-        // currently visible objects at player client
-        GuidSet m_clientGUIDs;
-
-        bool HaveAtClient(WorldObject const* u) { return u==this || m_clientGUIDs.find(u->GetObjectGuid())!=m_clientGUIDs.end(); }
+        // list of currently visible objects, stored at player client
+        GuidSet const& GetClientGuids() { return m_clientGUIDs; };
+        bool HaveAtClient(ObjectGuid const& guid) const;
+        void AddClientGuid(ObjectGuid const& guid);
+        void RemoveClientGuid(ObjectGuid const& guid);
+        bool HasClientGuid(ObjectGuid const& guid) const;
 
         bool IsVisibleInGridForPlayer(Player* pl) const;
         bool IsVisibleGloballyFor(Player* pl) const;
-
+        void BeforeVisibilityDestroy(WorldObject* obj);
         void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target);
-
-        template<class T>
-            void UpdateVisibilityOf(WorldObject const* viewPoint,T* target, UpdateData& data, WorldObjectSet& visibleNow);
+        void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target, UpdateData& data, WorldObjectSet& visibleNow);
 
         // Stealth detection system
         void HandleStealthedUnitsDetection();
@@ -2365,7 +2337,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CheckTransferPossibility(uint32 mapId);
         bool CheckTransferPossibility(AreaTrigger const*& at, bool b_onlyMainReq = false);
 
-        bool NeedGoingToHomebind();
+        bool NeedEjectFromThisMap();
 
         // LFG
         LFGPlayerState* GetLFGPlayerState() { return m_LFGState; }
@@ -2592,7 +2564,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         PlayerMails m_mail;
         PlayerSpellMap m_spells;
         PlayerTalentMap m_talents[MAX_TALENT_SPEC_COUNT];
-        SpellCooldowns m_spellCooldowns;
         uint32 m_lastPotionId;                              // last used health/mana potion in combat, that block next potion use
 
         GlobalCooldownMgr m_GlobalCooldownMgr;
@@ -2636,12 +2607,12 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool   m_MonthlyQuestChanged;
 
         uint32 m_drunkTimer;
-        uint16 m_drunk;
         uint32 m_weaponChangeTimer;
 
         uint32 m_zoneUpdateId;
         uint32 m_zoneUpdateTimer;
         uint32 m_areaUpdateId;
+        uint32 m_positionStatusUpdateTimer;
 
         uint32 m_deathTimer;
         time_t m_deathExpireTime;
@@ -2665,9 +2636,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         float m_rest_bonus;
         RestType rest_type;
         ////////////////////Rest System/////////////////////
-
-        // Transports
-//        Transport * m_transport;
 
         AntiCheat* m_anticheat;
 
@@ -2779,6 +2747,9 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool m_bHasBeenAliveAtDelayedTeleport;
 
         uint32 m_DetectInvTimer;
+
+        // Visible object storage
+        GuidSet m_clientGUIDs;
 
         // Temporary removed pet cache
         PetNumberList m_temporaryUnsummonedPetNumber;

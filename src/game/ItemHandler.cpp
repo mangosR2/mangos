@@ -736,8 +736,7 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
         GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
 
     // Stop the npc if moving
-    if (!pCreature->IsStopped())
-        pCreature->StopMoving();
+    pCreature->StopMoving();
 
     VendorItemData const* vItems = pCreature->GetVendorItems();
     VendorItemData const* tItems = pCreature->GetVendorTemplateItems();
@@ -789,6 +788,9 @@ void WorldSession::SendListInventory(ObjectGuid vendorguid)
                         continue;
 
                     if ((pProto->AllowableRace & _player->getRaceMask()) == 0)
+                        continue;
+
+                    if (crItem->conditionId && !sObjectMgr.IsPlayerMeetToCondition(crItem->conditionId, _player, pCreature->GetMap(), pCreature, CONDITION_FROM_VENDOR))
                         continue;
                 }
 

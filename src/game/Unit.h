@@ -756,14 +756,11 @@ class MovementInfo
         void AddMovementFlag2(MovementFlags2 f) { moveFlags2 |= f; }
 
         // Position manipulations
-        Position const *GetPos() const { return &pos; }
-        void SetTransportData(ObjectGuid guid, float x, float y, float z, float o, uint32 time, int8 seat, VehicleSeatEntry const* seatInfo = NULL)
+        Position const* GetPos() const { return &pos; }
+        void SetTransportData(ObjectGuid guid, Position const& pos, uint32 time, int8 seat, VehicleSeatEntry const* seatInfo = NULL)
         {
             t_guid = guid;
-            t_pos.x = x;
-            t_pos.y = y;
-            t_pos.z = z;
-            t_pos.o = o;
+            t_pos = pos;
             t_time = time;
             t_seat = seat;
             t_seatInfo = seatInfo;
@@ -781,7 +778,7 @@ class MovementInfo
             moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
-        Position const *GetTransportPos() const { return &t_pos; }
+        Position const* GetTransportPos() const { return &t_pos; }
         int8 GetTransportSeat() const { return t_seat; }
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
         uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
@@ -790,6 +787,12 @@ class MovementInfo
         void ChangeOrientation(float o) { pos.o = o; }
         void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
         void ChangeTransportPosition(float x, float y, float z, float o) { t_pos.x = x; t_pos.y = y; t_pos.z = z; t_pos.o = o; }
+
+        void ChangePosition(Position const& _pos) { pos = _pos; }
+        void ChangeTransportPosition(Position const& _pos) { t_pos = _pos; }
+        Position const& GetPosition() const { return pos; }
+        Position const& GetTransportPosition() const { return t_pos; }
+
         void UpdateTime(uint32 _time) { time = _time; }
 
         struct JumpInfo
@@ -814,7 +817,7 @@ class MovementInfo
             fallTime   = targetInfo.fallTime;
             jump       = targetInfo.jump;
 
-            if (!t_guid)
+            if (!t_guid || (t_guid && t_guid == targetInfo.t_guid))
             {
                 moveFlags2 = targetInfo.moveFlags2;
                 t_guid     = targetInfo.t_guid;
@@ -860,10 +863,6 @@ inline ByteBuffer& operator>> (ByteBuffer& buf, MovementInfo& mi)
 {
     mi.Read(buf);
     return buf;
-}
-
-namespace Movement{
-    class MoveSpline;
 }
 
 enum DiminishingLevels
@@ -960,7 +959,11 @@ struct DamageInfo
         SpellSchoolMask   SchoolMask()    const;
 
         // Damage types
-        uint32 damage;
+        union {
+            uint32 damage;
+            uint32 heal;
+        };
+
         int32  cleanDamage;          // Used for rage and healing calculation
 
         // Damage calculation
@@ -1000,10 +1003,23 @@ struct DamageInfo
         bool   IsMeleeDamage() const { return !m_spellInfo; };
         bool   IsHeal()        const { return cleanDamage < 0; };
 
-        uint32 const&  GetFlags();
         void           AddFlag(DamageFlags flag)       { m_flags |= (1 << flag); };
         void           RemoveFlag(DamageFlags flag)    { m_flags &= ~(1 << flag); };
         bool           HasFlag(DamageFlags flag) const { return (m_flags & (1 << flag)); };
+
+        // Attention: We now that this to function return the same (Remember the union from heal and damage)
+        // Exits Only for better reading!
+        uint32 GetRemainingHeal() { return heal; };
+        uint32 GetRemainingDamage() { return damage; };
+
+        // absorb
+        uint32 AddAbsorb(uint32 addvalue);
+        void AddPctAbsorb(float aborbPct);
+        uint32 GetAbsorb() const { return absorb; };
+        // should not be used, possible for some kinds of hacks
+        void SetAbsorb(uint32 value) { absorb = value; };
+
+
 
     private:
         DamageInfo();     // Don't allow plain initialization!
@@ -1253,6 +1269,14 @@ enum IgnoreUnitState
     IGNORE_UNIT_TARGET_NON_FROZEN = 126,                    // ignore absent of frozen state
 };
 
+struct SpellCooldown
+{
+    time_t end;
+    uint16 itemid;
+};
+
+typedef std::map<uint32, SpellCooldown> SpellCooldowns;
+
 typedef GuidSet GuardianPetList;
 typedef GuidSet GroupPetList;
 
@@ -1451,6 +1475,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         uint32 DealDamage(Unit* pVictim, DamageInfo* damageInfo, bool durabilityLoss);
         uint32 DealDamage(DamageInfo* damageInfo);
         int32  DealHeal(Unit* pVictim, uint32 addhealth, SpellEntry const* spellProto, bool critical = false, uint32 absorb = 0);
+        int32  DealHeal(DamageInfo* healInfo, bool critical = false);
 
         void PetOwnerKilledUnit(Unit* pVictim);
 
@@ -1491,8 +1516,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         float  MeleeSpellMissChance(Unit* pVictim, WeaponAttackType attType, int32 skillDiff, SpellEntry const *spell);
         SpellMissInfo MeleeSpellHitResult(Unit* pVictim, SpellEntry const* spell);
-        SpellMissInfo MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell);
-        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell);
+        SpellMissInfo MagicSpellHitResult(Unit* pVictim, SpellEntry const* spell, bool dotDamage = false);
+        SpellMissInfo SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool dotDamage = false);
         SpellMissInfo SpellResistResult(Unit* pVictim, SpellEntry const* spell);
         uint32 CalculateBaseSpellHitChance(Unit* pVictim);
 
@@ -1594,6 +1619,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void CastCustomSpell(Unit* Victim,SpellEntry const *spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item *castItem= NULL, Aura const* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
         void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item *castItem = NULL, Aura const* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
         void CastSpell(float x, float y, float z, SpellEntry const *spellInfo, bool triggered, Item *castItem = NULL, Aura const* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(WorldLocation const& loc, uint32 spellId, bool triggered, Item *castItem = NULL, Aura const* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
+        void CastSpell(WorldLocation const& loc, SpellEntry const *spellInfo, bool triggered, Item *castItem = NULL, Aura const* triggeredByAura = NULL, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = NULL);
 
         void DeMorph();
 
@@ -1605,11 +1632,12 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void SendSpellDamageResist(Unit* target, uint32 spellId);
         void SendSpellDamageImmune(Unit* target, uint32 spellId);
 
+        void NearTeleportTo(WorldLocation const& loc, uint32 options = 0);
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
         void MonsterMoveToDestination(float x, float y, float z, float o, float speed, float height, bool isKnockBack = false, Unit* target = NULL);
         // recommend use MonsterMove/MonsterMoveWithSpeed for most case that correctly work with movegens
         // if used additional args in ... part then floats must explicitly casted to double
-        virtual bool SetPosition(float x, float y, float z, float orientation, bool teleport = false);
+        virtual bool SetPosition(Position const& pos, bool teleport = false);
         virtual void SetFallInformation(uint32 time, float z) {};
 
         void MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath = true, bool forceDestination = false);
@@ -1756,7 +1784,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void RemoveRankAurasDueToSpell(uint32 spellId);
         bool RemoveNoStackAurasDueToAuraHolder(SpellAuraHolderPtr holder);
         void RemoveAurasWithInterruptFlags(uint32 flags);
-        void RemoveAurasWithAttribute(uint32 flags);
+        void RemoveAurasWithAttribute(uint32 flags, uint32 exclude = 0);
         void RemoveAurasWithDispelType(DispelType type, ObjectGuid casterGuid = ObjectGuid());
         void RemoveAllAuras(AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
         void RemoveArenaAuras(bool onleave = false);
@@ -1764,6 +1792,9 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         void HandleArenaPreparation(bool apply);
         bool RemoveSpellsCausingAuraByCaster(AuraType auraType, ObjectGuid casterGuid, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
+
+        // Method for enable-disable auras (currently - passive only) affect
+        void TriggerPassiveAurasWithAttribute(bool active, uint32 flags);
 
         // removing specific aura FROM stack by diff reasons and selections
         void RemoveAuraHolderFromStack(uint32 spellId, uint32 stackAmount = 1, ObjectGuid casterGuid = ObjectGuid(), AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT);
@@ -2094,9 +2125,10 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
                                                             // redefined in Creature
 
         uint32 CalcArmorReducedDamage(Unit* pVictim, const uint32 damage);
-        void CalculateDamageAbsorbAndResist(Unit *pCaster, DamageInfo* damageInfo, bool canReflect = false);
-        void CalculateAbsorbResistBlock(Unit *pCaster, DamageInfo *damageInfo, SpellEntry const* spellProto, WeaponAttackType attType = BASE_ATTACK);
-        void CalculateHealAbsorb(uint32 heal, uint32 *absorb);
+        void CalculateResistance(Unit* pCaster, DamageInfo* damageInfo);
+        void CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo, bool canReflect = false);
+        void CalculateAbsorbResistBlock(Unit* pCaster, DamageInfo* damageInfo, SpellEntry const* spellProto, WeaponAttackType attType = BASE_ATTACK);
+        void CalculateHealAbsorb(uint32 heal, uint32* absorb);
 
         void  UpdateSpeed(UnitMoveType mtype, bool forced, float ratio = 1.0f);
         float GetSpeed( UnitMoveType mtype ) const;
@@ -2127,7 +2159,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool IsInUnitState(UnitActionId state) const { return m_stateMgr.GetCurrentState() == state; }
 
         bool IsStopped() const { return !(hasUnitState(UNIT_STAT_MOVING)); }
-        void StopMoving();
+        void StopMoving(bool ignoreMoveState = false);
+        void InterruptMoving(bool ignoreMoveState = false);
 
         void SetFeared(bool apply, ObjectGuid casterGuid = ObjectGuid(), uint32 spellID = 0, uint32 time = 0);
         void SetConfused(bool apply, ObjectGuid casterGuid = ObjectGuid(), uint32 spellID = 0);
@@ -2175,16 +2208,9 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         // Movement info
         MovementInfo m_movementInfo;
-        Movement::MoveSpline * movespline;
+        MovementInfo const& GetMovementInfo() const { return m_movementInfo; };
 
         // Transports
-        Transport* GetTransport() const { return m_transport; }
-        void SetTransport(Transport* pTransport) { m_transport = pTransport; }
-
-        float GetTransOffsetX() const { return m_movementInfo.GetTransportPos()->x; }
-        float GetTransOffsetY() const { return m_movementInfo.GetTransportPos()->y; }
-        float GetTransOffsetZ() const { return m_movementInfo.GetTransportPos()->z; }
-        float GetTransOffsetO() const { return m_movementInfo.GetTransportPos()->o; }
         uint32 GetTransTime() const { return m_movementInfo.GetTransportTime(); }
         int8 GetTransSeat() const { return m_movementInfo.GetTransportSeat(); }
 
@@ -2201,6 +2227,9 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         VehicleKitPtr GetVehicleKit() const { return m_pVehicleKit; }
         void RemoveVehicleKit();
 
+        virtual bool IsTransport() const override { return bool(GetVehicleKit()); };
+        TransportBase* GetTransportBase() { return (TransportBase*)(&*GetVehicleKit()); };
+
         VehicleEntry const* GetVehicleInfo() const;
         virtual bool IsVehicle() const override { return GetVehicleInfo() != NULL; }
         void SetVehicleId(uint32 entry);
@@ -2212,6 +2241,21 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         bool IsLinkingEventTrigger() const { return m_isCreatureLinkingTrigger; }
 
+        // Cooldown System
+        static uint32 const infinityCooldownDelay = MONTH;  // used for set "infinity cooldowns" for spells and check
+        static uint32 const infinityCooldownDelayCheck = MONTH/2;
+        bool HasSpellCooldown(SpellEntry const* spellInfo) const;
+        bool HasSpellCooldown(uint32 spellId) const;
+        time_t GetSpellCooldownDelay(SpellEntry const* spellInfo) const;
+        SpellCooldowns const* GetSpellCooldownMap() const { return &m_spellCooldowns; }
+
+        void RemoveOutdatedSpellCooldowns();
+
+        void AddSpellCooldown(uint32 spell_id, uint32 itemid, time_t end_time);
+        void AddSpellAndCategoryCooldowns(SpellEntry const* spellInfo, uint32 itemId = 0, bool infinityCooldown = false );
+        void RemoveSpellCooldown(uint32 spell_id, bool update = false);
+        void RemoveAllSpellCooldown();
+        void RemoveSpellCategoryCooldown(uint32 cat, bool update = false);
     protected:
         explicit Unit ();
 
@@ -2264,9 +2308,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool m_spoofSamePlayerFaction : 1;
         // Frozen Mod
 
-        // Transports
-        Transport* m_transport;
-
         VehicleKitPtr m_pVehicleKit;
         VehicleKitPtr m_pVehicle;
 
@@ -2285,7 +2326,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         Unit* _GetTotem(TotemSlot slot) const;              // for templated function without include need
         Pet* _GetPet(ObjectGuid guid) const;                // for templated function without include need
 
-        void JustKilledCreature(Creature* victim);          // Wrapper called by DealDamage when a creature is killed
+        // Wrapper called by DealDamage when a creature is killed
+        void JustKilledCreature(Creature* victim, Player* responsiblePlayer);
 
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
@@ -2294,9 +2336,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         uint32 m_castCounter;                               // count casts chain of triggered spells for prevent infinity cast crashes
 
         UnitVisibility m_Visibility;
-        Position m_last_notified_position;
+        WorldLocation m_last_notified_position;
         bool m_AINotifyScheduled;
-        ShortTimeTracker m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units threatening us
@@ -2321,6 +2362,8 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         ObjectGuid m_fixateTargetGuid;                      //< Stores the Guid of a fixated target
 
+        SpellCooldowns m_spellCooldowns;
+
     private:                                                // Error traps for some wrong args using
         // this will catch and prevent build for any cases when all optional args skipped and instead triggered used non boolean type
         // no bodies expected for this declarations
@@ -2336,6 +2379,10 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void CastSpell(float x, float y, float z, uint32 spell, TR triggered);
         template <typename TR>
         void CastSpell(float x, float y, float z, SpellEntry const* spell, TR triggered);
+        template <typename TR>
+        void CastSpell(WorldLocation const& loc, uint32 spell, TR triggered);
+        template <typename TR>
+        void CastSpell(WorldLocation const& loc, SpellEntry const* spell, TR triggered);
 };
 
 template<typename Func>

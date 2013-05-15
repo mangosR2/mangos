@@ -116,7 +116,7 @@ void TargetedMovementGeneratorMedium<T, D>::_setTargetLocation(T& owner, bool up
     i_targetReached = false;
     m_speedChanged = false;
 
-    Movement::MoveSplineInit init(owner);
+    Movement::MoveSplineInit<Unit*> init(owner);
     init.MovebyPath(i_path->getPath());
     init.SetWalk(((D*)this)->EnableWalking());
     init.Launch();
@@ -279,12 +279,7 @@ void ChaseMovementGenerator<T>::Finalize(T& owner)
 template<class T>
 void ChaseMovementGenerator<T>::Interrupt(T& owner)
 {
-    if (!owner.movespline->Finalized())
-    {
-        Location loc = owner.movespline->ComputePosition();
-        owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
-        owner.movespline->_Interrupt();
-    }
+    owner.InterruptMoving();
     owner.clearUnitState(UNIT_STAT_CHASE | UNIT_STAT_CHASE_MOVE);
 }
 
@@ -347,12 +342,7 @@ void FollowMovementGenerator<T>::Finalize(T& owner)
 template<class T>
 void FollowMovementGenerator<T>::Interrupt(T& owner)
 {
-    if (!owner.movespline->Finalized())
-    {
-        Location loc = owner.movespline->ComputePosition();
-        owner.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
-        owner.movespline->_Interrupt();
-    }
+    owner.InterruptMoving();
     owner.clearUnitState(UNIT_STAT_FOLLOW | UNIT_STAT_FOLLOW_MOVE);
     _updateSpeed(owner);
 }

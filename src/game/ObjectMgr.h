@@ -50,11 +50,7 @@ class SQLStorage;
 
 struct GameTele
 {
-    float  position_x;
-    float  position_y;
-    float  position_z;
-    float  orientation;
-    uint32 mapId;
+    WorldLocation loc;
     std::string name;
     std::wstring wnameLow;
 };
@@ -68,13 +64,14 @@ struct SpellClickInfo
     uint32 questEnd;                                        // quest end (quest don't must be rewarded for spell apply)
     bool   questStartCanActive;                             // if true then quest start can be active (not only rewarded)
     uint8 castFlags;
+    uint16 conditionId;                                     // intends to replace questStart, questEnd, questStartCanActive
 
     // helpers
-    bool IsFitToRequirements(Player const* player) const;
+    bool IsFitToRequirements(Player const* player, Creature const* clickedCreature) const;
 };
 
-typedef UNORDERED_MULTIMAP<uint32, SpellClickInfo> SpellClickInfoMap;
-typedef std::pair<SpellClickInfoMap::const_iterator,SpellClickInfoMap::const_iterator> SpellClickInfoMapBounds;
+typedef UNORDERED_MULTIMAP<uint32 /*npcEntry*/, SpellClickInfo> SpellClickInfoMap;
+typedef std::pair<SpellClickInfoMap::const_iterator, SpellClickInfoMap::const_iterator> SpellClickInfoMapBounds;
 
 struct AreaTrigger
 {
@@ -92,11 +89,7 @@ struct AreaTrigger
     uint32 achiev0;
     uint32 achiev1;
     uint32 combatMode;
-    uint32 target_mapId;
-    float  target_X;
-    float  target_Y;
-    float  target_Z;
-    float  target_Orientation;
+    WorldLocation loc;
 
     // Operators
     bool IsMinimal() const { return (requiredLevel == 0 
@@ -116,7 +109,7 @@ struct AreaTrigger
 
     bool IsLessOrEqualThan(AreaTrigger const* l) const      // Expected to have same map
     {
-        MANGOS_ASSERT(target_mapId == l->target_mapId);
+        MANGOS_ASSERT(loc.GetMapId() == l->loc.GetMapId());
         return (requiredLevel <= l->requiredLevel
                 && requiredItem <= l->requiredItem
                 && requiredItem2 <= l->requiredItem2
@@ -154,6 +147,7 @@ typedef UNORDERED_MAP<uint32/*(mapid,spawnMode) pair*/,CellObjectGuidsMap> MapOb
 #define MAX_DB_SCRIPT_STRING_ID        2000010000
 #define MIN_CREATURE_AI_TEXT_STRING_ID (-1)                 // 'creature_ai_texts'
 #define MAX_CREATURE_AI_TEXT_STRING_ID (-1000000)
+// Anything below MAX_CREATURE_AI_TEXT_STRING_ID is handled by the external script lib
 
 static_assert(MAX_DB_SCRIPT_STRING_ID < ACE_INT32_MAX, "Must scope with int32 range");
 
@@ -502,6 +496,10 @@ enum ConditionType
     CONDITION_COMPLETED_ENCOUNTER   = 31,                   // encounter_id encounter_id2       encounter_id[2] = DungeonEncounter(dbc).id (if value2 provided it will return value1 OR value2)
     CONDITION_SOURCE_AURA           = 32,                   // spell_id     effindex (returns true if the source of the condition check has aura of spell_id, effIndex)
     CONDITION_LAST_WAYPOINT         = 33,                   // waypointId   0 = exact, 1: wp <= waypointId, 2: wp > waypointId  Use to check what waypoint was last reached
+    CONDITION_XP_USER               = 34,                   // 0, 1 (0: XP off, 1: XP on) for player    0
+    CONDITION_GENDER                = 35,                   // 0=male, 1=female, 2=none (see enum Gender)
+    CONDITION_DEAD_OR_AWAY          = 36,                   // value1: 0=player dead, 1=player is dead (with group dead), 2=player in instance are dead, 3=creature is dead
+                                                            // value2: if != 0 only consider players in range of this value
 };
 
 class PlayerCondition
@@ -848,6 +846,12 @@ class ObjectMgr
         void LoadVehicleAccessory();
 
         void LoadTransports(Map* map);
+        void LoadTransports();
+        typedef UNORDERED_SET<Transport*> TransportSet;
+        TransportSet const& GetTransports() { return m_Transports; };
+
+        Transport* GetTransportByGuid(ObjectGuid const& guid);
+        Transport const* GetTransportByGOMapId(uint32 mapid) const;
 
         std::string GeneratePetName(uint32 entry);
         uint32 GetBaseXP(uint32 level) const;
@@ -1137,9 +1141,9 @@ class ObjectMgr
             return &iter->second;
         }
 
-        void AddVendorItem(uint32 entry,uint32 item, uint32 maxcount, uint32 incrtime, uint32 ExtendedCost);
-        bool RemoveVendorItem(uint32 entry,uint32 item);
-        bool IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item, uint32 maxcount, uint32 ptime, uint32 ExtendedCost, Player* pl = NULL, std::set<uint32>* skip_vendors = NULL) const;
+        void AddVendorItem(uint32 entry, uint32 item, uint32 maxcount, uint32 incrtime, uint32 ExtendedCost);
+        bool RemoveVendorItem(uint32 entry, uint32 item);
+        bool IsVendorItemValid(bool isTemplate, char const* tableName, uint32 vendor_entry, uint32 item, uint32 maxcount, uint32 ptime, uint32 ExtendedCost, uint16 conditionId, Player* pl = NULL, std::set<uint32>* skip_vendors = NULL) const;
 
         int GetOrNewIndexForLocale(LocaleConstant loc);
 
@@ -1375,6 +1379,8 @@ class ObjectMgr
         DungeonEncounterMap m_DungeonEncounters;
 
         CreatureModelRaceMap    m_mCreatureModelRaceMap;
+
+        TransportSet m_Transports;
 
         CacheNpcTextIdMap m_mCacheNpcTextIdMap;
         CacheVendorItemMap m_mCacheVendorTemplateItemMap;

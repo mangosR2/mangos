@@ -35,6 +35,8 @@
 #define FLIGHT_TRAVEL_UPDATE  100
 #define STOP_TIME_FOR_PLAYER  3 * MINUTE * IN_MILLISECONDS  // 3 Minutes
 
+class GameObject;
+
 template<class T, class P>
 class MANGOS_DLL_SPEC PathMovementBase
 {
@@ -65,7 +67,7 @@ class MANGOS_DLL_SPEC WaypointMovementGenerator<Creature>
 public PathMovementBase<Creature, WaypointPath const*>
 {
     public:
-        WaypointMovementGenerator(Creature &) : i_nextMoveTime(0), m_isArrivalDone(false) {}
+        WaypointMovementGenerator(Creature&) : i_nextMoveTime(0), m_isArrivalDone(false), m_lastReachedWaypoint(0) {}
         ~WaypointMovementGenerator() { i_path = NULL; }
         void Initialize(Creature &u);
         void Interrupt(Creature &);
@@ -82,11 +84,11 @@ public PathMovementBase<Creature, WaypointPath const*>
         // now path movement implmementation
         void LoadPath(Creature &c);
 
-        bool GetResetPosition(Creature&, float& x, float& y, float& z);
+        bool GetResetPosition(Creature&, float& x, float& y, float& z) const;
 
         void AddToWaypointPauseTime(int32 waitTimeDiff);
 
-        uint32 getLastReachedWaypoint() const { return m_isArrivalDone ? i_currentNode + 1 : i_currentNode; }
+        uint32 getLastReachedWaypoint() const { return m_lastReachedWaypoint; }
 
     private:
         void Stop(int32 time) { i_nextMoveTime.Reset(time); }
@@ -100,6 +102,7 @@ public PathMovementBase<Creature, WaypointPath const*>
 
         ShortTimeTracker i_nextMoveTime;
         bool m_isArrivalDone;
+        uint32 m_lastReachedWaypoint;
 };
 
 /** FlightPathMovementGenerator generates movement of the player for the paths
@@ -129,7 +132,7 @@ public PathMovementBase<Player,TaxiPathNodeList const*>
         void SetCurrentNodeAfterTeleport();
         void SkipCurrentNode() { ++i_currentNode; }
         void DoEventIfAny(Player& player, TaxiPathNodeEntry const& node, bool departure);
-        bool GetResetPosition(Player&, float& x, float& y, float& z);
+        bool GetResetPosition(Player&, float& x, float& y, float& z) const;
 
     protected:
         void _Initialize(Player &);
@@ -138,4 +141,34 @@ public PathMovementBase<Player,TaxiPathNodeList const*>
         void _Reset(Player &);
 
 };
+
+/** TransportPathMovementGenerator generates movement of the MO_TRANSPORT and elevators for the paths
+ * and hence generates ground and activities.
+ */
+class MANGOS_DLL_SPEC TransportPathMovementGenerator
+    : public PathMovementBase<GameObject,TaxiPathNodeList const*>
+{
+    public:
+        explicit TransportPathMovementGenerator(TaxiPathNodeList const& pathnodes, uint32 startNode = 0)
+        {
+            i_path = &pathnodes;
+            i_currentNode = startNode;
+        }
+        virtual void Initialize(GameObject &go);
+        virtual void Finalize(GameObject &go);
+        virtual void Interrupt(GameObject &go);
+        virtual void Reset(GameObject &go);
+
+        bool Update(GameObject&, const uint32&);
+        MovementGeneratorType GetMovementGeneratorType() const { return FLIGHT_MOTION_TYPE; }
+
+        TaxiPathNodeList const& GetPath() { return *i_path; }
+        uint32 GetPathAtMapEnd() const;
+        bool HasArrived() const { return (i_currentNode >= i_path->size()); }
+        void SetCurrentNodeAfterTeleport();
+        void SkipCurrentNode() { ++i_currentNode; }
+        void DoEventIfAny(GameObject& go, TaxiPathNodeEntry const& node, bool departure);
+        bool GetResetPosition(GameObject& go, float& x, float& y, float& z) const;
+};
+
 #endif

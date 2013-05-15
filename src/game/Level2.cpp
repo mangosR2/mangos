@@ -169,18 +169,18 @@ void ChatHandler::ShowTriggerTargetListHelper(uint32 id, AreaTrigger const* at, 
         char dist_buf[50];
         if (!subpart)
         {
-            float dist = m_session->GetPlayer()->GetDistance2d(at->target_X, at->target_Y);
+            float dist = m_session->GetPlayer()->GetDistance2d(at->loc.x, at->loc.y);
             snprintf(dist_buf, 50, GetMangosString(LANG_TRIGGER_DIST), dist);
         }
         else
             dist_buf[0] = '\0';
 
         PSendSysMessage(LANG_TRIGGER_TARGET_LIST_CHAT,
-                        subpart ? " -> " : "", id, id, at->target_mapId, at->target_X, at->target_Y, at->target_Z, dist_buf);
+                        subpart ? " -> " : "", id, id, at->loc.GetMapId(), at->loc.x, at->loc.y, at->loc.z, dist_buf);
     }
     else
         PSendSysMessage(LANG_TRIGGER_TARGET_LIST_CONSOLE,
-                        subpart ? " -> " : "", id, at->target_mapId, at->target_X, at->target_Y, at->target_Z);
+                        subpart ? " -> " : "", id, at->loc.GetMapId(), at->loc.x, at->loc.y, at->loc.z);
 }
 
 void ChatHandler::ShowTriggerListHelper(AreaTriggerEntry const* atEntry)
@@ -392,11 +392,11 @@ bool ChatHandler::HandleTriggerNearCommand(char* args)
         if (!at)
             continue;
 
-        if (at->target_mapId != m_session->GetPlayer()->GetMapId())
+        if (at->loc.GetMapId() != m_session->GetPlayer()->GetMapId())
             continue;
 
-        float dx = at->target_X - pl->GetPositionX();
-        float dy = at->target_Y - pl->GetPositionY();
+        float dx = at->loc.x - pl->GetPositionX();
+        float dy = at->loc.y - pl->GetPositionY();
 
         if (dx * dx + dy * dy > dist2)
             continue;
@@ -459,7 +459,7 @@ bool ChatHandler::HandleGoTriggerCommand(char* args)
             return false;
         }
 
-        return HandleGoHelper(_player, at->target_mapId, at->target_X, at->target_Y, &at->target_Z);
+        return HandleGoHelper(_player, at->loc.GetMapId(), at->loc.x, at->loc.y, &at->loc.z);
     }
     else
         return HandleGoHelper(_player, atEntry->mapid, atEntry->x, atEntry->y, &atEntry->z);
@@ -1028,7 +1028,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         Map* map = obj->GetMap();
         map->Remove(obj, false);
 
-        obj->Relocate(chr->GetPositionX(), chr->GetPositionY(), chr->GetPositionZ(), obj->GetOrientation());
+        obj->Relocate(chr->GetPosition());
 
         map->Add(obj);
     }
@@ -1056,7 +1056,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         Map* map = obj->GetMap();
         map->Remove(obj, false);
 
-        obj->Relocate(x, y, z, obj->GetOrientation());
+        obj->Relocate(WorldLocation(map->GetId(), x, y, z, obj->GetOrientation(), obj->GetPhaseMask(), map->GetInstanceId()));
 
         map->Add(obj);
     }
@@ -1675,7 +1675,7 @@ bool ChatHandler::HandleNpcAddVendorItemCommand(char* args)
 
     uint32 vendor_entry = vendor ? vendor->GetEntry() : 0;
 
-    if (!sObjectMgr.IsVendorItemValid(false, "npc_vendor", vendor_entry, itemId, maxcount, incrtime, extendedcost, m_session->GetPlayer()))
+    if (!sObjectMgr.IsVendorItemValid(false, "npc_vendor", vendor_entry, itemId, maxcount, incrtime, extendedcost, 0, m_session->GetPlayer()))
     {
         SetSentErrorMessage(true);
         return false;
@@ -1962,22 +1962,22 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
     else
         lowguid = pCreature->GetGUIDLow();
 
-    float x = m_session->GetPlayer()->GetPositionX();
-    float y = m_session->GetPlayer()->GetPositionY();
-    float z = m_session->GetPlayer()->GetPositionZ();
-    float o = m_session->GetPlayer()->GetOrientation();
+    WorldLocation loc = m_session->GetPlayer()->GetPosition();
 
     if (pCreature)
     {
         if (CreatureData const* data = sObjectMgr.GetCreatureData(pCreature->GetGUIDLow()))
         {
-            const_cast<CreatureData*>(data)->posX = x;
-            const_cast<CreatureData*>(data)->posY = y;
-            const_cast<CreatureData*>(data)->posZ = z;
-            const_cast<CreatureData*>(data)->orientation = o;
+            const_cast<CreatureData*>(data)->posX = loc.x;
+            const_cast<CreatureData*>(data)->posY = loc.y;
+            const_cast<CreatureData*>(data)->posZ = loc.z;
+            const_cast<CreatureData*>(data)->orientation = loc.o;
         }
-        pCreature->GetMap()->Relocation(pCreature, x, y, z, o);
+
+        pCreature->SetRespawnCoord(loc);
+        pCreature->GetMap()->Relocation(pCreature, loc);
         pCreature->GetMotionMaster()->Initialize();
+
         if (pCreature->isAlive())                           // dead creature will reset movement generator at respawn
         {
             pCreature->SetDeathState(JUST_DIED);
@@ -1985,7 +1985,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
         }
     }
 
-    WorldDatabase.PExecuteLog("UPDATE creature SET position_x = '%f', position_y = '%f', position_z = '%f', orientation = '%f' WHERE guid = '%u'", x, y, z, o, lowguid);
+    WorldDatabase.PExecuteLog("UPDATE creature SET position_x = '%f', position_y = '%f', position_z = '%f', orientation = '%f' WHERE guid = '%u'", loc.x, loc.y, loc.z, loc.o, lowguid);
     PSendSysMessage(LANG_COMMAND_CREATUREMOVED);
     return true;
 }
@@ -3646,7 +3646,8 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             uint32 model2           = fields[11].GetUInt32();
 
             // Get the creature for which we read the waypoint
-            Creature* wpCreature = m_session->GetPlayer()->GetMap()->GetCreature(ObjectGuid(HIGHGUID_UNIT, VISUAL_WAYPOINT, wpGuid));
+            CreatureData const* data = sObjectMgr.GetCreatureData(wpGuid);
+            Creature* wpCreature = m_session->GetPlayer()->GetMap()->GetCreature(data ? data->GetObjectGuid(wpGuid) : ObjectGuid(HIGHGUID_UNIT, VISUAL_WAYPOINT, wpGuid));
 
             PSendSysMessage(LANG_WAYPOINT_INFO_TITLE, point, (wpCreature ? wpCreature->GetName() : "<not found>"), wpGuid);
             PSendSysMessage(LANG_WAYPOINT_INFO_WAITTIME, waittime);
@@ -5491,7 +5492,7 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
     PointsArray pointPath = path.getPath();
     PSendSysMessage("%s's path to %s:", target->GetName(), player->GetName());
     PSendSysMessage("Building %s", useStraightPath ? "StraightPath" : "SmoothPath");
-    PSendSysMessage("length %i type %u", pointPath.size(), path.getPathType());
+    PSendSysMessage("length "SIZEFMTD" type %u", pointPath.size(), path.getPathType());
 
     Vector3 start = path.getStartPosition();
     Vector3 end = path.getEndPosition();
@@ -5691,7 +5692,7 @@ bool ChatHandler::HandleWorldStateListCommand(char* args)
     for (uint8 i = 0; i < wsSet->count(); ++i)
     {
         WorldState* ws = (*wsSet)[i];
-		PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
+        PSendSysMessage(LANG_WORLDSTATE_LIST, ws->GetId(), ws->GetType(), ws->GetCondition(), ws->GetInstance(), ws->GetValue());
     }
     delete wsSet;
     return true;

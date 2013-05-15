@@ -80,10 +80,10 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 //============== Group ==============================
 //===================================================
 
-Group::Group(GroupType type) : m_groupType(type), m_Guid(ObjectGuid()),
-    m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL), m_lootThreshold(ITEM_QUALITY_UNCOMMON),
-    m_subGroupsCounts(NULL),
-    m_LFGState(LFGGroupState(this)), m_Difficulty(0)
+Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
+    m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
+    m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
+    m_LFGState(LFGGroupState(this))
 {
 }
 
@@ -385,14 +385,14 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
 
             if (Player* member = itr->getSource())
             {
-                if (player->HaveAtClient(member))
+                if (player->HaveAtClient(member->GetObjectGuid()))
                 {
                     member->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
                     member->BuildValuesUpdateBlockForPlayer(&data, player);
                     member->RemoveFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
                 }
 
-                if (member->HaveAtClient(player))
+                if (member->HaveAtClient(player->GetObjectGuid()))
                 {
                     UpdateData mdata;
                     WorldPacket mpacket;
@@ -947,8 +947,8 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                     item->is_looted = true;
                     roll->getLoot()->NotifyItemRemoved(roll->itemSlot);
                     --roll->getLoot()->unlootedCount;
-                    AllowedLooterSet* looters = item->GetAllowedLooters();
-                    player->StoreNewItem( dest, roll->itemid, true, item->randomPropertyId, (looters->size() > 1) ? looters : NULL);
+
+                    player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId, item->GetAllowedLooters());
                     player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, roll->itemid, item->count);
                     player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_TYPE, roll->getLoot()->loot_type, item->count);
                     player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_EPIC_ITEM, roll->itemid, item->count);
@@ -1003,8 +1003,8 @@ void Group::CountTheRoll(Rolls::iterator& rollI)
                         item->is_looted = true;
                         roll->getLoot()->NotifyItemRemoved(roll->itemSlot);
                         --roll->getLoot()->unlootedCount;
-                        AllowedLooterSet* looters = item->GetAllowedLooters();
-                        player->StoreNewItem( dest, roll->itemid, true, item->randomPropertyId, (looters->size() > 1) ? looters : NULL);
+
+                        player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId, item->GetAllowedLooters());
                         player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, roll->itemid, item->count);
                         player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_TYPE, roll->getLoot()->loot_type, item->count);
                         player->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_EPIC_ITEM, roll->itemid, item->count);
@@ -1184,7 +1184,7 @@ void Group::UpdatePlayerOutOfRange(Player* pPlayer)
 
     for(GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())
         if (Player *player = itr->getSource())
-            if (player != pPlayer && !player->HaveAtClient(pPlayer))
+            if (player != pPlayer && !player->HaveAtClient(pPlayer->GetObjectGuid()))
                 player->GetSession()->SendPacket(&data);
 }
 

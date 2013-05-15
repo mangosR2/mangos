@@ -18,10 +18,9 @@
 
 #include "MapManager.h"
 #include "MapPersistentStateMgr.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "Database/DatabaseEnv.h"
 #include "Log.h"
-#include "Transports.h"
 #include "GridDefines.h"
 #include "World.h"
 #include "CellImpl.h"
@@ -42,9 +41,6 @@ MapManager::~MapManager()
 {
     for(MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
         delete iter->second;
-
-    for(TransportSet::iterator i = m_Transports.begin(); i != m_Transports.end(); ++i)
-        delete *i;
 
     DeleteStateMachine();
 }
@@ -221,12 +217,6 @@ void MapManager::Update(uint32 diff)
         m_updater.ReActivate(m_threadsCountPreferred);
         sLog.outDetail("MapManager::Update map virtual server threads pool reactivated, new threads count is %u", m_threadsCountPreferred);
         m_threadsCount = m_threadsCountPreferred;
-    }
-
-    for (TransportSet::iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
-    {
-        WorldObject::UpdateHelper helper((*iter));
-        helper.Update((uint32)i_timer.GetCurrent());
     }
 
     //remove all maps which can be unloaded
@@ -458,4 +448,10 @@ void MapManager::UpdateLoadBalancer(bool b_start)
     m_tickCount = 0;
 
     i_balanceTimer.SetCurrent(0);
+}
+
+bool MapManager::IsTransportMap(uint32 mapid)
+{
+    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    return mapEntry ? mapEntry->IsTransport() : false;
 }

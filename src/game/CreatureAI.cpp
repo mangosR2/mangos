@@ -20,6 +20,9 @@
 #include "Creature.h"
 #include "DBCStores.h"
 #include "Spell.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
 
 CreatureAI::~CreatureAI()
 {
@@ -52,6 +55,9 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
         // Check for power (also done by Spell::CheckCast())
         if ((int32)m_creature->GetPower((Powers)pSpell->powerType) < Spell::CalculatePowerCost(pSpell, m_creature))
             return CAST_FAIL_POWER;
+
+        if (m_creature->HasSpellCooldown(pSpell))
+            return CAST_FAIL_SPELL_COOLDOWN;
     }
 
     if (SpellRangeEntry const* pSpellRange = sSpellRangeStore.LookupEntry(pSpell->rangeIndex))
@@ -172,4 +178,33 @@ void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
         m_creature->GetMotionMaster()->MoveIdle();
         m_creature->StopMoving();
     }
+}
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+//                                      Event system
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius) const
+{
+    if (fRadius > 0)
+    {
+        std::list<Creature*> receiverList;
+
+        // Use this check here to collect only assitable creatures in case of CALL_ASSISTANCE, else be less strict
+        MaNGOS::AnyAssistCreatureInRangeCheck u_check(m_creature, eventType == AI_EVENT_CALL_ASSISTANCE ? pInvoker : NULL, fRadius);
+        MaNGOS::CreatureListSearcher<MaNGOS::AnyAssistCreatureInRangeCheck> searcher(receiverList, u_check);
+        Cell::VisitGridObjects(m_creature, searcher, fRadius);
+
+        if (!receiverList.empty())
+        {
+            AiDelayEventAround* e = new AiDelayEventAround(eventType, pInvoker ? pInvoker->GetObjectGuid() : ObjectGuid(), *m_creature, receiverList);
+            m_creature->AddEvent(e, uiDelay);
+        }
+    }
+}
+
+void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver) const
+{
+    MANGOS_ASSERT(pReceiver);
+    pReceiver->AI()->ReceiveAIEvent(eventType, m_creature, pInvoker);
 }

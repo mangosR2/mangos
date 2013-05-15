@@ -18,7 +18,7 @@
 
 #include "SystemConfig.h"
 #include "DBCStores.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "Log.h"
 #include "ProgressBar.h"
 #include "SharedDefines.h"

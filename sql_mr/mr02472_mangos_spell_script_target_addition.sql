@@ -6,11 +6,12 @@
 */
 
 -- Berserk - Sartharion encounter - target dragon bosses only
-INSERT IGNORE INTO `spell_script_target` VALUES (61632, 1, 28860);
+INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES 
+(61632, 1, 28860);
 
 -- Flaming Arrow ---- Quest Going Bearback (12851)
 DELETE FROM spell_script_target WHERE spell_script_target.entry = 54897;
-INSERT INTO spell_script_target VALUES
+INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 (54897, 1, 29351),
 (54897, 1, 29358);
 
@@ -27,7 +28,7 @@ INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 
 -- Ulduar, Mimiron from Reamer
 DELETE FROM spell_script_target WHERE entry IN (63820, 64425, 64620);
-INSERT INTO spell_script_target VALUES
+INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 (63820, 1, 33856),
 (64425, 1, 33856),
 (64620, 1, 33856);

@@ -35,11 +35,7 @@ struct MANGOS_DLL_SPEC Location : public Vector3
         : Vector3(x, y, z), orientation(o)
     {}
 
-    Location(const Vector3& v) 
-        : Vector3(v), orientation(0.0f)
-    {}
-
-    Location(const Vector3& v, float o) 
+    Location(const Vector3& v, float o = 0.0f)
         : Vector3(v), orientation(o)
     {}
 
@@ -53,6 +49,15 @@ struct MANGOS_DLL_SPEC Location : public Vector3
     Location& operator = (Location const& loc);
     bool operator == (Location const& loc) const;
 
+    float GetDistance(Location const& loc) const;
+
+    bool IsEmpty() const;
+
+    float const& getX() const { return x; };
+    float const& getY() const { return y; };
+    float const& getZ() const { return z; };
+    float const& getO() const { return orientation; };
+
     union
     {
         float orientation;
@@ -63,31 +68,27 @@ struct MANGOS_DLL_SPEC Location : public Vector3
 struct MANGOS_DLL_SPEC Position : public Location
 {
     Position() 
-        : Location(), coord_x(x), coord_y(y), coord_z(z), m_phaseMask(PHASEMASK_NORMAL)
+        : Location(), m_phaseMask(PHASEMASK_NORMAL)
     {};
 
-    Position(float _x, float _y, float _z, float _o = 0.0f)
-        : Location(_x, _y, _z, _o), coord_x(x), coord_y(y), coord_z(z), m_phaseMask(PHASEMASK_NORMAL)
+    explicit Position(float _x, float _y, float _z, float _o = 0.0f)
+        : Location(_x, _y, _z, _o), m_phaseMask(PHASEMASK_NORMAL)
     {};
 
-    Position(float _x, float _y, float _z, float _o, uint32 phaseMask)
-        : Location(_x, _y, _z, _o), m_phaseMask(phaseMask), coord_x(x), coord_y(y), coord_z(z)
+    explicit Position(float _x, float _y, float _z, float _o, uint32 phaseMask)
+        : Location(_x, _y, _z, _o), m_phaseMask(phaseMask)
     {};
 
     Position(Position const &pos)
-        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(pos.GetPhaseMask()), coord_x(x), coord_y(y), coord_z(z)
+        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(pos.GetPhaseMask())
     {}
 
     Position(Position const &pos, uint32 phaseMask)
-        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(phaseMask), coord_x(x), coord_y(y), coord_z(z)
+        : Location(pos.x, pos.y, pos.z, pos.orientation), m_phaseMask(phaseMask)
     {}
 
     virtual ~Position()
     {};
-
-    float& coord_x;
-    float& coord_y;
-    float& coord_z;
 
     uint32 m_phaseMask;
 
@@ -98,6 +99,8 @@ struct MANGOS_DLL_SPEC Position : public Location
 
     Position& operator = (Position const& pos);
     bool operator == (Position const& pos) const;
+
+    float GetDistance(Position const& pos) const;
 };
 
 class WorldObject;
@@ -107,29 +110,23 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
 
     public:
     WorldLocation()
-        : Position(), mapid(-1), instance(0), realmid(0)
+        : Position(), mapid(-1), instance(0), realmid(0), m_Tpos(Position())
     {}
 
-    WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0)
-        : Position(_x, _y, _z, _o), mapid(_mapid), instance(0), realmid(0)
-    {}
+    explicit WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0, uint32 phaseMask = PHASEMASK_NORMAL, uint32 _instance = 0, uint32 _realmid = 0);
 
-    WorldLocation(uint32 _mapid, uint32 _instance, uint32 _realmid)
-        : Position(), mapid(_mapid), instance(_instance), realmid(_realmid)
-    {}
-
-    WorldLocation(float _x, float _y, float _z, float _o, uint32 _mapid, uint32 _instance, uint32 _realmid)
-        : Position(_x, _y, _z, _o), mapid(_mapid), instance(_instance), realmid(_realmid)
+    explicit WorldLocation(uint32 _mapid, uint32 _instance, uint32 _realmid)
+        : Position(), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position())
     {}
 
     WorldLocation(WorldLocation const &loc)
-        : Position(loc.x, loc.y, loc.z, loc.orientation), mapid(loc.mapid), instance(loc.instance), realmid(loc.realmid)
+        : Position(loc.x, loc.y, loc.z, loc.orientation, loc.GetPhaseMask()), mapid(loc.mapid), instance(loc.instance), realmid(loc.realmid), m_Tpos(loc.m_Tpos)
     {}
-
-    WorldLocation(WorldObject const& object);
 
     virtual ~WorldLocation() 
     {};
+
+    static WorldLocation const Null;
 
     bool operator == (WorldLocation const& loc) const;
 
@@ -158,10 +155,25 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
 
     WorldLocation& operator = (WorldLocation const& loc);
 
+    WorldLocation& operator = (Position const& pos);
+
+    float GetDistance(WorldLocation const& loc) const;
+
+    float GetDistance(Location const& loc) const;
+
     private:
     int32     mapid;                      // mapid    = -1 for not fully initialized WorldLocation
     uint32    instance;                   // instance = 0  for not fully initialized WorldLocation ("current instance")
     uint32    realmid;                    // realmid  = 0  for "always current realm". 
 
+    // Transport relative position
+    public:
+    Position const& GetTransportPos() const { return m_Tpos; };
+    Position& GetTransportPosition() { return m_Tpos; };
+    void ClearTransportData() { m_Tpos = Position(); };
+    void SetTransportPosition(Position const& pos) { m_Tpos = pos; };
+
+    private:
+    Position  m_Tpos;
 };
 #endif

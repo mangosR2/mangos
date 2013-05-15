@@ -269,7 +269,7 @@ enum SpellAttributes
     SPELL_ATTR_STOP_ATTACK_TARGET              = 0x00100000,            // 20 Stop attack after use this spell (and not begin attack if use)
     SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK    = 0x00200000,            // 21 Cannot be dodged/parried/blocked
     SPELL_ATTR_SET_TRACKING_TARGET             = 0x00400000,            // 22 SetTrackingTarget
-    SPELL_ATTR_UNK23                           = 0x00800000,            // 23 castable while dead?
+    SPELL_ATTR_CASTABLE_WHILE_DEAD             = 0x00800000,            // 23 castable while dead or not spawned/invisible (for creatures)
     SPELL_ATTR_CASTABLE_WHILE_MOUNTED          = 0x01000000,            // 24 castable while mounted
     SPELL_ATTR_DISABLED_WHILE_ACTIVE           = 0x02000000,            // 25 Activate and start cooldown after aura fade or remove summoned creature or go
     SPELL_ATTR_UNK26                           = 0x04000000,            // 26
@@ -426,7 +426,7 @@ enum SpellAttributesEx4
 
 enum SpellAttributesEx5
 {
-    SPELL_ATTR_EX5_UNK0                        = 0x00000001,            // 0
+    SPELL_ATTR_EX5_UNK0                        = 0x00000001,            // 0 possible no interrupt from channel spell when caster move
     SPELL_ATTR_EX5_NO_REAGENT_WHILE_PREP       = 0x00000002,            // 1 not need reagents if UNIT_FLAG_PREPARATION
     SPELL_ATTR_EX5_REMOVE_AT_ENTER_ARENA       = 0x00000004,            // 2 removed at enter arena (e.g. 31850 since 3.3.3)
     SPELL_ATTR_EX5_USABLE_WHILE_STUNNED        = 0x00000008,            // 3 usable while stunned
@@ -483,8 +483,8 @@ enum SpellAttributesEx6
     SPELL_ATTR_EX6_UNK18                       = 0x00040000,            // 18
     SPELL_ATTR_EX6_UNK19                       = 0x00080000,            // 19
     SPELL_ATTR_EX6_UNK20                       = 0x00100000,            // 20
-    SPELL_ATTR_EX6_UNK21                       = 0x00200000,            // 21
-    SPELL_ATTR_EX6_UNK22                       = 0x00400000,            // 22
+    SPELL_ATTR_EX6_EXPLICIT_NO_BINARY_RESIST   = 0x00200000,            // 21
+    SPELL_ATTR_EX6_PCT_ABSORB                  = 0x00400000,            // 22
     SPELL_ATTR_EX6_NO_STACK_DEBUFF_MAJOR       = 0x00800000,            // 23 only debuff and debuff-like spells in 3.3.5a
     SPELL_ATTR_EX6_UNK24                       = 0x01000000,            // 24 not set in 3.0.3
     SPELL_ATTR_EX6_UNK25                       = 0x02000000,            // 25 not set in 3.0.3
@@ -1476,10 +1476,12 @@ enum GameObjectFlags
 
 enum GameObjectDynamicLowFlags
 {
+    GO_DYNFLAG_LO_NONE              = 0x00,                 // no low flags
     GO_DYNFLAG_LO_ACTIVATE          = 0x01,                 // enables interaction with GO
     GO_DYNFLAG_LO_ANIMATE           = 0x02,                 // possibly more distinct animation of GO
     GO_DYNFLAG_LO_NO_INTERACT       = 0x04,                 // appears to disable interaction (not fully verified)
     GO_DYNFLAG_LO_SPARKLE           = 0x08,                 // makes GO sparkle
+    GO_DYNFLAG_LO_TRANSPORT_STOP    = 0x10,                 // Transport/MOTransport stopped
 };
 
 enum TextEmotes
@@ -3156,6 +3158,51 @@ enum ConditionSource                                        // From where was th
     CONDITION_FROM_GOSSIP_MENU      = 2,                    // Used to check a gossip menu menu-text
     CONDITION_FROM_GOSSIP_OPTION    = 3,                    // Used to check a gossip menu option-item
     CONDITION_FROM_EVENTAI          = 4,                    // Used to check EventAI Event "On Receive Emote"
+    CONDITION_FROM_HARDCODED        = 5,                    // Used to check a hardcoded event - not actually a condition
+    CONDITION_FROM_VENDOR           = 6,                    // Used to check a condition from a vendor
+    CONDITION_FROM_SPELL_AREA       = 7,                    // Used to check a condition from spell_area table
+    CONDITION_FROM_SPELLCLICK       = 8,                    // Used to check a condition from npc_spellclick_spells table
+    CONDITION_FROM_DBSCRIPTS        = 9,                    // Used to check a condition from DB Scripts Engine
+};
+
+enum AIEventType
+{
+    // Usable with Event AI
+    AI_EVENT_JUST_DIED          = 0,                        // Sender = Killed Npc, Invoker = Killer
+    AI_EVENT_CRITICAL_HEALTH    = 1,                        // Sender = Hurt Npc, Invoker = DamageDealer
+    AI_EVENT_LOST_HEALTH        = 2,                        // Sender = Hurt Npc, Invoker = DamageDealer
+    AI_EVENT_GOT_CCED           = 3,                        // Sender = CCed Npc, Invoker = Caster that CCed
+    AI_EVENT_GOT_FULL_HEALTH    = 4,                        // Sender = Healed Npc, Invoker = Healer
+    AI_EVENT_CUSTOM_EVENTAI_A   = 5,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
+    AI_EVENT_CUSTOM_EVENTAI_B   = 6,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
+    MAXIMAL_AI_EVENT_EVENTAI    = 7,
+
+    // Internal Use
+    AI_EVENT_CALL_ASSISTANCE    = 10,                       // Sender = Attacked Npc, Invoker = Enemy
+
+    // Predefined for SD2
+    AI_EVENT_START_ESCORT       = 100,                      // Invoker = Escorting Player
+    AI_EVENT_START_ESCORT_B     = 101,                      // Invoker = Escorting Player
+    AI_EVENT_START_EVENT        = 102,                      // Invoker = EventStarter
+    AI_EVENT_START_EVENT_A      = 103,                      // Invoker = EventStarter
+    AI_EVENT_START_EVENT_B      = 104,                      // Invoker = EventStarter
+
+    // Some IDs for special cases in SD2
+    AI_EVENT_CUSTOM_A           = 1000,
+    AI_EVENT_CUSTOM_B           = 1001,
+    AI_EVENT_CUSTOM_C           = 1002,
+    AI_EVENT_CUSTOM_D           = 1003,
+    AI_EVENT_CUSTOM_E           = 1004,
+    AI_EVENT_CUSTOM_F           = 1005,
+};
+
+enum Expansions
+{
+    EXPANSION_NONE                      = 0,                // classic
+    EXPANSION_TBC                       = 1,                // TBC
+    EXPANSION_WOTLK                     = 2,                // WotLK
+    EXPANSION_CATA                      = 3,                // Cata
+    EXPANSION_MOP                       = 4,                // MoP
 };
 
 #endif

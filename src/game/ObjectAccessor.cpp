@@ -18,7 +18,7 @@
 
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "Player.h"
 #include "WorldPacket.h"
 #include "Item.h"
@@ -237,8 +237,7 @@ ObjectAccessor::ConvertCorpseForPlayer(ObjectGuid player_guid, bool insignia)
         // bones->m_time = m_time;                              // don't overwrite time
         // bones->m_inWorld = m_inWorld;                        // don't overwrite world state
         // bones->m_type = m_type;                              // don't overwrite type
-        bones->Relocate(corpse->GetPositionX(), corpse->GetPositionY(), corpse->GetPositionZ(), corpse->GetOrientation());
-        bones->SetPhaseMask(corpse->GetPhaseMask(), false);
+        bones->Relocate(corpse->GetPosition());
 
         bones->SetUInt32Value(CORPSE_FIELD_FLAGS, CORPSE_FLAG_UNK2 | CORPSE_FLAG_BONES);
         bones->SetGuidValue(CORPSE_FIELD_OWNER, ObjectGuid());

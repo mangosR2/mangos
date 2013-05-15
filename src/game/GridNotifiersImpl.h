@@ -101,6 +101,15 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
     }
 }
 
+inline void MaNGOS::ObjectUpdater::Visit(GameObjectMapType& m)
+{
+    for (GameObjectMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    {
+        WorldObject::UpdateHelper helper(iter->getSource());
+        helper.Update(i_timeDiff);
+    }
+}
+
 inline void PlayerCreatureRelocationWorker(Player* pl, Creature* c)
 {
     // Creature AI reaction
@@ -222,9 +231,7 @@ inline void MaNGOS::DynamicObjectUpdater::VisitHelper(Unit* target)
         {
             Aura* Aur = holder->CreateAura(AURA_CLASS_PERSISTENT_AREA_AURA, eff_index, NULL, holder, target, i_dynobject.GetCaster(), NULL);
             target->AddAuraToModList(Aur);
-            //holder->SetInUse(true);
             Aur->ApplyModifier(true,true);
-            //holder->SetInUse(false);
         }
         else if (holder->GetAuraDuration() >= 0 && uint32(holder->GetAuraDuration()) < i_dynobject.GetDuration())
         {

@@ -86,9 +86,9 @@ class MapUpdater
 
     private:
 
-        DelayExecutor m_executor;
-        ACE_Condition_Thread_Mutex m_condition;
         ACE_Thread_Mutex m_mutex;
+        ACE_Condition_Thread_Mutex m_condition;
+        DelayExecutor m_executor;
         size_t pending_requests;
 
         ThreadMapMap m_threads;

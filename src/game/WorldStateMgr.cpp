@@ -53,7 +53,7 @@ void WorldStateMgr::Update()
         for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
         {
             WorldState* state = &itr->second;
-            if (!state)
+            if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED))
                 continue;
 
             switch (state->GetType())
@@ -429,7 +429,7 @@ void WorldStateMgr::LoadFromDB()
     while (result->NextRow());
 
     sLog.outString();
-    sLog.outString(">> Loaded data for %u WorldStates", m_worldState.size());
+    sLog.outString(">> Loaded data for "SIZEFMTD" WorldStates", m_worldState.size());
     delete result;
 }
 
@@ -679,8 +679,7 @@ void WorldStateMgr::MapUpdate(Map* map)
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
         WorldState* state = &itr->second;
-
-        if (!state || !IsFitToCondition(map, state))
+        if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED) || !IsFitToCondition(map, state))
             continue;
 
         switch (state->GetType())
@@ -746,10 +745,14 @@ WorldStateSet* WorldStateMgr::GetWorldStatesFor(Player* player, uint32 flags)
     ReadGuard guard(GetLock());
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if (itr->second.GetFlags() & flags)
+        WorldState* state = &itr->second;
+        if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED))
+            continue;
+
+        if (state->GetFlags() & flags)
         {
-            if (bFull || IsFitToCondition(player, &itr->second))
-                AddToWorldStateSet(&stateSet, &itr->second);
+            if (bFull || IsFitToCondition(player, state))
+                AddToWorldStateSet(&stateSet, state);
         }
     }
     return stateSet;
@@ -763,19 +766,24 @@ WorldStateSet* WorldStateMgr::GetUpdatedWorldStatesFor(Player* player, time_t up
 
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if (itr->second.HasFlag(WORLD_STATE_FLAG_ACTIVE) &&
-            itr->second.GetRenewTime() >= updateTime &&
-            itr->second.GetRenewTime() != time(NULL) &&
-            IsFitToCondition(player, &itr->second))
+        WorldState* state = &itr->second;
+
+        if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED))
+            continue;
+
+        if (state->HasFlag(WORLD_STATE_FLAG_ACTIVE) &&
+            state->GetRenewTime() >= updateTime &&
+            state->GetRenewTime() != time(NULL) &&
+            IsFitToCondition(player, state))
         {
             // Always send UpLinked worldstate with own chains
             // Attention! possible need sent ALL linked chain in this case. need tests.
-            if (itr->second.GetTemplate() && itr->second.GetTemplate()->m_linkedId)
-                if (WorldStateTemplate const* tmpl = FindTemplate(itr->second.GetTemplate()->m_linkedId, itr->second.GetType(), itr->second.GetCondition()))
-                    if (WorldState const* state = GetWorldState(tmpl, itr->second.GetInstance()))
-                        AddToWorldStateSet(&stateSet, state);
+            if (state->GetTemplate() && state->GetTemplate()->m_linkedId)
+                if (WorldStateTemplate const* tmpl = FindTemplate(state->GetTemplate()->m_linkedId, state->GetType(), state->GetCondition()))
+                    if (WorldState const* state1 = GetWorldState(tmpl, state->GetInstance()))
+                        AddToWorldStateSet(&stateSet, state1);
 
-            AddToWorldStateSet(&stateSet, &itr->second);
+            AddToWorldStateSet(&stateSet, state);
         }
     }
     return stateSet;
@@ -1279,7 +1287,7 @@ void WorldStateMgr::AddWorldStateFor(Player* player, uint32 stateId, uint32 inst
                     for (uint8 i = 0; i < stateSet->count(); ++i)
                     {
                         WorldState* ws = (*stateSet)[i];
-						ws->AddClient(player);
+                        ws->AddClient(player);
                         player->_SendUpdateWorldState(ws->GetId(), ws->GetValue());
                         DEBUG_LOG("WorldStateMgr::AddWorldStateFor  send linked state %u value %u for %s",
                             ws->GetId(), ws->GetValue(), player->GetGuidStr().c_str());
@@ -1314,7 +1322,7 @@ void WorldStateMgr::RemoveWorldStateFor(Player* player, uint32 stateId, uint32 i
             }
         }
 
-		const_cast<WorldState*>(state)->RemoveClient(player);
+        const_cast<WorldState*>(state)->RemoveClient(player);
         player->_SendUpdateWorldState(stateId, WORLD_STATE_REMOVE);
         DEBUG_LOG("WorldStateMgr::RemoveWorldStateFor remove main state %u (value %u) for %s",
             stateId, WORLD_STATE_REMOVE,
@@ -1398,22 +1406,25 @@ WorldStateSet* WorldStateMgr::GetInstanceStates(uint32 mapId, uint32 instanceId,
     WorldStateSet* stateSet = NULL;
 
     ReadGuard guard(GetLock());
-
     for (WorldStateMap::iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
-        if (!flags || (itr->second.GetFlags() & flags))
+        WorldState* state = &itr->second;
+        if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED))
+            continue;
+
+        if (!flags || (state->GetFlags() & flags))
         {
-            if (itr->second.GetType() == WORLD_STATE_TYPE_MAP &&
-                itr->second.GetCondition() == mapId &&
-                itr->second.GetInstance() == instanceId)
+            if (state->GetType() == WORLD_STATE_TYPE_MAP &&
+                state->GetCondition() == mapId &&
+                state->GetInstance() == instanceId)
             {
-                AddToWorldStateSet(&stateSet, &itr->second);
+                AddToWorldStateSet(&stateSet, state);
             }
             else if (full)
             {
                 Map* map = sMapMgr.FindMap(mapId, instanceId);
-                if (IsFitToCondition(map, &itr->second))
-                    AddToWorldStateSet(&stateSet, &itr->second);
+                if (IsFitToCondition(map, state))
+                    AddToWorldStateSet(&stateSet, state);
             }
         }
     }
@@ -1428,7 +1439,7 @@ WorldStateSet* WorldStateMgr::GetInitWorldStates(uint32 mapId, uint32 instanceId
     for (WorldStateMap::const_iterator itr = m_worldState.begin(); itr != m_worldState.end(); ++itr)
     {
         WorldState const* state = &itr->second;
-        if (!state)
+        if (!state || state->HasFlag(WORLD_STATE_FLAG_DELETED))
             continue;
 
         if ((state->HasFlag(WORLD_STATE_FLAG_INITIAL_STATE) ||
@@ -1439,11 +1450,11 @@ WorldStateSet* WorldStateMgr::GetInitWorldStates(uint32 mapId, uint32 instanceId
             if (state->HasDownLink())
             {
                 if (WorldStateSet* linkedStateSet = GetDownLinkedWorldStates(state))
-				{
-					for (uint8 i = 0; i < linkedStateSet->count(); ++i)
+                {
+                    for (uint8 i = 0; i < linkedStateSet->count(); ++i)
                         AddToWorldStateSet(&stateSet, (*linkedStateSet)[i]);
                     delete linkedStateSet;
-				}
+                }
             }
             AddToWorldStateSet(&stateSet, &itr->second);
         }

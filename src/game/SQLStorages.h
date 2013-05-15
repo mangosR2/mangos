@@ -39,5 +39,6 @@ extern SQLHashStorage sGameObjectDataAddonStorage;
 extern SQLHashStorage sSpellDbcTemplate;
 
 extern SQLMultiStorage sVehicleAccessoryStorage;
+extern SQLMultiStorage sSpellScriptTargetStorage;
 
 #endif

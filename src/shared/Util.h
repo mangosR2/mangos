@@ -38,19 +38,8 @@ std::string secsToTimeString(time_t timeInSecs, bool shortText = false, bool hou
 uint32 TimeStringToSecs(const std::string& timestring);
 std::string TimeToTimestampStr(time_t t);
 
-inline time_t timeBitFieldsToTimeStamp(uint32 bits)
-{
-    time_t tim = time(NULL);
-    tm* t = localtime(&tim);
-    t->tm_min = bits & 0x3F;
-    t->tm_sec = 0;
-    t->tm_hour = bits >> 6 & 0x1F;
-    t->tm_mday = (bits >> 14 & 0x3F) + 1;
-    t->tm_mon = bits >> 20 & 0xF;
-    t->tm_year = (bits >> 24 & 0xFF) + 100;
-
-    return mktime(t);
-}
+time_t timeBitFieldsToTimeStamp(uint32 bits);
+uint32 secsToTimeBitFields(time_t secs);
 
 /* Return a random number in the range min..max; (max-min) must be smaller than 32768. */
 MANGOS_DLL_SPEC int32 irand(int32 min, int32 max);

@@ -611,21 +611,6 @@ INSERT INTO `player_factionchange_items` VALUES ('0', '48352', 'Nobundo\'s War-K
 INSERT INTO `player_factionchange_items` VALUES ('0', '48353', 'Nobundo\'s Faceguard of Triumph', '0', '48358', 'Thrall\'s Faceguard of Triumph');
 INSERT INTO `player_factionchange_items` VALUES ('0', '48354', 'Nobundo\'s Grips of Triumph', '0', '48357', 'Thrall\'s Grips of Triumph');
 INSERT INTO `player_factionchange_items` VALUES ('0', '48355', 'Nobundo\'s Chestguard of Triumph', '0', '48356', 'Thrall\'s Chestguard of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48356', 'Thrall\'s Chestguard of Triumph', '0', '48385', 'Wrynn\'s Battleplate of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48357', 'Thrall\'s Grips of Triumph', '0', '48384', 'Wrynn\'s Gauntlets of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48358', 'Thrall\'s Faceguard of Triumph', '0', '48383', 'Wrynn\'s Helmet of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48359', 'Thrall\'s War-Kilt of Triumph', '0', '48382', 'Wrynn\'s Legplates of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48360', 'Thrall\'s Shoulderguards of Triumph', '0', '48381', 'Wrynn\'s Shoulderplates of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48361', 'Thrall\'s Shoulderguards of Triumph', '0', '48380', 'Wrynn\'s Shoulderplates of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48362', 'Thrall\'s War-Kilt of Triumph', '0', '48379', 'Wrynn\'s Legplates of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48363', 'Thrall\'s Faceguard of Triumph', '0', '48378', 'Wrynn\'s Helmet of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48364', 'Thrall\'s Grips of Triumph', '0', '48377', 'Wrynn\'s Gauntlets of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48365', 'Thrall\'s Chestguard of Triumph', '0', '48376', 'Wrynn\'s Battleplate of Triumph');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48366', 'Thrall\'s Chestguard of Conquest', '0', '48372', 'Wrynn\'s Battleplate of Conquest');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48367', 'Thrall\'s Grips of Conquest', '0', '48375', 'Wrynn\'s Gauntlets of Conquest');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48368', 'Thrall\'s Faceguard of Conquest', '0', '48371', 'Wrynn\'s Helmet of Conquest');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48369', 'Thrall\'s War-Kilt of Conquest', '0', '48373', 'Wrynn\'s Legplates of Conquest');
-INSERT INTO `player_factionchange_items` VALUES ('0', '48370', 'Thrall\'s Shoulderguards of Conquest', '0', '48374', 'Wrynn\'s Shoulderplates of Conquest');
 INSERT INTO `player_factionchange_items` VALUES ('0', '48371', 'Wrynn\'s Helmet of Conquest', '0', '48388', 'Hellscream\'s Helmet of Conquest');
 INSERT INTO `player_factionchange_items` VALUES ('0', '48372', 'Wrynn\'s Battleplate of Conquest', '0', '48386', 'Hellscream\'s Battleplate of Conquest');
 INSERT INTO `player_factionchange_items` VALUES ('0', '48373', 'Wrynn\'s Legplates of Conquest', '0', '48389', 'Hellscream\'s Legplates of Conquest');
@@ -758,3 +743,11 @@ INSERT INTO `player_factionchange_items` VALUES ('0', '17903', 'Stormpike Insign
 INSERT INTO `player_factionchange_items` VALUES ('0', '17904', 'Stormpike Insignia Rank 6', '0', '17909', 'Frostwolf Insignia Rank 6');
 INSERT INTO `player_factionchange_items` VALUES ('0', '15198', 'Knight\'s Colors', '0', '15199', 'Stone Guard\'s Herald');
 INSERT INTO `player_factionchange_items` VALUES ('0', '35467', 'Mooncloth Vestments(115)', '0', '35337', 'Mooncloth Vestments(115)');
+
+INSERT IGNORE INTO `player_factionchange_items` (`race_A`, `alliance_id`, `commentA`, `race_H`, `horde_id`, `commentH`) VALUES 
+(0, 44235, 'Reins of the Traveler\'s Tundra Mammoth', 0, 44234, 'Reins of the Traveler\'s Tundra Mammoth'),
+(0, 48073, 'Velen\'s Circlet of Conquest',   0, 48098, 'Zabra\'s Circlet of Conquest'),
+(0, 48072, 'Velen\'s Handwraps of Conquest', 0, 48097, 'Zabra\'s Handwraps of Conquest'),
+(0, 48074, 'Velen\'s Pants of Conquest',     0, 48099, 'Zabra\'s Pants of Conquest'),
+(0, 48075, 'Velen\'s Raiments of Conquest',  0, 48100, 'Zabra\'s Raiments of Conquest'),
+(0, 48076, 'Velen\'s Mantle of Conquest',    0, 48101, 'Zabra\'s Mantle of Conquest');

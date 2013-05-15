@@ -263,14 +263,26 @@ bool DynamicMapTree::isInLineOfSight(float x1, float y1, float z1, float x2, flo
 
     float maxDist = (v2 - v1).magnitude();
 
-    if (!G3D::fuzzyGt(maxDist, 0) )
+    if (!G3D::fuzzyGt(maxDist, M_NULL_F))
         return true;
 
     G3D::Ray r(v1, (v2-v1) / maxDist);
     DynamicTreeIntersectionCallback callback(phasemask);
     impl.intersectRay(r, callback, maxDist, v2);
 
-    return !callback.did_hit;
+    // search for intersect only one surface (may appears if method called for check
+    // LOS for objects, placed into other objects (cast "in GO" for example)
+    // MAY HEAVILY INCREASE CPU USAGE! /dev/rsa
+    bool result = !callback.did_hit;
+    if (!result && sWorld.getConfig(CONFIG_BOOL_DYNAMIC_VMAP_DOUBLE_CHECK))
+    {
+        Vector3 vRes1, vRes2;
+        bool ray1 = getObjectHitPos(phasemask, v1, v2, vRes1, 0.0f);
+        bool ray2 = getObjectHitPos(phasemask, v2, v1, vRes2, 0.0f);
+        if ((vRes1 - vRes2).magnitude() < M_NULL_F)
+            result = true;
+    }
+    return result;
 }
 
 float DynamicMapTree::getHeight(float x, float y, float z, float maxSearchDist, uint32 phasemask) const

@@ -24,7 +24,7 @@ typedef std::map< std::string, LC_AnalogVector > LC_AnalogMap;
 typedef std::set< std::string > LC_LetterSet;
 typedef std::vector< LC_LetterSet > LC_WordVector;
 typedef std::vector< LC_WordVector > LC_WordList;
-typedef std::multimap< std::string, unsigned int > LC_WordMap;
+typedef std::multimap< std::string, uint32 > LC_WordMap;
 
 class LexicsCutter
 {
@@ -38,16 +38,16 @@ class LexicsCutter
     public:
         LexicsCutter();
 
-        static bool ReadUTF8(std::string& in, std::string& out, unsigned int& pos);
+        static bool ReadUTF8(std::string& in, std::string& out, uint32& pos);
 
         std::string trim(std::string& s, const std::string& drop = " ");
         bool Read_Letter_Analogs(std::string& FileName);
         bool Read_Innormative_Words(std::string& FileName);
         void Map_Innormative_Words();
-        bool Compare_Word(std::string& str, unsigned int pos, LC_WordVector word);
+        bool Compare_Word(std::string& str, uint32 pos, LC_WordVector word);
         bool Check_Lexics(std::string& Phrase);
 
-        std::vector< std::pair< unsigned int, unsigned int > > Found;
+        std::vector< std::pair< uint32, uint32 > > Found;
         bool IgnoreMiddleSpaces;
         bool IgnoreLetterRepeat;
 };

@@ -102,8 +102,7 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPacket & recv_data)
         GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_FEIGN_DEATH);
 
     // Stop the npc if moving
-    if (!pCreature->IsStopped())
-        pCreature->StopMoving();
+    pCreature->StopMoving();
 
     if (sScriptMgr.OnGossipHello(_player, pCreature))
         return;
@@ -483,7 +482,7 @@ void WorldSession::HandlePushQuestToParty(WorldPacket& recvPacket)
                 if (pPlayer->GetPlayerbotAI())
                     pPlayer->GetPlayerbotAI()->AcceptQuest( pQuest, _player );
                 else
-                    pPlayer->PlayerTalkClass->SendQuestGiverQuestDetails(pQuest, _player->GetObjectGuid(), true);
+                    pPlayer->PlayerTalkClass->SendQuestGiverQuestDetails(pQuest, pPlayer->GetObjectGuid(), true);
             }
         }
     }
@@ -612,14 +611,18 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
     WorldPacket data(SMSG_QUESTGIVER_STATUS_MULTIPLE, 4);
     data << uint32(count);                                  // placeholder
 
-    for(GuidSet::const_iterator itr = _player->m_clientGUIDs.begin(); itr != _player->m_clientGUIDs.end(); ++itr)
+    for(GuidSet::const_iterator itr = _player->GetClientGuids().begin(); itr != _player->GetClientGuids().end(); ++itr)
     {
         uint8 dialogStatus = DIALOG_STATUS_NONE;
 
-        if (itr->IsAnyTypeCreature())
+        ObjectGuid guid = *itr;
+        if (guid.IsEmpty())
+            continue;
+
+        if (guid.IsAnyTypeCreature())
         {
             // need also pet quests case support
-            Creature *questgiver = GetPlayer()->GetMap()->GetAnyTypeCreature(*itr);
+            Creature* questgiver = GetPlayer()->GetMap()->GetAnyTypeCreature(guid);
 
             if (!questgiver || questgiver->IsHostileTo(_player))
                 continue;
@@ -632,13 +635,13 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (dialogStatus > DIALOG_STATUS_REWARD_REP)
                 dialogStatus = getDialogStatus(_player, questgiver, DIALOG_STATUS_NONE);
 
-            data << questgiver->GetObjectGuid();
+            data << guid;
             data << uint8(dialogStatus);
             ++count;
         }
-        else if (itr->IsGameObject())
+        else if (guid.IsGameObject())
         {
-            GameObject *questgiver = GetPlayer()->GetMap()->GetGameObject(*itr);
+            GameObject* questgiver = GetPlayer()->GetMap()->GetGameObject(guid);
 
             if (!questgiver)
                 continue;
@@ -651,7 +654,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
             if (dialogStatus > DIALOG_STATUS_REWARD_REP)
                 dialogStatus = getDialogStatus(_player, questgiver, DIALOG_STATUS_NONE);
 
-            data << questgiver->GetObjectGuid();
+            data << guid;
             data << uint8(dialogStatus);
             ++count;
         }

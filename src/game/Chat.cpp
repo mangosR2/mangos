@@ -566,6 +566,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "creature_loot_template",      SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadLootTemplatesCreatureCommand,   "", NULL },
         { "creature_questrelation",      SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadCreatureQuestRelationsCommand,  "", NULL },
         { "db_script_string",            SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadDbScriptStringCommand,          "", NULL },
+        { "dbscripts_on_creature_death", SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadDBScriptsOnCreatureDeathCommand,"", NULL },
         { "dbscripts_on_event",          SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadDBScriptsOnEventCommand,        "", NULL },
         { "dbscripts_on_gossip",         SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadDBScriptsOnGossipCommand,       "", NULL },
         { "dbscripts_on_go_use",         SEC_ADMINISTRATOR, true,  &ChatHandler::HandleReloadDBScriptsOnGoUseCommand,        "", NULL },
@@ -3135,10 +3136,10 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
             GameTele const* tele = sObjectMgr.GetGameTele(id);
             if (!tele)
                 return false;
-            mapid = tele->mapId;
-            x = tele->position_x;
-            y = tele->position_y;
-            z = tele->position_z;
+            mapid = tele->loc.GetMapId();
+            x = tele->loc.x;
+            y = tele->loc.y;
+            z = tele->loc.z;
             return true;
         }
         case LOCATION_LINK_TAXINODE:
@@ -3283,10 +3284,10 @@ bool ChatHandler::ExtractLocationFromLink(char** text, uint32& mapid, float& x, 
                 return false;
             }
 
-            mapid = at->target_mapId;
-            x = at->target_X;
-            y = at->target_Y;
-            z = at->target_Z;
+            mapid = at->loc.GetMapId();
+            x = at->loc.x;
+            y = at->loc.y;
+            z = at->loc.z;
             return true;
         }
     }
@@ -3497,6 +3498,18 @@ bool ChatHandler::ExtractRaceMask(char** text, uint32& raceMask, char const** ma
     }
 
     return true;
+}
+
+bool ChatHandler::ExtractGender(char** text, Gender& gender)
+{
+    if (ExtractLiteralArg(text, "male"))
+        gender = GENDER_MALE;
+    else if (ExtractLiteralArg(text, "female"))
+        gender = GENDER_FEMALE;
+    else
+        gender = GENDER_NONE;
+
+    return gender != GENDER_NONE;
 }
 
 std::string ChatHandler::GetNameLink(Player* chr) const

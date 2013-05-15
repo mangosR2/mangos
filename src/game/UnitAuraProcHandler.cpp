@@ -514,7 +514,7 @@ SpellAuraProcResult Unit::HandleHasteAuraProc(Unit *pVictim, DamageInfo* damageI
     if (!target || (target != this && !target->isAlive()))
         return SPELL_AURA_PROC_FAILED;
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && HasSpellCooldown(triggerEntry))
         return SPELL_AURA_PROC_FAILED;
 
     if (basepoints0)
@@ -522,8 +522,8 @@ SpellAuraProcResult Unit::HandleHasteAuraProc(Unit *pVictim, DamageInfo* damageI
     else
         CastSpell(target,triggered_spell_id,true,castItem,triggeredByAura);
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER)
-        ((Player*)this)->AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -582,7 +582,7 @@ SpellAuraProcResult Unit::HandleSpellCritChanceAuraProc(Unit *pVictim, DamageInf
     if (!target || (target != this && !target->isAlive()))
         return SPELL_AURA_PROC_FAILED;
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && HasSpellCooldown(triggered_spell_id))
         return SPELL_AURA_PROC_FAILED;
 
     if (basepoints0)
@@ -590,8 +590,8 @@ SpellAuraProcResult Unit::HandleSpellCritChanceAuraProc(Unit *pVictim, DamageInf
     else
         CastSpell(target,triggered_spell_id,true,castItem,triggeredByAura);
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER)
-        ((Player*)this)->AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -1157,7 +1157,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         71556, 71561, 71560     // Druid
                     };
 
-                    if (cooldown && GetTypeId() == TYPEID_PLAYER && static_cast<Player*>(this)->HasSpellCooldown(dummySpell->Id))
+                    if (cooldown && HasSpellCooldown(dummySpell->Id))
                         return SPELL_AURA_PROC_FAILED;
 
                     uint32 const *proc_spells = NULL;
@@ -1170,8 +1170,8 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
 
                     CastSpell(this, proc_spells[getClass()*3 + urand(0,2)], true, castItem, triggeredByAura);
 
-                    if (cooldown && GetTypeId() == TYPEID_PLAYER)
-                        static_cast<Player*>(this)->AddSpellCooldown(dummySpell->Id, 0, time(NULL) + cooldown);
+                    if (cooldown)
+                        AddSpellCooldown(dummySpell->Id, 0, time(NULL) + cooldown);
 
                     return SPELL_AURA_PROC_OK;
                 }
@@ -1364,7 +1364,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         return SPELL_AURA_PROC_FAILED;
 
                     // not 100% safe with client version switches but for 3.1.3 no spells with cooldown that can have mage player except Frost Nova.
-                    ((Player*)this)->RemoveSpellCategoryCooldown(35, true);
+                    RemoveSpellCategoryCooldown(35, true);
                     return SPELL_AURA_PROC_OK;
                 }
                 // Glyph of Icy Veins
@@ -1897,7 +1897,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         return SPELL_AURA_PROC_FAILED;
 
                     // check explicitly only to prevent mana cast when halth cast cooldown
-                    if (cooldown && ((Player*)this)->HasSpellCooldown(34299))
+                    if (cooldown && HasSpellCooldown(34299))
                         return SPELL_AURA_PROC_FAILED;
 
                     // health
@@ -2578,16 +2578,15 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         if (procSpell->GetSpellFamilyFlags().test<CF_PALADIN_FLASH_OF_LIGHT>() && (pVictim->HasAura(53569, EFFECT_INDEX_0) || pVictim->HasAura(53576, EFFECT_INDEX_0)))
                         {
                             triggered_spell_id = 66922;
-
                             basepoints[0] = int32(damage / GetSpellAuraMaxTicks(triggered_spell_id));
 
                             // For first rank of Infusion of Light  has only 1/2 bonus
                             if (pVictim->HasAura(53569, EFFECT_INDEX_0))
-                                basepoints[0] /= 2;
+                                basepoints[0] = basepoints[0] >> 1;
 
                             // T9 - 4 paladin bonus cause double heal
                             if (pVictim->HasAura(67191))
-                                basepoints[0] *= 2;
+                                basepoints[0] = basepoints[0] << 1;
                         }
                         else
                             return SPELL_AURA_PROC_FAILED;
@@ -2752,7 +2751,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         return SPELL_AURA_PROC_FAILED;
 
                     // custom cooldown processing case
-                    if (cooldown && ((Player*)this)->HasSpellCooldown(dummySpell->Id))
+                    if (cooldown && HasSpellCooldown(dummySpell->Id))
                         return SPELL_AURA_PROC_FAILED;
 
                     // Now amount of extra power stored in 1 effect of Enchant spell
@@ -2805,8 +2804,8 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                     }
 
                     // apply cooldown before cast to prevent processing itself
-                    if ( cooldown )
-                        ((Player*)this)->AddSpellCooldown(dummySpell->Id,0,time(NULL) + cooldown);
+                    if (cooldown)
+                        AddSpellCooldown(dummySpell->Id,0,time(NULL) + cooldown);
 
                     // Attack Twice
                     for ( uint32 i = 0; i<2; ++i )
@@ -3061,7 +3060,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                         return SPELL_AURA_PROC_FAILED;
 
                 // custom cooldown processing case
-                if ( cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(dummySpell->Id))
+                if ( cooldown && HasSpellCooldown(dummySpell->Id))
                     return SPELL_AURA_PROC_FAILED;
 
                 uint32 spellId = 0;
@@ -3099,12 +3098,12 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
 
                 // Remove cooldown (Chain Lightning - have Category Recovery time)
                 if (procSpell->GetSpellFamilyFlags().test<CF_SHAMAN_CHAIN_LIGHTNING>())
-                    ((Player*)this)->RemoveSpellCooldown(spellId);
+                    RemoveSpellCooldown(spellId);
 
                 CastSpell(pVictim, spellId, true, castItem, triggeredByAura);
 
-                if (cooldown && GetTypeId() == TYPEID_PLAYER)
-                    ((Player*)this)->AddSpellCooldown(dummySpell->Id, 0, time(NULL) + cooldown);
+                if (cooldown)
+                    AddSpellCooldown(dummySpell->Id, 0, time(NULL) + cooldown);
 
                 return SPELL_AURA_PROC_OK;
             }
@@ -3470,8 +3469,8 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
                 if (target == NULL)
                     target = !(procFlag & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
                 CastSpell(target, *itr, true, castItem, triggeredByAura);
-                if (cooldown && GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)this)->AddSpellCooldown(*itr,0,time(NULL) + cooldown);
+                if (cooldown)
+                    AddSpellCooldown(*itr,0,time(NULL) + cooldown);
             }
         }
     }
@@ -3492,7 +3491,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
     if (!target || (target != this && !target->isAlive()))
         return SPELL_AURA_PROC_FAILED;
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && HasSpellCooldown(triggered_spell_id))
         return SPELL_AURA_PROC_FAILED;
 
     if (basepoints[EFFECT_INDEX_0] || basepoints[EFFECT_INDEX_1] || basepoints[EFFECT_INDEX_2])
@@ -3504,8 +3503,8 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(Unit *pVictim, DamageInfo* damageI
     else
         CastSpell(target, triggerEntry, true, castItem, triggeredByAura);
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER)
-        ((Player*)this)->AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -3745,11 +3744,14 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                     trigger_spell_id = 72195;
                     break;
                 }
-                case 72408:                                 // Rune of Blood (Saurfang)
+                case 72256:                                 // Mark of the Fallen Champion
                 {
-                    // Proc on targets with dummy aura (debuff cast by Saurfang)
-                    if (pVictim && !pVictim->HasAura(72410))
-                        return SPELL_AURA_PROC_FAILED;
+                    if (SpellEntry const* triggerSpell = sSpellStore.LookupEntry(trigger_spell_id))
+                    {
+                        if (SpellEntry const* difftrigEntry =  GetSpellEntryByDifficulty(triggerSpell->SpellDifficultyId, GetMap()->GetDifficulty(), GetMap()->IsRaid()))
+                            triggerSpell = difftrigEntry;
+                        basepoints[EFFECT_INDEX_0] = triggerSpell->CalculateSimpleValue(EFFECT_INDEX_0) + damage;
+                    }
                     break;
                 }
             }
@@ -3946,6 +3948,9 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                 }
                 basepoints[0] = damage * triggerAmount / 100 / 3;
                 target = this;
+                // increase healing factor with each critical strike. Patch 3.0.2
+                if (Aura* old_aura = GetAura(trigger_spell_id, EFFECT_INDEX_0))
+                    basepoints[0] += old_aura->GetModifier()->m_amount;
             }
             // Glyph of Shadow Word: Pain
             else if (auraSpellInfo->Id == 55681 )
@@ -4309,8 +4314,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
             if (auraSpellInfo->Id == 62259)
             {
                 // remove cooldown of Death Grip
-                if (GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)this)->RemoveSpellCooldown(49576, true);
+                RemoveSpellCooldown(49576, true);
                 return SPELL_AURA_PROC_OK;
             }
             // Item - Death Knight T10 Melee 4P Bonus
@@ -4441,8 +4445,7 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
         case 50227:
         {
             // Remove cooldown on Shield Slam
-            if (GetTypeId() == TYPEID_PLAYER)
-                ((Player*)this)->RemoveSpellCategoryCooldown(1209, true);
+            RemoveSpellCategoryCooldown(1209, true);
             break;
         }
         // Maelstrom Weapon
@@ -4530,30 +4533,13 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
         case 59052:
         {
             // Howling Blast cooldown reset
-            if (GetTypeId() == TYPEID_PLAYER)
-                ((Player*)this)->RemoveSpellCategoryCooldown(1248, true);
+            RemoveSpellCategoryCooldown(1248, true);
             break;
         }
         // Druid - Savage Defense
         case 62606:
         {
             basepoints[0] = int32(GetTotalAttackPowerValue(BASE_ATTACK) * triggerAmount / 100);
-            break;
-        }
-        // Hack for Blood mark (ICC Saurfang)
-        case 72255:
-        case 72444:
-        case 72445:
-        case 72446:
-        {
-            float radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(auraSpellInfo->EffectRadiusIndex[EFFECT_INDEX_0]));
-            Map::PlayerList const& pList = GetMap()->GetPlayers();
-            for (Map::PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr)
-                if (itr->getSource() && itr->getSource()->IsWithinDistInMap(this,radius) && itr->getSource()->HasAura(triggerEntry->targetAuraSpell))
-                {
-                    target = itr->getSource();
-                    break;
-                }
             break;
         }
     }
@@ -4569,13 +4555,13 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
                 if (target == NULL)
                     target = !(procFlags & PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL) && IsPositiveSpell(*itr) ? this : pVictim;
                 CastSpell(target, *itr, true, castItem, triggeredByAura);
-                if (cooldown && GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)this)->AddSpellCooldown(*itr,0,time(NULL) + cooldown);
+                if (cooldown)
+                    AddSpellCooldown(*itr,0,time(NULL) + cooldown);
             }
         }
     }
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(trigger_spell_id))
+    if (cooldown && HasSpellCooldown(trigger_spell_id))
         return SPELL_AURA_PROC_FAILED;
 
     // try detect target manually if not set
@@ -4604,8 +4590,8 @@ SpellAuraProcResult Unit::HandleProcTriggerSpellAuraProc(Unit *pVictim, DamageIn
         return SPELL_AURA_PROC_FAILED;
     }
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER)
-        ((Player*)this)->AddSpellCooldown(trigger_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(trigger_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -4764,13 +4750,13 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Damag
         return SPELL_AURA_PROC_FAILED;
     }
 
-    if ( cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if ( cooldown && HasSpellCooldown(triggered_spell_id))
         return SPELL_AURA_PROC_FAILED;
 
     CastSpell(pVictim, triggered_spell_id, true, castItem, triggeredByAura);
 
-    if ( cooldown && GetTypeId()==TYPEID_PLAYER )
-        ((Player*)this)->AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -4818,9 +4804,7 @@ SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* 
 
                 // lock aura holder (currently SPELL_AURA_PRAYER_OF_MENDING is single target spell, so will attempt removing from old target
                 // when applied to new one)
-                //holder->SetInUse(true);
                 target->AddSpellAuraHolder(new_holder);
-                //holder->SetInUse(false);
             }
             else
                 holder->SetAuraCharges(1,false);
@@ -5007,7 +4991,7 @@ SpellAuraProcResult Unit::HandleModDamagePercentDoneAuraProc(Unit* /*pVictim*/, 
         uint32 maxmana = GetMaxPower(POWER_MANA);
         int32 bp = int32(maxmana* GetAttackTime(RANGED_ATTACK)/1000.0f/100.0f);
 
-        if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(34075))
+        if (cooldown && HasSpellCooldown(34075))
             return SPELL_AURA_PROC_FAILED;
 
         CastCustomSpell(this, 34075, &bp, NULL, NULL, true, castItem, triggeredByAura);
@@ -5148,11 +5132,8 @@ SpellAuraProcResult Unit::HandleRemoveByDamageProc(Unit* pVictim, DamageInfo* da
                 procSpell->HasAttribute(SPELL_ATTR_EX2_UNK28))
             return SPELL_AURA_PROC_FAILED;
     }
-    
 
-    //holder->SetInUse(true);
     RemoveAurasByCasterSpell(triggeredByAura->GetSpellProto()->Id, triggeredByAura->GetCasterGuid());
-    //holder->SetInUse(false);
 
     return SPELL_AURA_PROC_OK;
 }
@@ -5217,13 +5198,13 @@ SpellAuraProcResult Unit::HandleManaShieldAuraProc(Unit *pVictim, DamageInfo* da
     if (!target || (target != this && !target->isAlive()))
         return SPELL_AURA_PROC_FAILED;
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER && ((Player*)this)->HasSpellCooldown(triggered_spell_id))
+    if (cooldown && HasSpellCooldown(triggered_spell_id))
         return SPELL_AURA_PROC_FAILED;
 
     CastSpell(target, triggered_spell_id, true, castItem, triggeredByAura);
 
-    if (cooldown && GetTypeId()==TYPEID_PLAYER)
-        ((Player*)this)->AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
+    if (cooldown)
+        AddSpellCooldown(triggered_spell_id,0,time(NULL) + cooldown);
 
     return SPELL_AURA_PROC_OK;
 }

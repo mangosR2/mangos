@@ -17,7 +17,7 @@
  */
 
 #include "Common.h"
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 #include "SharedDefines.h"
 #include "ObjectMgr.h"
 #include "ProgressBar.h"
@@ -1864,11 +1864,11 @@ void LFGMgr::Teleport(Player* pPlayer, bool out, bool fromOpcode /*= false*/)
         }
         else if (AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(dungeon->map))
         {
-            mapid = at->target_mapId;
-            x = at->target_X;
-            y = at->target_Y;
-            z = at->target_Z;
-            orientation = at->target_Orientation;
+            mapid = at->loc.GetMapId();
+            x = at->loc.x;
+            y = at->loc.y;
+            z = at->loc.z;
+            orientation = at->loc.orientation;
         }
         else
         {

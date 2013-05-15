@@ -579,7 +579,7 @@ void WorldSession::HandlePetCancelAuraOpcode( WorldPacket& recvPacket)
 
     pet->RemoveAurasDueToSpell(spellId);
 
-    pet->AddCreatureSpellCooldown(spellId);
+    pet->AddSpellAndCategoryCooldowns(spellInfo);
 }
 
 void WorldSession::HandleCancelGrowthAuraOpcode( WorldPacket& /*recvPacket*/)
@@ -657,7 +657,7 @@ void WorldSession::HandleSpellClick( WorldPacket & recv_data )
     SpellClickInfoMapBounds clickPair = sObjectMgr.GetSpellClickInfoMapBounds(unit->GetEntry());
     for(SpellClickInfoMap::const_iterator itr = clickPair.first; itr != clickPair.second; ++itr)
     {
-        if (itr->second.IsFitToRequirements(_player))
+        if (itr->second.IsFitToRequirements(_player, unit))
         {
             Unit *caster = (itr->second.castFlags & 0x1) ? (Unit*)_player : (Unit*)unit;
             Unit *target = (itr->second.castFlags & 0x2) ? (Unit*)_player : (Unit*)unit;
@@ -808,8 +808,8 @@ void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
     ObjectGuid guid;
     uint32 spellId;
     float elevation, speed;
-    float srcX, srcY, srcZ;
-    float dstX, dstY, dstZ;
+    WorldLocation src = GetPlayer()->GetPosition();
+    WorldLocation dst = GetPlayer()->GetPosition();
     uint8 moveFlag;
 
     recv_data >> guid;
@@ -820,8 +820,8 @@ void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
     recv_data >> spellId;
     recv_data >> elevation;
     recv_data >> speed;
-    recv_data >> srcX >> srcY >> srcZ;
-    recv_data >> dstX >> dstY >> dstZ;
+    recv_data >> src.x >> src.y >> src.z;
+    recv_data >> dst.x >> dst.y >> dst.z;
     recv_data >> moveFlag;
 
     Unit* unit = ObjectAccessor::GetUnit(*GetPlayer(), guid);
@@ -833,14 +833,14 @@ void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
     {
         return;
     }
-    DEBUG_LOG("WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: src %f/%f %f/%f %f/%f dst %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
+    DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: src %f/%f %f/%f %f/%f dst %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
         spellId,
-        spell->m_targets.m_srcX, srcX, spell->m_targets.m_srcY, srcY, spell->m_targets.m_srcZ, srcZ,
-        spell->m_targets.m_destX, dstX, spell->m_targets.m_destY, dstY, spell->m_targets.m_destZ, dstZ,
+        spell->m_targets.getSource().x, src.x, spell->m_targets.getSource().y, src.y, spell->m_targets.getSource().z, src.z,
+        spell->m_targets.getDestination().x, dst.x, spell->m_targets.getDestination().y, dst.y, spell->m_targets.getDestination().z, dst.z,
         spell->m_targets.GetSpeed(), speed, spell->m_targets.GetElevation(), elevation);
 
-    spell->m_targets.setSource(srcX, srcY, srcZ);
-    spell->m_targets.setDestination(dstX, dstY, dstZ);
+    spell->m_targets.setSource(src);
+    spell->m_targets.setDestination(dst);
     spell->m_targets.SetElevation(elevation);
     spell->m_targets.SetSpeed(speed);
 

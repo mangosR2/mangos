@@ -1384,7 +1384,8 @@ struct MapEntry
             MapID==209 || MapID==269 || MapID==309 ||       // TanarisInstance, CavernsOfTime, Zul'gurub
             MapID==509 || MapID==534 || MapID==560 ||       // AhnQiraj, HyjalPast, HillsbradPast
             MapID==568 || MapID==580 || MapID==595 ||       // ZulAman, Sunwell Plateau, Culling of Stratholme
-            MapID==603 || MapID==615 || MapID==616;         // Ulduar, The Obsidian Sanctum, The Eye Of Eternity
+            MapID==603 || MapID==615 || MapID==616 ||       // Ulduar, The Obsidian Sanctum, The Eye Of Eternity
+            MapID==658;                                     // Pit of Saron
     }
 
     bool IsContinent() const
@@ -2359,6 +2360,8 @@ struct SummonPropertiesEntry
                                                             //      if title = UNITNAME_SUMMON_TITLE_COMPANION, slot=6 -> defensive guardian, in other cases criter/minipet
                                                             //      Slot may have other uses, selection of pet type in some cases?
     uint32  Flags;                                          // 5        m_flags (enum SummonPropFlags)
+
+    bool HasFlag(uint32 flag) const { return bool(Flags & flag); }
 };
 
 #define MAX_TALENT_RANK 5

@@ -76,7 +76,7 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
     MANGOS_ASSERT(owner);
 
     WorldObject::_Create(ObjectGuid(HIGHGUID_CORPSE, guidlow), owner->GetPhaseMask());
-    Relocate(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ(), owner->GetOrientation());
+    Relocate(owner->GetPosition());
 
     // we need to assign owner's map for corpse
     // in other way we will get a crash in Corpse::SaveToDB()
@@ -156,11 +156,13 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
     ////   7     8            9         10         11      12    13     14           15            16              17       18
     //    "time, corpse_type, instance, phaseMask, gender, race, class, playerBytes, playerBytes2, equipmentCache, guildId, playerFlags FROM corpse"
     uint32 playerLowGuid = fields[1].GetUInt32();
-    float positionX     = fields[2].GetFloat();
-    float positionY     = fields[3].GetFloat();
-    float positionZ     = fields[4].GetFloat();
-    float orientation   = fields[5].GetFloat();
-    uint32 mapid        = fields[6].GetUInt32();
+    WorldLocation position( fields[6].GetUInt32(),   //MapId
+                            fields[2].GetFloat(),    // x
+                            fields[3].GetFloat(),    // y
+                            fields[4].GetFloat(),    // z
+                            fields[5].GetFloat(),    // orientation
+                            fields[10].GetUInt32(),  // PhaseMask
+                            fields[9].GetUInt32());  // InstanceId
 
     Object::_Create(ObjectGuid(HIGHGUID_CORPSE, lowguid));
 
@@ -173,8 +175,6 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
         return false;
     }
 
-    uint32 instanceid   = fields[9].GetUInt32();
-    uint32 phaseMask    = fields[10].GetUInt32();
     uint8 gender        = fields[11].GetUInt8();
     uint8 race          = fields[12].GetUInt8();
     uint8 _class        = fields[13].GetUInt8();
@@ -235,11 +235,7 @@ bool Corpse::LoadFromDB(uint32 lowguid, Field* fields)
 
     // no need to mark corpse as lootable, because corpses are not saved in battle grounds
 
-    // place
-    SetLocationInstanceId(instanceid);
-    SetLocationMapId(mapid);
-    SetPhaseMask(phaseMask, false);
-    Relocate(positionX, positionY, positionZ, orientation);
+    Relocate(position);
 
     if (!IsPositionValid())
     {

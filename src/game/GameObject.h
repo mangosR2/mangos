@@ -621,17 +621,18 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
 {
     public:
         explicit GameObject();
-        ~GameObject();
+        virtual ~GameObject();
 
         void AddToWorld();
         virtual void RemoveFromWorld(bool remove) override;
 
-        bool Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang,
+        virtual bool Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMask, float x, float y, float z, float ang,
                     QuaternionData rotation = QuaternionData(), uint8 animprogress = GO_ANIMPROGRESS_DEFAULT, GOState go_state = GO_STATE_READY);
+
         void Update(uint32 update_diff, uint32 p_time) override;
         GameObjectInfo const* GetGOInfo() const;
 
-        bool IsTransport() const;
+        virtual bool IsTransport() const override;
         bool IsDynTransport() const;
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid
@@ -777,6 +778,8 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         void SetLinkedWorldState(uint32 value);
         Team GetTeam() const;
         bool SetTeam(Team team);
+
+        void UpdateSplineMovement(uint32 t_diff);
 
         GameObjectModel* m_model;
 

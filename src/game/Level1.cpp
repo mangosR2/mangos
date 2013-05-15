@@ -32,6 +32,7 @@
 #include "CellImpl.h"
 #include "MapPersistentStateMgr.h"
 #include "Mail.h"
+#include "Transports.h"
 #include "Util.h"
 #include "SpellMgr.h"
 #ifdef _DEBUG_VMAPS
@@ -479,9 +480,15 @@ bool ChatHandler::HandleNamegoCommand(char* args)
         target->InterruptTaxiFlying();
 
         // before GM
-        float x, y, z;
-        m_session->GetPlayer()->GetClosePoint(x, y, z, target->GetObjectBoundingRadius());
-        target->TeleportTo(m_session->GetPlayer()->GetMapId(), x, y, z, target->GetOrientation());
+
+        if (m_session->GetPlayer()->IsOnTransport())
+        {
+            WorldLocation loc = m_session->GetPlayer()->GetTransport()->GetPosition();
+            target->TeleportTo(loc, TELE_TO_NODELAY);
+            m_session->GetPlayer()->GetTransport()->AddPassenger(target, loc.GetTransportPos());
+        }
+        else
+            target->TeleportTo(m_session->GetPlayer()->GetClosePoint(target->GetObjectBoundingRadius()), TELE_TO_NODELAY);
     }
     else
     {
@@ -521,7 +528,6 @@ bool ChatHandler::HandleGonameCommand(char* args)
         SetSentErrorMessage(true);
         return false;
     }
-
 
     if (target)
     {
@@ -612,7 +618,7 @@ bool ChatHandler::HandleGonameCommand(char* args)
         if (needReportToTarget(target))
             ChatHandler(target).PSendSysMessage(LANG_APPEARING_TO, GetNameLink().c_str());
 
-        target->InterruptTaxiFlying();
+        _player->InterruptTaxiFlying();
 
         // to point to see at target with same orientation
         float x, y, z;
@@ -667,7 +673,7 @@ bool ChatHandler::HandleRecallCommand(char* args)
         return false;
     }
 
-    return HandleGoHelper(target, target->m_recallMap, target->m_recallX, target->m_recallY, &target->m_recallZ, &target->m_recallO);
+    return HandleGoHelper(target, target->m_recall.GetMapId(), target->m_recall.getX(), target->m_recall.getY(), &target->m_recall.z, &target->m_recall.o);
 }
 
 // Edit Player HP
@@ -1663,7 +1669,7 @@ bool ChatHandler::HandleTeleCommand(char* args)
         return false;
     }
 
-    return HandleGoHelper(_player, tele->mapId, tele->position_x, tele->position_y, &tele->position_z, &tele->orientation);
+    return HandleGoHelper(_player, tele->loc.GetMapId(), tele->loc.x, tele->loc.y, &tele->loc.z, &tele->loc.orientation);
 }
 
 bool ChatHandler::HandleLookupAreaCommand(char* args)
@@ -1881,7 +1887,7 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
         if (needReportToTarget(target))
             ChatHandler(target).PSendSysMessage(LANG_TELEPORTED_TO_BY, GetNameLink().c_str());
 
-        return HandleGoHelper(target, tele->mapId, tele->position_x, tele->position_y, &tele->position_z, &tele->orientation);
+        return HandleGoHelper(target, tele->loc.GetMapId(), tele->loc.x, tele->loc.y, &tele->loc.z, &tele->loc.orientation);
     }
     else
     {
@@ -1892,9 +1898,8 @@ bool ChatHandler::HandleTeleNameCommand(char* args)
         std::string nameLink = playerLink(target_name);
 
         PSendSysMessage(LANG_TELEPORTING_TO, nameLink.c_str(), GetMangosString(LANG_OFFLINE), tele->name.c_str());
-        Player::SavePositionInDB(target_guid, tele->mapId,
-                                 tele->position_x, tele->position_y, tele->position_z, tele->orientation,
-                                 sTerrainMgr.GetZoneId(tele->mapId, tele->position_x, tele->position_y, tele->position_z));
+        Player::SavePositionInDB(target_guid, tele->loc.GetMapId(),
+                                 tele->loc.x, tele->loc.y, tele->loc.z, tele->loc.orientation, tele->loc.GetZoneId());
     }
 
     return true;
@@ -1962,7 +1967,7 @@ bool ChatHandler::HandleTeleGroupCommand(char* args)
 
         pl->InterruptTaxiFlying();
 
-        pl->TeleportTo(tele->mapId, tele->position_x, tele->position_y, tele->position_z, tele->orientation);
+        pl->TeleportTo(tele->loc.GetMapId(), tele->loc.x, tele->loc.y, tele->loc.z, tele->loc.orientation);
     }
 
     return true;
@@ -2274,15 +2279,15 @@ bool ChatHandler::HandleGoGridCommand(char* args)
 
 bool ChatHandler::HandleModifyDrunkCommand(char* args)
 {
-    if (!*args)    return false;
+    if (!*args)
+        return false;
 
-    uint32 drunklevel = (uint32)atoi(args);
-    if (drunklevel > 100)
-        drunklevel = 100;
+    uint8 drunkValue = (uint8)atoi(args);
+    if (drunkValue > 100)
+        drunkValue = 100;
 
-    uint16 drunkMod = drunklevel * 0xFFFF / 100;
-
-    m_session->GetPlayer()->SetDrunkValue(drunkMod);
+    if (Player* target = getSelectedPlayer())
+        target->SetDrunkValue(drunkValue);
 
     return true;
 }

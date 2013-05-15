@@ -110,14 +110,14 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     if (!map)
     {
-        DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: cannot create requested map %u for teleport!", loc.GetMapId());
+        DETAIL_LOG("WorldSession::HandleMoveWorldportAckOpcode: cannot create requested map %u for teleport player %s!",loc.GetMapId(), GetPlayer()->GetGuidStr().c_str());
         GetPlayer()->SetSemaphoreTeleportFar(false);
         GetPlayer()->TeleportToHomebind();
         return;
     }
 
     GetPlayer()->SetMap(map);
-    GetPlayer()->Relocate(loc.coord_x, loc.coord_y, loc.coord_z, loc.orientation);
+    GetPlayer()->Relocate(loc);
 
     GetPlayer()->SendInitialPacketsBeforeAddToMap();
     // the CanEnter checks are done in TeleporTo but conditions may change
@@ -241,7 +241,7 @@ void WorldSession::HandleMoveTeleportAckOpcode(WorldPacket& recv_data)
 
     WorldLocation const& dest = plMover->GetTeleportDest();
 
-    plMover->SetPosition(dest.coord_x, dest.coord_y, dest.coord_z, dest.orientation, true);
+    plMover->SetPosition(dest, true);
 
     uint32 newzone, newarea;
     plMover->GetZoneAndAreaId(newzone, newarea);
@@ -366,7 +366,7 @@ void WorldSession::HandleForceSpeedChangeAckOpcodes(WorldPacket &recv_data)
             return;
     }
 
-    if (!_player->GetTransport() && fabs(_player->GetSpeed(move_type) - newspeed) > 0.01f)
+    if (!_player->IsOnTransport() && fabs(_player->GetSpeed(move_type) - newspeed) > 0.01f)
     {
         if(_player->GetSpeed(move_type) > newspeed)         // must be greater - just correct
         {
@@ -406,10 +406,10 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
     recv_data.hexlike();
 
     ObjectGuid old_mover_guid;
-    MovementInfo mi;
+    MovementInfo movementInfo;
 
     recv_data >> old_mover_guid.ReadAsPacked();
-    recv_data >> mi;
+    recv_data >> movementInfo;
 
     ObjectGuid moverGuid = GetPlayer()->GetMover() ? GetPlayer()->GetMover()->GetObjectGuid() : ObjectGuid();
 
@@ -425,7 +425,7 @@ void WorldSession::HandleMoveNotActiveMoverOpcode(WorldPacket &recv_data)
         return;
     }
 
-    _player->m_movementInfo = mi;
+    _player->m_movementInfo = movementInfo;
 }
 
 void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket& /*recvdata*/)
@@ -559,33 +559,18 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
     {
         if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
         {
-            if (!plMover->GetTransport())
+            if (!plMover->IsOnTransport())
             {
                 /* process anticheat check */
                 GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_TRANSPORT,movementInfo);
 
                 // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid can be found in the transport list
-                for (MapManager::TransportSet::const_iterator iter = sMapMgr.m_Transports.begin(); iter != sMapMgr.m_Transports.end(); ++iter)
-                {
-                    if ((*iter)->GetObjectGuid() == movementInfo.GetTransportGuid())
-                    {
-                        plMover->m_transport = (*iter);
-                        (*iter)->AddPassenger(plMover);
-
-                        if (plMover->GetVehicleKit())
-                            plMover->GetVehicleKit()->RemoveAllPassengers();
-
-                        break;
-                    }
-                }
+                if (Transport* transport = sObjectMgr.GetTransportByGuid(movementInfo.GetTransportGuid()))
+                    transport->AddPassenger(plMover, Position());
             }
         }
-        else if (plMover->GetTransport())               // if we were on a transport, leave
-        {
+        else if (plMover->IsOnTransport())               // if we were on a transport, leave
             plMover->GetTransport()->RemovePassenger(plMover);
-            plMover->SetTransport(NULL);
-            movementInfo.ClearTransportData();
-        }
 
         if (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plMover->IsInWater())
         {
@@ -593,8 +578,10 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
             plMover->SetInWater( !plMover->IsInWater() || plMover->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z) );
         }
 
-        plMover->SetPosition(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o);
-        plMover->m_movementInfo.ClearTransportData();
+        plMover->SetPosition(movementInfo.GetPosition());
+        if (plMover->IsOnTransport())
+            plMover->SetTransportPosition(movementInfo.GetTransportPosition());
+
         plMover->m_movementInfo = movementInfo;
 
         if((movementInfo.GetPos()->z < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPos()->z < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPos()->z < 20.0f)
@@ -633,7 +620,9 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         if (mover->IsInWorld())
         {
             mover->m_movementInfo = movementInfo;
-            mover->SetPosition(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o);
+            mover->SetPosition(movementInfo.GetPosition());
+            if (mover->IsOnTransport())
+                mover->SetTransportPosition(movementInfo.GetTransportPosition());
         }
     }
 }

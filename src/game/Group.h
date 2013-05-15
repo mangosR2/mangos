@@ -263,7 +263,7 @@ class MANGOS_DLL_SPEC Group
         // properties accessories
         ObjectGuid GetObjectGuid() const { return m_Guid; }
         uint32 GetId() const { return m_Guid.GetCounter(); }
-        bool IsFull() const { return (m_groupType == GROUPTYPE_NORMAL) ? (m_memberSlots.size() >= MAX_GROUP_SIZE) : (m_memberSlots.size() >= MAX_RAID_SIZE); }
+        bool IsFull() const { return (m_groupType == GROUPTYPE_NORMAL || isLFGGroup()) ? (m_memberSlots.size() >= MAX_GROUP_SIZE) : (m_memberSlots.size() >= MAX_RAID_SIZE); }
         bool isRaidGroup() const { return m_groupType & GROUPTYPE_RAID; }
         bool isBGGroup()   const { return m_bgGroup != NULL; }
         bool IsCreated()   const { return GetMembersCount() > 0; }
@@ -306,6 +306,7 @@ class MANGOS_DLL_SPEC Group
 
         MemberSlotList const& GetMemberSlots() const { return m_memberSlots; }
         GroupReference* GetFirstMember() { return m_memberMgr.getFirst(); }
+        GroupReference const* GetFirstMember() const { return m_memberMgr.getFirst(); }
         uint32 GetMembersCount() const { return m_memberSlots.size(); }
         void GetDataForXPAtKill(Unit const* victim, uint32& count,uint32& sum_level, Player* & member_with_max_level, Player* & not_gray_member_with_max_level, Player* additional = NULL);
         uint8 GetMemberGroup(ObjectGuid guid) const

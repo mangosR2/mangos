@@ -419,6 +419,40 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
+AiDelayEventAround::AiDelayEventAround(AIEventType eventType, ObjectGuid invokerGuid, Creature& owner, std::list<Creature*> const& receivers) :
+    BasicEvent(WORLDOBJECT_EVENT_TYPE_COMMON),
+    m_eventType(eventType),
+    m_invokerGuid(invokerGuid),
+    m_owner(owner)
+{
+    // Pushing guids because in delay can happen some creature gets despawned => invalid pointer
+    m_receiverGuids.reserve(receivers.size());
+    for (std::list<Creature*>::const_iterator itr = receivers.begin(); itr != receivers.end(); ++itr)
+        m_receiverGuids.push_back((*itr)->GetObjectGuid());
+}
+
+bool AiDelayEventAround::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    Unit* pInvoker = m_owner.GetMap()->GetUnit(m_invokerGuid);
+
+    for (GuidVector::const_reverse_iterator itr = m_receiverGuids.rbegin(); itr != m_receiverGuids.rend(); ++itr)
+    {
+        if (Creature* pReceiver = m_owner.GetMap()->GetAnyTypeCreature(*itr))
+        {
+            pReceiver->AI()->ReceiveAIEvent(m_eventType, &m_owner, pInvoker);
+            // Special case for type 0 (call-assistance)
+            if (m_eventType == AI_EVENT_CALL_ASSISTANCE && pInvoker && pReceiver->CanAssistTo(&m_owner, pInvoker))
+            {
+                pReceiver->SetNoCallAssistance(true);
+                pReceiver->AI()->AttackStart(pInvoker);
+            }
+        }
+    }
+    m_receiverGuids.clear();
+
+    return true;
+}
+
 // Vehicle events
 bool PassengerEjectEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {

@@ -53,7 +53,7 @@
 #include "CreatureLinkingMgr.h"
 
 // apply implementation of the singletons
-#include "Policies/SingletonImp.h"
+#include "Policies/Singleton.h"
 
 ObjectGuid CreatureData::GetObjectGuid(uint32 lowguid) const
 {
@@ -91,8 +91,11 @@ bool VendorItemData::RemoveItem(uint32 item_id)
 VendorItem const* VendorItemData::FindItemCostPair(uint32 item_id, uint32 extendedCost) const
 {
     for (VendorItemList::const_iterator i = m_items.begin(); i != m_items.end(); ++i)
+    {
+        // Skip checking for conditions, condition system is powerfull enough to not require additional entries only for the conditions
         if ((*i)->item == item_id && (*i)->ExtendedCost == extendedCost)
             return *i;
+    }
     return NULL;
 }
 
@@ -103,9 +106,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
     {
         if (fabs(m_dist) < M_NULL_F)
         {
-            m_pos.x = m_closeObject->GetPositionX();
-            m_pos.y = m_closeObject->GetPositionY();
-            m_pos.z = m_closeObject->GetPositionZ();
+            m_pos = m_closeObject->GetPosition();
         }
         else if (checkLOS)
         {
@@ -123,7 +124,7 @@ void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
 
 bool CreatureCreatePos::Relocate(Creature* cr) const
 {
-    cr->Relocate(m_pos.x, m_pos.y, m_pos.z, m_pos.o);
+    cr->Relocate(m_pos);
 
     if (!cr->IsPositionValid())
     {
@@ -146,9 +147,6 @@ m_creatureInfo(NULL)
 {
     m_regenTimer = 200;
     m_valuesCount = UNIT_END;
-
-    m_CreatureSpellCooldowns.clear();
-    m_CreatureCategoryCooldowns.clear();
 
     SetWalk(true, true);
 }
@@ -199,9 +197,8 @@ void Creature::RemoveCorpse()
     if (respawnDelay)
         m_respawnTime = time(NULL) + respawnDelay;
 
-    float x, y, z, o;
-    GetRespawnCoord(x, y, z, &o);
-    GetMap()->Relocation(this, x, y, z, o);
+    WorldLocation loc = GetRespawnCoord();
+    GetMap()->Relocation(this, loc);
     DisableSpline();
 
     // forced recreate creature object at clients
@@ -1310,9 +1307,13 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
         m_deathState = DEAD;
         if (CanFly())
         {
-            float tz = GetMap()->GetHeight(GetPhaseMask(), data->posX, data->posY, data->posZ);
-            if (data->posZ - tz > 0.1)
-                Relocate(data->posX, data->posY, tz);
+            Position loc = pos.m_pos;
+            float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
+            if (loc.z - tz > 0.1)
+            {
+                loc.z = tz;
+                Relocate(loc);
+            }
         }
     }
     else if (m_respawnTime)                                 // respawn time set but expired
@@ -1340,9 +1341,13 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             // Just set to dead, so need to relocate like above
             if (CanFly())
             {
-                float tz = GetMap()->GetHeight(data->phaseMask, data->posX, data->posY, data->posZ);
-                if (data->posZ - tz > 0.1)
-                    Relocate(data->posX, data->posY, tz);
+                Position loc = pos.m_pos;
+                float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
+                if (loc.z - tz > 0.1)
+                {
+                    loc.z = tz;
+                    Relocate(loc);
+                }
             }
         }
     }
@@ -1360,6 +1365,17 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
     // Creature Linking, Initial load is handled like respawn
     if (m_isCreatureLinkingTrigger && isAlive())
         GetMap()->GetCreatureLinkingHolder()->DoCreatureLinkingEvent(LINKING_EVENT_RESPAWN, this);
+
+    // check if it is rabbit day
+    if (isAlive() && sWorld.getConfig(CONFIG_UINT32_RABBIT_DAY))
+    {
+        time_t rabbit_day = time_t(sWorld.getConfig(CONFIG_UINT32_RABBIT_DAY));
+        tm rabbit_day_tm = *localtime(&rabbit_day);
+        tm now_tm = *localtime(&sWorld.GetGameTime());
+
+        if (now_tm.tm_mon == rabbit_day_tm.tm_mon && now_tm.tm_mday == rabbit_day_tm.tm_mday)
+            CastSpell(this, 10710 + urand(0, 2), true);
+    }
 
     return true;
 }
@@ -1530,21 +1546,16 @@ void Creature::SetDeathState(DeathState s)
 
     if (s == JUST_ALIVED)
     {
-        CreatureInfo const* cinfo = GetCreatureInfo();
-
-        SetHealth(GetMaxHealth());
-        SetLootRecipient(NULL);
-        SetWalk(true, true);
-
-        if (GetTemporaryFactionFlags() & TEMPFACTION_RESTORE_RESPAWN)
-            ClearTemporaryFaction();
+        clearUnitState(UNIT_STAT_ALL_STATE);
 
         Unit::SetDeathState(ALIVE);
 
-        clearUnitState(UNIT_STAT_ALL_STATE);
-        GetMotionMaster()->Initialize();
+        SetHealth(GetMaxHealth());
+        SetLootRecipient(NULL);
+        if (GetTemporaryFactionFlags() & TEMPFACTION_RESTORE_RESPAWN)
+            ClearTemporaryFaction();
 
-        SetMeleeDamageSchool(SpellSchools(cinfo->dmgschool));
+        SetMeleeDamageSchool(SpellSchools(GetCreatureInfo()->dmgschool));
 
         // Dynamic flags may be adjusted by spells. Clear them
         // first and let spell from *addon apply where needed.
@@ -1553,8 +1564,11 @@ void Creature::SetDeathState(DeathState s)
 
         // Flags after LoadCreatureAddon. Any spell in *addon
         // will not be able to adjust these.
-        SetUInt32Value(UNIT_NPC_FLAGS, cinfo->npcflag);
+        SetUInt32Value(UNIT_NPC_FLAGS, GetCreatureInfo()->npcflag);
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+
+        SetWalk(true, true);
+        GetMotionMaster()->Initialize();
     }
 }
 
@@ -1785,24 +1799,7 @@ void Creature::CallAssistance()
     if (!m_AlreadyCallAssistance && getVictim() && !isCharmed())
     {
         SetNoCallAssistance(true);
-
-        float radius = sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS);
-        if (radius > 0)
-        {
-            std::list<Creature*> assistList;
-
-            {
-                MaNGOS::AnyAssistCreatureInRangeCheck u_check(this, getVictim(), radius);
-                MaNGOS::CreatureListSearcher<MaNGOS::AnyAssistCreatureInRangeCheck> searcher(assistList, u_check);
-                Cell::VisitGridObjects(this, searcher, radius);
-            }
-
-            if (!assistList.empty())
-            {
-                AssistDelayEvent* event = new AssistDelayEvent(getVictim()->GetObjectGuid(), *this, assistList);
-                AddEvent(event, sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY));
-            }
-        }
+        AI()->SendAIEvent(AI_EVENT_CALL_ASSISTANCE, getVictim(), sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY), sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS));
     }
 }
 
@@ -1816,6 +1813,7 @@ void Creature::CallForHelp(float fRadius)
     Cell::VisitGridObjects(this, worker, fRadius);
 }
 
+/// if enemy provided, check for initial combat help against enemy
 bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /*= true*/) const
 {
     // we don't need help from zombies :)
@@ -1830,7 +1828,7 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
         return false;
 
     // skip fighting creature
-    if (isInCombat())
+    if (enemy && isInCombat())
         return false;
 
     // only free creature
@@ -1850,7 +1848,7 @@ bool Creature::CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction /
     }
 
     // skip non hostile to caster enemy creatures
-    if (!IsHostileTo(enemy))
+    if (enemy && !IsHostileTo(enemy))
         return false;
 
     return true;
@@ -1911,7 +1909,7 @@ bool Creature::IsOutOfThreatArea(Unit* pVictim) const
     float ThreatRadius = sWorld.getConfig(CONFIG_FLOAT_THREAT_RADIUS);
 
     // Use AttackDistance in distance check if threat radius is lower. This prevents creature bounce in and out of combat every update tick.
-    return !pVictim->IsWithinDist3d(m_combatStartX, m_combatStartY, m_combatStartZ,
+    return !pVictim->IsWithinDist3d(m_combatStart.x, m_combatStart.y, m_combatStart.z,
                                     ThreatRadius > AttackDist ? ThreatRadius : AttackDist);
 }
 
@@ -2145,50 +2143,6 @@ Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position, S
     return NULL;
 }
 
-void Creature::_AddCreatureSpellCooldown(uint32 spell_id, time_t end_time)
-{
-    m_CreatureSpellCooldowns[spell_id] = end_time;
-}
-
-void Creature::_AddCreatureCategoryCooldown(uint32 category, time_t apply_time)
-{
-    m_CreatureCategoryCooldowns[category] = apply_time;
-}
-
-void Creature::AddCreatureSpellCooldown(uint32 spellid)
-{
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellid);
-    if (!spellInfo)
-        return;
-
-    uint32 cooldown = GetSpellRecoveryTime(spellInfo);
-
-    if (Player* modOwner = GetSpellModOwner())
-        modOwner->ApplySpellMod(spellid, SPELLMOD_COOLDOWN, cooldown);
-
-    if (cooldown)
-        _AddCreatureSpellCooldown(spellid, time(NULL) + cooldown / IN_MILLISECONDS);
-
-    if (spellInfo->Category)
-        _AddCreatureCategoryCooldown(spellInfo->Category, time(NULL));
-}
-
-bool Creature::HasCategoryCooldown(uint32 spell_id) const
-{
-    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spell_id);
-    if (!spellInfo)
-        return false;
-
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureCategoryCooldowns.find(spellInfo->Category);
-    return (itr != m_CreatureCategoryCooldowns.end() && time_t(itr->second + (spellInfo->CategoryRecoveryTime / IN_MILLISECONDS)) > time(NULL));
-}
-
-bool Creature::HasSpellCooldown(uint32 spell_id) const
-{
-    CreatureSpellCooldowns::const_iterator itr = m_CreatureSpellCooldowns.find(spell_id);
-    return (itr != m_CreatureSpellCooldowns.end() && itr->second > time(NULL)) || HasCategoryCooldown(spell_id);
-}
-
 uint8 Creature::getRace() const
 {
     uint8 race = Unit::getRace();
@@ -2235,12 +2189,7 @@ void Creature::GetRespawnCoord(float& x, float& y, float& z, float* ori, float* 
 void Creature::ResetRespawnCoord()
 {
     if (CreatureData const* data = sObjectMgr.GetCreatureData(GetGUIDLow()))
-    {
-        m_respawnPos.x = data->posX;
-        m_respawnPos.y = data->posY;
-        m_respawnPos.z = data->posZ;
-        m_respawnPos.o = data->orientation;
-    }
+        m_respawnPos = WorldLocation(data->mapid, data->posX, data->posY, data->posZ, data->orientation, data->phaseMask);
 }
 
 void Creature::AllLootRemovedFromCorpse()

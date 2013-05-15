@@ -28,6 +28,7 @@
 #include "DBCStructure.h"
 #include "DBCStores.h"
 #include "SQLStorages.h"
+#include "WorldLocation.h"
 
 #include "Utilities/UnorderedMapSet.h"
 
@@ -217,9 +218,9 @@ inline bool IsExplicitDiscoverySpell(SpellEntry const *spellInfo)
 inline bool IsLootCraftingSpell(SpellEntry const *spellInfo)
 {
     return (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_RANDOM_ITEM ||
-        // different random cards from Inscription (121==Virtuoso Inking Set category) r without explicit item
-        (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2 &&
-        (spellInfo->TotemCategory[0] != 0 || spellInfo->EffectItemType[0]==0)));
+            // different random cards from Inscription (121==Virtuoso Inking Set category) or without explicit item or explicit spells
+            (spellInfo->Effect[EFFECT_INDEX_0] == SPELL_EFFECT_CREATE_ITEM_2 &&
+             (spellInfo->TotemCategory[0] != 0 || spellInfo->EffectItemType[0] == 0 || spellInfo->Id == 62941)));
 }
 
 int32 CompareAuraRanks(uint32 spellId_1, uint32 spellId_2);
@@ -657,12 +658,24 @@ inline Mechanics GetEffectMechanic(SpellEntry const* spellInfo, SpellEffectIndex
 
 inline bool IsBinaryResistedSpell(SpellEntry const* spellInfo) 
 {
-    return (GetAllSpellMechanicMask(spellInfo) != 0
+    if (!spellInfo)
+        return false;
+
+    if (IsAreaOfEffectSpell(spellInfo) ||
+            spellInfo->HasAttribute(SPELL_ATTR_EX6_EXPLICIT_NO_BINARY_RESIST) ||
+            spellInfo->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) || //???
+            spellInfo->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES) ||
+           (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) ||
+            spellInfo->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
+        return false;
+
+    if (GetAllSpellMechanicMask(spellInfo) != 0
             || IsDispelSpell(spellInfo)
-            || spellInfo->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES)
-            || spellInfo->HasAttribute(SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE)
-            );
-};
+            || spellInfo->HasAttribute(SPELL_ATTR_EX_BREAKABLE_BY_ANY_DAMAGE))
+        return true;
+
+    return false;
+}
 
 inline uint32 GetDispellMask(DispelType dispel)
 {
@@ -927,27 +940,18 @@ enum SpellTargetType
 
 #define MAX_SPELL_TARGET_TYPE 3
 
+// pre-defined targeting for spells
 struct SpellTargetEntry
 {
-    SpellTargetEntry(SpellTargetType type_,uint32 targetEntry_) : type(type_), targetEntry(targetEntry_) {}
-    SpellTargetType type;
+    uint32 spellId;
+    uint32 type;
     uint32 targetEntry;
+    uint32 inverseEffectMask;
+
+    bool CanNotHitWithSpellEffect(SpellEffectIndex effect) const { return inverseEffectMask & (1 << effect); }
 };
 
-typedef UNORDERED_MULTIMAP<uint32,SpellTargetEntry> SpellScriptTarget;
-typedef std::pair<SpellScriptTarget::const_iterator,SpellScriptTarget::const_iterator> SpellScriptTargetBounds;
-
-// coordinates for spells (accessed using SpellMgr functions)
-struct SpellTargetPosition
-{
-    uint32 target_mapId;
-    float  target_X;
-    float  target_Y;
-    float  target_Z;
-    float  target_Orientation;
-};
-
-typedef UNORDERED_MAP<uint32, SpellTargetPosition> SpellTargetPositionMap;
+typedef UNORDERED_MAP<uint32, WorldLocation> SpellTargetPositionMap;
 
 // Spell linked types
 enum SpellLinkedType
@@ -1039,6 +1043,7 @@ struct SpellArea
     uint32 areaId;                                          // zone/subzone/or 0 is not limited to zone
     uint32 questStart;                                      // quest start (quest must be active or rewarded for spell apply)
     uint32 questEnd;                                        // quest end (quest don't must be rewarded for spell apply)
+    uint16 conditionId;                                     // conditionId - will replace questStart, questEnd, raceMask, gender and questStartCanActive
     int32  auraSpell;                                       // spell aura must be applied for spell apply )if possitive) and it don't must be applied in other case
     uint32 raceMask;                                        // can be applied only to races
     Gender gender;                                          // can be applied only to gender
@@ -1047,14 +1052,13 @@ struct SpellArea
 
     // helpers
     bool IsFitToRequirements(Player const* player, uint32 newZone, uint32 newArea) const;
+    void ApplyOrRemoveSpellIfCan(Player* player, uint32 newZone, uint32 newArea, bool onlyApply) const;
 };
 
-typedef UNORDERED_MULTIMAP<uint32,SpellArea> SpellAreaMap;
-typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForQuestMap;
-typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForAuraMap;
-typedef UNORDERED_MULTIMAP<uint32,SpellArea const*> SpellAreaForAreaMap;
-typedef std::pair<SpellAreaMap::const_iterator,SpellAreaMap::const_iterator> SpellAreaMapBounds;
-typedef std::pair<SpellAreaForQuestMap::const_iterator,SpellAreaForQuestMap::const_iterator> SpellAreaForQuestMapBounds;
+typedef UNORDERED_MULTIMAP<uint32 /*applySpellId*/, SpellArea> SpellAreaMap;
+typedef UNORDERED_MULTIMAP<uint32 /*auraSpellId*/, SpellArea const*> SpellAreaForAuraMap;
+typedef UNORDERED_MULTIMAP<uint32 /*areaOrZoneId*/, SpellArea const*> SpellAreaForAreaMap;
+typedef std::pair<SpellAreaMap::const_iterator, SpellAreaMap::const_iterator> SpellAreaMapBounds;
 typedef std::pair<SpellAreaForAuraMap::const_iterator, SpellAreaForAuraMap::const_iterator>  SpellAreaForAuraMapBounds;
 typedef std::pair<SpellAreaForAreaMap::const_iterator, SpellAreaForAreaMap::const_iterator>  SpellAreaForAreaMapBounds;
 
@@ -1255,7 +1259,7 @@ class SpellMgr
         }
 
         // Spell target coordinates
-        SpellTargetPosition const* GetSpellTargetPosition(uint32 spell_id) const
+        WorldLocation const* GetSpellTargetPosition(uint32 spell_id) const
         {
             SpellTargetPositionMap::const_iterator itr = mSpellTargetPositions.find( spell_id );
             if ( itr != mSpellTargetPositions.end( ) )
@@ -1385,13 +1389,6 @@ class SpellMgr
 
         bool IsSkillBonusSpell(uint32 spellId) const;
 
-
-        // Spell script targets
-        SpellScriptTargetBounds GetSpellScriptTargetBounds(uint32 spell_id) const
-        {
-            return mSpellScriptTarget.equal_range(spell_id);
-        }
-
         // Spell correctness for client using
         static bool IsSpellValid(SpellEntry const * spellInfo, Player* pl = NULL, bool msg = true);
 
@@ -1448,19 +1445,6 @@ class SpellMgr
             return mSpellAreaMap.equal_range(spell_id);
         }
 
-        SpellAreaForQuestMapBounds GetSpellAreaForQuestMapBounds(uint32 quest_id, bool active) const
-        {
-            if (active)
-                return mSpellAreaForActiveQuestMap.equal_range(quest_id);
-            else
-                return mSpellAreaForQuestMap.equal_range(quest_id);
-        }
-
-        SpellAreaForQuestMapBounds GetSpellAreaForQuestEndMapBounds(uint32 quest_id) const
-        {
-            return mSpellAreaForQuestEndMap.equal_range(quest_id);
-        }
-
         SpellAreaForAuraMapBounds GetSpellAreaForAuraMapBounds(uint32 spell_id) const
         {
             return mSpellAreaForAuraMap.equal_range(spell_id);
@@ -1515,7 +1499,6 @@ class SpellMgr
     private:
         bool LoadPetDefaultSpells_helper(CreatureInfo const* cInfo, PetDefaultSpellsEntry& petDefSpells);
 
-        SpellScriptTarget  mSpellScriptTarget;
         SpellChainMap      mSpellChains;
         SpellChainMapNext  mSpellChainsNext;
         SpellLearnSkillMap mSpellLearnSkills;
@@ -1534,9 +1517,6 @@ class SpellMgr
         PetLevelupSpellMap  mPetLevelupSpellMap;
         PetDefaultSpellsMap mPetDefaultSpellsMap;           // only spells not listed in related mPetLevelupSpellMap entry
         SpellAreaMap         mSpellAreaMap;
-        SpellAreaForQuestMap mSpellAreaForQuestMap;
-        SpellAreaForQuestMap mSpellAreaForActiveQuestMap;
-        SpellAreaForQuestMap mSpellAreaForQuestEndMap;
         SpellAreaForAuraMap  mSpellAreaForAuraMap;
         SpellAreaForAreaMap  mSpellAreaForAreaMap;
         SkillDiscoveryMap    mSkillDiscoveryStore;

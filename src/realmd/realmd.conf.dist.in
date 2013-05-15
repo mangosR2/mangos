@@ -116,6 +116,18 @@ ConfVersion=2010062001
 #        Default: 1 (not more then one, sufficient for wrong account name typing)
 #        Max:
 #
+#   MultiIPCheck
+#   Check Login Account with last IP in account Database
+#       Default: 0 (disabled)
+#                1 (enabled)
+#
+#   MultiIPLimit
+#   Accounts amount, which can login from one IP
+#       Default: 10 (should be enough)
+#
+#   MultiIPPeriodInHours
+#   Time period in hours till last IP is free for all
+#       Default: 48
 #
 ###################################################################################################################
 
@@ -141,3 +153,7 @@ WrongPass.BanType = 0
 
 AutoRegistration = 0
 AutoRegistration.Amount = 1
+
+MultiIPCheck = 0
+MultiIPLimit = 10
+MultiIPPeriodInHours = 48

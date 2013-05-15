@@ -108,8 +108,8 @@ class SpellCastTargets
         SpellCastTargets();
         ~SpellCastTargets();
 
-        void read( ByteBuffer& data, Unit *caster );
-        void write( ByteBuffer& data ) const;
+        void read(ByteBuffer& data, Unit* caster );
+        void write(ByteBuffer& data ) const;
 
         SpellCastTargetsReader ReadForCaster(Unit* caster) { return SpellCastTargetsReader(*this,caster); }
 
@@ -130,13 +130,8 @@ class SpellCastTargets
 
             m_itemTargetEntry  = target.m_itemTargetEntry;
 
-            m_srcX = target.m_srcX;
-            m_srcY = target.m_srcY;
-            m_srcZ = target.m_srcZ;
-
-            m_destX = target.m_destX;
-            m_destY = target.m_destY;
-            m_destZ = target.m_destZ;
+            m_src       = target.m_src;
+            m_dest      = target.m_dest;
 
             m_strTarget = target.m_strTarget;
 
@@ -152,13 +147,15 @@ class SpellCastTargets
         ObjectGuid getUnitTargetGuid() const { return m_unitTargetGUID; }
         Unit* getUnitTarget() const { return m_unitTarget; }
 
-        void setDestination(float x, float y, float z);
-        void setSource(float x, float y, float z);
-        void getDestination(float& x, float& y, float& z) const { x = m_destX; y = m_destY; z = m_destZ; }
-        void getSource(float& x, float& y, float& z) const { x = m_srcX; y = m_srcY, z = m_srcZ; }
+        void setDestination(WorldLocation const& dest);
+        void setSource(WorldLocation const& src);
+
+        WorldLocation const& getDestination() const { return m_dest; }
+        WorldLocation const& getSource() const { return m_src; }
 
         bool HasLocation() const;
-        void GetLocation(float& x, float& y, float& z) const;
+
+        WorldLocation const& GetLocation() const;
 
         void setGOTarget(GameObject* target);
         ObjectGuid getGOTargetGuid() const { return m_GOTargetGUID; }
@@ -187,9 +184,6 @@ class SpellCastTargets
 
         void Update(Unit* caster);
 
-        float m_srcX, m_srcY, m_srcZ;
-        float m_destX, m_destY, m_destZ;
-
         std::string m_strTarget;
 
         float GetElevation() const { return m_elevation; }
@@ -202,9 +196,9 @@ class SpellCastTargets
 
     private:
         // objects (can be used at spell creating and after Update at casting
-        Unit *m_unitTarget;
-        GameObject *m_GOTarget;
-        Item *m_itemTarget;
+        Unit*       m_unitTarget;
+        GameObject* m_GOTarget;
+        Item*       m_itemTarget;
 
         // object GUID/etc, can be used always
         ObjectGuid m_unitTargetGUID;
@@ -214,6 +208,8 @@ class SpellCastTargets
         ObjectGuid m_srcTransportGUID;
         ObjectGuid m_destTransportGUID;
         uint32 m_itemTargetEntry;
+
+        WorldLocation m_src, m_dest;
 
         float m_elevation, m_speed;
 };
@@ -514,7 +510,7 @@ class Spell
         float GetBaseSpellSpeed();
 
         bool IsNeedSendToClient() const;                    // use for hide spell cast for client in case when cast not have client side affect (animation or log entries)
-        bool IsTriggeredSpellWithRedundentData() const;     // use for ignore some spell data for triggered spells like cast time, some triggered spells have redundent copy data from main spell for client use purpose
+        bool IsTriggeredSpellWithRedundentCastTime() const; // use for ignore some spell data for triggered spells like cast time, some triggered spells have redundent copy data from main spell for client use purpose
 
         CurrentSpellTypes GetCurrentContainer();
 
@@ -738,7 +734,7 @@ namespace MaNGOS
                 if( i_originalCaster->IsFriendlyTo(pPlayer) )
                     continue;
 
-                if( pPlayer->IsWithinDist3d(i_spell.m_targets.m_destX, i_spell.m_targets.m_destY, i_spell.m_targets.m_destZ,i_radius))
+                if( pPlayer->IsWithinDist3d(i_spell.m_targets.getDestination(),i_radius))
                     i_data.push_back(pPlayer);
             }
         }
@@ -756,6 +752,8 @@ namespace MaNGOS
         WorldObject* i_castingObject;
         bool i_playerControlled;
         WorldLocation i_center;
+
+        WorldLocation const& GetCenter() const { return i_center; }
 
         float GetCenterX() const { return i_center.x; }
         float GetCenterY() const { return i_center.y; }
@@ -782,55 +780,21 @@ namespace MaNGOS
                 case PUSH_SELF_CENTER:
                     if (i_castingObject)
                     {
-                        i_center =  WorldLocation(i_castingObject->GetMapId(), i_castingObject->GetPositionX(), i_castingObject->GetPositionY(), i_castingObject->GetPositionZ());
+                        i_center =  WorldLocation(i_castingObject->GetPosition());
                     }
                     break;
                 case PUSH_DEST_CENTER:
-                {
-                    // This hack from Schmoo - need revert in original state after rework spellsystem on separate
-                    // per-effect targeting
-                    float i_centerX, i_centerY, i_centerZ;
-
-                    if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
-                        i_spell.m_targets.getSource(i_centerX, i_centerY, i_centerZ);
-                    else
-                        i_spell.m_targets.getDestination(i_centerX, i_centerY, i_centerZ);
-
-                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
-
-                    break;
-                }
                 case PUSH_INHERITED_CENTER:
                 {
-                    float i_centerX, i_centerY, i_centerZ;
-
-                    if ((i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || (i_spell.m_targets.m_targetMask & TARGET_FLAG_UNIT))
-                    {
-                        i_centerX = i_spell.m_targets.m_destX;
-                        i_centerY = i_spell.m_targets.m_destY;
-                        i_centerZ = i_spell.m_targets.m_destZ;
-                    }
-                    else if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
-                    {
-                        i_centerX = i_spell.m_targets.m_srcX;
-                        i_centerY = i_spell.m_targets.m_srcY;
-                        i_centerZ = i_spell.m_targets.m_srcZ;
-                    }
-                    else
-                    {
-                        i_centerX = i_spell.m_targets.m_destX;
-                        i_centerY = i_spell.m_targets.m_destY;
-                        i_centerZ = i_spell.m_targets.m_destZ;
-                    }
-
-                    i_center =  WorldLocation(i_castingObject ? i_castingObject->GetMapId() : -1, i_centerX, i_centerY, i_centerZ);
-
+                    i_center = i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION ?
+                                                i_spell.m_targets.getSource() :
+                                                i_spell.m_targets.getDestination();
                     break;
                 }
                 case PUSH_TARGET_CENTER:
                     if (Unit* target = i_spell.m_targets.getUnitTarget())
                     {
-                        i_center =  WorldLocation(target->GetMapId(), target->GetPositionX(), target->GetPositionY(), target->GetPositionZ());
+                        i_center =  WorldLocation(target->GetPosition());
                     }
                     break;
                 default:
@@ -926,19 +890,19 @@ namespace MaNGOS
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_DEST_CENTER:
-                        if (itr->getSource()->IsWithinDist3d(GetCenterX(), GetCenterY(), GetCenterZ(), i_radius))
+                        if (itr->getSource()->IsWithinDist3d(GetCenter(), i_radius))
                             i_data->push_back(itr->getSource());
                         break;
                     case PUSH_INHERITED_CENTER:
                     {
                         if ((i_spell.m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION) || (i_spell.m_targets.m_targetMask & TARGET_FLAG_UNIT))
                         {
-                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.m_destX, i_spell.m_targets.m_destY, i_spell.m_targets.m_destZ,i_radius))
+                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.getDestination(), i_radius))
                                 i_data->push_back(itr->getSource());
                         }
                         else if (i_spell.m_targets.m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
                         {
-                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.m_srcX, i_spell.m_targets.m_srcY, i_spell.m_targets.m_srcZ, i_radius))
+                            if (itr->getSource()->IsWithinDist3d(i_spell.m_targets.getSource(), i_radius))
                                 i_data->push_back(itr->getSource());
                         }
                         break;

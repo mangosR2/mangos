@@ -62,7 +62,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature &creature)
 
     creature.addUnitState(UNIT_STAT_ROAMING_MOVE);
 
-    Movement::MoveSplineInit init(creature);
+    Movement::MoveSplineInit<Unit*> init(creature);
     init.MoveTo(destX, destY, destZ, true);
     init.SetWalk(true);
     init.Launch();
@@ -92,12 +92,7 @@ void RandomMovementGenerator<Creature>::Reset(Creature &creature)
 template<>
 void RandomMovementGenerator<Creature>::Interrupt(Creature &creature)
 {
-    if (!creature.movespline->Finalized())
-    {
-        Location loc = creature.movespline->ComputePosition();
-        creature.SetPosition(loc.x,loc.y,loc.z,loc.orientation);
-        creature.movespline->_Interrupt();
-    }
+    creature.InterruptMoving();
     creature.clearUnitState(UNIT_STAT_ROAMING | UNIT_STAT_ROAMING_MOVE);
     creature.SetWalk(!creature.hasUnitState(UNIT_STAT_RUNNING_STATE), false);
 }

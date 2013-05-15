@@ -20,7 +20,7 @@
 #include "ChatLexicsCutter.h"
 #include "Log.h"
 
-static const int trailingBytesForUTF8[256] = {
+static const uint8 trailingBytesForUTF8[256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -36,14 +36,15 @@ LexicsCutter::LexicsCutter()
     InvalidChars = "~`!@#$%^&*()-_+=[{]}|\\;:'\",<.>/?";
 }
 
-bool LexicsCutter::ReadUTF8(std::string& in, std::string& out, unsigned int& pos)
+bool LexicsCutter::ReadUTF8(std::string& in, std::string& out, uint32& pos)
 {
-    if (pos >= in.length()) return false;
+    if (pos >= in.length())
+        return false;
 
     out = "";
     unsigned char c = in[pos++];
     out += c;
-    int toread = trailingBytesForUTF8[(int) c];
+    uint8 toread = trailingBytesForUTF8[(uint8)c];
     while ((pos < in.length()) && (toread > 0))
     {
         out += in[pos++];
@@ -61,9 +62,9 @@ std::string LexicsCutter::trim(std::string& s, const std::string& drop)
 
 bool LexicsCutter::Read_Letter_Analogs(std::string& FileName)
 {
-    FILE *ma_file;
+    FILE* ma_file;
     char line[1024];
-    unsigned int pos;
+    uint32 pos;
     std::string line_s;
     std::string lchar;
     std::string lanalog;
@@ -92,13 +93,15 @@ bool LexicsCutter::Read_Letter_Analogs(std::string& FileName)
 
         if (strlen(line) >= 2)
         {
-            if (line[0] == '/' && line[1] == '/') continue;
+            if (line[0] == '/' && line[1] == '/')
+                continue;
         }
 
         // check for empty string
         line_s = line;
         line_s = trim(line_s, "\x0A\x0D\x20");
-        if (line_s == "") continue;
+        if (line_s == "")
+            continue;
 
         // process line without CR/LF
         line_s = line;
@@ -126,9 +129,9 @@ bool LexicsCutter::Read_Letter_Analogs(std::string& FileName)
 
 bool LexicsCutter::Read_Innormative_Words(std::string& FileName)
 {
-    FILE *ma_file;
+    FILE* ma_file;
     char line[1024];
-    unsigned int pos;
+    uint32 pos;
     std::string line_s;
     std::string lchar;
 
@@ -156,13 +159,15 @@ bool LexicsCutter::Read_Innormative_Words(std::string& FileName)
 
         if (strlen(line) >= 2)
         {
-            if (line[0] == '/' && line[1] == '/') continue;
+            if (line[0] == '/' && line[1] == '/')
+                continue;
         }
 
         // check for empty string
         line_s = line;
         line_s = trim(line_s, "\x0A\x0D\x20");
-        if (line_s == "") continue;
+        if (line_s == "")
+            continue;
 
         // process line without CR/LF
         line_s = line;
@@ -206,18 +211,18 @@ bool LexicsCutter::Read_Innormative_Words(std::string& FileName)
 void LexicsCutter::Map_Innormative_Words()
 {
     // process all the words in the vector
-    for (unsigned int i = 0; i < WordList.size(); i++)
+    for (uint32 i = 0; i < WordList.size(); ++i)
     {
         // parse all analogs in the first word letter
         for (LC_LetterSet::iterator itr = (*WordList[i].begin()).begin(); itr != (*WordList[i].begin()).end(); itr++)
         {
             // map the word to its first letter variants
-            WordMap.insert(std::pair< std::string, unsigned int >(*itr, i));
+            WordMap.insert(std::pair< std::string, uint32 >(*itr, i));
         }
     }
 }
 
-bool LexicsCutter::Compare_Word(std::string& str, unsigned int pos, LC_WordVector word)
+bool LexicsCutter::Compare_Word(std::string& str, uint32 pos, LC_WordVector word)
 {
     std::string lchar_prev;
     std::string lchar;
@@ -232,7 +237,8 @@ bool LexicsCutter::Compare_Word(std::string& str, unsigned int pos, LC_WordVecto
     while (i != word.end())
     {
         // get letter from word, return false if the string is shorter
-        if (!ReadUTF8(str, lchar, pos)) return(false);
+        if (!ReadUTF8(str, lchar, pos))
+            return false;
         // check, if the letter is in the set
         LC_LetterSet ls = *i;
         if (ls.count(lchar) == 0)
@@ -242,7 +248,7 @@ bool LexicsCutter::Compare_Word(std::string& str, unsigned int pos, LC_WordVecto
                 (!(IgnoreLetterRepeat && (lchar == lchar_prev))) )
             {
                 // no checks viable
-                return(false);
+                return false;
             }
         }
         else
@@ -251,10 +257,11 @@ bool LexicsCutter::Compare_Word(std::string& str, unsigned int pos, LC_WordVecto
             i++;
         }
         // set previous string letter to compare if needed (this check can really conserve time)
-        if (IgnoreLetterRepeat) lchar_prev = lchar;
+        if (IgnoreLetterRepeat)
+            lchar_prev = lchar;
     }
 
-    return(true);
+    return true;
 }
 
 bool LexicsCutter::Check_Lexics(std::string& Phrase)
@@ -263,12 +270,13 @@ bool LexicsCutter::Check_Lexics(std::string& Phrase)
     LC_WordMap::iterator i;
     std::pair< LC_WordMap::iterator, LC_WordMap::iterator > ii;
 
-    if (Phrase.size() == 0) return(false);
+    if (Phrase.size() == 0)
+        return false;
 
     // first, convert the string, adding spaces and removing invalid characters
     // also create fast position vector for the new positions
     std::string str = " ";
-    unsigned int pos = 0;
+    uint32 pos = 0;
     while (ReadUTF8(Phrase, lchar, pos))
     {
         if (InvalidChars.find(lchar) == std::string::npos)
@@ -278,7 +286,7 @@ bool LexicsCutter::Check_Lexics(std::string& Phrase)
     }
 
     // string prepared, now parse it and scan for all the words
-    unsigned int pos_prev = 0;
+    uint32 pos_prev = 0;
     pos = 0;
     while (ReadUTF8(str, lchar, pos))
     {
@@ -288,11 +296,12 @@ bool LexicsCutter::Check_Lexics(std::string& Phrase)
         for (i = ii.first; i != ii.second; i++)
         {
             // compare word at initial position
-            if (Compare_Word(str, pos_prev, WordList[i->second])) return(true);
+            if (Compare_Word(str, pos_prev, WordList[i->second]))
+                return true;
         }
        // set initial position to the current position
        pos_prev = pos;
     }
 
-    return(false);
+    return false;
 }

@@ -22,7 +22,6 @@ ConfVersion=2013012201
 #        Default: "" - no log directory prefix. if used log names aren't absolute paths
 #                      then logs will be stored in the current directory of the running program.
 #
-#
 #    LoginDatabaseInfo
 #    WorldDatabaseInfo
 #    CharacterDatabaseInfo
@@ -37,9 +36,9 @@ ConfVersion=2013012201
 #                    hostname;port;username;password;database
 #                    .;/path/to/unix_socket/DIRECTORY or . for default path;username;password;database - use Unix sockets at Unix/Linux
 #
-#   LoginDatabaseConnections
-#   WorldDatabaseConnections
-#   CharacterDatabaseConnections
+#    LoginDatabaseConnections
+#    WorldDatabaseConnections
+#    CharacterDatabaseConnections
 #        Amount of connections to database which will be used for SELECT queries. Maximum 16 connections per database.
 #        Please, note, for data consistency only one connection for each database is used for transactions and async SELECTs.
 #        So formula to find out how many connections will be established: X = n_connections + 1
@@ -152,6 +151,12 @@ BindIP = "0.0.0.0"
 #        Default: 1 (Enabled)
 #                 0 (Disabled)
 #
+#    vmap.Dynamic.DoubleCheck
+#        Enable/Disable dynamic VMap based double check for LOS (needed for "In GO state").
+#        Requires Vmaps && Dynamic VMaps enabled to work. May heavily increase CPU usage!
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
+#
 #
 #    DetectPosCollision
 #        Check final move position, summon position, etc for visible collision with other objects or
@@ -228,6 +233,18 @@ BindIP = "0.0.0.0"
 #        Min:     5    ( less then 3 - objects not be loaded anyway )
 #        Max:     1000 ( value more may cause false-freeze detection )
 #
+#    Calendar.RemoveExpiredEvents
+#        Delay (in hours) to remove expired events from the calendar.
+#        Default: -1  (never)
+#                  0  (at once)
+#                  1+ (delay hours (8760 - one year))
+#
+#    MapUpdate.PositionUpdateDelay
+#        Time (in ms!) for recalculation unit/GO position while spline movement.
+#        Default: 400 (0,4s)
+#        Min:     100 ( 1 MapUpdate cycle)
+#        Max:     2000( 2s)
+#
 ###################################################################################################################
 
 UseProcessors = 0
@@ -261,6 +278,9 @@ MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
 ObjectLoadingSplitter.MaxAllowedTime = 10
+Calendar.RemoveExpiredEvents = -1
+MapUpdate.PositionUpdateDelay = 400
+vmap.Dynamic.DoubleCheck = 0
 
 ###################################################################################################################
 # SERVER LOGGING
@@ -403,21 +423,21 @@ LogFileLevel = 0
 LogFilter_AchievementUpdates = 1
 LogFilter_CreatureMoves = 1
 LogFilter_TransportMoves = 1
+LogFilter_PlayerMoves = 1
 LogFilter_VisibilityChanges = 1
 LogFilter_Weather = 1
 LogFilter_DbStrictedCheck = 1
+LogFilter_SQLText = 1
 LogFilter_Pathfinding = 1
+LogFilter_Calendar = 1
 LogFilter_MapLoading = 1
 LogFilter_EventAiDev = 1
 LogFilter_PeriodicAffects = 0
-LogFilter_PlayerMoves = 1
-LogFilter_SQLText = 1
 LogFilter_AIAndMovegens = 0
 LogFilter_PlayerStats = 0
 LogFilter_Damage = 0
 LogFilter_Combat = 0
 LogFilter_SpellCast = 0
-LogFilter_Calendar = 1
 WorldLogFile = ""
 WorldLogTimestamp = 0
 DBErrorLogFile = "DBErrors.log"
@@ -432,82 +452,140 @@ RaLogFile = ""
 LogColors = ""
 
 ###################################################################################################################
-#   LEXICS CUTTER SYSTEM
+# CHAT LOG AND LEXICS CUTTER SYSTEM
 #
-#    Chat log parameters
-#        ChatLogEnable = 0
+#    ChatLogMethod
+#        Default: 0 (Disabled)
+#                 1 (Log to files)
+#                 2 (Log to DB by SQL)
 #
-#    If this is enabled, all $d in file names are replaced with current date
-#    This does include innormative lexics log
-#        ChatLogDateSplit = 1
-#    If this is enabled, UTF8 header is written into new files
-#        ChatLogUTFHeader = 1
-#    If this is enabled, chat log will ignore messages with unprintable chars
-#        ChatLogIgnoreUnprintable = 1
+#    ChatLogDateSplit
+#        If this is enabled, all $d in file names are replaced with current date
+#        This does include innormative lexics log
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
 #
-#    Chat log files
-#        ChatLogChatFile = main_chat-$d.log
-#        ChatLogPartyFile = party_chat-$d.log
-#        ChatLogGuildFile = guild_chat-$d.log
-#        ChatLogWhisperFile = whisper_chat-$d.log
-#        ChatLogChannelFile = channel_chat-$d.log
-#        ChatLogRaidFile = raid_chat-$d.log
-#        ChatLogBattleGroundFile = bg_chat-$d.log
+#    ChatLogUTFHeader
+#        If this is enabled, UTF8 header is written into new files
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
 #
-#    Chat log screen logging
-#        ChatLogChatScreen = 0
-#        ChatLogPartyScreen = 0
-#        ChatLogGuildScreen = 0
-#        ChatLogWhisperScreen = 0
-#        ChatLogChannelScreen = 0
-#        ChatLogRaidScreen = 0
-#        ChatLogBattleGroundScreen = 0
+#    ChatLogIgnoreUnprintable
+#        If this is enabled, chat log will ignore messages with unprintable chars
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
 #
-#    Lexics cutter parameters
-#        LexicsCutterEnable = 1
-#        LexicsCutterInnormativeCut = 1
-#        LexicsCutterCutReplacement = &!@^%!^&*!!!
-#        LexicsCutterLogFile = innormative-$d.log
-#        LexicsCutterScreenLog = 0
-#        LexicsCutterAnalogsFile = letter_analogs.txt
-#        LexicsCutterWordsFile = innormative_words.txt
+#    ChatLogsDirectory
+#        Chat log directory name
+#        Default: ""
 #
-#    Where to cut lexics
-#        LexicsCutInChat = 1
-#        LexicsCutInParty = 1
-#        LexicsCutInGuild = 1
-#        LexicsCutInWhisper = 1
-#        LexicsCutInChannel = 1
-#        LexicsCutInRaid = 1
-#        LexicsCutInBattleGround = 1
+#    ChatLogChatFile
+#    ChatLogPartyFile
+#    ChatLogGuildFile
+#    ChatLogWhisperFile
+#    ChatLogChannelFile
+#    ChatLogRaidFile
+#    ChatLogBattleGroundFile
+#        Chat log file names
+#        Default:
+#                 main_chat-$d.log
+#                 party_chat-$d.log
+#                 guild_chat-$d.log
+#                 whisper_chat-$d.log
+#                 channel_chat-$d.log
+#                 raid_chat-$d.log
+#                 bg_chat-$d.log
 #
-#    Ignore word spaces like: W O R D
-#        LexicsCutterIgnoreSpaces = 1
+#    ChatLogChatScreen
+#    ChatLogPartyScreen
+#    ChatLogGuildScreen
+#    ChatLogWhisperScreen
+#    ChatLogChannelScreen
+#    ChatLogRaidScreen
+#    ChatLogBattleGroundScreen
+#        Include log in server console output
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
 #
-#    Ignore repeats like: WWOOOORRRRRD
-#        LexicsCutterIgnoreRepeats = 1
+#    LexicsCutterEnable
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
 #
-#    Action:
-#    ---   0: log only
-#    ---   1: sheep
-#    ---   2: stun
-#    ---   3: kill
-#    ---   4: leave 5 health
-#    ---   5: disable chat
-#    ---   6: stuck (works as stun + 50% health)
-#    ---   7: resurrection sickness
-#    ---   8: shear
-#        LexicsCutterAction = 0
-#        LexicsCutterActionDuration = 60000
+#    LexicsCutterInnormativeCut
+#        Cutting innormative lexics
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
 #
-#     Do not perform action on GM if this is enabled
-#        LexicsCutterNoActionOnGM = 1
+#    LexicsCutterCutReplacement
+#        Replace cutting innormative lexics with this
+#        Default: &!@^%!^&*!!!
+#
+#    LexicsCutterLogFile
+#        Innormative lexics log file name
+#        Default: innormative-$d.log
+#
+#    LexicsCutterScreenLog
+#        Include log in server console output
+#        Default: 0 (Disabled)
+#                 1 (Enabled)
+#
+#    LexicsCutterAnalogsFile
+#        letter analogs file name
+#        Default: letter_analogs.txt
+#
+#    LexicsCutterWordsFile
+#        Words file name
+#        Default: innormative_words.txt
+#
+#    LexicsCutInChat
+#    LexicsCutInParty
+#    LexicsCutInGuild
+#    LexicsCutInWhisper
+#    LexicsCutInChannel
+#    LexicsCutInRaid
+#    LexicsCutInBattleGround
+#        Where to cut lexics
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
+#
+#    LexicsCutterIgnoreSpaces
+#        Ignore word spaces like: W O R D
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
+#
+#    LexicsCutterIgnoreRepeats
+#        Ignore repeats like: WWOOOORRRRRD
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
+#
+#    LexicsCutterAction
+#        Action
+#        Default: 0: log only
+#                 1: sheep
+#                 2: stun
+#                 3: kill
+#                 4: leave 5 health
+#                 5: disable chat
+#                 6: stuck (works as stun + 50% health)
+#                 7: resurrection sickness
+#                 8: shear
+#
+#    LexicsCutterActionDuration
+#        Action duration
+#        Default: 60000
+#
+#    LexicsCutterNoActionOnGM
+#        Do not perform action on GM if this is enabled
+#        Default: 1 (Enabled)
+#                 0 (Disabled)
+#
 ###################################################################################################################
 
-ChatLogEnable = 0
+ChatLogMethod = 0
 ChatLogDateSplit = 1
 ChatLogUTFHeader = 1
 ChatLogIgnoreUnprintable = 1
+ChatLogsDirectory = ""
 ChatLogChatFile = main_chat-$d.log
 ChatLogPartyFile = party_chat-$d.log
 ChatLogGuildFile = guild_chat-$d.log
@@ -745,11 +823,16 @@ LexicsCutterNoActionOnGM = 1
 #        Max amount triggered spell casts in chain by one caster, prevent stack overflow crash
 #        Too Low value will make some correct triggered casts fail
 #                 0 (no limit)
-#        Default: 10
+#        Default: 20
 #
 #   BirthdayTime
 #        Set to birthday (date in unix time), By default 28th August 2005, when MaNGOS got it's name
 #        Default: 1125180000
+#
+#   RabbitDay
+#        Set to Rabbit Day (date in unix time), only the day and month are considered, the year is not important
+#        Default: 0 (off)
+#        Suggested: 954547200 (April 1st, 2000)
 #
 #    Instance.IgnoreLevel
 #        Ignore level requirement to enter instance
@@ -972,6 +1055,16 @@ LexicsCutterNoActionOnGM = 1
 #        Default: 0 - false
 #                 1 - true -> not blizzlike
 #
+#    Resistance.CalculationMethod
+#        Method of resistance calculation.
+#                 0 (TBC,   resistance chance - 0%, 25%, 50%, 75% or 100%)
+#        Default: 1 (WOTLK, flat resistance chance - 0%, 10%, 20%, 30% ... 100%)
+#
+#    Resistance.AddByOverLevel
+#        If the target level is greater than caster level, add to target additional resistance points.
+#        Default: 0 - disabled (don't add additional resistance points)
+#                 1 - enabled  (add to target 5 resistance points on each target over level)
+#
 ###################################################################################################################
 
 GameType = 1
@@ -1006,8 +1099,9 @@ AllFlightPaths = 0
 AlwaysMaxSkillForLevel = 0
 ActivateWeather = 1
 CastUnstuck = 1
-MaxSpellCastsInChain = 10
+MaxSpellCastsInChain = 20
 BirthdayTime = 1125180000
+RabbitDay = 0
 Instance.IgnoreLevel = 0
 Instance.IgnoreRaid = 0
 Instance.ResetTimeHour = 4
@@ -1056,6 +1150,8 @@ AllowTransferToCustomMap = 0
 ResilenceAlternativeCalculation = 0
 BlinkAnimationType = 0
 FactiomAndRaceChangeWithoutRenaming = 0
+Resistance.CalculationMethod = 1
+Resistance.AddByOverLevel = 0
 
 ###################################################################################################################
 # PLAYER INTERACTION
@@ -2008,12 +2104,12 @@ CharDelete.KeepDays = 30
 #    Rate.RAF.LevelPerLevel  = 0.5 (bonus levels per referal level)
 #
 ###################################################################################################################
+
 RAF.MaxGrantLevel       = 60
 RAF.MaxReferals         = 5
 RAF.MaxReferers         = 5
 Rate.RAF.XP             = 3
 Rate.RAF.LevelPerLevel  = 0.5
-
 
 ###################################################################################################################
 #    LFG Dungeon finder system
@@ -2035,6 +2131,7 @@ Rate.RAF.LevelPerLevel  = 0.5
 #        default:            = ""
 #
 ###################################################################################################################
+
 LFR.Enable              = 1
 LFG.Enable              = 1
 LFG.Debug               = 0
@@ -2098,7 +2195,7 @@ LFG.DisableDungeonMapIds= ""
 #        Default: 1 - on
 #
 #    PlayerbotAI.Collect.Objects
-#        Enable collection options nearby objects 
+#        Enable collection options nearby objects
 #                 0 - off
 #        Default: 1 - on
 #
@@ -2177,7 +2274,7 @@ VMSS.ForceUnloadDelay = 3000
 #
 #    DuelReset.AreaIds
 #        List of area's ids where Duel Reset Script will be enabled. With delimiter ','. You can lookup areas going with a GM to X zone and typing .gps
-#        Default: "12,14,4570" Outdoor Stormwind, Outdoor Orgrimmar, Dalaran's Circle of Wills 
+#        Default: "12,14,4570" Outdoor Stormwind, Outdoor Orgrimmar, Dalaran's Circle of Wills
 #
 ###################################################################################################################
 DuelReset.Enable = 0

@@ -386,7 +386,7 @@ bool AntiCheat::CheckNeeded(AntiCheatCheck checktype)
             return false;
             break;
         case CHECK_MOVEMENT:
-            if (   GetPlayer()->GetTransport()
+            if (   GetPlayer()->IsOnTransport()
                 || GetPlayer()->HasMovementFlag(MOVEFLAG_ONTRANSPORT)
                 || GetPlayer()->IsInUnitState(UNIT_ACTION_CONFUSED)
                 || GetPlayer()->IsTaxiFlying())
@@ -431,7 +431,7 @@ bool AntiCheat::CheckNeeded(AntiCheatCheck checktype)
                 return false;
             break;
         case CHECK_MOVEMENT_TP2PLANE:
-            if (GetMover()->GetTransport())
+            if (GetMover()->IsOnTransport())
                 return false;
             if (m_currentmovementInfo->HasMovementFlag(MovementFlags(MOVEFLAG_SWIMMING | MOVEFLAG_CAN_FLY | MOVEFLAG_FLYING)))
                 return false;

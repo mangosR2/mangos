@@ -21,15 +21,19 @@
 
 #include "GameObject.h"
 #include "DBCEnums.h"
+#include "TransportSystem.h"
 
 #include <map>
 #include <set>
 #include <string>
 
-class Transport : public GameObject
+class TransportKit;
+
+class MANGOS_DLL_SPEC Transport : public GameObject
 {
     public:
         explicit Transport();
+        virtual ~Transport();
 
         static uint32 GetPossibleMapByEntry(uint32 entry, bool start = true);
         static bool   IsSpawnedAtDifficulty(uint32 entry, Difficulty difficulty);
@@ -37,32 +41,35 @@ class Transport : public GameObject
         bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress, uint16 dynamicHighValue);
         bool GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids);
         void Update(uint32 update_diff, uint32 p_time) override;
-        bool AddPassenger(Player* passenger);
-        bool RemovePassenger(Player* passenger);
+
+        bool SetPosition(WorldLocation const& loc, bool teleport);
+
+        bool AddPassenger(WorldObject* passenger, Position const& transportPos);
+        bool RemovePassenger(WorldObject* passenger);
 
         void Start();
         void Stop();
 
+        TransportKit* GetTransportKit() { return m_transportKit; };
+
         void BuildStartMovePacket(Map const *targetMap);
         void BuildStopMovePacket(Map const *targetMap);
 
-        typedef std::set<Player*> PlayerSet;
-        PlayerSet const& GetPassengers() const { return m_passengers; }
+        uint32 GetTransportMapId() const { return GetGOInfo() ? GetGOInfo()->moTransport.mapID : 0; };
+
+        virtual bool IsTransport() const override { return bool(m_transportKit); };
+        TransportBase* GetTransportBase() { return (TransportBase*)m_transportKit; };
 
     private:
         struct WayPoint
         {
-            WayPoint() : mapid(0), x(0), y(0), z(0), teleport(false) {}
+            WayPoint() : loc(WorldLocation()), teleport(false) {}
             WayPoint(uint32 _mapid, float _x, float _y, float _z, bool _teleport, uint32 _arrivalEventID = 0, uint32 _departureEventID = 0)
-                : mapid(_mapid), x(_x), y(_y), z(_z), teleport(_teleport),
+                : loc(_mapid, _x, _y, _z, 0.0f), teleport(_teleport),
                 arrivalEventID(_arrivalEventID), departureEventID(_departureEventID)
             {
             }
-
-            uint32 mapid;
-            float x;
-            float y;
-            float z;
+            WorldLocation loc;
             bool teleport;
             uint32 arrivalEventID;
             uint32 departureEventID;
@@ -75,8 +82,6 @@ class Transport : public GameObject
         uint32 m_pathTime;
         uint32 m_timer;
 
-        PlayerSet m_passengers;
-
     public:
         WayPointMap m_WayPoints;
         uint32 m_nextNodeTime;
@@ -86,13 +91,40 @@ class Transport : public GameObject
         WayPointMap::const_iterator GetNext()    { return m_next; }
 
     private:
-        void TeleportTransport(uint32 newMapid, float x, float y, float z);
-        void UpdateForMap(Map const* map);
         void DoEventIfAny(WayPointMap::value_type const& node, bool departure);
         void MoveToNextWayPoint();                          // move m_next/m_cur to next points
 
         void SetPeriod(uint32 time) { SetUInt32Value(GAMEOBJECT_LEVEL, time);}
         uint32 GetPeriod() const { return GetUInt32Value(GAMEOBJECT_LEVEL);}
 
+        TransportKit* m_transportKit;
+        IntervalTimer  m_anchorageTimer;
+
 };
+
+class  MANGOS_DLL_SPEC TransportKit : public TransportBase
+{
+    public:
+        explicit TransportKit(Transport& base);
+        virtual ~TransportKit();
+
+        void Initialize();
+        bool IsInitialized() const { return m_isInitialized; }
+
+        void Reset();
+
+        bool AddPassenger(WorldObject* passenger, Position const& transportPos);
+        void RemovePassenger(WorldObject* passenger);
+        void RemoveAllPassengers();
+
+        Transport* GetBase() const { return (Transport*)GetOwner(); }
+        PassengerMap const& GetPassengers() const { return m_passengers; };
+
+    private:
+        // Internal use to calculate the boarding position
+        virtual Position CalculateBoardingPositionOf(Position const& pos) const override;
+
+        bool m_isInitialized;
+};
+
 #endif
