@@ -38,3 +38,7 @@ INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `effect_mask`, `com
 (59545, 57901, 1, 0, 'Gift of the Naaru Visual'),
 (59547, 57901, 1, 0, 'Gift of the Naaru Visual'),
 (59548, 57901, 1, 0, 'Gift of the Naaru Visual');
+
+DELETE FROM `spell_linked` WHERE `linked_entry` = 61719;
+INSERT INTO `spell_linked` (`entry`, `linked_entry`, `type`, `comment`) VALUE
+(61716, 61719, 1, 'Rabbit Costume - Easter Lay Noblegarden Egg Aura');

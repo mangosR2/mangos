@@ -215,30 +215,32 @@ void PetAI::Reset()
         );
 }
 
-void PetAI::MoveInLineOfSight(Unit *u)
+void PetAI::MoveInLineOfSight(Unit* u)
 {
     if (m_creature->getVictim())
         return;
 
-    if (m_creature->IsPet() && m_creature->GetCharmInfo()->HasState(CHARM_STATE_ACTION,ACTIONS_DISABLE))
+    if (m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
         return;
 
-    if (!m_creature->GetCharmInfo() || !m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT,REACT_AGGRESSIVE))
+    CharmInfo* charmInfo = m_creature->GetCharmInfo();
+    if (!charmInfo)
         return;
 
-    if (u->isTargetableForAttack() && m_creature->IsHostileTo( u ) &&
-        u->isInAccessablePlaceFor(m_creature))
-    {
-        float attackRadius = m_creature->GetAttackDistance(u);
-        if(m_creature->IsWithinDistInMap(u, attackRadius) && m_creature->GetDistanceZ(u) <= CREATURE_Z_ATTACK_RANGE)
-        {
-            if (!m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT) && m_creature->IsWithinLOSInMap(u))
-            {
-                AttackStart(u);
-                u->RemoveSpellsCausingAura(SPELL_AURA_MOD_STEALTH);
-            }
-        }
-    }
+    if (m_creature->IsPet() && charmInfo->HasState(CHARM_STATE_ACTION, ACTIONS_DISABLE))
+        return;
+
+    if (!charmInfo->HasState(CHARM_STATE_REACT, REACT_AGGRESSIVE))
+        return;
+
+    if (!u->isTargetableForAttack() || !m_creature->IsHostileTo(u) ||
+        !u->isInAccessablePlaceFor(m_creature) ||
+        !u->isVisibleForOrDetect(m_creature, m_creature, true))
+        return;
+
+    float attackRadius = m_creature->GetAttackDistance(u);
+    if (m_creature->IsWithinDistInMap(u, attackRadius) && m_creature->GetDistanceZ(u) <= CREATURE_Z_ATTACK_RANGE)
+        AttackStart(u);
 }
 
 void PetAI::AttackStart(Unit* pTarget)
@@ -250,9 +252,11 @@ void PetAI::AttackStart(Unit* pTarget)
 
     m_creature->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ENTER_COMBAT);
 
+    if (!pTarget->isVisibleForOrDetect(m_creature, m_creature, true))
+        return;
+
     Unit* owner = m_creature->GetCharmerOrOwner();
-    if (!pTarget->isVisibleForOrDetect(m_creature, m_creature, true) &&
-        (owner && !pTarget->isVisibleForOrDetect(owner, owner, true)))
+    if (owner && !pTarget->isVisibleForOrDetect(owner, owner, true))
         return;
 
     if (m_creature->Attack(pTarget, m_AIType != PET_AI_RANGED))
@@ -756,6 +760,9 @@ void PetAI::UpdateAI(const uint32 diff)
                             pTarget ? pTarget->GetGuidStr().c_str() : "<none>");
                 switch (result)
                 {
+                    case SPELL_FAILED_TOO_CLOSE:
+                    case SPELL_FAILED_OUT_OF_RANGE:
+                        break; // ignore
                     case SPELL_FAILED_UNIT_NOT_INFRONT:
                     {
                         if (DoCastSpellIfCan(pTarget, spellID) == CAST_OK)

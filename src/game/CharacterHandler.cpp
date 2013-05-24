@@ -1364,16 +1364,16 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
 
         // Delete Friend List
         // Cleanup friends for online players
-        if (QueryResult *resultFriend = CharacterDatabase.PQuery("SELECT DISTINCT guid FROM character_social WHERE friend = '%u'", guid.GetCounter()))
+        if (QueryResult* resultFriend = CharacterDatabase.PQuery("SELECT DISTINCT guid FROM character_social WHERE friend = '%u'", guid.GetCounter()))
         {
             do
             {
-                Field *fieldsFriend = resultFriend->Fetch();
-                if (Player *sFriend = sObjectAccessor.FindPlayer(ObjectGuid(HIGHGUID_PLAYER, fieldsFriend[0].GetUInt32())))
+                Field* fieldsFriend = resultFriend->Fetch();
+                if (Player* sFriend = sObjectAccessor.FindPlayer(ObjectGuid(HIGHGUID_PLAYER, fieldsFriend[0].GetUInt32())))
                 {
                     if (sFriend->IsInWorld())
                     {
-                        sFriend->GetSocial()->RemoveFromSocialList(guid, false);
+                        sFriend->GetSocial()->RemoveFromSocialList(guid, false, true);
                         sSocialMgr.SendFriendStatus(sFriend, FRIEND_REMOVED, guid, false);
                     }
                 }

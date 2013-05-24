@@ -158,6 +158,24 @@ class EvadeDelayEvent : public BasicEvent
         bool    b_force;
 };
 
+class AiDelayEventAround : public BasicEvent
+{
+    public:
+        AiDelayEventAround(AIEventType eventType, ObjectGuid invokerGuid, Creature& owner, std::list<Creature*> const& receivers, uint32 miscValue);
+        bool Execute(uint64 /*e_time*/, uint32 /*p_time*/);
+
+    private:
+        AiDelayEventAround();
+
+        ObjectGuid m_invokerGuid;
+        GuidVector m_receiverGuids;
+        Creature&  m_owner;
+
+        AIEventType m_eventType;
+        uint32 m_miscValue;
+};
+
+
 // Player events
 class TeleportDelayEvent : public BasicEvent
 {

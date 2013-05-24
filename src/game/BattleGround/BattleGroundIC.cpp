@@ -806,15 +806,10 @@ Transport* BattleGroundIC::CreateTransport(uint32 goEntry, uint32 period)
         return NULL;
     }
 
-    uint32 mapid = t->m_WayPoints[0].mapid;
-
-    float x = t->m_WayPoints[0].x;
-    float y = t->m_WayPoints[0].y;
-    float z =  t->m_WayPoints[0].z;
-    float o = 1;
+    WorldLocation const& loc = t->m_WayPoints[0].loc;
 
     // creates the Gameobject
-    if (!t->Create(goEntry, mapid, x, y, z, o, GO_ANIMPROGRESS_DEFAULT, 0))
+    if (!t->Create(goEntry, loc.GetMapId(), loc.x, loc.y, loc.z, loc.o, GO_ANIMPROGRESS_DEFAULT, 0))
     {
         delete t;
         return NULL;

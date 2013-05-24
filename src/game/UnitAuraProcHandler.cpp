@@ -4804,9 +4804,7 @@ SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* 
 
                 // lock aura holder (currently SPELL_AURA_PRAYER_OF_MENDING is single target spell, so will attempt removing from old target
                 // when applied to new one)
-                //holder->SetInUse(true);
                 target->AddSpellAuraHolder(new_holder);
-                //holder->SetInUse(false);
             }
             else
                 holder->SetAuraCharges(1,false);
@@ -5134,11 +5132,8 @@ SpellAuraProcResult Unit::HandleRemoveByDamageProc(Unit* pVictim, DamageInfo* da
                 procSpell->HasAttribute(SPELL_ATTR_EX2_UNK28))
             return SPELL_AURA_PROC_FAILED;
     }
-    
 
-    //holder->SetInUse(true);
     RemoveAurasByCasterSpell(triggeredByAura->GetSpellProto()->Id, triggeredByAura->GetCasterGuid());
-    //holder->SetInUse(false);
 
     return SPELL_AURA_PROC_OK;
 }

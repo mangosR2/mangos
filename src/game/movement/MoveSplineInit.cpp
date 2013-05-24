@@ -57,11 +57,9 @@ namespace Movement
         MoveSpline& move_spline = *unit.movespline;
         TransportInfo* transportInfo = unit.GetTransportInfo();
 
-        Location real_position(unit.GetPositionX(), unit.GetPositionY(), unit.GetPositionZ(), unit.GetOrientation());
-
-        // If boarded use current local position
-        if (transportInfo)
-            transportInfo->GetLocalPosition(real_position.x, real_position.y, real_position.z, real_position.orientation);
+        Position real_position = transportInfo ? 
+                                    transportInfo->GetLocalPosition() :
+                                    unit.GetPosition();
 
         // there is a big chane that current position is unknown if current state is not finalized, need compute it
         // this also allows calculate spline position and update map position in much greater intervals
@@ -70,8 +68,16 @@ namespace Movement
 
         if (args.path.empty())
         {
-            // should i do the things that user should do?
+            // form final position only for rotate
+            if (!args.flags.isFacing())
+                return 0;
             MoveTo(real_position);
+        }
+        else
+        {
+            // check path equivalence
+            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
+                return 0;
         }
 
         // corrent first vertex
@@ -142,11 +148,9 @@ namespace Movement
         MoveSpline& move_spline = *gameobject.movespline;
         TransportInfo* transportInfo = gameobject.GetTransportInfo();
 
-        Location real_position(gameobject.GetPositionX(), gameobject.GetPositionY(), gameobject.GetPositionZ(), gameobject.GetOrientation());
-
-        // If boarded use current local position
-        if (transportInfo)
-            transportInfo->GetLocalPosition(real_position.x, real_position.y, real_position.z, real_position.orientation);
+        Position real_position = transportInfo ? 
+                                    transportInfo->GetLocalPosition() :
+                                    gameobject.GetPosition();
 
         // there is a big chane that current position is unknown if current state is not finalized, need compute it
         // this also allows calculate spline position and update map position in much greater intervals
@@ -155,8 +159,16 @@ namespace Movement
 
         if (args.path.empty())
         {
-            // should i do the things that user should do?
+            // form final position only for rotate
+            if (!args.flags.isFacing())
+                return 0;
             MoveTo(real_position);
+        }
+        else
+        {
+            // check path equivalence
+            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
+                return 0;
         }
 
         // corrent first vertex

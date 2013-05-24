@@ -60,6 +60,7 @@ class MANGOS_DLL_SPEC MotionMaster
         void MoveBoardVehicle(float x, float y, float z, float o, float horizontalSpeed, float max_height);
         void MoveWithSpeed(float x, float y, float z, float speed, bool generatePath = true, bool forceDestination = false);
         void MoveFall();
+        void MoveFlyOrLand(uint32 id, float x, float y, float z, bool liftOff);
 
         MovementGeneratorType GetCurrentMovementGeneratorType() const;
 

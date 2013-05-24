@@ -54,7 +54,7 @@ class MANGOS_DLL_SPEC MovementGenerator : public UnitAction
         virtual void UnitSpeedChanged() { }
 
         // used by Evade code for select point to evade with expected restart default movement
-        virtual bool GetResetPosition(Unit &, float& /*x*/, float& /*y*/, float& /*z*/) { return false; }
+        virtual bool GetResetPosition(Unit&, float& /*x*/, float& /*y*/, float& /*z*/) const { return false; }
 
         // given destination unreachable? due to pathfinsing or other
         virtual bool IsReachable() const { return true; }
@@ -93,10 +93,10 @@ class MANGOS_DLL_SPEC MovementGeneratorMedium : public MovementGenerator
             //u->AssertIsType<T>();
             return (static_cast<D*>(this))->Update(*((T*)&u), time_diff);
         }
-        bool GetResetPosition(Unit& u, float& x, float& y, float& z)
+        bool GetResetPosition(Unit& u, float& x, float& y, float& z) const override
         {
-            //u->AssertIsType<T>();
-            return (static_cast<D*>(this))->GetResetPosition(*((T*)&u), x, y, z);
+            // u->AssertIsType<T>();
+            return (static_cast<D const*>(this))->GetResetPosition(*((T*)&u), x, y, z);
         }
     public:
         // will not link if not overridden in the generators
@@ -107,7 +107,7 @@ class MANGOS_DLL_SPEC MovementGeneratorMedium : public MovementGenerator
         bool Update(T &u, const uint32 &time_diff);
 
         // not need always overwrites
-        bool GetResetPosition(T& /*u*/, float& /*x*/, float& /*y*/, float& /*z*/) { return false; }
+        bool GetResetPosition(T& /*u*/, float& /*x*/, float& /*y*/, float& /*z*/) const { return false; }
 };
 
 struct SelectableMovement : public FactoryHolder<MovementGenerator,MovementGeneratorType>

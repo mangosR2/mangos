@@ -109,8 +109,12 @@ class MANGOS_DLL_SPEC CreatureAI
          */
         virtual void JustReachedHome() {}
 
-        // Called at any heal cast/item used (call non implemented)
-        // virtual void HealBy(Unit * /*healer*/, uint32 /*amount_healed*/) {}
+        /**
+         * Called at any Heal received from any Unit
+         * @param pHealer Unit* which deals the heal
+         * @param uiHealedAmount Amount of healing received
+         */
+        virtual void HealedBy(Unit * /*pHealer*/, uint32& /*uiHealedAmount*/) {}
 
         /**
          * Called at any Damage to any victim (before damage apply)
@@ -281,6 +285,33 @@ class MANGOS_DLL_SPEC CreatureAI
         /// Set combat movement (on/off), also sets UNIT_STAT_NO_COMBAT_MOVEMENT
         void SetCombatMovement(bool enable, bool stopOrStartMovement = false);
         bool IsCombatMovement() const { return m_isCombatMovement; }
+
+        ///== Event Handling ===============================
+
+        /**
+         * Send an AI Event to nearby Creatures around
+         * @param uiType number to specify the event, default cases listed in enum AIEventType
+         * @param pInvoker Unit that triggered this event (like an attacker)
+         * @param uiDelay  delay time until the Event will be triggered
+         * @param fRadius  range in which for receiver is searched
+         */
+        void SendAIEvent(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue = 0) const;
+
+        /**
+         * Send an AI Event to a Creature
+         * @param eventType to specify the event, default cases listed in enum AIEventType
+         * @param pInvoker Unit that triggered this event (like an attacker)
+         * @param pReceiver Creature to receive this event
+         */
+        void SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver, uint32 miscValue = 0) const;
+
+        /**
+         * Called when an AI Event is received
+         * @param eventType to specify the event, default cases listed in enum AIEventType
+         * @param pSender Creature that sent this event
+         * @param pInvoker Unit that triggered this event (like an attacker)
+         */
+        virtual void ReceiveAIEvent(AIEventType /*eventType*/, Creature* /*pSender*/, Unit* /*pInvoker*/, uint32 /*miscValue*/) {}
 
     protected:
         void HandleMovementOnAttackStart(Unit* victim);

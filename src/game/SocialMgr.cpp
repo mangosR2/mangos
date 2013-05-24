@@ -75,7 +75,7 @@ bool PlayerSocial::AddToSocialList(ObjectGuid const& friend_guid, bool ignore)
     return true;
 }
 
-void PlayerSocial::RemoveFromSocialList(ObjectGuid const& friend_guid, bool ignore)
+void PlayerSocial::RemoveFromSocialList(ObjectGuid const& friend_guid, bool ignore, bool isBatch)
 {
     PlayerSocialMap::iterator itr = m_playerSocialMap.find(friend_guid);
     if(itr == m_playerSocialMap.end())                      // not exist
@@ -88,9 +88,11 @@ void PlayerSocial::RemoveFromSocialList(ObjectGuid const& friend_guid, bool igno
     itr->second.Flags &= ~flag;
 
     // FIXME - need make this asynchronows, like all other DB save methods
-    CharacterDatabase.BeginTransaction();
+    if (!isBatch)
+        CharacterDatabase.BeginTransaction();
     SaveFriendInfo(friend_guid, itr->second);
-    CharacterDatabase.CommitTransaction();
+    if (!isBatch)
+        CharacterDatabase.CommitTransaction();
 
     if (itr->second.Flags == SOCIAL_FLAG_NONE)
         m_playerSocialMap.erase(itr);

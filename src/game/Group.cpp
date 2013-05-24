@@ -385,14 +385,14 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
 
             if (Player* member = itr->getSource())
             {
-                if (player->HaveAtClient(member))
+                if (player->HaveAtClient(member->GetObjectGuid()))
                 {
                     member->SetFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
                     member->BuildValuesUpdateBlockForPlayer(&data, player);
                     member->RemoveFieldNotifyFlag(UF_FLAG_PARTY_MEMBER);
                 }
 
-                if (member->HaveAtClient(player))
+                if (member->HaveAtClient(player->GetObjectGuid()))
                 {
                     UpdateData mdata;
                     WorldPacket mpacket;
@@ -1184,7 +1184,7 @@ void Group::UpdatePlayerOutOfRange(Player* pPlayer)
 
     for(GroupReference *itr = GetFirstMember(); itr != NULL; itr = itr->next())
         if (Player *player = itr->getSource())
-            if (player != pPlayer && !player->HaveAtClient(pPlayer))
+            if (player != pPlayer && !player->HaveAtClient(pPlayer->GetObjectGuid()))
                 player->GetSession()->SendPacket(&data);
 }
 
