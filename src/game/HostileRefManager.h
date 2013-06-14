@@ -53,6 +53,7 @@ class HostileRefManager : public RefManager<Unit, ThreatManager>
         void deleteReferencesForFaction(uint32 faction);
 
         HostileReference* getFirst() { return ((HostileReference*) RefManager<Unit, ThreatManager>::getFirst()); }
+        HostileReference const* getFirst() const { return ((HostileReference const*) RefManager<Unit, ThreatManager>::getFirst()); }
 
         void updateThreatTables();
 

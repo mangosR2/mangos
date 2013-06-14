@@ -120,24 +120,12 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         bool IsWeaponBuffCoexistableWith() const;
         bool IsNeedVisibleSlot(Unit const* caster) const;
         bool IsRemovedOnShapeLost() const { return m_isRemovedOnShapeLost; }
-        bool IsInUse() const { return (m_in_use > 0);}
         bool IsDeleted() const { return m_deleted;}
         bool IsEmptyHolder() const;
 
         void SetDeleted() { m_deleted = true; }
 
-        void SetInUse(bool state)
-        {
-            if (state)
-                ++m_in_use;
-            else
-            {
-                if (m_in_use > 0)
-                    --m_in_use;
-            }
-        }
-
-        void UpdateHolder(uint32 diff) { SetInUse(true); Update(diff); SetInUse(false); }
+        void UpdateHolder(uint32 diff) { Update(diff); }
         void Update(uint32 diff);
         void RefreshHolder();
 
@@ -229,7 +217,6 @@ class MANGOS_DLL_SPEC SpellAuraHolder
         bool m_isSingleTarget:1;                            // true if it's a single target spell and registered at caster - can change at spell steal for example
         bool m_deleted:1;
 
-        int32 m_in_use;                                     // > 0 while in SpellAuraHolder::ApplyModifiers call/SpellAuraHolder::Update/etc
 };
 
 typedef void(Aura::*pAuraHandler)(bool Apply, bool Real);

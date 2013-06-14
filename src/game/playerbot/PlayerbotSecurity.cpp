@@ -61,6 +61,12 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* rea
             return PLAYERBOT_SECURITY_TALK;
         }
 
+        if (bot->GetMapId() != from->GetMapId() || bot->GetDistance(from) > sPlayerbotAIConfig.whisperDistance)
+        {
+            if (reason) *reason = PLAYERBOT_DENY_FAR;
+            return PLAYERBOT_SECURITY_TALK;
+        }
+
         int botGS = (int)bot->GetEquipGearScore(false, false);
         int fromGS = (int)from->GetEquipGearScore(false, false);
         if (botGS && bot->getLevel() > 15 && 100 * (botGS - fromGS) / botGS >= (10 + (91 - (int)bot->getLevel()) / 4))
@@ -125,7 +131,11 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
             out << "You are too low level";
             break;
         case PLAYERBOT_DENY_GEARSCORE:
-            out << "Your gearscore is too low";
+            {
+                int botGS = (int)bot->GetEquipGearScore(false, false);
+                int fromGS = (int)from->GetEquipGearScore(false, false);
+                out << "Your gearscore is too low: |cffff0000" << fromGS << "|cffffffff/|cff00ff00" << botGS;
+            }
             break;
         case PLAYERBOT_DENY_NOT_YOURS:
             out << "I have a master already";
@@ -141,6 +151,9 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
             break;
         case PLAYERBOT_DENY_INVITE:
             out << "Invite me to your group first";
+            break;
+        case PLAYERBOT_DENY_FAR:
+            out << "I am too far away";
             break;
         default:
             out << "I can't do that";

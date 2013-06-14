@@ -784,7 +784,7 @@ struct CreatureModelDataEntry
     uint32 Id;                                              // 1
     //uint32 Flags;                                         // 2
     //char* ModelPath[16]                                   // 3
-    //uint32 Unk1;                                          // 4
+    uint32 modInhabitType;                                  // 4 model inhabit type
     float Scale;                                            // 5 Used in calculation of unit collision data
     //int32 Unk2                                            // 6
     //int32 Unk3                                            // 7

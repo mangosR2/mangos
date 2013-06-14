@@ -96,9 +96,9 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
 
     private:
         // Internal use to calculate the boarding position
-        void CalculateBoardingPositionOf(float gx, float gy, float gz, float go, float &lx, float &ly, float &lz, float &lo);
+        virtual Position CalculateBoardingPositionOf(Position const& pos) const override;
 
-        void CalculateSeatPositionOf(VehicleSeatEntry const* seatInfo, float &x, float &y, float &z, float &o);
+        Position CalculateSeatPositionOf(VehicleSeatEntry const* seatInfo) const;
 
         void UpdateFreeSeatCount();
         void InstallAccessory(VehicleAccessory const* accessory);

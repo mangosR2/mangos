@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../Action.h"
+#include "InventoryAction.h"
 
 namespace ai
 {
-    class QueryItemUsageAction : public Action {
+    class QueryItemUsageAction : public InventoryAction {
     public:
-        QueryItemUsageAction(PlayerbotAI* ai, string name = "query item usage") : Action(ai, name) {}
+        QueryItemUsageAction(PlayerbotAI* ai, string name = "query item usage") : InventoryAction(ai, name) {}
         virtual bool Execute(Event event);
 
     protected:

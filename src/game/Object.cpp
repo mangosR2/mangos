@@ -58,7 +58,7 @@ UpdateFieldData::UpdateFieldData(Object const* object, Player* target)
     m_hasSpecialInfo = false;
     m_isPartyMember = false;
 
-    switch(object->GetTypeId())
+    switch (object->GetTypeId())
     {
         case TYPEID_ITEM:
         case TYPEID_CONTAINER:
@@ -72,7 +72,7 @@ UpdateFieldData::UpdateFieldData(Object const* object, Player* target)
             m_isOwner = ((Unit*)object)->GetOwnerGuid() == target->GetObjectGuid();
             m_hasSpecialInfo = ((Unit*)object)->HasAuraTypeWithCaster(SPELL_AURA_EMPATHY, target->GetObjectGuid());
             if (Player* pPlayer = ((Unit*)object)->GetCharmerOrOwnerPlayerOrPlayerItself())
-                m_isPartyMember = pPlayer->IsInSameGroupWith(target);
+                m_isPartyMember = pPlayer->IsInSameRaidWith(target);
             break;
         }
         case TYPEID_GAMEOBJECT:
@@ -110,7 +110,7 @@ Object::Object()
     m_objectTypeId        = TYPEID_OBJECT;
     m_objectType          = TYPEMASK_OBJECT;
 
-    m_uint32Values        = 0;
+    m_uint32Values        = NULL;
     m_valuesCount         = 0;
     m_fieldNotifyFlags    = UF_FLAG_DYNAMIC;
 
@@ -138,8 +138,8 @@ Object::~Object()
 
 void Object::_InitValues()
 {
-    m_uint32Values = new uint32[ m_valuesCount ];
-    memset(m_uint32Values, 0, m_valuesCount*sizeof(uint32));
+    m_uint32Values = new uint32[m_valuesCount];
+    memset(m_uint32Values, 0, m_valuesCount * sizeof(uint32));
 
     m_changedValues.resize(m_valuesCount, false);
 
@@ -313,9 +313,9 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     // 0x20
     if (updateFlags & UPDATEFLAG_LIVING)
     {
-        Unit *unit = ((Unit*)this);
+        Unit* unit = ((Unit*)this);
 
-        if (unit->GetTransport() || unit->GetVehicle())
+        if (unit->IsOnTransport() || unit->GetVehicle())
             unit->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
         else
             unit->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
@@ -345,13 +345,8 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
         if (updateFlags & UPDATEFLAG_POSITION)
         {
             ObjectGuid transportGuid;
-            if (GetObjectGuid().IsUnit())
-            {
-                if (((Unit*)this)->m_movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
-                    transportGuid = ((Unit*)this)->m_movementInfo.GetTransportGuid();
-            }
-            else if (Transport* transport = ((WorldObject*)this)->GetTransport())
-                transportGuid = transport->GetObjectGuid();
+            if (((WorldObject*)this)->GetTransportInfo())
+                transportGuid = ((WorldObject*)this)->GetTransportInfo()->GetTransportGuid();
 
             if (transportGuid)
                 *data << transportGuid.WriteAsPacked();
@@ -387,14 +382,7 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
             if (updateFlags & UPDATEFLAG_HAS_POSITION)
             {
                 // 0x02
-                if ((updateFlags & UPDATEFLAG_TRANSPORT) && ((GameObject*)this)->GetGoType() == GAMEOBJECT_TYPE_MO_TRANSPORT)
-                {
-                    *data << float(0);
-                    *data << float(0);
-                    *data << float(0);
-                    *data << float(((WorldObject *)this)->GetOrientation());
-                }
-                else if (updateFlags & UPDATEFLAG_TRANSPORT)
+                if (updateFlags & UPDATEFLAG_TRANSPORT && !GetObjectGuid().IsMOTransport())
                 {
                     *data << float(((WorldObject*)this)->GetTransOffsetX());
                     *data << float(((WorldObject*)this)->GetTransOffsetY());
@@ -403,10 +391,10 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
                 }
                 else
                 {
-                    *data << float(((WorldObject *)this)->GetPositionX());
-                    *data << float(((WorldObject *)this)->GetPositionY());
-                    *data << float(((WorldObject *)this)->GetPositionZ());
-                    *data << float(((WorldObject *)this)->GetOrientation());
+                    *data << float(((WorldObject*)this)->GetPositionX());
+                    *data << float(((WorldObject*)this)->GetPositionY());
+                    *data << float(((WorldObject*)this)->GetPositionZ());
+                    *data << float(((WorldObject*)this)->GetOrientation());
                 }
             }
         }
@@ -698,34 +686,30 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer * data, UpdateMask *
                     // GAMEOBJECT_TYPE_DUNGEON_DIFFICULTY can have lo flag = 2
                     //      most likely related to "can enter map" and then should be 0 if can not enter
 
-                    if (IsActivateToQuest)
+                    switch(((GameObject*)this)->GetGoType())
                     {
-                        switch(((GameObject*)this)->GetGoType())
-                        {
-                            case GAMEOBJECT_TYPE_QUESTGIVER:
-                                // GO also seen with GO_DYNFLAG_LO_SPARKLE explicit, relation/reason unclear (192861)
-                                *data << uint16(GO_DYNFLAG_LO_ACTIVATE);
-                                *data << uint16(-1);
-                                break;
-                            case GAMEOBJECT_TYPE_CHEST:
-                            case GAMEOBJECT_TYPE_GENERIC:
-                            case GAMEOBJECT_TYPE_SPELL_FOCUS:
-                            case GAMEOBJECT_TYPE_GOOBER:
-                                *data << uint16(GO_DYNFLAG_LO_ACTIVATE | GO_DYNFLAG_LO_SPARKLE);
-                                *data << uint16(-1);
-                                break;
-                            default:
-                                // unknown, not happen.
-                                *data << uint16(0);
-                                *data << uint16(-1);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        // disable quest object
-                        *data << uint16(0);
-                        *data << uint16(-1);
+                        case GAMEOBJECT_TYPE_QUESTGIVER:
+                            // GO also seen with GO_DYNFLAG_LO_SPARKLE explicit, relation/reason unclear (192861)
+                            *data << uint16(IsActivateToQuest ? GO_DYNFLAG_LO_ACTIVATE : GO_DYNFLAG_LO_NONE);
+                            *data << uint16(-1);
+                            break;
+                        case GAMEOBJECT_TYPE_CHEST:
+                        case GAMEOBJECT_TYPE_GENERIC:
+                        case GAMEOBJECT_TYPE_SPELL_FOCUS:
+                        case GAMEOBJECT_TYPE_GOOBER:
+                            *data << uint16(IsActivateToQuest ? (GO_DYNFLAG_LO_ACTIVATE | GO_DYNFLAG_LO_SPARKLE) : GO_DYNFLAG_LO_NONE);
+                            *data << uint16(-1);
+                            break;
+                        case GAMEOBJECT_TYPE_TRANSPORT:
+                        case GAMEOBJECT_TYPE_MO_TRANSPORT:
+                            *data << uint16(((GameObject*)this)->GetGoState() != GO_STATE_ACTIVE ? GO_DYNFLAG_LO_TRANSPORT_STOP : GO_DYNFLAG_LO_NONE);
+                            *data << uint16(-1);
+                            break;
+                        default:
+                            // unknown, not happen.
+                            *data << uint16(GO_DYNFLAG_LO_NONE);
+                            *data << uint16(-1);
+                            break;
                     }
                 }
                 else
@@ -1140,49 +1124,47 @@ ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
     return GetMap() ? GetMap()->GetLock(_lockType) : sWorld.GetLock(_lockType);
 }
 
-void WorldObject::Relocate(WorldLocation const& location)
+// Attention! This method cannot must call while relocation to other map!
+void WorldObject::Relocate(Position const& position)
 {
-    bool locationChanged    = !bool(location == m_position);
-    bool orientationChanged = bool(fabs(location.o - m_position.o) > M_NULL_F);
+    bool positionChanged    = !bool(position == m_position);
+    bool orientationChanged = bool(fabs(position.o - m_position.o) > M_NULL_F);
 
-    m_position = location;
+    m_position = position;
 
     if (isType(TYPEMASK_UNIT))
     {
-        if (locationChanged)
-            ((Unit*)this)->m_movementInfo.ChangePosition(m_position.x, m_position.y, m_position.z, m_position.o);
+        if (positionChanged)
+            ((Unit*)this)->m_movementInfo.ChangePosition(m_position);
         else if (orientationChanged)
             ((Unit*)this)->m_movementInfo.ChangeOrientation(m_position.o);
     }
 }
 
-void WorldObject::Relocate(float x, float y, float z, float orientation)
-{
-    m_position.x = x;
-    m_position.y = y;
-    m_position.z = z;
-    m_position.o = orientation;
-
-    if (isType(TYPEMASK_UNIT))
-        ((Unit*)this)->m_movementInfo.ChangePosition(x, y, z, orientation);
-}
-
-void WorldObject::Relocate(float x, float y, float z)
-{
-    m_position.x = x;
-    m_position.y = y;
-    m_position.z = z;
-
-    if (isType(TYPEMASK_UNIT))
-        ((Unit*)this)->m_movementInfo.ChangePosition(x, y, z, GetOrientation());
-}
-
 void WorldObject::SetOrientation(float orientation)
 {
-    m_position.o = orientation;
+    Relocate(Position(GetPositionX(), GetPositionY(), GetPositionZ(), orientation, GetPhaseMask()));
+}
 
-    if (isType(TYPEMASK_UNIT))
-        ((Unit*)this)->m_movementInfo.ChangeOrientation(orientation);
+void WorldObject::Relocate(WorldLocation const& location)
+{
+    if (location.HasMap() && GetMapId() != location.GetMapId())
+    {
+        if (sMapMgr.IsValidMAP(location.GetMapId()))
+        {
+            SetLocationMapId(location.GetMapId());
+            if (GetInstanceId() != location.GetInstanceId())
+            {
+                if (!sMapMgr.FindMap(location.GetMapId(),location.GetInstanceId()))
+                    DEBUG_LOG("WorldObject::Relocate %s try relocate to non-existance instance %u (map %u).", GetObjectGuid().GetString().c_str(),location.GetInstanceId(), location.GetMapId());
+                SetLocationInstanceId(location.GetInstanceId());
+            }
+        }
+        else
+            sLog.outError("WorldObject::Relocate %s try relocate to non-existance map %u!", GetObjectGuid().GetString().c_str(), location.GetMapId());
+    }
+
+    Relocate(Position(location));
 }
 
 uint32 WorldObject::GetZoneId() const
@@ -1505,9 +1487,9 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
             }
             // non fly unit don't must be in air
             // non swim unit must be at ground (mostly speedup, because it don't must be in water and water level check less fast
-            else if (!((Creature const*)this)->CanFly())
+            else if (!((Creature*)this)->CanFly())
             {
-                bool canSwim = ((Creature const*)this)->CanSwim();
+                bool canSwim = ((Creature*)this)->CanSwim();
                 float ground_z = z;
                 float max_z = canSwim
                     ? GetTerrain()->GetWaterOrGroundLevel(x, y, z, &ground_z, !((Unit const*)this)->HasAuraType(SPELL_AURA_WATER_WALK))
@@ -1736,7 +1718,7 @@ void WorldObject::SendGameObjectCustomAnim(ObjectGuid guid, uint32 animId /*= 0*
     SendMessageToSet(&data, true);
 }
 
-void WorldObject::SetMap(Map * map)
+void WorldObject::SetMap(Map* map)
 {
     MANGOS_ASSERT(map);
     m_currMap = map;
@@ -2141,7 +2123,7 @@ struct WorldObjectChangeAccumulator
         for(CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
         {
             Player* owner = iter->getSource()->GetOwner();
-            if (owner && owner != &i_object && owner->HaveAtClient(&i_object))
+            if (owner && owner != &i_object && owner->HaveAtClient(i_object.GetObjectGuid()))
                 i_object.BuildUpdateDataForPlayer(owner, i_updateDatas);
         }
     }
@@ -2346,4 +2328,24 @@ void WorldObject::UpdateEvents(uint32 update_diff, uint32 time)
     }
 
     GetEvents()->Update(update_diff);
+}
+
+Transport* WorldObject::GetTransport() const
+{
+    return IsOnTransport() ? sObjectMgr.GetTransportByGuid(GetTransportInfo()->GetTransportGuid()) : NULL;
+}
+
+bool WorldObject::IsOnTransport() const
+{
+    return GetTransportInfo() && GetTransportInfo()->GetTransportGuid().IsMOTransport();
+}
+
+TransportBase* WorldObject::GetTransportBase()
+{
+    if (GetObjectGuid().IsMOTransport())
+        return ((Transport*)this)->GetTransportBase();
+    else if (GetObjectGuid().IsUnit())
+        return ((Unit*)this)->GetTransportBase();
+
+    return NULL;
 }

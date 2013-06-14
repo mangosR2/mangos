@@ -554,6 +554,7 @@
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\ResetAiAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\ReviveFromCorpseAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\RewardAction.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SellAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SetHomeAction.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\StatsAction.cpp" />
@@ -1018,6 +1019,7 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\ReviveFromCorpseAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\RewardAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\RtiAction.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SellAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SetHomeAction.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\StatsAction.h" />
@@ -1206,6 +1208,7 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\LineTargetValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\LogLevelValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\LootStrategyValue.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\values\ManaSaveLevelValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\MasterTargetValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\NearestAdsValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\NearestCorpsesValue.h" />
@@ -1314,8 +1317,6 @@
     <None Include="..\..\src\game\CMakeLists.txt" />
     <None Include="..\..\src\game\Mail.cpp.orig" />
     <None Include="..\..\src\game\Makefile.in" />
-    <None Include="..\..\src\game\Player.cpp.orig" />
-    <None Include="..\..\src\game\Player.h.orig" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

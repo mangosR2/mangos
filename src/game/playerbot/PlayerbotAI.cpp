@@ -133,7 +133,7 @@ void PlayerbotAI::UpdateAIInternal(uint32 elapsed)
         ChatCommandHolder holder = chatCommands.top();
         string command = holder.GetCommand();
         Player* owner = holder.GetOwner();
-        if (!helper.ParseChatCommand(command, owner))
+        if (!helper.ParseChatCommand(command, owner) && holder.GetType() == CHAT_MSG_WHISPER)
         {
             ostringstream out; out << "Unknown command " << command;
             TellMaster(out);
@@ -210,12 +210,12 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     if (filtered.empty())
         return;
 
-    if (filtered != "who" && !GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_ALLOW_ALL, type != CHAT_MSG_WHISPER, &fromPlayer))
+    if (filtered.find("who") != 0 && !GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_ALLOW_ALL, type != CHAT_MSG_WHISPER, &fromPlayer))
         return;
 
     if (type == CHAT_MSG_RAID_WARNING && filtered.find(bot->GetName()) != string::npos && filtered.find("award") == string::npos)
     {
-        ChatCommandHolder cmd("warning", &fromPlayer);
+        ChatCommandHolder cmd("warning", &fromPlayer, type);
         chatCommands.push(cmd);
         return;
     }
@@ -231,7 +231,7 @@ void PlayerbotAI::HandleCommand(uint32 type, const string& text, Player& fromPla
     }
     else
     {
-        ChatCommandHolder cmd(filtered, &fromPlayer);
+        ChatCommandHolder cmd(filtered, &fromPlayer, type);
         chatCommands.push(cmd);
     }
 }
@@ -872,7 +872,13 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell)
 
 bool PlayerbotAI::CastSpell(string name, Unit* target)
 {
-    return CastSpell(aiObjectContext->GetValue<uint32>("spell id", name)->Get(), target);
+    bool result = CastSpell(aiObjectContext->GetValue<uint32>("spell id", name)->Get(), target);
+    if (result)
+    {
+        aiObjectContext->GetValue<time_t>("last spell cast time", name)->Set(time(0));
+    }
+
+    return result;
 }
 
 bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target)
@@ -914,8 +920,17 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target)
     Spell *spell = new Spell(bot, pSpellInfo, false);
 
     SpellCastTargets targets;
-    targets.setUnitTarget(target);
     WorldObject* faceTo = target;
+
+    if (pSpellInfo->Targets & TARGET_FLAG_SOURCE_LOCATION ||
+            pSpellInfo->Targets & TARGET_FLAG_DEST_LOCATION)
+    {
+        targets.setDestination(target->GetPosition());
+    }
+    else
+    {
+        targets.setUnitTarget(target);
+    }
 
     if (pSpellInfo->Targets & TARGET_FLAG_ITEM)
     {

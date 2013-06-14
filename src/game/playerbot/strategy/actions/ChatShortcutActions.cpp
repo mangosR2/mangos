@@ -94,3 +94,15 @@ bool TankAttackChatShortcutAction::Execute(Event event)
     ai->TellMaster("Attacking");
     return true;
 }
+
+bool MaxDpsChatShortcutAction::Execute(Event event)
+{
+    Player* master = GetMaster();
+    if (!master)
+        return false;
+
+    ai->Reset();
+    ai->ChangeStrategy("-threat,-conserve mana,-cast time", BOT_STATE_COMBAT);
+    ai->TellMaster("Max DPS");
+    return true;
+}

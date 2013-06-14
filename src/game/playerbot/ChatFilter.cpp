@@ -242,11 +242,14 @@ CompositeChatFilter::~CompositeChatFilter()
 
 string CompositeChatFilter::Filter(string message)
 {
-    for (list<ChatFilter*>::iterator i = filters.begin(); i != filters.end(); i++)
+    for (int j = 0; j < filters.size(); ++j)
     {
-        message = (*i)->Filter(message);
-        if (message.empty())
-            break;
+        for (list<ChatFilter*>::iterator i = filters.begin(); i != filters.end(); i++)
+        {
+            message = (*i)->Filter(message);
+            if (message.empty())
+                break;
+        }
     }
 
     return message;

@@ -25,37 +25,40 @@ bool TellReputationAction::Execute(Event event)
     int32 reputation = bot->GetReputationMgr().GetReputation(faction);
 
     ostringstream out;
-    out << "Reputation with " << entry->name[0] << ": ";
+    out << entry->name[0] << ": ";
+    out << "|cff";
     ReputationRank rank = bot->GetReputationMgr().GetRank(entry);
     switch (rank) {
         case REP_HATED:
-            out << "hated";
+            out << "cc2222hated";
             break;
         case REP_HOSTILE:
-            out << "hostile";
+            out << "ff0000hostile";
             break;
         case REP_UNFRIENDLY:
-            out << "unfriendly";
+            out << "ee6622unfriendly";
             break;
         case REP_NEUTRAL:
-            out << "neutral";
+            out << "ffff00neutral";
             break;
         case REP_FRIENDLY:
-            out << "friendly";
+            out << "00ff00friendly";
             break;
         case REP_HONORED:
-            out << "honored";
+            out << "00ff88honored";
             break;
         case REP_REVERED:
-            out << "revered";
+            out << "00ffccrevered";
             break;
         case REP_EXALTED:
-            out << "exalted";
+            out << "00ffffexalted";
             break;
         default:
-            out << "unknown";
+            out << "808080unknown";
             break;
     }
+
+    out << "|cffffffff";
 
     int32 base = ReputationMgr::Reputation_Cap + 1;
     for (int i = MAX_REPUTATION_RANK - 1; i >= rank; --i)

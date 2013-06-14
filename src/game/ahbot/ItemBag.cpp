@@ -14,6 +14,7 @@
 #include "../ObjectMgr.h"
 
 using namespace ahbot;
+char * strstri (const char* str1, const char* str2);
 
 CategoryList CategoryList::instance;
 
@@ -115,6 +116,9 @@ bool ItemBag::Add(ItemPrototype const* proto)
     if (proto->RequiredLevel > sAhBotConfig.maxRequiredLevel || proto->ItemLevel > sAhBotConfig.maxItemLevel)
         return false;
 
+    if (strstri(proto->Name1, "qa") || strstri(proto->Name1, "test"))
+        return false;
+
     for (int i = 0; i < CategoryList::instance.size(); i++)
     {
         if (CategoryList::instance[i]->Contains(proto))
@@ -131,7 +135,7 @@ void AvailableItemsBag::Load()
 {
     set<uint32> vendorItems;
 
-      QueryResult* results = WorldDatabase.PQuery("SELECT item, count(item) as cnt FROM npc_vendor group by item having cnt > 20");
+      QueryResult* results = WorldDatabase.PQuery("SELECT item FROM npc_vendor where maxcount = 0");
       if (results != NULL)
       {
           do

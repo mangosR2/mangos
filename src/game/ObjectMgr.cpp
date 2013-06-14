@@ -106,9 +106,12 @@ LanguageDesc const* GetLanguageDescByID(uint32 lang)
     return NULL;
 }
 
-bool SpellClickInfo::IsFitToRequirements(Player const* player) const
+bool SpellClickInfo::IsFitToRequirements(Player const* player, Creature const* clickedCreature) const
 {
-    if(questStart)
+    if (conditionId)
+        return sObjectMgr.IsPlayerMeetToCondition(conditionId, player, player->GetMap(), clickedCreature, CONDITION_FROM_SPELLCLICK);
+
+    if (questStart)
     {
         // not in expected required quest state
         if (!player || ((!questStartCanActive || !player->IsActiveQuest(questStart)) && !player->GetQuestRewardStatus(questStart)))
@@ -169,6 +172,9 @@ ObjectMgr::~ObjectMgr()
             delete[] playerInfo[race][class_].levelInfo;
 
     // free objects
+    for (TransportSet::iterator itr = m_Transports.begin(); itr != m_Transports.end(); ++itr)
+        delete *itr;
+
     for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end(); ++itr)
         delete itr->second;
 
@@ -1596,6 +1602,10 @@ void ObjectMgr::LoadGameObjects()
         if (gameEvent==0 && GuidPoolId==0 && EntryPoolId==0)// if not this is to be managed by GameEvent System or Pool system
             AddGameobjectToGrid(guid, &data);
 
+        //uint32 zoneId, areaId;
+        //sTerrainMgr.LoadTerrain(data.mapid)->GetZoneAndAreaId(zoneId, areaId, data.posX, data.posY, data.posZ);
+        //sLog.outErrorDb("UPDATE gameobject SET zone_id=%u, area_id=%u WHERE guid=%u;", zoneId, areaId, guid);
+
         ++count;
 
     } while (result->NextRow());
@@ -2761,6 +2771,14 @@ void ObjectMgr::LoadPetLevelInfo()
     }
 
     PetLevelInfo* petBaseInfo = petInfo[1];
+
+    // fatal error if no base pet with id 1
+    if (!petBaseInfo)
+    {
+        sLog.outErrorDb("Table `pet_levelstats` does not have requered base pet with id 1! Must be exist!");
+        Log::WaitBeforeContinueIfNeed();
+        exit(1);
+    }
 
     // Fill gaps and check integrity
     for (PetLevelInfoMap::iterator itr = petInfo.begin(); itr != petInfo.end(); ++itr)
@@ -4674,15 +4692,13 @@ void ObjectMgr::LoadQuests()
             if (!quest)
                 continue;
 
-            if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT))
+            // Exclude false positive of quest 10162
+            if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT) && spellInfo->Id != 33824 && quest_id != 10162)
             {
                 sLog.outErrorDb("Spell (id: %u) have SPELL_EFFECT_QUEST_COMPLETE for quest %u , but quest does not have SpecialFlags QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT (2) set. Quest SpecialFlags should be corrected to enable this objective.", spellInfo->Id, quest_id);
 
-                // The below forced alteration has been disabled because of spell 33824 / quest 10162.
-                // A startup error will still occur with proper data in quest_template, but it will be possible to sucessfully complete the quest with the expected data.
-
                 // this will prevent quest completing without objective
-                // const_cast<Quest*>(quest)->SetSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT);
+                const_cast<Quest*>(quest)->SetSpecialFlag(QUEST_SPECIAL_FLAG_EXPLORATION_OR_EVENT);
             }
         }
     }
@@ -6757,11 +6773,9 @@ std::string ObjectMgr::GeneratePetName(uint32 entry)
 
     if (list0.empty() || list1.empty())
     {
-        CreatureInfo const *cinfo = GetCreatureTemplate(entry);
+        CreatureInfo const* cinfo = GetCreatureTemplate(entry);
         char const* petname = GetPetName(cinfo->family, sWorld.GetDefaultDbcLocale());
-        if (!petname)
-            petname = cinfo->Name;
-        return std::string(petname);
+        return std::string(petname ? petname : "");
     }
 
     return *(list0.begin()+urand(0, list0.size()-1)) + *(list1.begin()+urand(0, list1.size()-1));
@@ -7223,8 +7237,8 @@ void ObjectMgr::LoadNPCSpellClickSpells()
     uint32 count = 0;
 
     mSpellClickInfoMap.clear();
-    //                                                0          1         2            3                   4          5
-    QueryResult *result = WorldDatabase.Query("SELECT npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags FROM npc_spellclick_spells");
+    //                                                0          1         2            3                   4          5           6
+    QueryResult* result = WorldDatabase.Query("SELECT npc_entry, spell_id, quest_start, quest_start_active, quest_end, cast_flags, condition_id FROM npc_spellclick_spells");
 
     if (!result)
     {
@@ -7244,7 +7258,15 @@ void ObjectMgr::LoadNPCSpellClickSpells()
         Field *fields = result->Fetch();
         bar.step();
 
-        uint32 npc_entry = fields[0].GetUInt32();
+        SpellClickInfo info;
+        uint32 npc_entry         = fields[0].GetUInt32();
+        info.spellId             = fields[1].GetUInt32();
+        info.questStart          = fields[2].GetUInt32();
+        info.questStartCanActive = fields[3].GetBool();
+        info.questEnd            = fields[4].GetUInt32();
+        info.castFlags           = fields[5].GetUInt8();
+        info.conditionId         = fields[6].GetUInt16();
+
         CreatureInfo const* cInfo = GetCreatureTemplate(npc_entry);
         if (!cInfo)
         {
@@ -7252,48 +7274,36 @@ void ObjectMgr::LoadNPCSpellClickSpells()
             continue;
         }
 
-        uint32 spellid = fields[1].GetUInt32();
-        SpellEntry const *spellinfo = sSpellStore.LookupEntry(spellid);
+        SpellEntry const* spellinfo = sSpellStore.LookupEntry(info.spellId);
         if (!spellinfo)
         {
-            sLog.outErrorDb("Table npc_spellclick_spells references unknown spellid %u. Skipping entry.", spellid);
+            sLog.outErrorDb("Table npc_spellclick_spells references unknown spellid %u. Skipping entry.", info.spellId);
             continue;
         }
 
-        uint32 quest_start = fields[2].GetUInt32();
-
-        // quest might be 0 to enable spellclick independent of any quest
-        if (quest_start)
+        if (info.conditionId && !sConditionStorage.LookupEntry<PlayerCondition const*>(info.conditionId))
         {
-            if(mQuestTemplates.find(quest_start) == mQuestTemplates.end())
+            sLog.outErrorDb("Table npc_spellclick_spells references unknown condition %u. Skipping entry.", info.conditionId);
+            continue;
+        }
+        else if (!info.conditionId)                         // TODO Drop block after finished converting
+        {
+            // quest might be 0 to enable spellclick independent of any quest
+            if (info.questStart && mQuestTemplates.find(info.questStart) == mQuestTemplates.end())
             {
-                sLog.outErrorDb("Table npc_spellclick_spells references unknown start quest %u. Skipping entry.", quest_start);
+                sLog.outErrorDb("Table npc_spellclick_spells references unknown start quest %u. Skipping entry.", info.questStart);
+                continue;
+            }
+
+            // quest might be 0 to enable spellclick active infinity after start quest
+            if (info.questEnd && mQuestTemplates.find(info.questEnd) == mQuestTemplates.end())
+            {
+                sLog.outErrorDb("Table npc_spellclick_spells references unknown end quest %u. Skipping entry.", info.questEnd);
                 continue;
             }
 
         }
 
-        bool quest_start_active = fields[3].GetBool();
-
-        uint32 quest_end = fields[4].GetUInt32();
-        // quest might be 0 to enable spellclick active infinity after start quest
-        if (quest_end)
-        {
-            if(mQuestTemplates.find(quest_end) == mQuestTemplates.end())
-            {
-                sLog.outErrorDb("Table npc_spellclick_spells references unknown end quest %u. Skipping entry.", quest_end);
-                continue;
-            }
-
-        }
-
-        uint8 castFlags = fields[5].GetUInt8();
-        SpellClickInfo info;
-        info.spellId = spellid;
-        info.questStart = quest_start;
-        info.questStartCanActive = quest_start_active;
-        info.questEnd = quest_end;
-        info.castFlags = castFlags;
         mSpellClickInfoMap.insert(SpellClickInfoMap::value_type(npc_entry, info));
 
         // mark creature template as spell clickable
@@ -8139,7 +8149,10 @@ char const* conditionSourceToStr[] =
     "gossip menu option",
     "event AI",
     "hardcoded",
-    "vendor's item check"
+    "vendor's item check",
+    "spell_area check",
+    "npc_spellclick_spells check",
+    "DBScript engine"
 };
 
 // Checks if player meets the condition
@@ -8426,6 +8439,37 @@ bool PlayerCondition::Meets(Player const* player, Map const* map, WorldObject co
         }
         case CONDITION_GENDER:
             return player->getGender() == m_value1;
+        case CONDITION_DEAD_OR_AWAY:
+            switch (m_value1)
+            {
+                case 0:                                     // Player dead or out of range
+                    return !player || !player->isAlive() || (m_value2 && source && !source->IsWithinDistInMap(player, m_value2));
+                case 1:                                     // All players in Group dead or out of range
+                    if (!player)
+                        return true;
+                    if (Group const* grp = player->GetGroup())
+                    {
+                        for (GroupReference const* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+                        {
+                            Player const* pl = itr->getSource();
+                            if (pl && pl->isAlive() && !pl->isGameMaster() && (!m_value2 || !source || source->IsWithinDistInMap(pl, m_value2)))
+                                return false;
+                        }
+                        return true;
+                    }
+                    else
+                        return !player->isAlive() || (m_value2 && source && !source->IsWithinDistInMap(player, m_value2));
+                case 2:                                     // All players in instance dead or out of range
+                    for (Map::PlayerList::const_iterator itr = map->GetPlayers().begin(); itr != map->GetPlayers().end(); ++itr)
+                    {
+                        Player const* plr = itr->getSource();
+                        if (plr && plr->isAlive() && !plr->isGameMaster() && (!m_value2 || !source || source->IsWithinDistInMap(plr, m_value2)))
+                            return false;
+                    }
+                    return true;
+                case 3:                                     // Creature source is dead
+                    return !source || source->GetTypeId() != TYPEID_UNIT || !((Unit*)source)->isAlive();
+            }
         default:
             return false;
     }
@@ -8471,6 +8515,31 @@ bool PlayerCondition::CheckParamRequirements(Player const* pPlayer, Map const* m
                 sLog.outErrorDb("CONDITION %u type %u used with bad parameters, called from %s, used with plr: %s, map %i, src %s",
                                     m_entry, m_condition, conditionSourceToStr[conditionSourceType], pPlayer ? pPlayer->GetGuidStr().c_str() : "NULL", map ? map->GetId() : -1, source ? source->GetGuidStr().c_str() : "NULL");
                 return false;
+            }
+            break;
+        case CONDITION_DEAD_OR_AWAY:
+            switch (m_value1)
+            {
+                case 0:                                     // Player dead or out of range
+                case 1:                                     // All players in Group dead or out of range
+                case 2:                                     // All players in instance dead or out of range
+                    if (m_value2 && !source)
+                    {
+                        sLog.outErrorDb("CONDITION_DEAD_OR_AWAY %u - called from %s without source, but source expected for range check", m_entry, conditionSourceToStr[conditionSourceType]);
+                        return false;
+                    }
+                    if (m_value1 != 2)
+                        return true;
+                    // Case 2 (Instance map only)
+                    if (!map && (pPlayer || source))
+                        map = source ? source->GetMap() : pPlayer->GetMap();
+                    if (!map || !map->Instanceable())
+                    {
+                        sLog.outErrorDb("CONDITION_DEAD_OR_AWAY %u (Player in instance case) - called from %s without map param or from non-instanceable map %i", m_entry,  conditionSourceToStr[conditionSourceType], map ? map->GetId() : -1);
+                        return false;
+                    }
+                case 3:                                     // Creature source is dead
+                    return true;
             }
             break;
         default:
@@ -8843,6 +8912,15 @@ bool PlayerCondition::IsValid(uint16 entry, ConditionType condition, uint32 valu
             if (value1 >= MAX_GENDER)
             {
                 sLog.outErrorDb("Gender condition (entry %u, type %u) has an invalid value in value1. (Has %u, must be smaller than %u), skipping.", entry, condition, value1, MAX_GENDER);
+                return false;
+            }
+            break;
+        }
+        case CONDITION_DEAD_OR_AWAY:
+        {
+            if (value1 >= 4)
+            {
+                sLog.outErrorDb("Dead condition (entry %u, type %u) has an invalid value in value1. (Has %u, must be smaller than 4), skipping.", entry, condition, value1);
                 return false;
             }
             break;
@@ -9487,7 +9565,7 @@ void ObjectMgr::LoadGossipMenuItems(std::set<uint32>& gossipScriptSet)
                               "SELECT menu_id, id, option_icon, option_text, option_id, npc_option_npcflag, "
                               "action_menu_id, action_poi_id, action_script_id, box_coded, box_money, box_text, "
                               "condition_id "
-                              "FROM gossip_menu_option");
+                              "FROM gossip_menu_option ORDER BY menu_id, id");
 
     if (!result)
     {
@@ -10040,6 +10118,146 @@ GameObjectDataPair const* FindGOData::GetResult() const
         return i_spawnedData;
 
     return i_anyData;
+}
+
+void ObjectMgr::LoadTransports()
+{
+    QueryResult *result = WorldDatabase.Query("SELECT entry, name, period FROM transports");
+
+    uint32 count = 0;
+
+    if( !result )
+    {
+        BarGoLink bar(1);
+        bar.step();
+
+        sLog.outString();
+        sLog.outString( ">> Loaded %u transports", count );
+        return;
+    }
+
+    BarGoLink bar(result->GetRowCount());
+
+    do
+    {
+        bar.step();
+
+        Transport *t = new Transport;
+
+        Field *fields = result->Fetch();
+
+        uint32 entry = fields[0].GetUInt32();
+        std::string name = fields[1].GetCppString();
+        t->m_period = fields[2].GetUInt32();
+
+        const GameObjectInfo *goinfo = ObjectMgr::GetGameObjectInfo(entry);
+
+        if(!goinfo)
+        {
+            sLog.outErrorDb("Transport ID:%u, Name: %s, will not be loaded, gameobject_template missing", entry, name.c_str());
+            delete t;
+            continue;
+        }
+
+        if(goinfo->type != GAMEOBJECT_TYPE_MO_TRANSPORT)
+        {
+            sLog.outErrorDb("Transport ID:%u, Name: %s, will not be loaded, gameobject_template type wrong", entry, name.c_str());
+            delete t;
+            continue;
+        }
+
+        DEBUG_LOG("Loading transport %u between %s, %s transport map id %u", entry, name.c_str(), goinfo->name, goinfo->moTransport.mapID);
+
+        std::set<uint32> mapsUsed;
+
+        if(!t->GenerateWaypoints(goinfo->moTransport.taxiPathId, mapsUsed))
+            // skip transports with empty waypoints list
+        {
+            sLog.outErrorDb("Transport (path id %u) path size = 0. Transport ignored, check DBC files or transport GO data0 field.",goinfo->moTransport.taxiPathId);
+            delete t;
+            continue;
+        }
+
+        WorldLocation loc = t->m_WayPoints[0].loc;
+
+        //current code does not support transports in dungeon!
+        const MapEntry* pMapInfo = sMapStore.LookupEntry(loc.GetMapId());
+        if(!pMapInfo || pMapInfo->Instanceable())
+        {
+            delete t;
+            continue;
+        }
+
+        // creates the Gameobject
+        if (!t->Create(entry, loc.GetMapId(), loc.x, loc.y, loc.z, loc.o, GO_ANIMPROGRESS_DEFAULT, GO_DYNFLAG_LO_NONE))
+        {
+            delete t;
+            continue;
+        }
+
+        m_Transports.insert(t);
+
+        //If we someday decide to use the grid to track transports, here:
+        Map* map = sMapMgr.CreateMap(loc.GetMapId(), t);
+        t->SetMap(map);
+        map->Relocation((GameObject*)t, loc);
+        map->Add((GameObject*)t);
+        t->Start();
+
+        ++count;
+    } while(result->NextRow());
+    delete result;
+
+    sLog.outString();
+    sLog.outString( ">> Loaded %u transports", count );
+
+    // check transport data DB integrity
+    result = WorldDatabase.Query("SELECT gameobject.guid,gameobject.id,transports.name FROM gameobject,transports WHERE gameobject.id = transports.entry");
+    if(result)                                              // wrong data found
+    {
+        do
+        {
+            Field *fields = result->Fetch();
+
+            uint32 guid  = fields[0].GetUInt32();
+            uint32 entry = fields[1].GetUInt32();
+            std::string name = fields[2].GetCppString();
+            sLog.outErrorDb("Transport %u '%s' have record (GUID: %u) in `gameobject`. Transports DON'T must have any records in `gameobject` or its behavior will be unpredictable/bugged.",entry,name.c_str(),guid);
+        }
+        while(result->NextRow());
+
+        delete result;
+    }
+}
+
+Transport const* ObjectMgr::GetTransportByGOMapId(uint32 mapid) const
+{
+    for (TransportSet::const_iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
+    {
+        Transport const* transport = *iter;
+
+        if (!transport)
+            continue;
+
+        if (transport->GetGOInfo()->moTransport.mapID == mapid)
+            return transport;
+    }
+    return NULL;
+}
+
+Transport* ObjectMgr::GetTransportByGuid(ObjectGuid const& guid)
+{
+    for (TransportSet::iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
+    {
+        Transport* transport = *iter;
+
+        if (!transport)
+            continue;
+
+        if (transport->GetObjectGuid() == guid)
+            return transport;
+    }
+    return NULL;
 }
 
 void ObjectMgr::LoadTransports(Map* map)

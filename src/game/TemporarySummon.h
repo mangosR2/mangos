@@ -24,6 +24,15 @@
 
 #define DEFAULT_DESPAWN_DELAY 5000
 
+enum TSUpdateActions
+{
+    TSUA_NONE                 = 0,
+    TSUA_UNSUMMON             = 1,
+    TSUA_RESET_TIMER          = 2,
+    TSUA_CHECK_TIMER          = 4,
+    TSUA_CHECK_UNIQUENESS     = 8
+};
+
 class TemporarySummon : public Creature
 {
     public:

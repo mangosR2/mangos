@@ -274,6 +274,13 @@ int AhBot::Answer(int auction, Category* category, ItemBag* inAuctionItems)
             continue;
         }
 
+        if (proto->RequiredLevel > sAhBotConfig.maxRequiredLevel || proto->ItemLevel > sAhBotConfig.maxItemLevel)
+        {
+            sLog.outDetail("%s (x%d) in auction %d: above max required or item level",
+                    item->GetProto()->Name1, item->GetCount(), auctionIds[auction]);
+            continue;
+        }
+
         uint32 price = category->GetPricingStrategy()->GetBuyPrice(proto, auctionIds[auction]);
         if (!price)
         {
@@ -535,8 +542,10 @@ void AhBot::HandleCommand(string command)
         if (category->Contains(proto))
         {
             ostringstream out;
-            out << proto->Name1 << " (" << category->GetDisplayName() << ")"
-                << "\n";
+            out << proto->Name1 << " (" << category->GetDisplayName() << "), "
+                    << category->GetMaxAllowedAuctionCount() << "x" << category->GetMaxAllowedItemAuctionCount(proto)
+                    << "x" << category->GetStackCount(proto) << " max"
+                    << "\n";
             for (int auction = 0; auction < MAX_AUCTIONS; auction++)
             {
                 const AuctionHouseEntry* ahEntry = sAuctionHouseStore.LookupEntry(auctionIds[auction]);
@@ -839,6 +848,32 @@ int32 AhBot::GetSellPrice(ItemPrototype const* proto)
             int32 price = (int32)category->GetPricingStrategy()->GetSellPrice(proto, auctionIds[auction]);
             if (!price)
                 price = (int32)category->GetPricingStrategy()->GetBuyPrice(proto, auctionIds[auction]);
+
+            if (price > maxPrice)
+                maxPrice = price;
+        }
+    }
+
+    return maxPrice;
+}
+
+int32 AhBot::GetBuyPrice(ItemPrototype const* proto)
+{
+    if (!player)
+        return 0;
+
+    int32 maxPrice = 0;
+    for (int i=0; i<CategoryList::instance.size(); i++)
+    {
+        Category* category = CategoryList::instance[i];
+        if (!category->Contains(proto))
+            continue;
+
+        for (int auction = 0; auction < MAX_AUCTIONS; auction++)
+        {
+            int32 price = (int32)category->GetPricingStrategy()->GetBuyPrice(proto, auctionIds[auction]);
+            if (!price)
+                continue;
 
             if (price > maxPrice)
                 maxPrice = price;

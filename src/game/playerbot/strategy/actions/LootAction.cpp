@@ -261,7 +261,14 @@ bool StoreLootAction::IsLootAllowedBySkill(ItemPrototype const * proto)
     switch (proto->Class)
     {
     case ITEM_CLASS_KEY:
+    case ITEM_CLASS_CONSUMABLE:
         return true;
+    case ITEM_CLASS_GEM:
+        if (proto->SubClass == ITEM_SUBCLASS_GEM_SIMPLE && bot->HasSkill(SKILL_JEWELCRAFTING))
+            return true;
+        if (proto->SubClass != ITEM_SUBCLASS_GEM_SIMPLE)
+            return true;
+        break;
     case ITEM_CLASS_TRADE_GOODS:
         switch (proto->SubClass)
         {

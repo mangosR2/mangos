@@ -33,9 +33,9 @@ protected:
         tick();
 
         engine->addStrategy("bspeed");
-        set<bool>("mounted", true);
+        set<bool>("mounted", "self target", true);
 		tick();
-        set<bool>("mounted", false);
+        set<bool>("mounted", "self target", false);
 
 		assertActions(">P:blessing of kings on party>S:crusader aura");
     }

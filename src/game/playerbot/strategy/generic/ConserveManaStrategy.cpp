@@ -3,6 +3,7 @@
 #include "ConserveManaStrategy.h"
 #include "../../PlayerbotAIConfig.h"
 #include "../actions/GenericSpellActions.h"
+#include "../values/LastSpellCastValue.h"
 
 using namespace ai;
 
@@ -42,7 +43,46 @@ float ConserveManaMultiplier::GetValue(Action* action)
     return 1.0f;
 }
 
+float SaveManaMultiplier::GetValue(Action* action)
+{
+    if (action == NULL)
+        return 1.0f;
+
+    double saveLevel = AI_VALUE(double, "mana save level");
+    if (saveLevel <= 1.0)
+        return 1.0f;
+
+    CastSpellAction* spellAction = dynamic_cast<CastSpellAction*>(action);
+    if (!spellAction)
+        return 1.0f;
+
+    string spell = spellAction->getName();
+    uint32 spellId = AI_VALUE2(uint32, "spell id", spell);
+    const SpellEntry* const spellInfo = sSpellStore.LookupEntry(spellId);
+    if (!spellInfo || spellInfo->powerType != POWER_MANA)
+        return 1.0f;
+
+    int32 cost = spellInfo->manaCost;
+    if (spellInfo->ManaCostPercentage)
+        cost += spellInfo->ManaCostPercentage * bot->GetCreateMana() / 100;
+
+    uint32 mana = bot->GetMaxPower(POWER_MANA);
+    double percent = (double)cost / (double)mana * 100.0f;
+
+    time_t lastCastTime = AI_VALUE2(time_t, "last spell cast time", spell);
+    if (!lastCastTime)
+        return 1.0f;
+
+    time_t elapsed = time(0) - lastCastTime;
+    if ((double)elapsed < 10 + pow(saveLevel, sqrt(percent)))
+        return 0.0f;
+
+    return 1.0f;
+}
+
+
 void ConserveManaStrategy::InitMultipliers(std::list<Multiplier*> &multipliers)
 {
     multipliers.push_back(new ConserveManaMultiplier(ai));
+    multipliers.push_back(new SaveManaMultiplier(ai));
 }

@@ -65,7 +65,20 @@ uint8 ComboPointsValue::Calculate()
 
 bool IsMountedValue::Calculate()
 {
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
 
-    return bot->IsMounted();
+    return target->IsMounted();
+}
+
+
+bool IsInCombatValue::Calculate()
+{
+    Unit* target = GetTarget();
+    if (!target)
+        return false;
+
+    return target->IsInCombat();
 }
 

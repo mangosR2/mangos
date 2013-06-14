@@ -31,32 +31,43 @@ bool LfgJoinAction::SetRoles()
     if (!state)
         return false;
 
-    state->SetRoles(LFG_ROLE_MASK_DAMAGE);
-
     int spec = AiFactory::GetPlayerSpecTab(bot);
     switch (bot->getClass())
     {
     case CLASS_DRUID:
         if (spec == 2)
             state->SetRoles(LFG_ROLE_MASK_HEALER);
+        else
+            state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
     case CLASS_PALADIN:
         if (spec == 1)
             state->SetRoles(LFG_ROLE_MASK_TANK);
-        if (spec == 0)
+        else if (spec == 0)
             state->SetRoles(LFG_ROLE_MASK_HEALER);
+        else
+            state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
     case CLASS_PRIEST:
         if (spec != 2)
             state->SetRoles(LFG_ROLE_MASK_HEALER);
+        else
+            state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
     case CLASS_SHAMAN:
         if (spec == 2)
             state->SetRoles(LFG_ROLE_MASK_HEALER);
+        else
+            state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
     case CLASS_WARRIOR:
         if (spec == 2)
             state->SetRoles(LFG_ROLE_MASK_TANK);
+        else
+            state->SetRoles(LFG_ROLE_MASK_DAMAGE);
+        break;
+    default:
+        state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
     }
 

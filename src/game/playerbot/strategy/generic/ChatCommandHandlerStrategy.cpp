@@ -123,6 +123,10 @@ void ChatCommandHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode(
         "warning",
         NextAction::array(0, new NextAction("runaway chat shortcut", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "max dps",
+        NextAction::array(0, new NextAction("max dps chat shortcut", relevance), NULL)));
 }
 
 
@@ -164,4 +168,5 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* ai) : PassTr
     supported.push_back("position");
     supported.push_back("summon");
     supported.push_back("who");
+    supported.push_back("save mana");
 }

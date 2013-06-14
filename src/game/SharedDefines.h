@@ -269,7 +269,7 @@ enum SpellAttributes
     SPELL_ATTR_STOP_ATTACK_TARGET              = 0x00100000,            // 20 Stop attack after use this spell (and not begin attack if use)
     SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK    = 0x00200000,            // 21 Cannot be dodged/parried/blocked
     SPELL_ATTR_SET_TRACKING_TARGET             = 0x00400000,            // 22 SetTrackingTarget
-    SPELL_ATTR_UNK23                           = 0x00800000,            // 23 castable while dead?
+    SPELL_ATTR_CASTABLE_WHILE_DEAD             = 0x00800000,            // 23 castable while dead or not spawned/invisible (for creatures)
     SPELL_ATTR_CASTABLE_WHILE_MOUNTED          = 0x01000000,            // 24 castable while mounted
     SPELL_ATTR_DISABLED_WHILE_ACTIVE           = 0x02000000,            // 25 Activate and start cooldown after aura fade or remove summoned creature or go
     SPELL_ATTR_UNK26                           = 0x04000000,            // 26
@@ -1476,10 +1476,12 @@ enum GameObjectFlags
 
 enum GameObjectDynamicLowFlags
 {
+    GO_DYNFLAG_LO_NONE              = 0x00,                 // no low flags
     GO_DYNFLAG_LO_ACTIVATE          = 0x01,                 // enables interaction with GO
     GO_DYNFLAG_LO_ANIMATE           = 0x02,                 // possibly more distinct animation of GO
     GO_DYNFLAG_LO_NO_INTERACT       = 0x04,                 // appears to disable interaction (not fully verified)
     GO_DYNFLAG_LO_SPARKLE           = 0x08,                 // makes GO sparkle
+    GO_DYNFLAG_LO_TRANSPORT_STOP    = 0x10,                 // Transport/MOTransport stopped
 };
 
 enum TextEmotes
@@ -3158,6 +3160,41 @@ enum ConditionSource                                        // From where was th
     CONDITION_FROM_EVENTAI          = 4,                    // Used to check EventAI Event "On Receive Emote"
     CONDITION_FROM_HARDCODED        = 5,                    // Used to check a hardcoded event - not actually a condition
     CONDITION_FROM_VENDOR           = 6,                    // Used to check a condition from a vendor
+    CONDITION_FROM_SPELL_AREA       = 7,                    // Used to check a condition from spell_area table
+    CONDITION_FROM_SPELLCLICK       = 8,                    // Used to check a condition from npc_spellclick_spells table
+    CONDITION_FROM_DBSCRIPTS        = 9,                    // Used to check a condition from DB Scripts Engine
+};
+
+enum AIEventType
+{
+    // Usable with Event AI
+    AI_EVENT_JUST_DIED          = 0,                        // Sender = Killed Npc, Invoker = Killer
+    AI_EVENT_CRITICAL_HEALTH    = 1,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 10% health
+    AI_EVENT_LOST_HEALTH        = 2,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 50% health
+    AI_EVENT_LOST_SOME_HEALTH   = 3,                        // Sender = Hurt Npc, Invoker = DamageDealer - Expected to be sent by 90% health
+    AI_EVENT_GOT_FULL_HEALTH    = 4,                        // Sender = Healed Npc, Invoker = Healer
+    AI_EVENT_CUSTOM_EVENTAI_A   = 5,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
+    AI_EVENT_CUSTOM_EVENTAI_B   = 6,                        // Sender = Npc that throws custom event, Invoker = TARGET_T_ACTION_INVOKER (if exists)
+    AI_EVENT_GOT_CCED           = 7,                        // Sender = CCed Npc, Invoker = Caster that CCed
+    MAXIMAL_AI_EVENT_EVENTAI    = 8,
+
+    // Internal Use
+    AI_EVENT_CALL_ASSISTANCE    = 10,                       // Sender = Attacked Npc, Invoker = Enemy
+
+    // Predefined for SD2
+    AI_EVENT_START_ESCORT       = 100,                      // Invoker = Escorting Player
+    AI_EVENT_START_ESCORT_B     = 101,                      // Invoker = Escorting Player
+    AI_EVENT_START_EVENT        = 102,                      // Invoker = EventStarter
+    AI_EVENT_START_EVENT_A      = 103,                      // Invoker = EventStarter
+    AI_EVENT_START_EVENT_B      = 104,                      // Invoker = EventStarter
+
+    // Some IDs for special cases in SD2
+    AI_EVENT_CUSTOM_A           = 1000,
+    AI_EVENT_CUSTOM_B           = 1001,
+    AI_EVENT_CUSTOM_C           = 1002,
+    AI_EVENT_CUSTOM_D           = 1003,
+    AI_EVENT_CUSTOM_E           = 1004,
+    AI_EVENT_CUSTOM_F           = 1005,
 };
 
 enum Expansions

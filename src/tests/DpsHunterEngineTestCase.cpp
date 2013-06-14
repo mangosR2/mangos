@@ -46,6 +46,8 @@ protected:
 		tick();
 
 		tickInMeleeRange();
+		spellAvailable("wing clip");
+		addTargetAura("wing clip");
 		tickInMeleeRange();
 		tickInSpellRange();
 

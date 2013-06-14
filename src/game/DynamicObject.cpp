@@ -51,8 +51,9 @@ void DynamicObject::RemoveFromWorld(bool remove)
 bool DynamicObject::Create(uint32 guidlow, Unit* caster, uint32 spellId, SpellEffectIndex effIndex, float x, float y, float z, int32 duration, float radius, DynamicObjectType type)
 {
     WorldObject::_Create(ObjectGuid(HIGHGUID_DYNAMICOBJECT, guidlow), caster->GetPhaseMask());
+
+    Relocate(WorldLocation(caster->GetMapId(), x, y, z, 0.0f, caster->GetPhaseMask(), caster->GetInstanceId()));
     SetMap(caster->GetMap());
-    Relocate(x, y, z, 0);
 
     if (!IsPositionValid())
     {

@@ -39,22 +39,20 @@
 
 #define MAX_STEALTH_DETECT_RANGE    45.0f
 
+#define DEFAULT_HIDDEN_MODEL_ID     11686                   // common "hidden" (invisible) model ID
+
 enum TempSummonType
 {
-    TEMPSUMMON_TIMED_OR_DEAD_DESPAWN       = 1,             // despawns after a specified time OR when the creature disappears
-    TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN     = 2,             // despawns after a specified time OR when the creature dies
-    TEMPSUMMON_TIMED_DESPAWN               = 3,             // despawns after a specified time
-    TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT = 4,             // despawns after a specified time after the creature is out of combat
-    TEMPSUMMON_CORPSE_DESPAWN              = 5,             // despawns instantly after death
-    TEMPSUMMON_CORPSE_TIMED_DESPAWN        = 6,             // despawns after a specified time after death
-    TEMPSUMMON_DEAD_DESPAWN                = 7,             // despawns when the creature disappears
-    TEMPSUMMON_MANUAL_DESPAWN              = 8,             // despawns when UnSummon() is called
-    TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT_OR_DEAD_DESPAWN = 9, // despawns after a specified time after the creature is out of combat OR when the creature disappears
-
-    // New types, currently same mechanics as old types
-    TEMPSUMMON_TIMED_OOC_DESPAWN           = TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT,             // despawns after a specified time after the creature is out of combat
-    TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN   = TEMPSUMMON_TIMED_OR_DEAD_DESPAWN,             // despawns after a specified time (OOC) OR when the creature disappears
-    TEMPSUMMON_TIMED_OOC_OR_CORPSE_DESPAWN = TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN,             // despawns after a specified time (OOC) OR when the creature dies
+    TEMPSUMMON_MANUAL_DESPAWN              = 0,             // despawns when UnSummon() is called
+    TEMPSUMMON_DEAD_DESPAWN                = 1,             // despawns when the creature disappears
+    TEMPSUMMON_CORPSE_DESPAWN              = 2,             // despawns instantly after death
+    TEMPSUMMON_CORPSE_TIMED_DESPAWN        = 3,             // despawns after a specified time after death (or when the creature disappears)
+    TEMPSUMMON_TIMED_DESPAWN               = 4,             // despawns after a specified time
+    TEMPSUMMON_TIMED_OOC_DESPAWN           = 5,             // despawns after a specified time after the creature is out of combat
+    TEMPSUMMON_TIMED_OR_DEAD_DESPAWN       = 6,             // despawns after a specified time OR when the creature disappears
+    TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN     = 7,             // despawns after a specified time OR when the creature dies
+    TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN   = 8,             // despawns after a specified time (OOC) OR when the creature disappears
+    TEMPSUMMON_TIMED_OOC_OR_CORPSE_DESPAWN = 9,             // despawns after a specified time (OOC) OR when the creature dies
 
     // Place for future despawn types
     TEMPSUMMON_LOST_OWNER_DESPAWN                           = 20,            // despawns when creature lost charmer/owner
@@ -62,6 +60,10 @@ enum TempSummonType
     TEMPSUMMON_TIMED_OR_DEAD_OR_LOST_OWNER_DESPAWN          = 22,            // despawns when creature lost charmer/owner, or by time
     TEMPSUMMON_TIMED_OR_DEAD_OR_LOST_UNIQUENESS_DESPAWN     = 23,            // despawns when owner spawn creature this type in visible range, or by rules of TEMPSUMMON_TIMED_OR_DEAD_DESPAWN
     TEMPSUMMON_DEAD_OR_LOST_UNIQUENESS_DESPAWN              = 24,            // despawns when owner spawn creature this type in visible range, or by rules of TEMPSUMMON_DEAD_DESPAWN
+
+    // Wrappers for old scripts
+    TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT = TEMPSUMMON_TIMED_OOC_DESPAWN,
+    TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT_OR_DEAD_DESPAWN = TEMPSUMMON_TIMED_OOC_OR_DEAD_DESPAWN,
 };
 
 class WorldPacket;
@@ -78,6 +80,7 @@ class UpdateMask;
 class InstanceData;
 class TerrainInfo;
 class Transport;
+class TransportBase;
 class TransportInfo;
 
 typedef UNORDERED_MAP<ObjectGuid, UpdateData> UpdateDataMapType;
@@ -124,7 +127,7 @@ struct UpdateFieldData
 class MANGOS_DLL_SPEC Object
 {
     public:
-        virtual ~Object ();
+        virtual ~Object();
 
         const bool& IsInWorld() const { return m_inWorld; }
         virtual void AddToWorld()
@@ -470,11 +473,15 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         bool IsBoarded() const { return m_transportInfo != NULL; }
         void SetTransportInfo(TransportInfo* transportInfo) { m_transportInfo = transportInfo; }
 
-        void Relocate(float x, float y, float z, float orientation);
-        void Relocate(float x, float y, float z);
-        void Relocate(WorldLocation const& location);
+        virtual bool IsTransport() const { return false; };
+        TransportBase* GetTransportBase();
 
+        void Relocate(WorldLocation const& location);
+        void Relocate(Position const& position);
         void SetOrientation(float orientation);
+
+        // FIXME - need remove wrapper after cleanup SD2
+        void Relocate(float x, float y, float z, float orientation = 0.0f) { Relocate(Position(x, y, z, orientation, GetPhaseMask())); };
 
         float const& GetPositionX() const     { return m_position.x; }
         float const& GetPositionY() const     { return m_position.y; }
@@ -483,11 +490,15 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void GetPosition(float &x, float &y, float &z ) const { x = m_position.x; y = m_position.y; z = m_position.z; }
         WorldLocation const& GetPosition() const { return m_position; };
 
-        virtual Transport* GetTransport() const { return NULL; }
-        virtual float GetTransOffsetX() const { return 0.0f; }
-        virtual float GetTransOffsetY() const { return 0.0f; }
-        virtual float GetTransOffsetZ() const { return 0.0f; }
-        virtual float GetTransOffsetO() const { return 0.0f; }
+        virtual bool IsOnTransport() const;
+        virtual Transport* GetTransport() const;
+        float GetTransOffsetX() const { return m_position.GetTransportPos().getX(); }
+        float GetTransOffsetY() const { return m_position.GetTransportPos().getY(); }
+        float GetTransOffsetZ() const { return m_position.GetTransportPos().getZ(); }
+        float GetTransOffsetO() const { return m_position.GetTransportPos().getO(); }
+        Position const& GetTransportPosition() const { return m_position.GetTransportPos(); };
+        void SetTransportPosition(Position const& pos) { m_position.SetTransportPosition(pos); };
+        void ClearTransportData() { m_position.ClearTransportData(); };
 
         void GetNearPoint2D( float &x, float &y, float distance, float absAngle) const;
         void GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float searcher_bounding_radius, float distance2d, float absAngle) const;
@@ -692,6 +703,12 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         Movement::MoveSpline* movespline;
         ShortTimeTracker m_movesplineTimer;
 
+        // Visibility operations for object in (must be used only in active state!)
+        GuidSet& GetNotifiedClients() { return m_notifiedClients;};
+        void  AddNotifiedClient(ObjectGuid const& guid)    { m_notifiedClients.insert(guid); };
+        void  RemoveNotifiedClient(ObjectGuid const& guid) { m_notifiedClients.erase(guid); };
+        bool  HasNotifiedClients() const { return !m_notifiedClients.empty(); };
+
     protected:
         explicit WorldObject();
 
@@ -723,6 +740,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         uint32 m_LastUpdateTime;
 
         WorldObjectEventProcessor m_Events;
+
+        GuidSet    m_notifiedClients;
 };
 
 #endif

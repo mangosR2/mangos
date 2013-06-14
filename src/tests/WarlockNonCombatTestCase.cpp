@@ -27,7 +27,7 @@ protected:
         tick();
         addAura("fel armor");
 
-		itemAvailable("soulstone", 2);
+		itemAvailable("soul shard", 2);
 		tick();
 		itemAvailable("healthstone", 1);
 

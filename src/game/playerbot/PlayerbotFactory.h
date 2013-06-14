@@ -40,8 +40,8 @@ private:
     void InitMounts();
     void InitPotions();
     void InitFood();
-    bool CanEquipArmor(ItemPrototype const* proto, uint8 slot);
-    bool CanEquipWeapon(ItemPrototype const* proto, uint8 slot);
+    bool CanEquipArmor(ItemPrototype const* proto);
+    bool CanEquipWeapon(ItemPrototype const* proto);
     void EnchantItem(Item* item);
     void AddItemStats(uint32 mod, uint8 &sp, uint8 &ap, uint8 &tank);
     bool CheckItemStats(uint8 sp, uint8 ap, uint8 tank);
@@ -49,6 +49,8 @@ private:
     bool IsDesiredReplacement(Item* item);
     void InitBags();
     void InitInventory();
+    void InitInventoryTrade();
+    void InitInventoryEquip();
 
 private:
     Player* bot;

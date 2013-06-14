@@ -140,6 +140,10 @@ namespace ai
     {
     public:
         CastWingClipAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "wing clip") {}
+        virtual bool isUseful()
+        {
+            return CastMeleeSpellAction::isUseful() && !ai->HasAura(spell, GetTarget());
+        }
     };
 
     class CastSerpentStingOnAttackerAction : public CastDebuffSpellOnAttackerAction

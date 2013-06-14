@@ -25,7 +25,7 @@ UPDATE `creature_template` SET IconName = 'vehichleCursor' WHERE `entry` IN (291
 UPDATE creature_template SET IconName = 'vehichleCursor' WHERE vehicle_id > 0 AND IconName IS NULL;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33109, 33167, 33062, 33060, 33067);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (33109, 62309, 0, 0, 0, 1),  -- Demolisher
 (33167, 62309, 0, 0, 0, 1),  -- Demolisher mechanic seat
 (33062, 65030, 0, 0, 0, 1),  -- Chopper
@@ -95,7 +95,7 @@ INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `f
 REPLACE INTO `creature_template_spells` SET `entry` = 30066, `spell1` = 55812;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (30066);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (30066, 44002, 12953, 1, 12953, 1);
 -- INSERT IGNORE INTO spell_script_target VALUES (55812, 1, 30096); -- listed for TargetEntry 30096 does not have any implicit target TARGET_SCRIPT(38) or TARGET_SCRIPT_COORDINATES (46) or TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT (40).
 
@@ -104,12 +104,12 @@ INSERT INTO npc_spellclick_spells VALUES
 UPDATE `creature_template` SET `IconName` = 'Gunner' WHERE `entry` IN (27714);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27714);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (27714, 67373, 0, 0, 0, 1);
 
 /* Broken-down Shredder */
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (27354);
-INSERT INTO `npc_spellclick_spells` VALUES
+INSERT INTO `npc_spellclick_spells` (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (27354, 48533, 12244, 1, 12244, 1),
 (27354, 48533, 12270, 1, 12270, 1);
 
@@ -119,7 +119,7 @@ INSERT INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 
 /* Forsaken Blight Spreader */
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (26523);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (26523, 47961, 0, 0, 0, 1);
 
 /* Argent Tournament mount */
@@ -144,7 +144,7 @@ UPDATE creature_template SET KillCredit1 = 33340 WHERE entry IN (33272);
 UPDATE creature_template SET KillCredit1 = 33339 WHERE entry IN (33243);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (33842, 33843);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (33842, 63791, 13829, 1, 0, 3),
 (33842, 63791, 13839, 1, 0, 3),
 (33842, 63791, 13838, 1, 0, 3),
@@ -157,7 +157,7 @@ UPDATE `creature_template` SET `vehicle_id` = 308 WHERE entry IN (29598);
 REPLACE INTO `creature_template_spells` SET `entry` = 29598, `spell1` = 54897, `spell2` = 54907;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (29598);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (29598, 54908, 12851, 1, 12851, 1);
 
 -- INSERT IGNORE INTO spell_script_target VALUES (54897, 1, 29358); --listed for TargetEntry 29358 does not have any implicit target TARGET_SCRIPT(38) or TARGET_SCRIPT_COORDINATES (46) or TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT (40).
@@ -171,7 +171,7 @@ INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 (45877, 1, 25596);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (25334, 27107);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (25334, 47917, 11652, 1, 11652, 1);
 
 -- REPLACE INTO spell_script_target VALUES (47962, 1, 27107); -- listed for TargetEntry 27107 does not have any implicit target TARGET_SCRIPT(38) or TARGET_SCRIPT_COORDINATES (46) or TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT (40).
@@ -187,7 +187,7 @@ INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `f
 (27061, 47938, 3, 0, 0, 0);
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27061);
-INSERT INTO npc_spellclick_spells VALUES (27061, 47920, 0, 0, 0, 1);
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES (27061, 47920, 0, 0, 0, 1);
 REPLACE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES 
 (47939, 0, 188539);
 
@@ -196,7 +196,7 @@ UPDATE `creature_template` SET `vehicle_id` = 244 WHERE `entry` IN (30236);
 UPDATE `npc_spellclick_spells` SET `quest_start` = 13086, `quest_start_active` = 1, `quest_end` = 13086 WHERE `npc_entry` = 30236 AND `spell_id` = 57573;
 
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (27996);
-INSERT INTO npc_spellclick_spells VALUES
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (27996, 50343, 12498, 1, 12498, 1);
 
 -- Quest 13236 Gift of the Lich King
@@ -214,16 +214,16 @@ UPDATE creature_template SET AIName='EventAI' WHERE entry=27698;
 
 -- Quest King of the Mountain (13280)
 DELETE FROM npc_spellclick_spells WHERE npc_entry = 31736;
-INSERT INTO npc_spellclick_spells VALUES (31736, 59592, 13280, 1, 0, 3);
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES (31736, 59592, 13280, 1, 0, 3);
 
 -- Njorndar Proto-Drake
 UPDATE creature_template SET vehicle_id = 228 WHERE entry = 30272;
 DELETE FROM npc_spellclick_spells WHERE npc_entry = 30272;
-INSERT INTO npc_spellclick_spells VALUES (30272, 57401, 13071, 1, 13071, 1);
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES (30272, 57401, 13071, 1, 13071, 1);
 
 -- Updates vehicles by lanc
 DELETE FROM npc_spellclick_spells WHERE npc_entry IN (32189, 29433, 29555);
-INSERT INTO npc_spellclick_spells VALUES 
+INSERT INTO npc_spellclick_spells (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES 
 (32189, 46598, 0, 0, 0, 1),
 (29433, 47020, 0, 0, 0, 1),
 (29555, 47020, 0, 0, 0, 1);
@@ -326,7 +326,7 @@ INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `f
 (@GUID, 63034, 6, 0, 0, 0);
 
 DELETE FROM `npc_spellclick_spells` WHERE npc_entry = 33870;
-INSERT INTO `npc_spellclick_spells` VALUES
+INSERT INTO `npc_spellclick_spells` (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (33870, 63663, 13664, 1, 0, 3);
 
 -- Typo fix for Argent Mount
@@ -352,7 +352,7 @@ REPLACE INTO `creature_template_spells` SET `entry` = 30021, `spell1` = 55982, `
 UPDATE `creature_template` SET `vehicle_id` = 529 WHERE `entry` = 33782;
 
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (30021, 33782);
-INSERT INTO `npc_spellclick_spells` VALUES
+INSERT INTO `npc_spellclick_spells` (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (30021, 55785, 0, 0, 0, 3),
 (33782, 63151, 0, 0, 0, 1);
 
@@ -361,7 +361,7 @@ UPDATE `creature_template` SET `InhabitType` = 6, `unit_flags` = `unit_flags`|16
 UPDATE `creature_model_info` SET `bounding_radius` = 0.534723,`combat_reach` = 3.5 WHERE `modelid` = 26611;
 
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` = 27593;
-INSERT INTO `npc_spellclick_spells` VALUES
+INSERT INTO `npc_spellclick_spells` (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES
 (27593, 49177, 12437, 1, 0, 1);
 
 -- Wintergrasp vehicles
@@ -370,7 +370,7 @@ INSERT INTO `npc_spellclick_spells` VALUES
 SET @GUID := 28366;
 UPDATE `creature_template` SET AIName = 'NullAI' WHERE entry = @GUID;
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (@GUID);
-INSERT INTO `npc_spellclick_spells` VALUES (@GUID, 60962, 0, 0, 0, 1);
+INSERT INTO `npc_spellclick_spells` (`npc_entry`, `spell_id`, `quest_start`, `quest_start_active`, `quest_end`, `cast_flags`) VALUES (@GUID, 60962, 0, 0, 0, 1);
 
 -- Wintergrasp siege Engine (Alliance)
 SET @GUID := 28312;

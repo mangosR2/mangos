@@ -27,6 +27,8 @@
  * - Abstract storage of passengers (added by BoardPassenger, UnboardPassenger)
  */
 
+#include "Player.h"
+#include "Transports.h"
 #include "TransportSystem.h"
 #include "Unit.h"
 #include "Vehicle.h"
@@ -65,8 +67,7 @@ void TransportBase::Update(uint32 diff)
 // Update the global positions of all passengers
 void TransportBase::UpdateGlobalPositions()
 {
-    Position pos(m_owner->GetPositionX(), m_owner->GetPositionY(),
-                 m_owner->GetPositionZ(), m_owner->GetOrientation());
+    WorldLocation pos = m_owner->GetPosition();
 
     // Calculate new direction multipliers
     if (MapManager::NormalizeOrientation(pos.o - m_lastPosition.o) > 0.01f)
@@ -75,35 +76,50 @@ void TransportBase::UpdateGlobalPositions()
         m_cosO = cos(pos.o);
     }
 
-    // Update global positions
-    for (PassengerMap::const_iterator itr = m_passengers.begin(); itr != m_passengers.end(); ++itr)
-        UpdateGlobalPositionOf(itr->first, itr->second->GetLocalPositionX(), itr->second->GetLocalPositionY(),
-                               itr->second->GetLocalPositionZ(), itr->second->GetLocalOrientation());
+    if (!m_passengers.empty())
+    {
+        MAPLOCK_READ(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+        // Update global positions
+        for (PassengerMap::const_iterator itr = m_passengers.begin(); itr != m_passengers.end(); ++itr)
+            UpdateGlobalPositionOf(itr->first, itr->second.GetLocalPosition());
+    }
 
     m_lastPosition = pos;
 }
 
 // Update the global position of a passenger
-void TransportBase::UpdateGlobalPositionOf(WorldObject* passenger, float lx, float ly, float lz, float lo) const
+void TransportBase::UpdateGlobalPositionOf(ObjectGuid const& passengerGuid, Position const& pos) const
 {
-    float gx, gy, gz, go;
-    CalculateGlobalPositionOf(lx, ly, lz, lo, gx, gy, gz, go);
+    WorldObject* passenger = GetOwner()->GetMap()->GetWorldObject(passengerGuid);
 
-    if (passenger->GetTypeId() == TYPEID_PLAYER || passenger->GetTypeId() == TYPEID_UNIT)
+    if (!passenger)
+        return;
+
+    Position g = CalculateGlobalPositionOf(pos);
+
+    switch(passenger->GetTypeId())
     {
-        if (passenger->GetTypeId() == TYPEID_PLAYER)
-        {
-            m_owner->GetMap()->Relocation((Player*)passenger, gx, gy, gz, go);
-        }
-        else
-            m_owner->GetMap()->Relocation((Creature*)passenger, gx, gy, gz, go);
-
-        // If passenger is vehicle
-        if (((Unit*)passenger)->IsVehicle())
-            ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
+        case TYPEID_GAMEOBJECT:
+        case TYPEID_DYNAMICOBJECT:
+            m_owner->GetMap()->Relocation((GameObject*)passenger, g);
+            break;
+        case TYPEID_UNIT:
+            m_owner->GetMap()->Relocation((Creature*)passenger, g);
+            // If passenger is vehicle
+            if (((Unit*)passenger)->IsVehicle())
+                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
+            break;
+        case TYPEID_PLAYER:
+            m_owner->GetMap()->Relocation((Player*)passenger, g);
+            // If passenger is vehicle
+            if (((Unit*)passenger)->IsVehicle())
+                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
+            break;
+        case TYPEID_CORPSE:
+        // TODO - add corpse relocation
+        default:
+            break;
     }
-    // ToDo: Add gameobject relocation
-    // ToDo: Add passenger relocation for MO transports
 }
 
 // This rotates the vector (lx, ly) by transporter->orientation
@@ -121,64 +137,178 @@ void TransportBase::NormalizeRotatedPosition(float rx, float ry, float& lx, floa
 }
 
 // Calculate a global position of local positions based on this transporter
-void TransportBase::CalculateGlobalPositionOf(float lx, float ly, float lz, float lo, float& gx, float& gy, float& gz, float& go) const
+Position TransportBase::CalculateGlobalPositionOf(Position const& pos) const
 {
-    RotateLocalPosition(lx, ly, gx, gy);
-    gx += m_owner->GetPositionX();
-    gy += m_owner->GetPositionY();
+    Position g(pos);
+    RotateLocalPosition(pos.x, pos.y, g.x, g.y);
+    g.x += m_owner->GetPositionX();
+    g.y += m_owner->GetPositionY();
 
-    gz = lz + m_owner->GetPositionZ();
-    go = MapManager::NormalizeOrientation(lo + m_owner->GetOrientation());
+    g.z = pos.z + m_owner->GetPositionZ();
+    g.o = MapManager::NormalizeOrientation(pos.o + m_owner->GetOrientation());
+    return g;
 }
 
-void TransportBase::BoardPassenger(WorldObject* passenger, float lx, float ly, float lz, float lo, uint8 seat)
+void TransportBase::BoardPassenger(WorldObject* passenger, Position const& pos, int8 seat)
 {
-    TransportInfo* transportInfo = new TransportInfo(passenger, this, lx, ly, lz, lo, seat);
+    if (!passenger)
+        return;
+
+    MAPLOCK_WRITE(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
 
     // Insert our new passenger
-    m_passengers.insert(PassengerMap::value_type(passenger, transportInfo));
+    m_passengers.insert(PassengerMap::value_type(passenger->GetObjectGuid(),TransportInfo(*passenger, *this, pos, seat)));
+
+    PassengerMap::iterator itr = m_passengers.find(passenger->GetObjectGuid());
+    MANGOS_ASSERT(itr != m_passengers.end());
 
     // The passenger needs fast access to transportInfo
-    passenger->SetTransportInfo(transportInfo);
+    passenger->SetTransportInfo(&itr->second);
+
+    // Add MI and other data only if successful boarded!
+    if (passenger->isType(TYPEMASK_UNIT))
+    {
+        ((Unit*)passenger)->m_movementInfo.ClearTransportData();
+        ((Unit*)passenger)->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
+        ((Unit*)passenger)->m_movementInfo.SetTransportData(GetOwner()->GetObjectGuid(), pos, WorldTimer::getMSTime(), -1);
+    }
+    passenger->SetTransportPosition(pos);
 }
 
 void TransportBase::UnBoardPassenger(WorldObject* passenger)
 {
-    PassengerMap::iterator itr = m_passengers.find(passenger);
-
-    if (itr == m_passengers.end())
+    if (!passenger)
         return;
+
+    // Cleanup movementinfo/data even his not boarded!
+    if (passenger->isType(TYPEMASK_UNIT))
+    {
+        ((Unit*)passenger)->m_movementInfo.ClearTransportData();
+        ((Unit*)passenger)->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
+    }
+    passenger->ClearTransportData();
 
     // Set passengers transportInfo to NULL
     passenger->SetTransportInfo(NULL);
 
-    // Delete transportInfo
-    delete itr->second;
+    MAPLOCK_WRITE(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+    PassengerMap::iterator itr = m_passengers.find(passenger->GetObjectGuid());
 
+    if (itr == m_passengers.end())
+        return;
+
+    // Delete transportInfo
     // Unboard finally
     m_passengers.erase(itr);
 }
 
 /* **************************************** TransportInfo ****************************************/
 
-TransportInfo::TransportInfo(WorldObject* owner, TransportBase* transport, float lx, float ly, float lz, float lo, uint8 seat) :
-    m_owner(owner),
-    m_transport(transport),
-    m_localPosition(lx, ly, lz, lo),
-    m_seat(seat)
+void TransportInfo::SetLocalPosition(Position const& pos)
 {
-    MANGOS_ASSERT(owner && m_transport);
-}
-
-void TransportInfo::SetLocalPosition(float lx, float ly, float lz, float lo)
-{
-    m_localPosition.x = lx;
-    m_localPosition.y = ly;
-    m_localPosition.z = lz;
-    m_localPosition.o = lo;
+    m_owner.SetTransportPosition(pos);
 
     // Update global position
-    m_transport->UpdateGlobalPositionOf(m_owner, lx, ly, lz, lo);
+    m_transport.UpdateGlobalPositionOf(m_owner.GetObjectGuid(), pos);
+}
+
+WorldObject* TransportInfo::GetTransport() const 
+{
+    return m_transport.GetOwner();
+}
+
+ObjectGuid TransportInfo::GetTransportGuid() const
+{
+    return m_transport.GetOwner()->GetObjectGuid();
+}
+
+bool TransportInfo::IsOnVehicle() const
+{
+    return m_transport.GetOwner()->GetTypeId() == TYPEID_PLAYER || m_transport.GetOwner()->GetTypeId() == TYPEID_UNIT;
+}
+
+void NotifyMapChangeBegin::operator() (WorldObject* obj) const
+{
+    if (!obj)
+        return;
+
+    switch(obj->GetTypeId())
+    {
+        case TYPEID_GAMEOBJECT:
+        case TYPEID_DYNAMICOBJECT:
+            break;
+        case TYPEID_UNIT:
+            if (obj->GetObjectGuid().IsPet())
+                break;
+            // TODO Despawn creatures in old map
+            break;
+        case TYPEID_PLAYER:
+        {
+            Player* plr = (Player*)obj;
+            if (!plr)
+                return;
+            if (plr->isDead() && !plr->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+                plr->ResurrectPlayer(1.0);
+            if (plr->GetSession() && m_oldloc.GetMapId() != m_loc.GetMapId())
+            {
+                WorldPacket data(SMSG_NEW_WORLD, 4);
+                data << uint32(plr->IsOnTransport() ? plr->GetTransport()->GetTransportMapId() : m_loc.GetMapId());
+                plr->GetSession()->SendPacket(&data);
+            }
+            plr->TeleportTo(m_loc, TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NODELAY);
+            break;
+        }
+        // TODO - make corpse moving.
+        case TYPEID_CORPSE:
+        default:
+            break;
+    }
+}
+
+void NotifyMapChangeEnd::operator() (WorldObject* obj) const
+{
+    if (!obj)
+        return;
+
+    switch(obj->GetTypeId())
+    {
+        case TYPEID_GAMEOBJECT:
+        case TYPEID_DYNAMICOBJECT:
+            break;
+        case TYPEID_UNIT:
+            // TODO Spawn creatures in new map
+            break;
+        case TYPEID_PLAYER:
+            break;
+        // TODO - make corpse moving.
+        case TYPEID_CORPSE:
+        default:
+            break;
+    }
+}
+
+void SendCurrentTransportDataWithHelper::operator() (WorldObject* object) const
+{
+    if (!object || 
+        object->GetObjectGuid() == m_player->GetObjectGuid() ||
+        !m_player->HaveAtClient(object->GetObjectGuid()))
+        return;
+
+    object->BuildCreateUpdateBlockForPlayer(m_data, m_player);
+}
+
+void UpdateVisibilityOfWithHelper::operator() (WorldObject* object) const
+{
+    if (!object)
+        return;
+
+    if (m_guidSet.find(object->GetObjectGuid()) != m_guidSet.end())
+    {
+        if (object->GetTypeId() == TYPEID_PLAYER)
+            ((Player*)object)->UpdateVisibilityOf(object, &m_player);
+        m_player.UpdateVisibilityOf(&m_player, object, i_data, i_visibleNow);
+        m_guidSet.erase(object->GetObjectGuid());
+    }
 }
 
 /*! @} */

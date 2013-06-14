@@ -54,8 +54,7 @@ class MANGOS_DLL_SPEC Camera
         // set view to camera's owner
         void ResetView(bool update_far_sight_field = true);
 
-        template<class T>
-        void UpdateVisibilityOf(T* obj, UpdateData& d, WorldObjectSet& vis);
+        void UpdateVisibilityOf(WorldObject* obj, UpdateData& d, WorldObjectSet& vis);
         void UpdateVisibilityOf(WorldObject* obj);
 
         void ReceivePacket(WorldPacket* data);

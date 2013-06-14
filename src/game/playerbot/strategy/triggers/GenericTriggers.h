@@ -377,7 +377,7 @@ namespace ai
 		NoPetTrigger(PlayerbotAI* ai) : Trigger(ai, "no pet", 5) {}
 
 		virtual bool IsActive() {
-			return !AI_VALUE(Unit*, "pet target") && !AI_VALUE(bool, "mounted");
+			return !AI_VALUE(Unit*, "pet target") && !AI_VALUE2(bool, "mounted", "self target");
 		}
 	};
 

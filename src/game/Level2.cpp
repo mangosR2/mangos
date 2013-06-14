@@ -1028,7 +1028,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         Map* map = obj->GetMap();
         map->Remove(obj, false);
 
-        obj->Relocate(chr->GetPositionX(), chr->GetPositionY(), chr->GetPositionZ(), obj->GetOrientation());
+        obj->Relocate(chr->GetPosition());
 
         map->Add(obj);
     }
@@ -1056,7 +1056,7 @@ bool ChatHandler::HandleGameObjectMoveCommand(char* args)
         Map* map = obj->GetMap();
         map->Remove(obj, false);
 
-        obj->Relocate(x, y, z, obj->GetOrientation());
+        obj->Relocate(WorldLocation(map->GetId(), x, y, z, obj->GetOrientation(), obj->GetPhaseMask(), map->GetInstanceId()));
 
         map->Add(obj);
     }
@@ -1962,23 +1962,20 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
     else
         lowguid = pCreature->GetGUIDLow();
 
-    float x = m_session->GetPlayer()->GetPositionX();
-    float y = m_session->GetPlayer()->GetPositionY();
-    float z = m_session->GetPlayer()->GetPositionZ();
-    float o = m_session->GetPlayer()->GetOrientation();
+    WorldLocation loc = m_session->GetPlayer()->GetPosition();
 
     if (pCreature)
     {
         if (CreatureData const* data = sObjectMgr.GetCreatureData(pCreature->GetGUIDLow()))
         {
-            const_cast<CreatureData*>(data)->posX = x;
-            const_cast<CreatureData*>(data)->posY = y;
-            const_cast<CreatureData*>(data)->posZ = z;
-            const_cast<CreatureData*>(data)->orientation = o;
+            const_cast<CreatureData*>(data)->posX = loc.x;
+            const_cast<CreatureData*>(data)->posY = loc.y;
+            const_cast<CreatureData*>(data)->posZ = loc.z;
+            const_cast<CreatureData*>(data)->orientation = loc.o;
         }
 
-        pCreature->SetRespawnCoord(x, y, z, o);
-        pCreature->GetMap()->Relocation(pCreature, x, y, z, o);
+        pCreature->SetRespawnCoord(loc);
+        pCreature->GetMap()->Relocation(pCreature, loc);
         pCreature->GetMotionMaster()->Initialize();
 
         if (pCreature->isAlive())                           // dead creature will reset movement generator at respawn
@@ -1988,7 +1985,7 @@ bool ChatHandler::HandleNpcMoveCommand(char* args)
         }
     }
 
-    WorldDatabase.PExecuteLog("UPDATE creature SET position_x = '%f', position_y = '%f', position_z = '%f', orientation = '%f' WHERE guid = '%u'", x, y, z, o, lowguid);
+    WorldDatabase.PExecuteLog("UPDATE creature SET position_x = '%f', position_y = '%f', position_z = '%f', orientation = '%f' WHERE guid = '%u'", loc.x, loc.y, loc.z, loc.o, lowguid);
     PSendSysMessage(LANG_COMMAND_CREATUREMOVED);
     return true;
 }
@@ -3649,7 +3646,8 @@ bool ChatHandler::HandleWpShowCommand(char* args)
             uint32 model2           = fields[11].GetUInt32();
 
             // Get the creature for which we read the waypoint
-            Creature* wpCreature = m_session->GetPlayer()->GetMap()->GetCreature(ObjectGuid(HIGHGUID_UNIT, VISUAL_WAYPOINT, wpGuid));
+            CreatureData const* data = sObjectMgr.GetCreatureData(wpGuid);
+            Creature* wpCreature = m_session->GetPlayer()->GetMap()->GetCreature(data ? data->GetObjectGuid(wpGuid) : ObjectGuid(HIGHGUID_UNIT, VISUAL_WAYPOINT, wpGuid));
 
             PSendSysMessage(LANG_WAYPOINT_INFO_TITLE, point, (wpCreature ? wpCreature->GetName() : "<not found>"), wpGuid);
             PSendSysMessage(LANG_WAYPOINT_INFO_WAITTIME, waittime);

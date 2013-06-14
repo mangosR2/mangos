@@ -80,20 +80,23 @@ private:
 class ChatCommandHolder
 {
 public:
-    ChatCommandHolder(string command, Player* owner = NULL) : command(command), owner(owner) {}
+    ChatCommandHolder(string command, Player* owner = NULL, uint32 type = CHAT_MSG_WHISPER) : command(command), owner(owner), type(type) {}
     ChatCommandHolder(ChatCommandHolder const& other)
     {
         this->command = other.command;
         this->owner = other.owner;
+        this->type = other.type;
     }
 
 public:
     string GetCommand() { return command; }
     Player* GetOwner() { return owner; }
+    uint32 GetType() { return type; }
 
 private:
     string command;
     Player* owner;
+    uint32 type;
 };
 
 class PlayerbotAI : public PlayerbotAIBase

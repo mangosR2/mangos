@@ -1891,7 +1891,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
         void SendResetFailedNotify(uint32 mapid);
 
-        bool SetPosition(float x, float y, float z, float orientation, bool teleport = false);
+        bool SetPosition(Position const& pos, bool teleport = false);
         void UpdateUnderwaterState(Map * m, float x, float y, float z);
 
         void SendMessageToSet(WorldPacket *data, bool self);// overwrite Object::SendMessageToSet
@@ -2002,9 +2002,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         //End of PvP System
 
-        void SetDrunkValue(uint16 newDrunkValue, uint32 itemid=0);
-        uint16 GetDrunkValue() const { return m_drunk; }
-        static DrunkenState GetDrunkenstateByValue(uint16 value);
+        void SetDrunkValue(uint8 newDrunkValue, uint32 itemId = 0);
+        uint8 GetDrunkValue() const { return GetByteValue(PLAYER_BYTES_3, 1); }
+        static DrunkenState GetDrunkenstateByValue(uint8 value);
 
         uint32 GetDeathTimer() const { return m_deathTimer; }
         uint32 GetCorpseReclaimDelay(bool pvp) const;
@@ -2283,18 +2283,18 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
-        // currently visible objects at player client
-        GuidSet m_clientGUIDs;
-
-        bool HaveAtClient(WorldObject const* u) { return u==this || m_clientGUIDs.find(u->GetObjectGuid())!=m_clientGUIDs.end(); }
+        // list of currently visible objects, stored at player client
+        GuidSet const& GetClientGuids() { return m_clientGUIDs; };
+        bool HaveAtClient(ObjectGuid const& guid) const;
+        void AddClientGuid(ObjectGuid const& guid);
+        void RemoveClientGuid(ObjectGuid const& guid);
+        bool HasClientGuid(ObjectGuid const& guid) const;
 
         bool IsVisibleInGridForPlayer(Player* pl) const;
         bool IsVisibleGloballyFor(Player* pl) const;
-
+        void BeforeVisibilityDestroy(WorldObject* obj);
         void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target);
-
-        template<class T>
-            void UpdateVisibilityOf(WorldObject const* viewPoint,T* target, UpdateData& data, WorldObjectSet& visibleNow);
+        void UpdateVisibilityOf(WorldObject const* viewPoint, WorldObject* target, UpdateData& data, WorldObjectSet& visibleNow);
 
         // Stealth detection system
         void HandleStealthedUnitsDetection();
@@ -2631,7 +2631,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool   m_MonthlyQuestChanged;
 
         uint32 m_drunkTimer;
-        uint16 m_drunk;
         uint32 m_weaponChangeTimer;
 
         uint32 m_zoneUpdateId;
@@ -2661,9 +2660,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         float m_rest_bonus;
         RestType rest_type;
         ////////////////////Rest System/////////////////////
-
-        // Transports
-//        Transport * m_transport;
 
         AntiCheat* m_anticheat;
 
@@ -2775,6 +2771,9 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool m_bHasBeenAliveAtDelayedTeleport;
 
         uint32 m_DetectInvTimer;
+
+        // Visible object storage
+        GuidSet m_clientGUIDs;
 
         // Temporary removed pet cache
         PetNumberList m_temporaryUnsummonedPetNumber;

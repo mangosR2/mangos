@@ -49,6 +49,8 @@
 #include "InvalidTargetValue.h"
 #include "EnemyPlayerValue.h"
 #include "AttackerWithoutAuraTargetValue.h"
+#include "LastSpellCastTimeValue.h"
+#include "ManaSaveLevelValue.h"
 
 namespace ai
 {
@@ -115,6 +117,7 @@ namespace ai
             creators["item for spell"] = &ValueContext::item_for_spell;
             creators["spell cast useful"] = &ValueContext::spell_cast_useful;
             creators["last spell cast"] = &ValueContext::last_spell_cast;
+            creators["last spell cast time"] = &ValueContext::last_spell_cast_time;
             creators["chat"] = &ValueContext::chat;
             creators["has totem"] = &ValueContext::has_totem;
 
@@ -127,9 +130,12 @@ namespace ai
             creators["balance"] = &ValueContext::balance;
             creators["attackers"] = &ValueContext::attackers;
             creators["invalid target"] = &ValueContext::invalid_target;
+            creators["mana save level"] = &ValueContext::mana_save_level;
+            creators["combat"] = &ValueContext::combat;
         }
 
     private:
+        static UntypedValue* mana_save_level(PlayerbotAI* ai) { return new ManaSaveLevelValue(ai); }
         static UntypedValue* invalid_target(PlayerbotAI* ai) { return new InvalidTargetValue(ai); }
         static UntypedValue* balance(PlayerbotAI* ai) { return new BalancePercentValue(ai); }
         static UntypedValue* attackers(PlayerbotAI* ai) { return new AttackersValue(ai); }
@@ -141,6 +147,7 @@ namespace ai
 
         static UntypedValue* chat(PlayerbotAI* ai) { return new ChatValue(ai); }
         static UntypedValue* last_spell_cast(PlayerbotAI* ai) { return new LastSpellCastValue(ai); }
+        static UntypedValue* last_spell_cast_time(PlayerbotAI* ai) { return new LastSpellCastTimeValue(ai); }
         static UntypedValue* spell_cast_useful(PlayerbotAI* ai) { return new SpellCastUsefulValue(ai); }
         static UntypedValue* item_for_spell(PlayerbotAI* ai) { return new ItemForSpellValue(ai); }
         static UntypedValue* spell_id(PlayerbotAI* ai) { return new SpellIdValue(ai); }
@@ -199,5 +206,6 @@ namespace ai
         static UntypedValue* duel_target(PlayerbotAI* ai) { return new DuelTargetValue(ai); }
         static UntypedValue* has_totem(PlayerbotAI* ai) { return new HasTotemValue(ai); }
         static UntypedValue* threat(PlayerbotAI* ai) { return new ThreatValue(ai); }
+        static UntypedValue* combat(PlayerbotAI* ai) { return new IsInCombatValue(ai); }
     };
 };

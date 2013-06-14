@@ -20,6 +20,11 @@
 #include "Creature.h"
 #include "DBCStores.h"
 #include "Spell.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+
+static_assert(MAXIMAL_AI_EVENT_EVENTAI <= 32, "Maximal 32 AI_EVENTs supported with EventAI");
 
 CreatureAI::~CreatureAI()
 {
@@ -175,4 +180,33 @@ void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
         m_creature->GetMotionMaster()->MoveIdle();
         m_creature->StopMoving();
     }
+}
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+//                                      Event system
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue /*=0*/) const
+{
+    if (fRadius > 0)
+    {
+        std::list<Creature*> receiverList;
+
+        // Use this check here to collect only assitable creatures in case of CALL_ASSISTANCE, else be less strict
+        MaNGOS::AnyAssistCreatureInRangeCheck u_check(m_creature, eventType == AI_EVENT_CALL_ASSISTANCE ? pInvoker : NULL, fRadius);
+        MaNGOS::CreatureListSearcher<MaNGOS::AnyAssistCreatureInRangeCheck> searcher(receiverList, u_check);
+        Cell::VisitGridObjects(m_creature, searcher, fRadius);
+
+        if (!receiverList.empty())
+        {
+            AiDelayEventAround* e = new AiDelayEventAround(eventType, pInvoker ? pInvoker->GetObjectGuid() : ObjectGuid(), *m_creature, receiverList, miscValue);
+            m_creature->AddEvent(e, uiDelay);
+        }
+    }
+}
+
+void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, Creature* pReceiver, uint32 miscValue /*=0*/) const
+{
+    MANGOS_ASSERT(pReceiver);
+    pReceiver->AI()->ReceiveAIEvent(eventType, m_creature, pInvoker, miscValue);
 }

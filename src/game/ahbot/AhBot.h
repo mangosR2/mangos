@@ -21,7 +21,7 @@ namespace ahbot
     class AhBot
     {
     public:
-        AhBot() : nextAICheckTime(0), player(NULL) {}
+        AhBot() : nextAICheckTime(0), player(NULL), session(NULL) {}
         virtual ~AhBot();
 
     public:
@@ -39,6 +39,7 @@ namespace ahbot
         }
 
         int32 GetSellPrice(const ItemPrototype* proto);
+        int32 GetBuyPrice(const ItemPrototype* proto);
 
     private:
         int Answer(int auction, Category* category, ItemBag* inAuctionItems);

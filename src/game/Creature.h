@@ -285,6 +285,15 @@ enum InhabitTypeValues
     INHABIT_ANYWHERE = INHABIT_GROUND | INHABIT_WATER | INHABIT_AIR
 };
 
+enum ModelInhabitTypeValues
+{
+    MODEL_INHABIT_ONLY_GROUND         = 0,
+    MODEL_INHABIT_ONLY_SWIM           = 1,
+    MODEL_INHABIT_ONLY_FLY            = 2,
+    MODEL_INHABIT_ONLY_GROUND_AND_FLY = 3,
+    MODEL_INHABIT_ONLY_UNDERWATER     = 4,
+};
+
 // Enums used by StringTextData::Type (CreatureEventAI)
 enum ChatType
 {
@@ -519,9 +528,11 @@ class MANGOS_DLL_SPEC Creature : public Unit
         bool IsCivilian() const { return GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN; }
         bool IsGuard() const { return GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_GUARD; }
 
-        bool CanWalk() const { return GetCreatureInfo()->InhabitType & INHABIT_GROUND; }
-        bool CanSwim() const { return GetCreatureInfo()->InhabitType & INHABIT_WATER; }
-        bool CanFly()  const { return (GetCreatureInfo()->InhabitType & INHABIT_AIR) || (GetByteValue(UNIT_FIELD_BYTES_1, 3) & UNIT_BYTE1_FLAG_HOVER); }
+        uint32 GetModelInhabitType();
+
+        bool CanWalk();
+        bool CanSwim();
+        bool CanFly();
 
         bool IsTrainerOf(Player* player, bool msg) const;
         bool CanInteractWithBattleMaster(Player* player, bool msg) const;
@@ -563,6 +574,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         void SetWalk(bool enable, bool asDefault = true);
         void SetLevitate(bool enable, float altitude = 1.0f);
+        void SetSwim(bool enable);
         void SetRoot(bool enable) override;
         void SetWaterWalk(bool enable) override;
 
@@ -602,6 +614,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
         CreatureDataAddon const* GetCreatureAddon() const;
 
         static uint32 ChooseDisplayId(const CreatureInfo* cinfo, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
+        void SetDisplayId(uint32 modelId);
 
         std::string GetAIName() const;
         std::string GetScriptName() const;
@@ -776,6 +789,8 @@ class MANGOS_DLL_SPEC Creature : public Unit
     private:
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;                 // in difficulty mode > 0 can different from ObjMgr::GetCreatureTemplate(GetEntry())
+
+        int32 m_modelInhabitType;                           // cached value
 };
 
 #endif

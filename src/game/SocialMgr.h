@@ -119,7 +119,7 @@ class PlayerSocial
         ~PlayerSocial();
         // adding/removing
         bool AddToSocialList(ObjectGuid const& friend_guid, bool ignore);
-        void RemoveFromSocialList(ObjectGuid const& friend_guid, bool ignore);
+        void RemoveFromSocialList(ObjectGuid const& friend_guid, bool ignore, bool isBatch = false);
         void SetFriendNote(ObjectGuid const& friend_guid, std::string note);
         // Packet send's
         void SendSocialList();

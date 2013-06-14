@@ -11,6 +11,15 @@ namespace ai
         virtual float GetValue(Action* action);
     };
 
+    class SaveManaMultiplier : public Multiplier
+    {
+    public:
+        SaveManaMultiplier(PlayerbotAI* ai) : Multiplier(ai, "save mana") {}
+
+    public:
+        virtual float GetValue(Action* action);
+    };
+
     class ConserveManaStrategy : public Strategy
     {
     public:
@@ -20,6 +29,4 @@ namespace ai
         virtual void InitMultipliers(std::list<Multiplier*> &multipliers);
         virtual string getName() { return "conserve mana"; }
     };
-
-
 }

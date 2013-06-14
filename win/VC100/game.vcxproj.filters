@@ -441,6 +441,7 @@
     <ClCompile Include="..\..\src\game\playerbot\strategy\values\EnemyPlayerValue.cpp" />
     <ClCompile Include="..\..\src\game\WorldLocation.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\ahbot\AhBot.h" />
@@ -952,10 +953,10 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\generic\AttackEnemyPlayersStrategy.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\EnemyPlayerValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\values\ManaSaveLevelValue.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\game\Player.h.orig" />
-    <None Include="..\..\src\game\Player.cpp.orig" />
     <None Include="..\..\src\game\Makefile.in" />
     <None Include="..\..\src\game\Mail.cpp.orig" />
     <None Include="..\..\src\game\CMakeLists.txt" />

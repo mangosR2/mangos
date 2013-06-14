@@ -4,7 +4,8 @@
 
 namespace ai
 {
-    class ValueInRangeTrigger : public Trigger {
+    class ValueInRangeTrigger : public Trigger
+    {
     public:
         ValueInRangeTrigger(PlayerbotAI* ai, string name, float maxValue, float minValue) : Trigger(ai, name) {
             this->maxValue = maxValue;
@@ -21,15 +22,22 @@ namespace ai
         float maxValue, minValue;
     };
 
-	class HealthInRangeTrigger : public ValueInRangeTrigger {
+	class HealthInRangeTrigger : public ValueInRangeTrigger
+	{
 	public:
 		HealthInRangeTrigger(PlayerbotAI* ai, string name, float maxValue, float minValue = 0) :
 		  ValueInRangeTrigger(ai, name, maxValue, minValue) {}
 
-		  virtual float GetValue();
+		virtual bool IsActive()
+		{
+		    return ValueInRangeTrigger::IsActive() && !AI_VALUE2(bool, "dead", GetTargetName());
+		}
+
+		virtual float GetValue();
 	};
 
-    class LowHealthTrigger : public HealthInRangeTrigger {
+    class LowHealthTrigger : public HealthInRangeTrigger
+    {
     public:
         LowHealthTrigger(PlayerbotAI* ai, string name = "low health",
             float value = sPlayerbotAIConfig.lowHealth, float minValue = sPlayerbotAIConfig.criticalHealth) :
@@ -71,7 +79,7 @@ namespace ai
     class PartyMemberCriticalHealthTrigger : public PartyMemberLowHealthTrigger
     {
     public:
-        PartyMemberCriticalHealthTrigger(PlayerbotAI* ai) : 
+        PartyMemberCriticalHealthTrigger(PlayerbotAI* ai) :
             PartyMemberLowHealthTrigger(ai, "party member critical health", sPlayerbotAIConfig.criticalHealth, 0) {}
     };
 

@@ -38,7 +38,7 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed)
 
     list<uint32> bots = GetBots();
     int botCount = bots.size();
-    int botsWere = botCount, allianceNewBots = 0, hordeNewBots = 0;
+    int allianceNewBots = 0, hordeNewBots = 0;
     int randomBotsPerInterval = (int)urand(sPlayerbotAIConfig.minRandomBotsPerInterval, sPlayerbotAIConfig.maxRandomBotsPerInterval);
     while (botCount++ < maxAllowedBotCount)
     {
@@ -68,8 +68,8 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed)
             break;
     }
 
-    sLog.outString("%d random bot processed. %d alliance and %d horde bots added. %d bots available. Next check in %d seconds",
-            botProcessed, allianceNewBots, hordeNewBots, botsWere + allianceNewBots + hordeNewBots, sPlayerbotAIConfig.randomBotUpdateInterval);
+    sLog.outString("%d bots processed. %d alliance and %d horde bots added. %d bots online. Next check in %d seconds",
+            botProcessed, allianceNewBots, hordeNewBots, playerBots.size(), sPlayerbotAIConfig.randomBotUpdateInterval);
 }
 
 uint32 RandomPlayerbotMgr::AddRandomBot(bool alliance)
@@ -284,7 +284,10 @@ void RandomPlayerbotMgr::IncreaseLevel(Player* bot)
 
 void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 {
-    uint32 maxLevel = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
+    uint32 maxLevel = sPlayerbotAIConfig.randomBotMaxLevel;
+    if (maxLevel > sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))
+        maxLevel = sWorld.getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL);
+
     for (int attempt = 0; attempt < 100; ++attempt)
     {
         int index = urand(0, sPlayerbotAIConfig.randomBotMaps.size() - 1);
@@ -310,6 +313,9 @@ void RandomPlayerbotMgr::RandomizeFirst(Player* bot)
 
         if (urand(0, 100) < 100 * sPlayerbotAIConfig.randomBotMaxLevelChance)
             level = maxLevel;
+
+        if (level < sPlayerbotAIConfig.randomBotMinLevel)
+            continue;
 
         PlayerbotFactory factory(bot, level);
         factory.Randomize(false);
@@ -493,7 +499,7 @@ bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
 
     if (!args || !*args)
     {
-        sLog.outError("Usage: rndbot stats/reset/init/update/add/remove");
+        sLog.outError("Usage: rndbot stats/update/reset/init/refresh/add/remove");
         return false;
     }
 
@@ -510,7 +516,12 @@ bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
         sRandomPlayerbotMgr.PrintStats();
         return true;
     }
-    else if (cmd == "init" || cmd == "update")
+    else if (cmd == "update")
+    {
+        sRandomPlayerbotMgr.UpdateAIInternal(0);
+        return true;
+    }
+    else if (cmd == "init" || cmd == "refresh")
     {
 		sLog.outString("Randomizing bots for %d accounts", sPlayerbotAIConfig.randomBotAccounts.size());
         BarGoLink bar(sPlayerbotAIConfig.randomBotAccounts.size());
@@ -535,7 +546,7 @@ bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
                     }
                     else
                     {
-                        sLog.outDetail("Updating bot %s for account %u", bot->GetName(), account);
+                        sLog.outDetail("Refreshing bot %s for account %u", bot->GetName(), account);
                         bot->SetLevel(bot->getLevel() - 1);
                         sRandomPlayerbotMgr.IncreaseLevel(bot);
                     }
@@ -664,4 +675,32 @@ void RandomPlayerbotMgr::PrintStats()
         if (!from) from = 1;
         sLog.outString("%d..%d: %d alliance, %d horde", from, to, alliance[i], horde[i]);
     }
+}
+
+double RandomPlayerbotMgr::GetBuyMultiplier(Player* bot)
+{
+    uint32 id = bot->GetObjectGuid();
+    uint32 value = GetEventValue(id, "buymultiplier");
+    if (!value)
+    {
+        value = urand(1, 120);
+        uint32 validIn = urand(sPlayerbotAIConfig.minRandomBotsPriceChangeInterval, sPlayerbotAIConfig.maxRandomBotsPriceChangeInterval);
+        SetEventValue(id, "buymultiplier", value, validIn);
+    }
+
+    return (double)value / 100.0;
+}
+
+double RandomPlayerbotMgr::GetSellMultiplier(Player* bot)
+{
+    uint32 id = bot->GetObjectGuid();
+    uint32 value = GetEventValue(id, "sellmultiplier");
+    if (!value)
+    {
+        value = urand(80, 500);
+        uint32 validIn = urand(sPlayerbotAIConfig.minRandomBotsPriceChangeInterval, sPlayerbotAIConfig.maxRandomBotsPriceChangeInterval);
+        SetEventValue(id, "sellmultiplier", value, validIn);
+    }
+
+    return (double)value / 100.0;
 }

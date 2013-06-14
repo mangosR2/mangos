@@ -46,22 +46,30 @@ namespace ai
         BanishTrigger(PlayerbotAI* ai) : HasCcTargetTrigger(ai, "banish") {}
     };
 
-    class HasSpellstoneTrigger : public ItemCountTrigger
+    class WarlockConjuredItemTrigger : public ItemCountTrigger
     {
     public:
-        HasSpellstoneTrigger(PlayerbotAI* ai) : ItemCountTrigger(ai, "spellstone", 1) {}
+        WarlockConjuredItemTrigger(PlayerbotAI* ai, string item) : ItemCountTrigger(ai, item, 1) {}
+
+        virtual bool IsActive() { return ItemCountTrigger::IsActive() && AI_VALUE2(uint8, "item count", "soul shard") > 0; }
     };
 
-    class HasFirestoneTrigger : public ItemCountTrigger
+    class HasSpellstoneTrigger : public WarlockConjuredItemTrigger
     {
     public:
-        HasFirestoneTrigger(PlayerbotAI* ai) : ItemCountTrigger(ai, "firestone", 1) {}
+        HasSpellstoneTrigger(PlayerbotAI* ai) : WarlockConjuredItemTrigger(ai, "spellstone") {}
     };
 
-    class HasHealthstoneTrigger : public ItemCountTrigger
+    class HasFirestoneTrigger : public WarlockConjuredItemTrigger
     {
     public:
-        HasHealthstoneTrigger(PlayerbotAI* ai) : ItemCountTrigger(ai, "healthstone", 1) {}
+        HasFirestoneTrigger(PlayerbotAI* ai) : WarlockConjuredItemTrigger(ai, "firestone") {}
+    };
+
+    class HasHealthstoneTrigger : public WarlockConjuredItemTrigger
+    {
+    public:
+        HasHealthstoneTrigger(PlayerbotAI* ai) : WarlockConjuredItemTrigger(ai, "healthstone") {}
     };
 
     class FearTrigger : public HasCcTargetTrigger

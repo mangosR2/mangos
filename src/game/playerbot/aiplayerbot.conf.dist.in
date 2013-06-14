@@ -33,7 +33,7 @@ AiPlayerbot.FleeDistance = 15.0
 AiPlayerbot.TooCloseDistance = 7.0
 AiPlayerbot.MeleeDistance = 2.0
 AiPlayerbot.FollowDistance = 2.0
-AiPlayerbot.WhisperDistance = 0.0
+AiPlayerbot.WhisperDistance = 6000.0
 
 # Bot can flee for enemy
 AiPlayerbot.FleeingEnabled = 1
@@ -59,6 +59,8 @@ AiPlayerbot.RandomBotAutoCreate = 1
 # Random bot count
 AiPlayerbot.MinRandomBots = 50
 AiPlayerbot.MaxRandomBots = 200
+AiPlayerbot.RandomBotMinLevel = 1
+AiPlayerbot.RandomBotMaxLevel = 255 (ignored if more than MaxPlayerLevel mangosd.conf value)
 
 # Accounts to create for random bots
 AiPlayerbot.RandomBotAccountPrefix = rndbot
@@ -95,6 +97,8 @@ AiPlayerbot.MinRandomBotRandomizeTime = 7200
 AiPlayerbot.MaxRandomRandomizeTime = 1209600
 AiPlayerbot.MinRandomBotsPerInterval = 50
 AiPlayerbot.MaxRandomBotsPerInterval = 100
+AiPlayerbot.MinRandomBotsPriceChangeInterval = 7200
+AiPlayerbot.MaxRandomBotsPriceChangeInterval = 172800
 
 # How far random bots are teleported after death
 AiPlayerbot.RandomBotTeleportDistance = 400

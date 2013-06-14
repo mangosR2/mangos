@@ -39,7 +39,7 @@ namespace MaNGOS
         GuidSet i_clientGUIDs;
         WorldObjectSet i_visibleNow;
 
-        explicit VisibleNotifier(Camera& c) : i_camera(c), i_clientGUIDs(c.GetOwner()->m_clientGUIDs) {}
+        explicit VisibleNotifier(Camera& c) : i_camera(c), i_clientGUIDs(c.GetOwner()->GetClientGuids()) {}
         template<class T> void Visit(GridRefManager<T>& m);
         void Visit(CameraMapType& /*m*/) {}
         void Notify(void);
@@ -120,6 +120,7 @@ namespace MaNGOS
         void Visit(CorpseMapType&) {}
         void Visit(CameraMapType&) {}
         void Visit(CreatureMapType&);
+        void Visit(GameObjectMapType&);
     };
 
     struct MANGOS_DLL_DECL PlayerRelocationNotifier
@@ -1119,12 +1120,13 @@ namespace MaNGOS
     class NearestCreatureEntryWithLiveStateInObjectRangeCheck
     {
         public:
-            NearestCreatureEntryWithLiveStateInObjectRangeCheck(WorldObject const& obj, uint32 entry, bool onlyAlive, bool onlyDead, float range)
-                : i_obj(obj), i_entry(entry), i_onlyAlive(onlyAlive), i_onlyDead(onlyDead), i_range(range) {}
+            NearestCreatureEntryWithLiveStateInObjectRangeCheck(WorldObject const& obj, uint32 entry, bool onlyAlive, bool onlyDead, float range, bool excludeSelf = true)
+                : i_obj(obj), i_entry(entry), i_onlyAlive(onlyAlive), i_onlyDead(onlyDead), i_excludeSelf(excludeSelf), i_range(range) {}
             WorldObject const& GetFocusObject() const { return i_obj; }
             bool operator()(Creature* u)
             {
-                if (u->GetEntry() == i_entry && u->GetObjectGuid() != i_obj.GetObjectGuid() && ((i_onlyAlive && u->isAlive()) || (i_onlyDead && u->IsCorpse()) || (!i_onlyAlive && !i_onlyDead)) && i_obj.IsWithinDistInMap(u, i_range))
+                if (u->GetEntry() == i_entry && ((i_onlyAlive && u->isAlive()) || (i_onlyDead && u->IsCorpse()) || (!i_onlyAlive && !i_onlyDead))
+                        && (!i_excludeSelf || (u->GetObjectGuid() != i_obj.GetObjectGuid())) && i_obj.IsWithinDistInMap(u, i_range))
                 {
                     i_range = i_obj.GetDistance(u);         // use found unit range as new range limit for next check
                     return true;
@@ -1137,6 +1139,7 @@ namespace MaNGOS
             uint32 i_entry;
             bool   i_onlyAlive;
             bool   i_onlyDead;
+            bool   i_excludeSelf;
             float  i_range;
 
             // prevent clone this object

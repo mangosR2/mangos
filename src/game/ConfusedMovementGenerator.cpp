@@ -27,16 +27,22 @@
 template<class T>
 void ConfusedMovementGenerator<T>::Initialize(T& unit)
 {
+    unit.addUnitState(UNIT_STAT_CONFUSED);
+
     // set initial position
     unit.GetPosition(i_x, i_y, i_z);
 
+    if (!unit.isAlive() || unit.hasUnitState(UNIT_STAT_NOT_MOVE))
+        return;
+
     unit.StopMoving();
-    unit.addUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
+    unit.addUnitState(UNIT_STAT_CONFUSED_MOVE);
 }
 
 template<class T>
 void ConfusedMovementGenerator<T>::Interrupt(T& unit)
 {
+    unit.InterruptMoving();
     // confused state still applied while movegen disabled
     unit.clearUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
 }
@@ -45,8 +51,12 @@ template<class T>
 void ConfusedMovementGenerator<T>::Reset(T& unit)
 {
     i_nextMoveTime.Reset(0);
-    unit.addUnitState(UNIT_STAT_CONFUSED|UNIT_STAT_CONFUSED_MOVE);
+
+    if (!unit.isAlive() || unit.hasUnitState(UNIT_STAT_NOT_MOVE))
+        return;
+
     unit.StopMoving();
+    unit.addUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
 }
 
 template<class T>
@@ -96,8 +106,8 @@ bool ConfusedMovementGenerator<T>::Update(T& unit, const uint32& diff)
 template<>
 void ConfusedMovementGenerator<Player>::Finalize(Player& unit)
 {
-    unit.clearUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
     unit.StopMoving();
+    unit.clearUnitState(UNIT_STAT_CONFUSED | UNIT_STAT_CONFUSED_MOVE);
 }
 
 template<>

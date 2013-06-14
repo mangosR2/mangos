@@ -142,7 +142,18 @@ bool Engine::DoNextAction(Unit* unit, int depth)
             }
             else if (action->isUseful())
             {
-                if (action->isPossible())
+                for (list<Multiplier*>::iterator i = multipliers.begin(); i!= multipliers.end(); i++)
+                {
+                    Multiplier* multiplier = *i;
+                    relevance *= multiplier->GetValue(action);
+                    if (!relevance)
+                    {
+                        LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
+                        break;
+                    }
+                }
+
+                if (action->isPossible() && relevance)
                 {
                     if ((!skipPrerequisites || lastRelevance-relevance > 0.04) &&
                             MultiplyAndPush(actionNode->getPrerequisites(), relevance + 0.02, false, event))
@@ -233,19 +244,6 @@ bool Engine::MultiplyAndPush(NextAction** actions, float forceRelevance, bool sk
                 if (forceRelevance > 0.0f)
                 {
                     k = forceRelevance;
-                }
-                else
-                {
-                    for (list<Multiplier*>::iterator i = multipliers.begin(); i!= multipliers.end(); i++)
-                    {
-                        Multiplier* multiplier = *i;
-                        k *= multiplier->GetValue(action->getAction());
-                        if (!k)
-                        {
-                            LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
-                            break;
-                        }
-                    }
                 }
 
                 if (k > 0)

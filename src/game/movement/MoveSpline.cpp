@@ -28,7 +28,7 @@ namespace Movement
     extern float computeFallElevation(float time_passed, bool isSafeFall, float start_velocy);
     extern float computeFallElevation(float time_passed);
 
-    Location MoveSpline::ComputePosition() const
+    Position MoveSpline::ComputePosition() const
     {
         MANGOS_ASSERT(Initialized());
 
@@ -36,7 +36,7 @@ namespace Movement
         int32 seg_time = spline.length(point_Idx, point_Idx + 1);
         if (seg_time > 0)
             u = (time_passed - spline.length(point_Idx)) / (float)seg_time;
-        Location c;
+        Position c;
         c.orientation = initialOrientation;
         spline.evaluate_percent(point_Idx, u, c);
 
@@ -67,6 +67,8 @@ namespace Movement
             if (splineflags.orientationInversed)
                 c.orientation = -c.orientation;
         }
+
+        c.orientation = G3D::wrap(c.orientation, 0.0f, float(G3D::twoPi()));
         return c;
     }
 

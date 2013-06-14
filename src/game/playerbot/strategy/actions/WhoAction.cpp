@@ -3,10 +3,13 @@
 #include "WhoAction.h"
 #include "../../AiFactory.h"
 #include "../ItemVisitors.h"
+#include "../../../ahbot/AhBot.h"
+#include "../../RandomPlayerbotMgr.h"
 
 using namespace ai;
 
 map<uint32, string> WhoAction::skills;
+
 
 bool WhoAction::Execute(Event event)
 {
@@ -14,11 +17,88 @@ bool WhoAction::Execute(Event event)
     if (!owner)
         return false;
 
+    string tell = "";
+    string text = event.getParam();
+    if (!text.empty())
+    {
+        if (!sRandomPlayerbotMgr.IsRandomBot(bot))
+            return false;
+
+        tell = QuerySkill(text);
+        if (tell.empty())
+        {
+            tell = QueryTrade(text);
+        }
+    }
+    else
+    {
+        tell = QuerySpec(text);
+    }
+
+    if (tell.empty())
+        return false;
+
+    // ignore random bot chat filter
+    WorldPacket data(SMSG_MESSAGECHAT, 1024);
+    bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, tell, LANG_UNIVERSAL);
+    owner->GetSession()->SendPacket(&data);
+    return true;
+}
+
+
+string WhoAction::QueryTrade(string text)
+{
+    ostringstream out;
+
+    list<Item*> items = InventoryAction::parseItems(text);
+    for (list<Item*>::iterator i = items.begin(); i != items.end(); ++i)
+    {
+        Item* sell = *i;
+        int32 sellPrice = auctionbot.GetSellPrice(sell->GetProto()) * sRandomPlayerbotMgr.GetSellMultiplier(bot) * sell->GetCount();
+        out << "Selling " << chat->formatItem(sell->GetProto(), sell->GetCount()) << " for " << chat->formatMoney(sellPrice);
+        return out.str();
+    }
+
+    return "";
+}
+
+string WhoAction::QuerySkill(string text)
+{
+    ostringstream out;
+    InitSkills();
+
+    for (map<uint32, string>::iterator i = skills.begin(); i != skills.end(); ++i)
+    {
+        string name = i->second;
+        uint16 skill = i->first;
+        if (!strcmpi(text.c_str(), name.c_str()) && bot->HasSkill(skill))
+        {
+            string skillName = i->second;
+            uint32 spellId = AI_VALUE2(uint32, "spell id", skillName);
+            uint16 value = bot->GetSkillValue(skill);
+            uint16 maxSkill = bot->GetMaxSkillValue(skill);
+            ObjectGuid guid = bot->GetObjectGuid();
+            string data = "0";
+            out << "|cFFFFFF00|Htrade:" << spellId << ":" << value << ":" << maxSkill << ":"
+                    << std::hex << std::uppercase << guid.GetRawValue()
+                    << std::nouppercase << std::dec << ":" << data
+                    << "|h[" << skills[skill] << "]|h|r"
+                    << " |h|cff00ff00" << value << "|h|cffffffff/"
+                    << "|h|cff00ff00" << maxSkill << "|h|cffffffff ";
+        }
+    }
+
+    return out.str();
+}
+
+string WhoAction::QuerySpec(string text)
+{
     ostringstream out;
 
     int spec = AiFactory::GetPlayerSpecTab(bot);
     out << "|h|cffffffff" << chat->formatClass(bot, spec);
-    out << "|h|cff00ff00 (" << bot->getLevel() << "|h|cffffffff lvl), ";
+    out << " (|h|cff00ff00" << bot->getLevel() << "|h|cffffffff lvl), ";
+    out << "|h|cff00ff00" << bot->GetEquipGearScore(false, false) << "|h|cffffffff GS (";
 
     ItemCountByQuality visitor;
     IterateItems(&visitor, ITERATE_ITEMS_IN_EQUIP);
@@ -44,82 +124,29 @@ bool WhoAction::Execute(Event event)
         needSlash = true;
     }
 
-    if (needSlash)
-    {
-        out << " gear (|h|cff00ff00" << bot->GetEquipGearScore(false, false) << "|h|cffffffff GS)";
-    }
+    out << ")";
 
-    if (skills.empty())
-    {
-        skills[SKILL_ALCHEMY] = "Alchemy";
-        skills[SKILL_ENCHANTING] = "Enchanting";
-        skills[SKILL_SKINNING] = "Skinning";
-        skills[SKILL_JEWELCRAFTING] = "Jewelcrafting";
-        skills[SKILL_INSCRIPTION] = "Inscription";
-        skills[SKILL_TAILORING] = "Tailoring";
-        skills[SKILL_LEATHERWORKING] = "Leatherworking";
-        skills[SKILL_ENGINEERING] = "Engineering";
-        skills[SKILL_HERBALISM] = "Herbalism";
-        skills[SKILL_MINING] = "Mining";
-        skills[SKILL_BLACKSMITHING] = "Blacksmithing";
-        skills[SKILL_COOKING] = "Cooking";
-        skills[SKILL_FIRST_AID] = "First Aid";
-        skills[SKILL_FISHING] = "Fishing";
-    }
+    return out.str();
+}
 
-    ObjectGuid guid = bot->GetObjectGuid();
-    for (map<uint32, string>::iterator i = skills.begin(); i != skills.end(); ++i)
-    {
-        uint16 skill = i->first;
-        if (!bot->HasSkill(skill))
-            continue;
 
-        string skillName = i->second;
-        uint32 spellId = AI_VALUE2(uint32, "spell id", skillName);
-        uint16 value = bot->GetSkillValue(skill);
-        uint16 maxSkill = bot->GetMaxSkillValue(skill);
-		string data = "0";
-        out << " |cFFFFFF00|Htrade:" << spellId << ":" << value << ":" << maxSkill << ":"
-                << std::hex << std::uppercase << guid.GetRawValue()
-                << std::nouppercase << std::dec << ":" << data
-                << "|h[" << skills[skill] << "]|h|r"
-                << " |h|cff00ff00" << value << "|h|cffffffff/"
-                << "|h|cff00ff00" << maxSkill << "|h|cffffffff ";
-    }
+void WhoAction::InitSkills()
+{
+    if (!skills.empty())
+        return;
 
-    Player* master = GetMaster();
-    Group* group = master ? master->GetGroup() : bot->GetGroup();
-    if (group)
-    {
-        out << " in " << (int)group->GetMembersCount() <<  "-party with (";
-        int index = 1, followIndex = -1;
-        for (GroupReference *ref = group->GetFirstMember(); ref; ref = ref->next())
-        {
-            Player* player = ref->getSource();
-            if (!player)
-                out << "?";
-            else if (player == master)
-                out << "!" << player->GetName() << "!";
-            else
-                out << player->GetName();
-
-            if (ref->next())
-                out << ", ";
-
-            if(ref->getSource() == master)
-                continue;
-
-            if(ref->getSource() == bot)
-                followIndex = index;
-
-            index++;
-        }
-        out << ") " << followIndex << "th";
-    }
-
-    // ignore random bot chat filter
-    WorldPacket data(SMSG_MESSAGECHAT, 1024);
-    bot->BuildPlayerChat(&data, CHAT_MSG_WHISPER, out.str(), LANG_UNIVERSAL);
-    owner->GetSession()->SendPacket(&data);
-    return true;
+    skills[SKILL_ALCHEMY] = "Alchemy";
+    skills[SKILL_ENCHANTING] = "Enchanting";
+    skills[SKILL_SKINNING] = "Skinning";
+    skills[SKILL_JEWELCRAFTING] = "Jewelcrafting";
+    skills[SKILL_INSCRIPTION] = "Inscription";
+    skills[SKILL_TAILORING] = "Tailoring";
+    skills[SKILL_LEATHERWORKING] = "Leatherworking";
+    skills[SKILL_ENGINEERING] = "Engineering";
+    skills[SKILL_HERBALISM] = "Herbalism";
+    skills[SKILL_MINING] = "Mining";
+    skills[SKILL_BLACKSMITHING] = "Blacksmithing";
+    skills[SKILL_COOKING] = "Cooking";
+    skills[SKILL_FIRST_AID] = "First Aid";
+    skills[SKILL_FISHING] = "Fishing";
 }

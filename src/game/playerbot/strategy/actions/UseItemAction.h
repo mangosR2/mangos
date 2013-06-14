@@ -35,11 +35,13 @@ namespace ai
     class UseHealingPotion : public UseItemAction {
     public:
         UseHealingPotion(PlayerbotAI* ai) : UseItemAction(ai, "healing potion") {}
+        virtual bool isUseful() { return AI_VALUE2(bool, "combat", "self target"); }
     };
 
     class UseManaPotion : public UseItemAction
     {
     public:
         UseManaPotion(PlayerbotAI* ai) : UseItemAction(ai, "mana potion") {}
+        virtual bool isUseful() { return AI_VALUE2(bool, "combat", "self target"); }
     };
 }

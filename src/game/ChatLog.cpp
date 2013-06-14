@@ -922,13 +922,13 @@ void ChatLog::ChatBadLexicsAction(Player* player, std::string& msg)
         case LEXICS_ACTION_DIE:
         {
             // oops, kicked the bucket
-            player->DealDamage(player, player->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            player->KillSelf();
             break;
         }
         case LEXICS_ACTION_DRAIN:
         {
             // living corpse :)
-            player->DealDamage(player, player->GetHealth() - 5, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+            player->KillSelf(5);
             break;
         }
         case LEXICS_ACTION_SILENCE:

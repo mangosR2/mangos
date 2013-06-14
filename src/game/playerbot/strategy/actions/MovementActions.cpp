@@ -170,7 +170,8 @@ bool MovementAction::Follow(Unit* target, float distance, float angle)
         }
         else
         {
-            bot->SetPosition(x, y, z, bot->GetOrientation(), true);
+            Position pos(x, y, z, bot->GetOrientation());
+            bot->SetPosition(pos, true);
         }
         AI_VALUE(LastMovement&, "last movement").Set(target);
         return true;

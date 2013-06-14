@@ -139,6 +139,7 @@ namespace ai
             creators["combo"] = &MockValueContext::stats;
             creators["dead"] = &MockValueContext::logical;
             creators["has mana"] = &MockValueContext::logical;
+            creators["combat"] = &MockValueContext::logical;
 
             creators["attacker count"] = &MockValueContext::stats;
             creators["my attacker count"] = &MockValueContext::stats;
@@ -211,6 +212,9 @@ namespace ai
               GetValue<uint8>("health", "party member to heal")->Set(100);
               GetValue<uint8>("health", "party member to resurrect")->Set(100);
 
+              GetValue<bool>("dead", "current target")->Set(false);
+              GetValue<bool>("dead", "self target")->Set(false);
+
               GetValue<uint8>("mana", "self target")->Set(100);
               GetValue<uint8>("mana", "current target")->Set(100);
               GetValue<uint8>("mana", "pet target")->Set(100);
@@ -222,6 +226,8 @@ namespace ai
               GetValue<bool>("has mana", "pet target")->Set(true);
               GetValue<bool>("has mana", "party member to heal")->Set(true);
               GetValue<bool>("has mana", "party member to resurrect")->Set(true);
+
+              GetValue<bool>("combat", "self target")->Set(false);
 
               GetValue<uint8>("attacker count")->Set(1);
               GetValue<uint8>("my attacker count")->Set(1);

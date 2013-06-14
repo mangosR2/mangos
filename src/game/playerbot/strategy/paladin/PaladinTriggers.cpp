@@ -19,5 +19,5 @@ bool SealTrigger::IsActive()
 bool CrusaderAuraTrigger::IsActive() 
 {
 	Unit* target = GetTarget();
-	return AI_VALUE(bool, "mounted") && !ai->HasAura("crusader aura", target);
+	return AI_VALUE2(bool, "mounted", "self target") && !ai->HasAura("crusader aura", target);
 }

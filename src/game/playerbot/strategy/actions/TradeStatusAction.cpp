@@ -96,7 +96,7 @@ bool TradeStatusAction::CheckTrade()
         }
 
         item = master->GetTradeData()->GetItem((TradeSlots)slot);
-        if (item && !auctionbot.GetSellPrice(item->GetProto()))
+        if (item && !auctionbot.GetBuyPrice(item->GetProto()))
         {
             ostringstream out;
             out << chat->formatItem(item->GetProto()) << " - I don't need this";
@@ -105,8 +105,8 @@ bool TradeStatusAction::CheckTrade()
         }
     }
 
-    int32 botMoney = CalculateCost(bot->GetTradeData());
-    int32 playerMoney = CalculateCost(master->GetTradeData());
+    int32 botMoney = CalculateCost(bot->GetTradeData(), true);
+    int32 playerMoney = CalculateCost(master->GetTradeData(), false);
 
     if (playerMoney >= botMoney)
         return true;
@@ -117,7 +117,7 @@ bool TradeStatusAction::CheckTrade()
     return false;
 }
 
-int32 TradeStatusAction::CalculateCost(TradeData* data)
+int32 TradeStatusAction::CalculateCost(TradeData* data, bool sell)
 {
     if (!data)
         return 0;
@@ -136,7 +136,14 @@ int32 TradeStatusAction::CalculateCost(TradeData* data)
         if (proto->Quality < ITEM_QUALITY_NORMAL)
             return 0;
 
-        sum += item->GetCount() * auctionbot.GetSellPrice(proto);
+        if (sell)
+        {
+            sum += item->GetCount() * auctionbot.GetSellPrice(proto) * sRandomPlayerbotMgr.GetSellMultiplier(bot);
+        }
+        else
+        {
+            sum += item->GetCount() * auctionbot.GetBuyPrice(proto) * sRandomPlayerbotMgr.GetBuyMultiplier(bot);
+        }
     }
 
     return sum;

@@ -32,6 +32,7 @@
 #include "CellImpl.h"
 #include "MapPersistentStateMgr.h"
 #include "Mail.h"
+#include "Transports.h"
 #include "Util.h"
 #include "SpellMgr.h"
 #ifdef _DEBUG_VMAPS
@@ -479,9 +480,15 @@ bool ChatHandler::HandleNamegoCommand(char* args)
         target->InterruptTaxiFlying();
 
         // before GM
-        float x, y, z;
-        m_session->GetPlayer()->GetClosePoint(x, y, z, target->GetObjectBoundingRadius());
-        target->TeleportTo(m_session->GetPlayer()->GetMapId(), x, y, z, target->GetOrientation());
+
+        if (m_session->GetPlayer()->IsOnTransport())
+        {
+            WorldLocation loc = m_session->GetPlayer()->GetTransport()->GetPosition();
+            target->TeleportTo(loc, TELE_TO_NODELAY);
+            m_session->GetPlayer()->GetTransport()->AddPassenger(target, loc.GetTransportPos());
+        }
+        else
+            target->TeleportTo(m_session->GetPlayer()->GetClosePoint(target->GetObjectBoundingRadius()), TELE_TO_NODELAY);
     }
     else
     {
@@ -2272,15 +2279,15 @@ bool ChatHandler::HandleGoGridCommand(char* args)
 
 bool ChatHandler::HandleModifyDrunkCommand(char* args)
 {
-    if (!*args)    return false;
+    if (!*args)
+        return false;
 
-    uint32 drunklevel = (uint32)atoi(args);
-    if (drunklevel > 100)
-        drunklevel = 100;
+    uint8 drunkValue = (uint8)atoi(args);
+    if (drunkValue > 100)
+        drunkValue = 100;
 
-    uint16 drunkMod = drunklevel * 0xFFFF / 100;
-
-    m_session->GetPlayer()->SetDrunkValue(drunkMod);
+    if (Player* target = getSelectedPlayer())
+        target->SetDrunkValue(drunkValue);
 
     return true;
 }
