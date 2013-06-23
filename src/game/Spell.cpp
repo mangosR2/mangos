@@ -428,8 +428,9 @@ Spell::Spell( Unit* caster, SpellEntry const *info, bool triggered, ObjectGuid o
     m_spellState = SPELL_STATE_PREPARING;
 
     m_castPositionX = m_castPositionY = m_castPositionZ = 0;
-    m_TriggerSpells.clear();
     m_preCastSpells.clear();
+    m_TriggerSpells.clear();
+    m_NotTriggerSpells.clear();
     m_IsTriggeredSpell = m_spellInfo->HasAttribute(SPELL_ATTR_EX4_FORCE_TRIGGERED) ? true : triggered;
     //m_AreaAura = false;
     m_CastItem = NULL;
@@ -3703,6 +3704,14 @@ void Spell::cast(bool skipCheck)
             AddTriggeredSpell(*itr);
     }
 
+    // Linked spells (not triggered)
+    linkedSet = sSpellMgr.GetSpellLinked(m_spellInfo->Id, SPELL_LINKED_TYPE_NOT_TRIGGERED);
+    if (linkedSet.size() > 0)
+    {
+        for (SpellLinkedSet::const_iterator itr = linkedSet.begin(); itr != linkedSet.end(); ++itr)
+            AddNotTriggeredSpell(*itr);
+    }
+
     // traded items have trade slot instead of guid in m_itemTargetGUID
     // set to real guid to be sent later to the client
     m_targets.updateTradeSlotItem();
@@ -4191,8 +4200,12 @@ void Spell::finish(bool ok)
         ((Player*)m_caster)->UpdatePotionCooldown(this);
 
     // call triggered spell only at successful cast (after clear combo points -> for add some if need)
-    if(!m_TriggerSpells.empty())
+    if (!m_TriggerSpells.empty())
         CastTriggerSpells();
+
+    // call not triggered spell only at successful cast
+    if (!m_NotTriggerSpells.empty())
+        CastNotTriggerSpells();
 
     // Stop Attack for some spells
     if (m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET))
@@ -5259,45 +5272,60 @@ void Spell::HandleEffects(Unit *pUnitTarget, Item *pItemTarget, GameObject *pGOT
         m_damageIndex = i;
 }
 
-void Spell::AddTriggeredSpell( uint32 spellId )
+void Spell::AddPrecastSpell(uint32 spellId)
 {
-    SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellId );
-
-    if(!spellInfo)
-    {
-        sLog.outError("Spell::AddTriggeredSpell: unknown spell id %u used as triggred spell for spell %u)", spellId, m_spellInfo->Id);
-        return;
-    }
-
-    m_TriggerSpells.push_back(spellInfo);
-}
-
-void Spell::AddPrecastSpell( uint32 spellId )
-{
-    SpellEntry const *spellInfo = sSpellStore.LookupEntry(spellId );
-
-    if(!spellInfo)
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
+    if (!spellInfo)
     {
         sLog.outError("Spell::AddPrecastSpell: unknown spell id %u used as pre-cast spell for spell %u)", spellId, m_spellInfo->Id);
         return;
     }
-
     m_preCastSpells.push_back(spellInfo);
+}
+
+void Spell::AddTriggeredSpell(uint32 spellId)
+{
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
+    if (!spellInfo)
+    {
+        sLog.outError("Spell::AddTriggeredSpell: unknown spell id %u used as triggred spell for spell %u)", spellId, m_spellInfo->Id);
+        return;
+    }
+    m_TriggerSpells.push_back(spellInfo);
+}
+
+void Spell::AddNotTriggeredSpell(uint32 spellId)
+{
+    SpellEntry const* spellInfo = sSpellStore.LookupEntry(spellId);
+    if (!spellInfo)
+    {
+        sLog.outError("Spell::AddNotTriggeredSpell: unknown spell id %u used as not triggred spell for spell %u)", spellId, m_spellInfo->Id);
+        return;
+    }
+    m_NotTriggerSpells.push_back(spellInfo);
+}
+
+void Spell::CastPreCastSpells(Unit* target)
+{
+    for (SpellInfoList::const_iterator si = m_preCastSpells.begin(); si != m_preCastSpells.end(); ++si)
+        m_caster->CastSpell(target, (*si), true, m_CastItem);
 }
 
 void Spell::CastTriggerSpells()
 {
-    for(SpellInfoList::const_iterator si = m_TriggerSpells.begin(); si != m_TriggerSpells.end(); ++si)
+    for (SpellInfoList::const_iterator si = m_TriggerSpells.begin(); si != m_TriggerSpells.end(); ++si)
     {
         Spell* spell = new Spell(m_caster, (*si), true, m_originalCasterGUID);
         spell->prepare(&m_targets);                         // use original spell original targets
     }
 }
-
-void Spell::CastPreCastSpells(Unit* target)
+void Spell::CastNotTriggerSpells()
 {
-    for(SpellInfoList::const_iterator si = m_preCastSpells.begin(); si != m_preCastSpells.end(); ++si)
-        m_caster->CastSpell(target, (*si), true, m_CastItem);
+    for (SpellInfoList::const_iterator si = m_NotTriggerSpells.begin(); si != m_NotTriggerSpells.end(); ++si)
+    {
+        Spell* spell = new Spell(m_caster, (*si), false, m_originalCasterGUID);
+        spell->prepare(&m_targets);                         // use original spell original targets
+    }
 }
 
 Unit* Spell::GetPrefilledUnitTargetOrUnitTarget(SpellEffectIndex effIndex) const

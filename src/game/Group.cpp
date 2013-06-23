@@ -332,6 +332,14 @@ Player* Group::GetInvited(const std::string& name) const
 
 bool Group::AddMember(ObjectGuid guid, const char* name)
 {
+    // not add again if player already in this group
+    if (IsMember(guid))
+    {
+        sLog.outError("Group::AddMember: attempt to add %s into %s. Player already in this group.",
+            guid.GetString().c_str(), GetObjectGuid().GetString().c_str());
+        return false;
+    }
+
     if (!_addMember(guid, name))
         return false;
 

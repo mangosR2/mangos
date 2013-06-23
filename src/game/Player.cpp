@@ -18841,7 +18841,8 @@ void Player::UpdatePvPFlag(time_t currTime)
 {
     if (!IsPvP())
         return;
-    if (pvpInfo.endTimer == 0 || currTime < (pvpInfo.endTimer + 300))
+
+    if (pvpInfo.endTimer == 0 || currTime < (pvpInfo.endTimer + 300) || pvpInfo.inHostileArea)
         return;
 
     UpdatePvP(false);
@@ -20457,7 +20458,7 @@ bool Player::IsVisibleGloballyFor(Player* u) const
 
 bool Player::HaveAtClient(ObjectGuid const& guid) const
 {
-    return  guid == GetObjectGuid() || 
+    return  guid == GetObjectGuid() ||
             (IsBoarded() && GetTransportInfo()->GetTransportGuid() == guid) ||
             HasClientGuid(guid);
 }
