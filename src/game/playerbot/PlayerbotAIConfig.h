@@ -45,6 +45,7 @@ public:
     bool fleeingEnabled;
     std::string randomBotCombatStrategies, randomBotNonCombatStrategies;
     uint32 randomBotMinLevel, randomBotMaxLevel;
+    float randomChangeMultiplier;
 
     uint32 iterationsPerTick;
 

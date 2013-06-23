@@ -72,6 +72,19 @@ namespace ai
         }
     };
 
+    class Uint32CalculatedValue : public CalculatedValue<uint32>
+    {
+    public:
+        Uint32CalculatedValue(PlayerbotAI* ai, string name = "value", int checkInterval = 1) :
+            CalculatedValue<uint32>(ai, name, checkInterval) {}
+
+        virtual string Format()
+        {
+            ostringstream out; out << (int)Calculate();
+            return out.str();
+        }
+    };
+
     class FloatCalculatedValue : public CalculatedValue<float>
     {
     public:

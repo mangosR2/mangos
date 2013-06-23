@@ -54,6 +54,21 @@ namespace ahbot
         virtual string GetName() { return "Food"; }
     };
 
+    class Bandage : public Consumable
+    {
+    public:
+        Bandage() : Consumable() {}
+
+    public:
+        virtual bool Contains(ItemPrototype const* proto)
+        {
+            return Consumable::Contains(proto) &&
+                    proto->SubClass == ITEM_SUBCLASS_BANDAGE;
+        }
+
+        virtual string GetName() { return "Bandage"; }
+    };
+
     class OtherConsumable : public Consumable
     {
     public:
@@ -64,8 +79,7 @@ namespace ahbot
         {
             return Consumable::Contains(proto) &&
                     (proto->SubClass == ITEM_SUBCLASS_CONSUMABLE ||
-                    proto->SubClass != ITEM_SUBCLASS_CONSUMABLE_OTHER ||
-                    proto->SubClass != ITEM_SUBCLASS_BANDAGE);
+                    proto->SubClass == ITEM_SUBCLASS_CONSUMABLE_OTHER) && proto->RequiredSkill;
         }
 
         virtual string GetName() { return "OtherConsumable"; }

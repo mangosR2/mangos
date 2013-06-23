@@ -458,7 +458,7 @@ int AhBot::AddAuction(int auction, Category* category, ItemPrototype const* prot
         return 0;
 
     if (urand(0, 100) <= sAhBotConfig.underPriceProbability * 100)
-        price = price * 100 / urand(150, 500);
+        price = price * 100 / urand(100, 200);
 
     uint32 bidPrice = stackCount * price;
     uint32 buyoutPrice = stackCount * urand(price, 4 * price / 3);

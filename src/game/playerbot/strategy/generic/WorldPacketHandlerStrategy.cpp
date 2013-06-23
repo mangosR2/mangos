@@ -82,6 +82,10 @@ void WorldPacketHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     triggers.push_back(new TriggerNode(
         "lfg proposal",
         NextAction::array(0, new NextAction("lfg accept", relevance), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "lfg proposal active",
+        NextAction::array(0, new NextAction("lfg accept", relevance), NULL)));
 }
 
 WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* ai) : PassTroughStrategy(ai)

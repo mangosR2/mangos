@@ -93,6 +93,7 @@ int main()
   sPlayerbotAIConfig.lowMana = 40;
   sPlayerbotAIConfig.mediumMana = 60;
   sPlayerbotAIConfig.iterationsPerTick = 10;
+  sPlayerbotAIConfig.randomChangeMultiplier = 1;
 
   // Create the event manager and test controller
   CPPUNIT_NS::TestResult controller;

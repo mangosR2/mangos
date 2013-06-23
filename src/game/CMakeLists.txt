@@ -832,6 +832,7 @@ playerbot/strategy/triggers/TriggerContext.h
 playerbot/strategy/triggers/WithinAreaTrigger.h
 playerbot/strategy/triggers/WorldPacketTrigger.h
 playerbot/strategy/triggers/WorldPacketTriggerContext.h
+playerbot/strategy/triggers/LfgTriggers.h
 playerbot/strategy/values/AlwaysLootListValue.h
 playerbot/strategy/values/AoeHealValues.cpp
 playerbot/strategy/values/AoeHealValues.h
@@ -921,6 +922,7 @@ playerbot/strategy/values/ThreatValues.h
 playerbot/strategy/values/ValueContext.h
 playerbot/strategy/values/LastSpellCastTimeValue.h
 playerbot/strategy/values/ManaSaveLevelValue.h
+playerbot/strategy/values/LfgValues.h
 playerbot/strategy/warlock/DpsWarlockStrategy.cpp
 playerbot/strategy/warlock/DpsWarlockStrategy.h
 playerbot/strategy/warlock/GenericWarlockNonCombatStrategy.cpp

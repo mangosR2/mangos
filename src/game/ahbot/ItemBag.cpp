@@ -33,6 +33,7 @@ CategoryList::CategoryList()
     Add(new Alchemy());
     Add(new Scroll());
     Add(new Food());
+    Add(new Bandage());
 
     Add(new Cloth());
     Add(new Leather());
@@ -114,6 +115,12 @@ bool ItemBag::Add(ItemPrototype const* proto)
         return false;
 
     if (proto->RequiredLevel > sAhBotConfig.maxRequiredLevel || proto->ItemLevel > sAhBotConfig.maxItemLevel)
+        return false;
+
+    if (proto->Duration & 0x80000000)
+        return false;
+
+    if (sAhBotConfig.ignoreItemIds.find(proto->ItemId) != sAhBotConfig.ignoreItemIds.end())
         return false;
 
     if (strstri(proto->Name1, "qa") || strstri(proto->Name1, "test"))

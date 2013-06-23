@@ -107,3 +107,4 @@ AiPlayerbot.RandomBotTeleportDistance = 400
 AiPlayerbot.SpellDump = 0
 AiPlayerbot.LogInGroupOnly = 1
 AiPlayerbot.LogValuesPerTick = 0
+AiPlayerbot.RandomChangeMultiplier = 1

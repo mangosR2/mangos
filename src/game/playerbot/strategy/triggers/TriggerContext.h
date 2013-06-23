@@ -4,6 +4,7 @@
 #include "GenericTriggers.h"
 #include "LootTriggers.h"
 #include "../triggers/GenericTriggers.h"
+#include "LfgTriggers.h"
 
 namespace ai
 {
@@ -88,9 +89,11 @@ namespace ai
             creators["low aoe heal"] = &TriggerContext::low_aoe_heal;
             creators["medium aoe heal"] = &TriggerContext::medium_aoe_heal;
             creators["invalid target"] = &TriggerContext::invalid_target;
+            creators["lfg proposal active"] = &TriggerContext::lfg_proposal_active;
         }
 
     private:
+        static Trigger* lfg_proposal_active(PlayerbotAI* ai) { return new LfgProposalActiveTrigger(ai); }
         static Trigger* invalid_target(PlayerbotAI* ai) { return new InvalidTargetTrigger(ai); }
         static Trigger* critical_aoe_heal(PlayerbotAI* ai) { return new AoeHealTrigger(ai, "critical aoe heal", "critical", 2); }
         static Trigger* low_aoe_heal(PlayerbotAI* ai) { return new AoeHealTrigger(ai, "low aoe heal", "low", 2); }

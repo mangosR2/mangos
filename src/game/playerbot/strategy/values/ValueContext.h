@@ -51,6 +51,7 @@
 #include "AttackerWithoutAuraTargetValue.h"
 #include "LastSpellCastTimeValue.h"
 #include "ManaSaveLevelValue.h"
+#include "LfgValues.h"
 
 namespace ai
 {
@@ -132,6 +133,7 @@ namespace ai
             creators["invalid target"] = &ValueContext::invalid_target;
             creators["mana save level"] = &ValueContext::mana_save_level;
             creators["combat"] = &ValueContext::combat;
+            creators["lfg proposal"] = &ValueContext::lfg_proposal;
         }
 
     private:
@@ -207,5 +209,6 @@ namespace ai
         static UntypedValue* has_totem(PlayerbotAI* ai) { return new HasTotemValue(ai); }
         static UntypedValue* threat(PlayerbotAI* ai) { return new ThreatValue(ai); }
         static UntypedValue* combat(PlayerbotAI* ai) { return new IsInCombatValue(ai); }
+        static UntypedValue* lfg_proposal(PlayerbotAI* ai) { return new LfgProposalValue(ai); }
     };
 };

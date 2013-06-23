@@ -24,6 +24,7 @@ public:
     float underPriceProbability;
     float buyProbability;
     float sellProbability;
+    std::set<uint32> ignoreItemIds;
 
     float GetSellPriceMultiplier(string category)
     {

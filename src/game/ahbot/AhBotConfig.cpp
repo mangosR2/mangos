@@ -1,6 +1,7 @@
 #include "../pchdef.h"
 #include "AhBotConfig.h"
 #include "SystemConfig.h"
+std::vector<std::string> split(const std::string &s, char delim);
 
 using namespace std;
 
@@ -8,6 +9,20 @@ INSTANTIATE_SINGLETON_1(AhBotConfig);
 
 AhBotConfig::AhBotConfig()
 {
+}
+
+template <class T>
+void LoadSet(string value, T &res)
+{
+    vector<string> ids = split(value, ',');
+    for (vector<string>::iterator i = ids.begin(); i != ids.end(); i++)
+    {
+        uint32 id = atoi((*i).c_str());
+        if (!id)
+            continue;
+
+        res.insert(id);
+    }
 }
 
 bool AhBotConfig::Initialize()
@@ -39,6 +54,8 @@ bool AhBotConfig::Initialize()
     underPriceProbability = config.GetFloatDefault("AhBot.UnderPriceProbability", 0.05f);
     buyProbability = config.GetFloatDefault("AhBot.BuyProbability", 0.25f);
     sellProbability = config.GetFloatDefault("AhBot.SellProbability", 1.0f);
+    LoadSet<set<uint32> >(config.GetStringDefault("AhBot.IgnoreItemIds", "49283,52200,8494,6345,6891,2460"), ignoreItemIds);
+
 
     return enabled;
 }

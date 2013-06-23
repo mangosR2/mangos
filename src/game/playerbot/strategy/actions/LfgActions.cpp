@@ -80,6 +80,9 @@ bool LfgJoinAction::JoinProposal()
     if (!state)
         return false;
 
+    if (state->GetDungeons() && !state->GetDungeons()->empty())
+        return false;
+
     if (!SetRoles())
         return false;
 
@@ -124,6 +127,9 @@ bool LfgJoinAction::JoinProposal()
         state->SetType(LFG_TYPE_DUNGEON);
 	}
 
+    if (list.empty())
+        return false;
+
     state->SetComment("bot");
     state->SetDungeons(list);
 
@@ -148,18 +154,31 @@ bool LfgRoleCheckAction::Execute(Event event)
 
 bool LfgAcceptAction::Execute(Event event)
 {
-    WorldPacket p(event.getPacket());
-
-    uint32 dungeon;
-    uint8 state;
-    uint32 id;
-    p >> dungeon >> state >> id;
-
     LFGPlayerState* botState = bot->GetLFGPlayerState();
     if (!botState || botState->GetState() != LFG_STATE_PROPOSAL)
         return false;
 
-    sLFGMgr.UpdateProposal(id, bot->GetObjectGuid(), true);
+    uint32 id = AI_VALUE(uint32, "lfg proposal");
+    if (id)
+    {
+        if (urand(0, 1 + 10 / sPlayerbotAIConfig.randomChangeMultiplier))
+            return false;
+
+        sLog.outDetail("Bot %s updated proposal %d", bot->GetName(), id);
+        ai->GetAiObjectContext()->GetValue<uint32>("lfg proposal")->Set(0);
+        sLFGMgr.UpdateProposal(id, bot->GetObjectGuid(), true);
+        ai->Reset();
+        ai->ResetStrategies();
+        return true;
+    }
+
+    WorldPacket p(event.getPacket());
+
+    uint32 dungeon;
+    uint8 state;
+    p >> dungeon >> state >> id;
+
+    ai->GetAiObjectContext()->GetValue<uint32>("lfg proposal")->Set(id);
     return true;
 }
 

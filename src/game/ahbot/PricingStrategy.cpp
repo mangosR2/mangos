@@ -188,13 +188,26 @@ uint32 PricingStrategy::GetDefaultBuyPrice(ItemPrototype const* proto)
 
     if (proto->SellPrice)
         price = proto->SellPrice;
-    else if (proto->BuyPrice)
-        price = proto->BuyPrice / 4;
-    else
+    if (proto->BuyPrice)
+        price = max(price, proto->BuyPrice / 4);
+
+    uint32 level = max(proto->ItemLevel, proto->RequiredLevel);
+    if (proto->Class == ITEM_CLASS_QUEST)
     {
-        uint32 level = max(proto->ItemLevel, proto->RequiredLevel);
-        price = sAhBotConfig.defaultMinPrice * level * level / 10;
+        double result = 1.0;
+
+        QueryResult* results = WorldDatabase.PQuery(
+            "select max(QuestLevel), max(MinLevel) from quest_template where ReqItemId1 = %u or ReqItemId2 = %u or ReqItemId3 = %u or ReqItemId4 = %u or ReqItemId5 = %u or ReqItemId6 = %u",
+            proto->ItemId, proto->ItemId, proto->ItemId, proto->ItemId, proto->ItemId, proto->ItemId);
+        if (results)
+        {
+            Field* fields = results->Fetch();
+            level = max(fields[0].GetUInt32(), fields[1].GetUInt32());
+            delete results;
+        }
     }
+    price = max(price, sAhBotConfig.defaultMinPrice * level * level / 10);
+    price = max(price, (uint32)100);
 
     return ApplyQualityMultiplier(proto, price) * sAhBotConfig.priceMultiplier;
 }

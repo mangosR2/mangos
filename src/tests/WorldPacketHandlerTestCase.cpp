@@ -230,7 +230,10 @@ protected:
         trigger("lfg proposal");
         tick();
 
-        assertActions(">S:lfg join>S:lfg role check>S:lfg accept");
+        trigger("lfg proposal active");
+        tick();
+
+        assertActions(">S:lfg join>S:lfg role check>S:lfg accept>S:lfg accept");
     }
 
     void lfg_leave()
