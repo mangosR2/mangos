@@ -829,11 +829,34 @@ bool GameObject::isVisibleForInState(Player const* u, WorldObject const* viewPoi
         // special invisibility cases
         if (GetGOInfo()->type == GAMEOBJECT_TYPE_TRAP && GetGOInfo()->trap.stealthed)
         {
-            if (u->HasAura(2836) && u->isInFront(this, 15.0f))   // hack, maybe values are wrong
-                return true;
+            bool trapNotVisible = false;
 
-            if (GetOwner() && u->IsFriendlyTo(GetOwner()))
-                return true;
+            if (Unit* owner = GetOwner())
+            {
+                if (owner->GetTypeId() == TYPEID_PLAYER)
+                {
+                    Player* oPlayer = (Player*)owner;
+                    if ((GetMap()->IsBattleGroundOrArena() && oPlayer->GetBGTeam() != u->GetBGTeam()) ||
+                        (oPlayer->IsInDuelWith(u)) ||
+                        (oPlayer->GetTeam() != u->GetTeam()))
+                        trapNotVisible = true;
+                }
+                else
+                {
+                    if (u->IsFriendlyTo(owner))
+                        return true;
+                }
+            }
+
+            // only rogue have skill for traps detection
+            if (Aura* aura = ((Player*)u)->GetAura(2836, EFFECT_INDEX_0))
+            {
+                if (roll_chance_i(aura->GetModifier()->m_amount) && u->isInFront(this, 15.0f))
+                    return true;
+            }
+
+            if (trapNotVisible)
+                return false;
 
             if (m_lootState == GO_READY)
                 return false;

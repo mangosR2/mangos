@@ -57,7 +57,7 @@ namespace Movement
         MoveSpline& move_spline = *unit.movespline;
         TransportInfo* transportInfo = unit.GetTransportInfo();
 
-        Position real_position = transportInfo ? 
+        Position real_position = transportInfo ?
                                     transportInfo->GetLocalPosition() :
                                     unit.GetPosition();
 
@@ -76,7 +76,7 @@ namespace Movement
         else
         {
             // check path equivalence
-            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
+            if (!args.flags.isFacing() && args.path.size() == 2 && args.path[0] == args.path[1])
                 return 0;
         }
 
@@ -85,21 +85,26 @@ namespace Movement
         args.initialOrientation = real_position.orientation;
 
         uint32 moveFlags = unit.m_movementInfo.GetMovementFlags();
-        if (args.flags.walkmode)
-            moveFlags |= MOVEFLAG_WALK_MODE;
-        else
-            moveFlags &= ~MOVEFLAG_WALK_MODE;
-
         moveFlags |= (MOVEFLAG_SPLINE_ENABLED | MOVEFLAG_FORWARD);
-
-        if (fabs(args.velocity) < M_NULL_F)
-            args.velocity = unit.GetSpeed(SelectSpeedType(moveFlags));
-
-        if (!args.Validate(&unit))
-            return 0;
 
         if (moveFlags & MOVEFLAG_ROOT)
             moveFlags &= ~MOVEFLAG_MASK_MOVING;
+
+        if (fabs(args.velocity) < M_NULL_F)
+        {
+            // Add or remove walk mode flag for select speed depending from call SetWalk()
+            // in spline initialization. Not need change the real unit move flags.
+            uint32 moveFlagsForSpeed = moveFlags;
+            if (args.flags.walkmode)
+                moveFlagsForSpeed |= MOVEFLAG_WALK_MODE;
+            else
+                moveFlagsForSpeed &= ~MOVEFLAG_WALK_MODE;
+
+            args.velocity = unit.GetSpeed(SelectSpeedType(moveFlagsForSpeed));
+        }
+
+        if (!args.Validate(&unit))
+            return 0;
 
         unit.m_movementInfo.SetMovementFlags((MovementFlags)moveFlags);
         move_spline.Initialize(args);
@@ -148,7 +153,7 @@ namespace Movement
         MoveSpline& move_spline = *gameobject.movespline;
         TransportInfo* transportInfo = gameobject.GetTransportInfo();
 
-        Position real_position = transportInfo ? 
+        Position real_position = transportInfo ?
                                     transportInfo->GetLocalPosition() :
                                     gameobject.GetPosition();
 
@@ -167,7 +172,7 @@ namespace Movement
         else
         {
             // check path equivalence
-            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
+            if (!args.flags.isFacing() && args.path.size() == 2 && args.path[0] == args.path[1])
                 return 0;
         }
 

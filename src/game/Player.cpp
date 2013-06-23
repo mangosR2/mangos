@@ -4978,6 +4978,7 @@ void Player::RepopAtGraveyard()
     // and don't show spirit healer location
     if (ClosestGrave)
     {
+        bool updateVisibility = IsInWorld() && GetMapId() == ClosestGrave->map_id;
         TeleportTo(ClosestGrave->map_id, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, GetOrientation());
         if (isDead())                                        // not send if alive, because it used in TeleportTo()
         {
@@ -4988,6 +4989,8 @@ void Player::RepopAtGraveyard()
             data << ClosestGrave->z;
             GetSession()->SendPacket(&data);
         }
+        if (updateVisibility && IsInWorld())
+            UpdateVisibilityAndView();
     }
 }
 
@@ -18815,7 +18818,8 @@ void Player::UpdatePvPFlag(time_t currTime)
 {
     if (!IsPvP())
         return;
-    if (pvpInfo.endTimer == 0 || currTime < (pvpInfo.endTimer + 300))
+
+    if (pvpInfo.endTimer == 0 || currTime < (pvpInfo.endTimer + 300) || pvpInfo.inHostileArea)
         return;
 
     UpdatePvP(false);
@@ -20431,7 +20435,7 @@ bool Player::IsVisibleGloballyFor(Player* u) const
 
 bool Player::HaveAtClient(ObjectGuid const& guid) const
 {
-    return  guid == GetObjectGuid() || 
+    return  guid == GetObjectGuid() ||
             (IsBoarded() && GetTransportInfo()->GetTransportGuid() == guid) ||
             HasClientGuid(guid);
 }

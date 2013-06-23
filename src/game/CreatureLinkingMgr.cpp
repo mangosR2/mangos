@@ -534,7 +534,7 @@ void CreatureLinkingHolder::ProcessSlave(CreatureLinkingEvent eventType, Creatur
             break;
         case LINKING_EVENT_DIE:
             if ((flag & FLAG_SELFKILL_ON_DEATH) && pSlave->isAlive())
-                pSlave->DealDamage(pSlave, pSlave->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
+                pSlave->KillSelf();
             if ((flag & FLAG_DESPAWN_ON_DEATH) && pSlave->isAlive())
                 pSlave->ForcedDespawn();
             if ((flag & FLAG_RESPAWN_ON_DEATH) && !pSlave->isAlive())

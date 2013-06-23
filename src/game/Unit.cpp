@@ -7964,6 +7964,7 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
         }
     }
 
+    uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
     float DoneTotalMod = 1.0f;
     int32 DoneTotal = 0;
 
@@ -8022,21 +8023,16 @@ void Unit::SpellDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
     }
     DoneTotalMod *= ((nonStackingPos + 100.0f) / 100.0f) * ((nonStackingNeg + 100.0f) / 100.0f);
 
-    uint32 creatureTypeMask = pVictim->GetCreatureTypeMask();
     // Add flat bonus from spell damage versus
     DoneTotal += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_FLAT_SPELL_DAMAGE_VERSUS, creatureTypeMask);
-    AuraList const& mDamageDoneVersus = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE_VERSUS);
-    for(AuraList::const_iterator i = mDamageDoneVersus.begin();i != mDamageDoneVersus.end(); ++i)
-        if (creatureTypeMask & uint32((*i)->GetModifier()->m_miscvalue))
-            DoneTotalMod *= ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
 
-    AuraList const& mDamageDoneCreature = GetAurasByType(SPELL_AURA_MOD_DAMAGE_DONE_CREATURE);
-    for(AuraList::const_iterator i = mDamageDoneCreature.begin();i != mDamageDoneCreature.end(); ++i)
-    {
-        if (creatureTypeMask & uint32((*i)->GetModifier()->m_miscvalue))
-            DoneTotalMod += ((*i)->GetModifier()->m_amount+100.0f)/100.0f;
-    }
+    // Add pct bonus from spell damage versus
+    DoneTotalMod *= GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_DONE_VERSUS, creatureTypeMask);
 
+    // Add flat bonus from spell damage creature
+    DoneTotal += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_DAMAGE_DONE_CREATURE, creatureTypeMask);
+
+    // Add pct bonus from aura state versus
     AuraList const& mDamageDoneVersusAuraState = GetAurasByType(SPELL_AURA_DAMAGE_DONE_VERSUS_AURA_STATE_PCT);
     for(AuraList::const_iterator i = mDamageDoneVersusAuraState.begin();i != mDamageDoneVersusAuraState.end(); ++i)
     {
@@ -12598,9 +12594,10 @@ void Unit::InterruptMoving(bool ignoreMoveState /*=false*/)
 
     if (!movespline->Finalized())
     {
-        Position loc = movespline->ComputePosition();
+        Position pos = movespline->ComputePosition();
+        pos.SetPhaseMask(GetPhaseMask());
         movespline->_Interrupt();
-        SetPosition(loc);
+        SetPosition(pos);
         isMoving = true;
     }
 
@@ -14196,15 +14193,16 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     if (m_movesplineTimer.Passed() || arrived)
     {
         m_movesplineTimer.Reset(sWorld.getConfig(CONFIG_UINT32_POSITION_UPDATE_DELAY));
-        Position loc = movespline->ComputePosition();
+        Position pos = movespline->ComputePosition();
+        pos.SetPhaseMask(GetPhaseMask());
 
         if (IsBoarded())
         {
-            m_movementInfo.ChangeTransportPosition(loc);
-            GetTransportInfo()->SetLocalPosition(loc);
+            m_movementInfo.ChangeTransportPosition(pos);
+            GetTransportInfo()->SetLocalPosition(pos);
         }
         else
-            SetPosition(loc);
+            SetPosition(pos);
     }
 }
 
@@ -14544,4 +14542,10 @@ void Unit::RemoveOutdatedSpellCooldowns()
             RemoveSpellCooldown(itr->first);
         }
     }
+}
+
+void Unit::KillSelf(uint32 keepHealthPoints/*=0*/)
+{
+    DealDamage(this, keepHealthPoints ? GetHealth() - keepHealthPoints : GetHealth(),
+        NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
 }

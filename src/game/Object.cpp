@@ -1125,16 +1125,16 @@ ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
 }
 
 // Attention! This method cannot must call while relocation to other map!
-void WorldObject::Relocate(Position const& location)
+void WorldObject::Relocate(Position const& position)
 {
-    bool locationChanged    = !bool(location == m_position);
-    bool orientationChanged = bool(fabs(location.o - m_position.o) > M_NULL_F);
+    bool positionChanged    = !bool(position == m_position);
+    bool orientationChanged = bool(fabs(position.o - m_position.o) > M_NULL_F);
 
-    m_position = location;
+    m_position = position;
 
     if (isType(TYPEMASK_UNIT))
     {
-        if (locationChanged)
+        if (positionChanged)
             ((Unit*)this)->m_movementInfo.ChangePosition(m_position);
         else if (orientationChanged)
             ((Unit*)this)->m_movementInfo.ChangeOrientation(m_position.o);

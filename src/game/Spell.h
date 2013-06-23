@@ -395,6 +395,7 @@ class Spell
         void cast(bool skipCheck = false);
         void finish(bool ok = true);
         void TakePower();
+        void TakeAmmo();
         void TakeReagents();
         void TakeCastItem();
 
@@ -531,12 +532,15 @@ class Spell
 
         void UpdatePointers();                              // must be used at call Spell code after time delay (non triggered spell cast/update spell call/etc)
 
-        void AddTriggeredSpell(SpellEntry const* spellInfo) { m_TriggerSpells.push_back(spellInfo); }
         void AddPrecastSpell(SpellEntry const* spellInfo) { m_preCastSpells.push_back(spellInfo); }
-        void AddTriggeredSpell(uint32 spellId);
+        void AddTriggeredSpell(SpellEntry const* spellInfo) { m_TriggerSpells.push_back(spellInfo); }
+        void AddNotTriggeredSpell(SpellEntry const* spellInfo) { m_NotTriggerSpells.push_back(spellInfo); }
         void AddPrecastSpell(uint32 spellId);
+        void AddTriggeredSpell(uint32 spellId);
+        void AddNotTriggeredSpell(uint32 spellId);
         void CastPreCastSpells(Unit* target);
         void CastTriggerSpells();
+        void CastNotTriggerSpells();
 
         void CleanupTargetList();
         void ClearCastItem();
@@ -678,8 +682,9 @@ class Spell
 
         //List For Triggered Spells
         typedef std::list<SpellEntry const*> SpellInfoList;
-        SpellInfoList m_TriggerSpells;                      // casted by caster to same targets settings in m_targets at success finish of current spell
         SpellInfoList m_preCastSpells;                      // casted by caster to each target at spell hit before spell effects apply
+        SpellInfoList m_TriggerSpells;                      // casted by caster to same targets settings in m_targets at success finish of current spell
+        SpellInfoList m_NotTriggerSpells;                   // casted not triggered by caster to same targets settings in m_targets at success finish of current spell
 
         uint32 m_spellState;
         uint32 m_timer;
