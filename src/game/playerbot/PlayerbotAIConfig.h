@@ -41,6 +41,7 @@ public:
     uint32 minRandomBotsPerInterval, maxRandomBotsPerInterval;
     uint32 minRandomBotsPriceChangeInterval, maxRandomBotsPriceChangeInterval;
     bool randomBotJoinLfg;
+    bool randomBotLoginAtStartup;
     bool logInGroupOnly, logValuesPerTick;
     bool fleeingEnabled;
     std::string randomBotCombatStrategies, randomBotNonCombatStrategies;

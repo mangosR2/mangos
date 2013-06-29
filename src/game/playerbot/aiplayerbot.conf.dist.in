@@ -100,6 +100,9 @@ AiPlayerbot.MaxRandomBotsPerInterval = 100
 AiPlayerbot.MinRandomBotsPriceChangeInterval = 7200
 AiPlayerbot.MaxRandomBotsPriceChangeInterval = 172800
 
+# Log on all random bots on start
+AiPlayerbot.RandomBotLoginAtStartup = 1
+
 # How far random bots are teleported after death
 AiPlayerbot.RandomBotTeleportDistance = 400
 

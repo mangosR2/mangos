@@ -89,7 +89,7 @@ bool LfgJoinAction::JoinProposal()
     ItemCountByQuality visitor;
     IterateItems(&visitor, ITERATE_ITEMS_IN_EQUIP);
 	bool heroic = visitor.count[ITEM_QUALITY_EPIC] >= 3 && bot->getLevel() >= 70;
-    bool random = urand(0, 100) < 50;
+    bool random = urand(0, 100) < 25;
 
     LFGDungeonSet list;
     for (uint32 i = 0; i < sLFGDungeonStore.GetNumRows(); ++i)
@@ -98,11 +98,23 @@ bool LfgJoinAction::JoinProposal()
         if (!dungeon || (dungeon->type != LFG_TYPE_RANDOM_DUNGEON && dungeon->type != LFG_TYPE_DUNGEON && dungeon->type != LFG_TYPE_HEROIC_DUNGEON))
             continue;
 
-        if (dungeon->recminlevel &&
-                ((int)dungeon->recminlevel > (int)bot->getLevel() || (int)dungeon->recminlevel + 10 < (int)bot->getLevel()))
+        int botLevel = (int)bot->getLevel();
+        if (dungeon->recminlevel && botLevel < (int)dungeon->recminlevel)
             continue;
 
-        if ((int)bot->getLevel() > (int)dungeon->maxlevel)
+        if (dungeon->minlevel && botLevel < (int)dungeon->minlevel)
+            continue;
+
+        if (dungeon->recminlevel && botLevel > (int)dungeon->recminlevel + 10)
+            continue;
+
+        if (dungeon->minlevel && botLevel > (int)dungeon->minlevel + 10)
+            continue;
+
+        if (dungeon->maxlevel && botLevel > (int)dungeon->maxlevel)
+            continue;
+
+        if (dungeon->recmaxlevel && botLevel > (int)dungeon->recmaxlevel)
             continue;
 
         if (heroic && !dungeon->difficulty)
@@ -167,8 +179,11 @@ bool LfgAcceptAction::Execute(Event event)
         sLog.outDetail("Bot %s updated proposal %d", bot->GetName(), id);
         ai->GetAiObjectContext()->GetValue<uint32>("lfg proposal")->Set(0);
         sLFGMgr.UpdateProposal(id, bot->GetObjectGuid(), true);
+
+        sRandomPlayerbotMgr.Refresh(bot);
         ai->Reset();
         ai->ResetStrategies();
+        bot->TeleportToHomebind();
         return true;
     }
 

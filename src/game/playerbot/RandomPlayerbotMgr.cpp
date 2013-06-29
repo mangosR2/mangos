@@ -11,7 +11,7 @@
 
 INSTANTIATE_SINGLETON_1(RandomPlayerbotMgr);
 
-RandomPlayerbotMgr::RandomPlayerbotMgr() : PlayerbotHolder()
+RandomPlayerbotMgr::RandomPlayerbotMgr() : PlayerbotHolder(), firstRun(true)
 {
 }
 
@@ -40,6 +40,14 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed)
     int botCount = bots.size();
     int allianceNewBots = 0, hordeNewBots = 0;
     int randomBotsPerInterval = (int)urand(sPlayerbotAIConfig.minRandomBotsPerInterval, sPlayerbotAIConfig.maxRandomBotsPerInterval);
+    if (firstRun)
+    {
+        if (sPlayerbotAIConfig.randomBotLoginAtStartup)
+            randomBotsPerInterval = bots.size();
+
+        firstRun = false;
+    }
+
     while (botCount++ < maxAllowedBotCount)
     {
         bool alliance = botCount % 2;

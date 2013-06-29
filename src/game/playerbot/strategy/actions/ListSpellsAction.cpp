@@ -1,6 +1,7 @@
 #include "../../../pchdef.h"
 #include "../../playerbot.h"
 #include "ListSpellsAction.h"
+#include "../ItemVisitors.h"
 
 using namespace ai;
 
@@ -14,6 +15,8 @@ bool ListSpellsAction::Execute(Event event)
 
     std::ostringstream posOut;
     std::ostringstream negOut;
+
+    string filter = event.getParam();
 
     const std::string ignoreList = ",Opening,Closing,Stuck,Remove Insignia,Opening - No Text,Grovel,Duel,Honorless Target,";
     std::string alreadySeenList = ",";
@@ -35,6 +38,9 @@ bool ListSpellsAction::Execute(Event event)
         comp.append(",");
 
         if (!(ignoreList.find(comp) == std::string::npos && alreadySeenList.find(comp) == std::string::npos))
+            continue;
+
+        if (!filter.empty() && !strstri(pSpellInfo->SpellName[loc], filter.c_str()))
             continue;
 
         alreadySeenList += pSpellInfo->SpellName[loc];
