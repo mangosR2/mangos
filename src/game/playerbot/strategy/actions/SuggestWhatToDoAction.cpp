@@ -90,17 +90,17 @@ void SuggestWhatToDoAction::grindMaterials()
 void SuggestWhatToDoAction::grindReputation()
 {
     if (bot->getLevel() > 50)
-        ai->TellMaster("I think we should do something to improve our reputation", PLAYERBOT_SECURITY_ALLOW_ALL);
+        ai->TellMasterNoFacing("I think we should do something to improve our reputation", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::nothing()
 {
-    ai->TellMaster("I don't want to do anything", PLAYERBOT_SECURITY_ALLOW_ALL);
+    ai->TellMasterNoFacing("I don't want to do anything", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::relax()
 {
-    ai->TellMaster("It is so boring... We could relax a bit", PLAYERBOT_SECURITY_ALLOW_ALL);
+    ai->TellMasterNoFacing("It is so boring... We could relax a bit", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
 void SuggestWhatToDoAction::achievement()

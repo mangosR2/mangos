@@ -83,6 +83,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     InitPotions();
     InitSecondEquipmentSet();
     InitInventory();
+    bot->SetMoney(urand(level * 1000, level * 5 * 1000));
     bot->SaveToDB();
 
     InitPet();
@@ -1362,6 +1363,43 @@ void PlayerbotFactory::InitInventory()
 {
     InitInventoryTrade();
     InitInventoryEquip();
+    InitInventorySkill();
+}
+
+void PlayerbotFactory::InitInventorySkill()
+{
+    if (bot->HasSkill(SKILL_MINING)) {
+        StoreItem(2901, 1); // Mining Pick
+    }
+    if (bot->HasSkill(SKILL_JEWELCRAFTING)) {
+        StoreItem(20815, 1); // Jeweler's Kit
+        StoreItem(20824, 1); // Simple Grinder
+    }
+    if (bot->HasSkill(SKILL_BLACKSMITHING) || bot->HasSkill(SKILL_ENGINEERING)) {
+        StoreItem(5956, 1); // Blacksmith Hammer
+    }
+    if (bot->HasSkill(SKILL_ENGINEERING)) {
+        StoreItem(6219, 1); // Arclight Spanner
+    }
+    if (bot->HasSkill(SKILL_ENCHANTING)) {
+        StoreItem(44452, 1); // Runed Titanium Rod
+    }
+    if (bot->HasSkill(SKILL_INSCRIPTION)) {
+        StoreItem(39505, 1); // Virtuoso Inking Set
+    }
+    if (bot->HasSkill(SKILL_SKINNING)) {
+        StoreItem(7005, 1); // Skinning Knife
+    }
+}
+
+Item* PlayerbotFactory::StoreItem(uint32 itemId, uint32 count)
+{
+    ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+    Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, min(count, proto->GetMaxStackSize())));
+    if (newItem)
+        newItem->AddToUpdateQueueOf(bot);
+
+    return newItem;
 }
 
 void PlayerbotFactory::InitInventoryTrade()
@@ -1400,14 +1438,8 @@ void PlayerbotFactory::InitInventoryTrade()
             continue;
 
         uint32 itemId = ids[index];
-        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
-        Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, proto->GetMaxStackSize()));
-        if (newItem)
-        {
-            newItem->AddToUpdateQueueOf(bot);
-            if (count++ >= maxCount)
-                break;
-        }
+        if (StoreItem(itemId, 250) && count++ >= maxCount)
+            break;
     }
 }
 
@@ -1451,13 +1483,7 @@ void PlayerbotFactory::InitInventoryEquip()
             continue;
 
         uint32 itemId = ids[index];
-        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
-        Item* newItem = bot->StoreNewItemInInventorySlot(itemId, 1);
-        if (newItem)
-        {
-            newItem->AddToUpdateQueueOf(bot);
-            if (count++ >= maxCount)
-                break;
-        }
+        if (StoreItem(itemId, 1) && count++ >= maxCount)
+            break;
    }
 }

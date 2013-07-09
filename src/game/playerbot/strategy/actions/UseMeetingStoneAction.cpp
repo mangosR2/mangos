@@ -84,7 +84,7 @@ bool SummonAction::Execute(Event event)
 
     if (!master->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING) && master->GetSession()->GetSecurity() < SEC_GAMEMASTER)
     {
-        ai->TellMaster("You must be in a city or inn to summon me");
+        ai->TellMasterNoFacing("You must be in a city or inn to summon me");
         return false;
     }
 
@@ -114,7 +114,7 @@ bool SummonAction::Teleport()
     PlayerbotChatHandler ch(master);
     if (!ch.teleport(*bot))
     {
-        ai->TellMaster("You cannot summon me");
+        ai->TellMasterNoFacing("You cannot summon me");
         return false;
     }
 

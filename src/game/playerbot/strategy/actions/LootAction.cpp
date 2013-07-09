@@ -10,10 +10,7 @@ using namespace ai;
 bool LootAction::Execute(Event event)
 {
     if (!AI_VALUE(bool, "has available loot"))
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Cannot loot: nothing more available");
         return false;
-    }
 
     LootObject const& lootObject = AI_VALUE(LootObjectStack*, "available loot")->GetLoot(sPlayerbotAIConfig.lootDistance);
     context->GetValue<LootObject>("loot target")->Set(lootObject);
@@ -345,17 +342,11 @@ bool StoreLootAction::IsLootAllowed(uint32 itemid)
 
     ItemPrototype const *proto = sItemStorage.LookupEntry<ItemPrototype>(itemid);
     if (!proto)
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: invalid item");
         return false;
-    }
 
     uint32 max = proto->MaxCount;
     if (max > 0 && bot->HasItemCount(itemid, max, true))
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: cannot have more than have");
         return false;
-    }
 
     if (proto->StartQuest ||
         proto->Bonding == BIND_QUEST_ITEM ||
@@ -364,34 +355,22 @@ bool StoreLootAction::IsLootAllowed(uint32 itemid)
         return true;
 
     if (lootStrategy == LOOTSTRATEGY_QUEST)
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: not a quest item");
         return false;
-    }
 
     if (IsLootAllowedBySkill(proto))
         return true;
 
     if (lootStrategy == LOOTSTRATEGY_SKILL)
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: not a tradeskill item");
         return false;
-    }
 
     if (proto->Class == ITEM_CLASS_MONEY || proto->Quality == ITEM_QUALITY_POOR)
         return true;
 
     if (lootStrategy == LOOTSTRATEGY_GRAY)
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: not a gray item");
         return true;
-    }
 
     if (proto->Bonding == BIND_WHEN_PICKED_UP)
-    {
-        ai->TellMaster(LOG_LVL_DEBUG, "Not allowed loot: item is BOP");
         return false;
-    }
 
     return true;
 }

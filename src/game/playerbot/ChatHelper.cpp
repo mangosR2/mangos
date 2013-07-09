@@ -11,6 +11,7 @@ map<string, uint32> ChatHelper::itemQualities;
 map<string, uint32> ChatHelper::slots;
 map<string, ChatMsg> ChatHelper::chats;
 map<uint8, string> ChatHelper::classes;
+map<uint8, string> ChatHelper::races;
 map<uint8, map<uint8, string> > ChatHelper::specs;
 
 template<class T>
@@ -134,6 +135,17 @@ ChatHelper::ChatHelper(PlayerbotAI* ai) : PlayerbotAIAware(ai)
     specs[CLASS_WARRIOR][0] = "arms";
     specs[CLASS_WARRIOR][1] = "fury";
     specs[CLASS_WARRIOR][2] = "protection";
+
+    races[RACE_BLOODELF] = "Blood Elf";
+    races[RACE_DRAENEI] = "Draenei";
+    races[RACE_DWARF] = "Dwarf";
+    races[RACE_GNOME] = "Gnome";
+    races[RACE_HUMAN] = "Human";
+    races[RACE_NIGHTELF] = "Night Elf";
+    races[RACE_ORC] = "Orc";
+    races[RACE_TAUREN] = "Tauren";
+    races[RACE_TROLL] = "Troll";
+    races[RACE_UNDEAD] = "Undead";
 }
 
 string ChatHelper::formatMoney(uint32 copper)
@@ -409,4 +421,14 @@ string ChatHelper::formatClass(Player* player, int spec)
 
     out <<  ") " << classes[cls];
     return out.str();
+}
+
+string ChatHelper::formatClass(uint8 cls)
+{
+    return classes[cls];
+}
+
+string ChatHelper::formatRace(uint8 race)
+{
+    return races[race];
 }

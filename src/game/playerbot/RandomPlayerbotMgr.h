@@ -55,7 +55,7 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotHolder
 
     private:
         vector<Player*> players;
-        bool firstRun;
+        int processTicks;
 };
 
 #define sRandomPlayerbotMgr MaNGOS::Singleton<RandomPlayerbotMgr>::Instance()

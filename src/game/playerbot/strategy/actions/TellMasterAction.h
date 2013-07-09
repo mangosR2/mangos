@@ -27,11 +27,10 @@ namespace ai
             bool canFollow = Follow(AI_VALUE(Unit*, "master target"));
             if (!canFollow)
             {
-                ai->TellMaster(LOG_LVL_DEBUG, "I am stuck here!");
                 ai->SetNextCheckDelay(5000);
                 return false;
             }
-            
+
             ai->TellMaster("Wait for me!");
             return true;
         }

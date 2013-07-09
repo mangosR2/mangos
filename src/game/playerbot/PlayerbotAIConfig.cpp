@@ -100,7 +100,7 @@ bool PlayerbotAIConfig::Initialize()
     randomChangeMultiplier = config.GetFloatDefault("AiPlayerbot.RandomChangeMultiplier", 1.0);
 
     randomBotCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotCombatStrategies", "+dps,+attack weak");
-    randomBotNonCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotNonCombatStrategies", "+grind,+move random");
+    randomBotNonCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotNonCombatStrategies", "+grind,+move random,+loot");
 
     CreateRandomBots();
     sLog.outString("AI Playerbot configuration loaded");
@@ -267,9 +267,10 @@ void PlayerbotAIConfig::CreateRandomBots()
         }
 
         RandomPlayerbotFactory factory(accountId);
-        while (count++ < 10)
+        for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES; ++cls)
         {
-            factory.CreateRandomBot();
+            if (cls != 10 && cls != CLASS_DEATH_KNIGHT)
+                factory.CreateRandomBot(cls);
         }
 
         totalRandomBotChars += sAccountMgr.GetCharactersCount(accountId);

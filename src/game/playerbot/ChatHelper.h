@@ -28,6 +28,8 @@ namespace ai
         static string formatChat(ChatMsg chat);
 
         static string formatClass(Player* player, int spec);
+        static string formatClass(uint8 cls);
+        static string formatRace(uint8 race);
 
         static uint32 parseItemQuality(string text);
         static bool parseItemClass(string text, uint32 *itemClass, uint32 *itemSubClass);
@@ -42,6 +44,7 @@ namespace ai
         static map<string, uint32> slots;
         static map<string, ChatMsg> chats;
         static map<uint8, string> classes;
+        static map<uint8, string> races;
         static map<uint8, map<uint8, string> > specs;
     };
 };

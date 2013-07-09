@@ -27,7 +27,10 @@
 #include "World.h"
 #include "ObjectMgr.h"
 
-Corpse::Corpse(CorpseType type) : WorldObject(), loot(this)
+Corpse::Corpse(CorpseType type) : WorldObject(),
+    loot(this),
+    lootRecipient(NULL),
+    lootForBody(false)
 {
     m_objectType |= TYPEMASK_CORPSE;
     m_objectTypeId = TYPEID_CORPSE;
@@ -39,8 +42,6 @@ Corpse::Corpse(CorpseType type) : WorldObject(), loot(this)
     m_type = type;
 
     m_time = time(NULL);
-
-    lootForBody = false;
 }
 
 Corpse::~Corpse()

@@ -3330,7 +3330,7 @@ void Unit::SendMeleeAttackStart(Unit* pVictim)
     data << pVictim->GetObjectGuid();
 
     SendMessageToSet(&data, true);
-    DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStart %s start attacking %s", GetObjectGuid().GetString().c_str(), pVictim ? pVictim->GetObjectGuid().GetString().c_str() : "<none>");
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStart %s start attacking %s", GetObjectGuid().GetString().c_str(), pVictim ? pVictim->GetObjectGuid().GetString().c_str() : "<none>");
 }
 
 void Unit::SendMeleeAttackStop(Unit* victim)
@@ -3342,7 +3342,7 @@ void Unit::SendMeleeAttackStop(Unit* victim)
     SendMessageToSet(&data, true);
 
     if (victim)
-        DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStop %s stopped attacking %s", GetObjectGuid().GetString().c_str(), victim ? victim->GetObjectGuid().GetString().c_str() : "<none>");
+        DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStop %s stopped attacking %s", GetObjectGuid().GetString().c_str(), victim ? victim->GetObjectGuid().GetString().c_str() : "<none>");
 
     /*if (victim->GetTypeId() == TYPEID_UNIT)
         ((Creature*)victim)->AI().EnterEvadeMode(this);*/

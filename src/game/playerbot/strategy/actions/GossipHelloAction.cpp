@@ -39,9 +39,10 @@ bool GossipHelloAction::Execute(Event event)
     WorldPacket p1;
     p1 << guid;
     bot->GetSession()->HandleGossipHelloOpcode(p1);
+    bot->SetFacingToObject(pCreature);
 
     ostringstream out; out << "--- " << pCreature->GetName() << " ---";
-    ai->TellMaster(out.str());
+    ai->TellMasterNoFacing(out.str());
 
     GossipMenu& menu = bot->PlayerTalkClass->GetGossipMenu();
     int i = 0, loops = 0;
@@ -49,7 +50,7 @@ bool GossipHelloAction::Execute(Event event)
     while (i < menu.MenuItemCount() && loops++ < 100)
     {
         GossipMenuItem const& item = menu.GetItem(i);
-        ai->TellMaster(item.m_gMessage);
+        ai->TellMasterNoFacing(item.m_gMessage);
 
         if (item.m_gOptionId < 1000 && item.m_gOptionId != GOSSIP_OPTION_GOSSIP)
         {

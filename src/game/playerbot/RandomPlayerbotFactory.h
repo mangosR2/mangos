@@ -15,17 +15,18 @@ using namespace std;
 class MANGOS_DLL_SPEC RandomPlayerbotFactory
 {
     public:
-        RandomPlayerbotFactory(uint32 accountId) : accountId(accountId) {}
+        RandomPlayerbotFactory(uint32 accountId);
 		virtual ~RandomPlayerbotFactory() {}
 
 	public:
-        bool CreateRandomBot();
+        bool CreateRandomBot(uint8 cls);
 
 	private:
         string CreateRandomBotName();
 
     private:
         uint32 accountId;
+        static map<uint8, vector<uint8> > availableRaces;
 };
 
 #endif

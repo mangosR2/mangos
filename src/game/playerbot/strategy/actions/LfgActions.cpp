@@ -180,10 +180,13 @@ bool LfgAcceptAction::Execute(Event event)
         ai->GetAiObjectContext()->GetValue<uint32>("lfg proposal")->Set(0);
         sLFGMgr.UpdateProposal(id, bot->GetObjectGuid(), true);
 
-        sRandomPlayerbotMgr.Refresh(bot);
         ai->Reset();
-        ai->ResetStrategies();
-        bot->TeleportToHomebind();
+        if (sRandomPlayerbotMgr.IsRandomBot(bot) && !bot->GetGroup())
+        {
+            sRandomPlayerbotMgr.Refresh(bot);
+            ai->ResetStrategies();
+            bot->TeleportToHomebind();
+        }
         return true;
     }
 

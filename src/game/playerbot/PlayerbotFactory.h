@@ -51,6 +51,8 @@ private:
     void InitInventory();
     void InitInventoryTrade();
     void InitInventoryEquip();
+    void InitInventorySkill();
+    Item* StoreItem(uint32 itemId, uint32 count);
 
 private:
     Player* bot;

@@ -55,6 +55,9 @@ string WhoAction::QueryTrade(string text)
     {
         Item* sell = *i;
         int32 sellPrice = auctionbot.GetSellPrice(sell->GetProto()) * sRandomPlayerbotMgr.GetSellMultiplier(bot) * sell->GetCount();
+        if (!sellPrice)
+            continue;
+
         out << "Selling " << chat->formatItem(sell->GetProto(), sell->GetCount()) << " for " << chat->formatMoney(sellPrice);
         return out.str();
     }

@@ -46,7 +46,7 @@ bool UseItemAction::UseGameObject(ObjectGuid guid)
 
     go->Use(bot);
     ostringstream out; out << "Using " << chat->formatGameobject(go);
-    ai->TellMaster(out);
+    ai->TellMasterNoFacing(out.str());
     return true;
 }
 
@@ -166,7 +166,7 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget)
             *packet << uint32(0);
             bot->GetSession()->QueuePacket(packet); // queue the packet to get around race condition
             ostringstream out; out << "Got quest " << chat->formatQuest(qInfo);
-            ai->TellMaster(out);
+            ai->TellMasterNoFacing(out.str());
             return true;
         }
     }
@@ -237,7 +237,7 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget)
         ai->SetNextCheckDelay(30000);
     }
 
-    ai->TellMaster(out);
+    ai->TellMasterNoFacing(out.str());
     bot->GetSession()->QueuePacket(packet);
     return true;
 }
@@ -292,7 +292,7 @@ bool UseItemAction::SocketItem(Item* item, Item* gem, bool replace)
     {
         ostringstream out; out << "Socketing " << chat->formatItem(item->GetProto());
         out << " with "<< chat->formatItem(gem->GetProto());
-        ai->TellMaster(out);
+        ai->TellMasterNoFacing(out.str());
 
         bot->GetSession()->QueuePacket(packet);
     }

@@ -26,7 +26,6 @@ bool InventoryChangeFailureAction::Execute(Event event)
         ai->TellMaster("That item is locked.");
         break;
     case EQUIP_ERR_ALREADY_LOOTED:
-        ai->TellMaster(LOG_LVL_DEBUG, "That is already looted.");
         break;
     case EQUIP_ERR_INVENTORY_FULL:
         ai->TellMaster("My inventory is full.");
@@ -51,7 +50,6 @@ bool InventoryChangeFailureAction::Execute(Event event)
         break;
     default:
         ai->TellMaster("I can't use that.");
-        DEBUG_LOG ("[PlayerbotAI]: HandleBotOutgoingPacket - SMSG_INVENTORY_CHANGE_FAILURE: %u", err);
     }
     return true;
 }

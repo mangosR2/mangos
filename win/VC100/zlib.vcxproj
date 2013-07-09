@@ -248,6 +248,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\dep\src\zlib\crc32.h" />
     <ClInclude Include="..\..\dep\src\zlib\deflate.h" />
+    <ClInclude Include="..\..\dep\src\zlib\gzguts.h" />
     <ClInclude Include="..\..\dep\src\zlib\inffast.h" />
     <ClInclude Include="..\..\dep\src\zlib\inffixed.h" />
     <ClInclude Include="..\..\dep\src\zlib\inflate.h" />
@@ -263,7 +264,6 @@
     <ClCompile Include="..\..\dep\src\zlib\crc32.c" />
     <ClCompile Include="..\..\dep\src\zlib\deflate.c" />
     <ClCompile Include="..\..\dep\src\zlib\example.c" />
-    <ClCompile Include="..\..\dep\src\zlib\gzio.c" />
     <ClCompile Include="..\..\dep\src\zlib\infback.c" />
     <ClCompile Include="..\..\dep\src\zlib\inffast.c" />
     <ClCompile Include="..\..\dep\src\zlib\inflate.c" />
@@ -271,6 +271,9 @@
     <ClCompile Include="..\..\dep\src\zlib\trees.c" />
     <ClCompile Include="..\..\dep\src\zlib\uncompr.c" />
     <ClCompile Include="..\..\dep\src\zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dep\src\zlib\CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

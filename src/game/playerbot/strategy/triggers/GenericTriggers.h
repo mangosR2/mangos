@@ -315,7 +315,7 @@ namespace ai
     class OftenTrigger : public RandomTrigger
     {
     public:
-        OftenTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 2) {}
+        OftenTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 5) {}
         virtual string getName() { return "often"; }
     };
 

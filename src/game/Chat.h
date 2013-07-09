@@ -624,7 +624,8 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleMmapLocCommand(char* args);
         bool HandleMmapLoadedTilesCommand(char* args);
         bool HandleMmapStatsCommand(char* args);
-        bool HandleMmap(char* args);
+        bool HandleMmapOn(char* args);
+        bool HandleMmapOff(char* args);
         bool HandleMmapTestArea(char* args);
 
         // WorldState operations

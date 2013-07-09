@@ -649,23 +649,30 @@ GameObject* PlayerbotAI::GetGameObject(ObjectGuid guid)
     return NULL;
 }
 
-void PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
+bool PlayerbotAI::TellMasterNoFacing(string text, PlayerbotSecurityLevel securityLevel)
 {
     Player* master = GetMaster();
     if (!master)
-        return;
+        return false;
 
     if (!GetSecurity()->CheckLevelFor(securityLevel, true, master))
-        return;
+        return false;
 
     if (sPlayerbotAIConfig.whisperDistance && !bot->GetGroup() && sRandomPlayerbotMgr.IsRandomBot(bot) &&
             master->GetSession()->GetSecurity() < SEC_GAMEMASTER &&
             (bot->GetMapId() != master->GetMapId() || bot->GetDistance(master) > sPlayerbotAIConfig.whisperDistance))
-        return;
+        return false;
 
     WorldPacket data(SMSG_MESSAGECHAT, 1024);
     bot->BuildPlayerChat(&data, *aiObjectContext->GetValue<ChatMsg>("chat"), text, LANG_UNIVERSAL);
     master->GetSession()->SendPacket(&data);
+    return true;
+}
+
+bool PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
+{
+    if (!TellMasterNoFacing(text, securityLevel))
+        return false;
 
     if (!bot->isMoving() && !bot->IsInCombat() && bot->GetMapId() == master->GetMapId())
     {
@@ -674,26 +681,9 @@ void PlayerbotAI::TellMaster(string text, PlayerbotSecurityLevel securityLevel)
 
         bot->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
     }
+
+    return true;
 }
-
-void PlayerbotAI::TellMaster(LogLevel level, string text, PlayerbotSecurityLevel securityLevel)
-{
-    LogLevel logLevel = *aiObjectContext->GetValue<LogLevel>("log level");
-
-    if (logLevel < level)
-        return;
-
-    ostringstream out;
-    out << LogLevelAction::logLevel2string(level) << ": " << text;
-    TellMaster(out.str(), securityLevel);
-}
-
-void PlayerbotAI::TellMaster(bool verbose, string text, PlayerbotSecurityLevel securityLevel)
-{
-    if (verbose)
-        TellMaster(text, securityLevel);
-}
-
 
 bool IsRealAura(Player* bot, AuraPair* aura, Unit* unit)
 {

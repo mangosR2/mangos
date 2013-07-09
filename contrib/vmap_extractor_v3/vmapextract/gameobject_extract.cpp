@@ -6,30 +6,31 @@
 #include <algorithm>
 #include <stdio.h>
 
-bool ExtractSingleModel(std::string& fname)
+bool ExtractSingleModel(std::string& origPath, std::string& fixedName, StringSet& failedPaths)
 {
-    char * name = GetPlainName((char*)fname.c_str());
-    char * ext = GetExtension(name);
+    char const* ext = GetExtension(GetPlainName(origPath.c_str()));
 
     // < 3.1.0 ADT MMDX section store filename.mdx filenames for corresponded .m2 file
     if (!strcmp(ext, ".mdx"))
     {
         // replace .mdx -> .m2
-        fname.erase(fname.length()-2,2);
-        fname.append("2");
+        origPath.erase(origPath.length() - 2, 2);
+        origPath.append("2");
     }
     // >= 3.1.0 ADT MMDX section store filename.m2 filenames for corresponded .m2 file
     // nothing do
 
-    std::string output(szWorkDirWmo);
+    fixedName = GetPlainName(origPath.c_str());
+
+    std::string output(szWorkDirWmo);                       // Stores output filename (possible changed)
     output += "/";
-    output += name;
+    output += fixedName;
 
     if (FileExists(output.c_str()))
         return true;
 
-    Model mdl(fname);
-    if (!mdl.open())
+    Model mdl(origPath);                                    // Possible changed fname
+    if (!mdl.open(failedPaths))
         return false;
 
     return mdl.ConvertToVMAPModel(output.c_str());
@@ -37,9 +38,10 @@ bool ExtractSingleModel(std::string& fname)
 
 void ExtractGameobjectModels()
 {
-    printf("Extracting GameObject models...");
+    printf("\n");
+    printf("Extracting GameObject models...\n");
     DBCFile dbc("DBFilesClient\\GameObjectDisplayInfo.dbc");
-    if(!dbc.open())
+    if (!dbc.open())
     {
         printf("Fatal error: Invalid GameObjectDisplayInfo.dbc file format!\n");
         exit(1);
@@ -48,8 +50,9 @@ void ExtractGameobjectModels()
     std::string basepath = szWorkDirWmo;
     basepath += "/";
     std::string path;
+    StringSet failedPaths;
 
-    FILE * model_list = fopen((basepath + "temp_gameobject_models").c_str(), "wb");
+    FILE* model_list = fopen((basepath + "temp_gameobject_models").c_str(), "wb");
 
     for (DBCFile::Iterator it = dbc.begin(); it != dbc.end(); ++it)
     {
@@ -59,14 +62,14 @@ void ExtractGameobjectModels()
             continue;
 
         fixnamen((char*)path.c_str(), path.size());
-        char * name = GetPlainName((char*)path.c_str());
+        char* name = GetPlainName((char*)path.c_str());
         fixname2(name, strlen(name));
 
-        char * ch_ext = GetExtension(name);
+        char const* ch_ext = GetExtension(name);
         if (!ch_ext)
             continue;
 
-        strToLower(ch_ext);
+        //strToLower(ch_ext);
 
         bool result = false;
         if (!strcmp(ch_ext, ".wmo"))
@@ -80,7 +83,8 @@ void ExtractGameobjectModels()
         }
         else //if (!strcmp(ch_ext, ".mdx") || !strcmp(ch_ext, ".m2"))
         {
-            result = ExtractSingleModel(path);
+            std::string fixedName;
+            result = ExtractSingleModel(path, fixedName, failedPaths);
         }
 
         if (result)
@@ -94,6 +98,14 @@ void ExtractGameobjectModels()
     }
 
     fclose(model_list);
+
+    if (!failedPaths.empty())
+    {
+        printf("Warning: Some models could not be extracted, see below\n");
+        for (StringSet::const_iterator itr = failedPaths.begin(); itr != failedPaths.end(); ++itr)
+            printf("Could not find file of model %s\n", itr->c_str());
+        printf("A few of these warnings are expected to happen, so be not alarmed!\n");
+    }
 
     printf("Done!\n");
 }

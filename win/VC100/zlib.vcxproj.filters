@@ -26,9 +26,6 @@
     <ClCompile Include="..\..\dep\src\zlib\example.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dep\src\zlib\gzio.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\dep\src\zlib\infback.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -82,5 +79,11 @@
     <ClInclude Include="..\..\dep\src\zlib\zutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\dep\src\zlib\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dep\src\zlib\CMakeLists.txt" />
   </ItemGroup>
 </Project>

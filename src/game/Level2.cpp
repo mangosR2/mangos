@@ -53,6 +53,7 @@
 #include "TargetedMovementGenerator.h"                      // for HandleNpcUnFollowCommand
 #include "MoveMap.h"                                        // for mmap manager
 #include "PathFinder.h"                                     // for mmap commands
+#include "movement/MoveSplineInit.h"
 
 static uint32 ReputationRankStrIndex[MAX_REPUTATION_RANK] =
 {
@@ -5477,15 +5478,24 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
     char* para = strtok(args, " ");
 
     bool useStraightPath = false;
-    if (para && strcmp(para, "true") == 0)
-        useStraightPath = true;
+    bool followPath = false;
+    if (para && strcmp(para, "go") == 0)
+    {
+        followPath = true;
+        para = strtok(NULL, " ");
+        if (para && strcmp(para, "straight") == 0)
+            useStraightPath = true;
+    }
+    else
+        if (para && strcmp(para, "straight") == 0)
+            useStraightPath = true;
 
     // unit locations
     float x, y, z;
-    player->GetPosition(x, y, z);
+    target->GetPosition(x, y, z);
 
     // path
-    PathFinder path(target);
+    PathFinder path(player);
     path.setUseStrightPath(useStraightPath);
     path.calculate(x, y, z);
 
@@ -5507,9 +5517,20 @@ bool ChatHandler::HandleMmapPathCommand(char* args)
 
     // this entry visible only to GM's with "gm on"
     static const uint32 WAYPOINT_NPC_ENTRY = 1;
+    Creature* wp = NULL;
     for (uint32 i = 0; i < pointPath.size(); ++i)
-        player->SummonCreature(WAYPOINT_NPC_ENTRY, pointPath[i].x, pointPath[i].y, pointPath[i].z, 0, TEMPSUMMON_TIMED_DESPAWN, 9000);
+    {
+        wp = player->SummonCreature(WAYPOINT_NPC_ENTRY, pointPath[i].x, pointPath[i].y, pointPath[i].z, 0, TEMPSUMMON_TIMED_DESPAWN, 9000);
         // TODO: make creature not sink/fall
+    }
+
+    if (followPath)
+    {
+        Movement::MoveSplineInit<Unit*> init(*player);
+        init.MovebyPath(pointPath);
+        init.SetWalk(false);
+        init.Launch();
+    }
 
     return true;
 }
@@ -5557,10 +5578,11 @@ bool ChatHandler::HandleMmapLocCommand(char* /*args*/)
         PSendSysMessage("Dt     [??,??] (invalid poly, probably no tile loaded)");
     else
     {
-        const dtMeshTile* tile;
-        const dtPoly* poly;
+        const dtMeshTile* tile = NULL;
+        const dtPoly* poly = NULL;
         navmesh->getTileAndPolyByRef(polyRef, &tile, &poly);
-        if (tile)
+        dtStatus dtResult = navmesh->getTileAndPolyByRef(polyRef, &tile, &poly);
+        if (( dtStatusSucceed(dtResult)) && tile)
             PSendSysMessage("Dt     [%02i,%02i]", tile->header->x, tile->header->y);
         else
             PSendSysMessage("Dt     [??,??] (no tile loaded)");

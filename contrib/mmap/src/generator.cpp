@@ -58,19 +58,40 @@ bool checkDirectories(bool debugOutput)
     return true;
 }
 
+void printUsage()
+{
+    printf("Generator command line args\n\n");
+    printf("-? or /? or -h : This help\n");
+    printf("[#] : Build only the map specified by #.\n");
+    printf("--maxAngle [#] : Max walkable inclination angle\n");
+    printf("--tile [#,#] : Build the specified tile\n");
+    printf("--skipLiquid [true|false] : liquid data for maps\n");
+    printf("--skipContinents [true|false] : skip continents\n");
+    printf("--skipJunkMaps [true|false] : junk maps include some unused\n");
+    printf("--skipBattlegrounds [true|false] : does not include PVP arenas\n");
+    printf("--debugOutput [true|false] : create debugging files for use with RecastDemo\n");
+    printf("--bigBaseUnit [true|false] : Generate tile/map using bigger basic unit.\n");
+    printf("--silent : Make script friendly. No wait for user input, error, completion.\n");
+    printf("--offMeshInput [file.*] : Path to file containing off mesh connections data.\n\n");
+    printf("Example:\nmovemapgen (generate all mmap with default arg\n"
+        "movemapgen 0 (generate map 0)\n"
+        "movemapgen 0 --tile 34,46 (builds only tile 34,46 of map 0)\n\n");
+    printf("Please read readme file for more information and examples.\n");
+}
+
 bool handleArgs(int argc, char** argv,
-               int &mapnum,
-               int &tileX,
-               int &tileY,
-               float &maxAngle,
-               bool &skipLiquid,
-               bool &skipContinents,
-               bool &skipJunkMaps,
-               bool &skipBattlegrounds,
-               bool &debugOutput,
-               bool &silent,
-               bool &bigBaseUnit,
-               char* &offMeshInputPath)
+                int& mapnum,
+                int& tileX,
+                int& tileY,
+                float& maxAngle,
+                bool& skipLiquid,
+                bool& skipContinents,
+                bool& skipJunkMaps,
+                bool& skipBattlegrounds,
+                bool& debugOutput,
+                bool& silent,
+                bool& bigBaseUnit,
+                char*& offMeshInputPath)
 {
     char* param = NULL;
     for (int i = 1; i < argc; ++i)
@@ -122,7 +143,7 @@ bool handleArgs(int argc, char** argv,
             else
                 printf("invalid option for '--skipLiquid', using default\n");
         }
-        else if(strcmp(argv[i], "--skipContinents") == 0)
+        else if (strcmp(argv[i], "--skipContinents") == 0)
         {
             param = argv[++i];
             if (!param)
@@ -199,6 +220,11 @@ bool handleArgs(int argc, char** argv,
 
             offMeshInputPath = param;
         }
+        else if ((strcmp(argv[i], "-?") == 0) || (strcmp(argv[i], "/?") == 0) || (strcmp(argv[i], "-h") == 0))
+        {
+            printUsage();
+            exit(1);
+        }
         else
         {
             int map = atoi(argv[i]);
@@ -225,7 +251,7 @@ int finish(const char* message, int returnValue)
 int main(int argc, char** argv)
 {
     int mapnum = -1;
-    float maxAngle = 60.0f;
+    float maxAngle = 55.0f;
     int tileX = -1, tileY = -1;
     bool skipLiquid = false,
          skipContinents = false,
@@ -242,7 +268,7 @@ int main(int argc, char** argv)
                                  debugOutput, silent, bigBaseUnit, offMeshInputPath);
 
     if (!validParam)
-        return silent ? -1 : finish("You have specified invalid parameters", -1);
+        return silent ? -1 : finish("You have specified invalid parameters (use -? for more help)", -1);
 
     if (mapnum == -1 && debugOutput)
     {

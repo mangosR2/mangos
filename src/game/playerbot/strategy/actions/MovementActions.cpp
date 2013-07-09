@@ -261,7 +261,7 @@ bool MoveRandomAction::Execute(Event event)
             if (target && bot->GetDistance(target) > sPlayerbotAIConfig.tooCloseDistance)
             {
                 ostringstream out; out << "I will check " << target->GetName();
-                ai->TellMaster(out);
+                ai->TellMasterNoFacing(out.str());
                 break;
             }
         }
@@ -278,7 +278,7 @@ bool MoveRandomAction::Execute(Event event)
             {
                 AI_VALUE(LootObjectStack*, "available loot")->Add(target->GetObjectGuid());
                 ostringstream out; out << "I will check " << chat->formatGameobject((GameObject*)target);
-                ai->TellMaster(out);
+                ai->TellMasterNoFacing(out.str());
                 break;
             }
         }
@@ -302,7 +302,7 @@ bool MoveRandomAction::Execute(Event event)
         bool moved = MoveNear(bot->GetMapId(), x, y, z);
         if (moved)
         {
-            ai->TellMaster("I will check out there");
+            ai->TellMasterNoFacing("I will check out there");
             return true;
         }
     }

@@ -17,12 +17,25 @@ bool CastCustomSpellAction::Execute(Event event)
 
     string text = event.getParam();
 
-    ostringstream msg; msg << "Casting " << text << " on " << target->GetName();
-    ai->TellMaster(msg);
     uint32 spell = chat->parseSpell(text);
 
+    bool result = false;
     if (spell)
-        return ai->CastSpell(spell, target);
+        result = ai->CastSpell(spell, target);
+    else
+        ai->CastSpell(text, target);
 
-    return ai->CastSpell(text, target);
+    ostringstream msg;
+    if (result)
+    {
+        msg << "Casting " << text << " on " << target->GetName();
+        ai->TellMasterNoFacing(msg.str());
+    }
+    else
+    {
+        msg << "Cast " << text << " on " << target->GetName() << " is failed";
+        ai->TellMaster(msg.str());
+    }
+
+    return result;
 }

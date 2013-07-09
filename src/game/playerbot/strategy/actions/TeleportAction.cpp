@@ -24,7 +24,7 @@ bool TeleportAction::Execute(Event event)
             continue;
 
         ostringstream out; out << "Teleporting using " << goInfo->name;
-        ai->TellMaster(out);
+        ai->TellMasterNoFacing(out.str());
 
         ai->ChangeStrategy("-follow,+stay", BOT_STATE_NON_COMBAT);
 
