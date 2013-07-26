@@ -495,6 +495,9 @@
     <ClCompile Include="..\..\src\tests\DruidNonCombatTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\DpsHunterEngineTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\DuelTestCase.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\EfficiencyActionExecutionListener.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\MageEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\ShamanEfficiencyTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\EventTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\ExternalEventHelperTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\HealDruidTestCase.cpp" />
@@ -545,6 +548,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\tests\AiObjectContextWrapper.h" />
+    <ClInclude Include="..\..\src\tests\efficiency\EfficiencyActionExecutionListener.h" />
     <ClInclude Include="..\..\src\tests\EngineTestBase.h" />
     <ClInclude Include="..\..\src\tests\EverythingUnavailableAiManagerRegistry.h" />
     <ClInclude Include="..\..\src\tests\aitest.h" />

@@ -258,6 +258,14 @@ int AhBot::Answer(int auction, Category* category, ItemBag* inAuctionItems)
             continue;
 
         const ItemPrototype* proto = item->GetProto();
+        vector<uint32> items = availableItems.Get(category);
+        if (find(items.begin(), items.end(), proto->ItemId) == items.end())
+        {
+            sLog.outDetail("%s (x%d) in auction %d: unavailable item",
+                    item->GetProto()->Name1, item->GetCount(), auctionIds[auction]);
+            continue;
+        }
+
         uint32 answerCount = GetAnswerCount(proto->ItemId, auctionIds[auction], sAhBotConfig.itemBuyInterval);
         uint32 maxAnswerCount = category->GetMaxAllowedItemAuctionCount(proto);
         if (maxAnswerCount && answerCount > maxAnswerCount)
@@ -541,6 +549,10 @@ void AhBot::HandleCommand(string command)
         Category* category = CategoryList::instance[i];
         if (category->Contains(proto))
         {
+            vector<uint32> items = availableItems.Get(category);
+            if (find(items.begin(), items.end(), proto->ItemId) == items.end())
+                continue;
+
             ostringstream out;
             out << proto->Name1 << " (" << category->GetDisplayName() << "), "
                     << category->GetMaxAllowedAuctionCount() << "x" << category->GetMaxAllowedItemAuctionCount(proto)

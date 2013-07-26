@@ -23,11 +23,11 @@ bool ActionExecutionListeners::Before(Action* action, Event event)
     return result;
 }
 
-void ActionExecutionListeners::After(Action* action, Event event)
+void ActionExecutionListeners::After(Action* action, bool executed, Event event)
 {
     for (list<ActionExecutionListener*>::iterator i = listeners.begin(); i!=listeners.end(); i++)
     {
-        (*i)->After(action, event);
+        (*i)->After(action, executed, event);
     }
 }
 
@@ -451,10 +451,11 @@ bool Engine::ListenAndExecute(Action* action, Event event)
     if (actionExecutionListeners.Before(action, event))
     {
         actionExecuted = actionExecutionListeners.AllowExecution(action, event) ? action->Execute(event) : true;
-        actionExecutionListeners.After(action, event);
     }
 
-    return actionExecutionListeners.OverrideResult(action, actionExecuted, event);
+    actionExecuted = actionExecutionListeners.OverrideResult(action, actionExecuted, event);
+    actionExecutionListeners.After(action, actionExecuted, event);
+    return actionExecuted;
 }
 
 void Engine::LogAction(const char* format, ...)

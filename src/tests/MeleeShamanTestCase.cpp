@@ -32,13 +32,13 @@ protected:
 
         tick();
         tick();
-        addTargetAura("flame shock");
+        addTargetAura("earth shock");
 
         tick();
 		tick();
 		tick();
 
-        assertActions(">S:searing totem>T:flame shock>T:earth shock>T:stormstrike>T:lava lash>T:melee");
+        assertActions(">S:searing totem>T:earth shock>T:flame shock>T:stormstrike>T:lava lash>T:melee");
     }
 
     void buff()

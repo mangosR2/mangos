@@ -148,9 +148,25 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
 
     if (player->isDead())
     {
-        sLog.outDetail("Random teleporting dead bot %d", bot);
-        RandomTeleport(player, player->GetMapId(), player->GetPositionX(), player->GetPositionY(), player->GetPositionZ());
-        return true;
+        if (!GetEventValue(bot, "dead"))
+        {
+            sLog.outDetail("Setting dead flag for bot %d", bot);
+            uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotReviveTime, sPlayerbotAIConfig.maxRandomBotReviveTime);
+            SetEventValue(bot, "dead", 1, randomTime);
+            SetEventValue(bot, "revive", 1, randomTime - 60);
+            return false;
+        }
+
+        if (!GetEventValue(bot, "revive"))
+        {
+            sLog.outDetail("Reviving dead bot %d", bot);
+            SetEventValue(bot, "dead", 0, 0);
+            SetEventValue(bot, "revive", 0, 0);
+            RandomTeleport(player, player->GetMapId(), player->GetPositionX(), player->GetPositionY(), player->GetPositionZ());
+            return true;
+        }
+
+        return false;
     }
 
     uint32 randomize = GetEventValue(bot, "randomize");
@@ -158,7 +174,7 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
     {
         sLog.outDetail("Randomizing bot %d", bot);
         Randomize(player);
-        uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotRandomizeTime, sPlayerbotAIConfig.maxRandomRandomizeTime);
+        uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotRandomizeTime, sPlayerbotAIConfig.maxRandomBotRandomizeTime);
         ScheduleRandomize(bot, randomTime);
         return true;
     }
@@ -252,8 +268,6 @@ void RandomPlayerbotMgr::RandomTeleportForLevel(Player* bot)
 
 void RandomPlayerbotMgr::RandomTeleport(Player* bot, uint32 mapId, float teleX, float teleY, float teleZ)
 {
-    Refresh(bot);
-
     vector<WorldLocation> locs;
     QueryResult* results = WorldDatabase.PQuery("select position_x, position_y, position_z from creature where map = '%u' and abs(position_x - '%f') < '%u' and abs(position_y - '%f') < '%u'",
             mapId, teleX, sPlayerbotAIConfig.randomBotTeleportDistance / 2, teleY, sPlayerbotAIConfig.randomBotTeleportDistance / 2);
@@ -272,6 +286,7 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, uint32 mapId, float teleX, 
     }
 
     RandomTeleport(bot, locs);
+    Refresh(bot);
 }
 
 void RandomPlayerbotMgr::Randomize(Player* bot)
@@ -564,7 +579,7 @@ bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
                         bot->SetLevel(bot->getLevel() - 1);
                         sRandomPlayerbotMgr.IncreaseLevel(bot);
                     }
-                    uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotRandomizeTime, sPlayerbotAIConfig.maxRandomRandomizeTime);
+                    uint32 randomTime = urand(sPlayerbotAIConfig.minRandomBotRandomizeTime, sPlayerbotAIConfig.maxRandomBotRandomizeTime);
                     CharacterDatabase.PExecute("update ai_playerbot_random_bots set validIn = '%u' where event = 'randomize' and bot = '%u'",
                             randomTime, bot->GetGUIDLow());
                     CharacterDatabase.PExecute("update ai_playerbot_random_bots set validIn = '%u' where event = 'logout' and bot = '%u'",

@@ -62,7 +62,7 @@ void MeleeShamanStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "shock",
-        NextAction::array(0, new NextAction("flame shock", 20.0f), NULL)));
+        NextAction::array(0, new NextAction("earth shock", 20.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
         "not facing target",

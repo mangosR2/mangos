@@ -19,14 +19,14 @@ public:
         creators["riptide"] = &riptide;
         creators["chain heal on party"] = &chain_heal_on_party;
         creators["riptide on party"] = &riptide_on_party;
-        creators["flame shock"] = &flame_shock;
+        creators["earth shock"] = &earth_shock;
     }
 private:
-    static ActionNode* flame_shock(PlayerbotAI* ai)
+    static ActionNode* earth_shock(PlayerbotAI* ai)
     {
-        return new ActionNode ("flame shock",
+        return new ActionNode ("earth shock",
             /*P*/ NULL,
-            /*A*/ NextAction::array(0, new NextAction("earth shock"), NULL),
+            /*A*/ NextAction::array(0, new NextAction("flame shock"), NULL),
             /*C*/ NULL);
     }
     static ActionNode* flametongue_weapon(PlayerbotAI* ai)

@@ -37,6 +37,9 @@
     <Filter Include="Mocks">
       <UniqueIdentifier>{89a9daa6-604a-4673-9497-d76541abdac2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="efficiency">
+      <UniqueIdentifier>{c30a2538-6a50-4c32-b8d0-d4704f715952}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\tests\BearTankDruidTestCase.cpp">
@@ -193,6 +196,15 @@
     <ClCompile Include="..\..\src\tests\HolyPriestTestCase.cpp">
       <Filter>Priest</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\EfficiencyActionExecutionListener.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\ShamanEfficiencyTestCase.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\MageEfficiencyTestCase.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\tests\EngineTestBase.h">
@@ -217,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\tests\AiObjectContextWrapper.h">
       <Filter>Mocks</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tests\efficiency\EfficiencyActionExecutionListener.h">
+      <Filter>efficiency</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

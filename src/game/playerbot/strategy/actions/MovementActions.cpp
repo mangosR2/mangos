@@ -21,6 +21,8 @@ bool MovementAction::MoveNear(WorldObject* target, float distance)
     if (!target)
         return false;
 
+    distance += target->GetObjectBoundingRadius();
+
     float followAngle = GetFollowAngle();
     for (float angle = followAngle - M_PI; angle <= followAngle + M_PI; angle += M_PI / 4)
     {
@@ -259,11 +261,7 @@ bool MoveRandomAction::Execute(Event event)
             target = ai->GetUnit(*i);
 
             if (target && bot->GetDistance(target) > sPlayerbotAIConfig.tooCloseDistance)
-            {
-                ostringstream out; out << "I will check " << target->GetName();
-                ai->TellMasterNoFacing(out.str());
                 break;
-            }
         }
     }
 
@@ -275,20 +273,20 @@ bool MoveRandomAction::Execute(Event event)
             target = ai->GetGameObject(*i);
 
             if (target && bot->GetDistance(target) > sPlayerbotAIConfig.tooCloseDistance)
-            {
-                AI_VALUE(LootObjectStack*, "available loot")->Add(target->GetObjectGuid());
-                ostringstream out; out << "I will check " << chat->formatGameobject((GameObject*)target);
-                ai->TellMasterNoFacing(out.str());
                 break;
-            }
         }
     }
 
     float distance = sPlayerbotAIConfig.tooCloseDistance + sPlayerbotAIConfig.grindDistance * urand(3, 10) / 10.0f;
 
+    const TerrainInfo * terrain = bot->GetMap()->GetTerrain();
     if (target)
     {
-        return MoveNear(target);
+        float x = target->GetPositionX();
+        float y = target->GetPositionY();
+        float z = target->GetPositionZ();
+        if (!terrain->IsInWater(x, y, z) && !terrain->IsUnderWater(x, y, z))
+            return MoveNear(target);
     }
 
     for (int i = 0; i < 10; ++i)
@@ -299,12 +297,13 @@ bool MoveRandomAction::Execute(Event event)
         x += urand(0, distance) - distance / 2;
         y += urand(0, distance) - distance / 2;
         bot->UpdateGroundPositionZ(x, y, z);
+
+        if (terrain->IsInWater(x, y, z) || terrain->IsUnderWater(x, y, z))
+            continue;
+
         bool moved = MoveNear(bot->GetMapId(), x, y, z);
         if (moved)
-        {
-            ai->TellMasterNoFacing("I will check out there");
             return true;
-        }
     }
 
     return false;

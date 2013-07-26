@@ -14,7 +14,7 @@ namespace ai
     public:
         virtual bool Before(Action* action, Event event) = 0;
         virtual bool AllowExecution(Action* action, Event event) = 0;
-        virtual void After(Action* action, Event event) = 0;
+        virtual void After(Action* action, bool executed, Event event) = 0;
         virtual bool OverrideResult(Action* action, bool executed, Event event) = 0;
     };
 
@@ -29,7 +29,7 @@ namespace ai
     public:
         virtual bool Before(Action* action, Event event);
         virtual bool AllowExecution(Action* action, Event event);
-        virtual void After(Action* action, Event event);
+        virtual void After(Action* action, bool executed, Event event);
         virtual bool OverrideResult(Action* action, bool executed, Event event);
 
     public:

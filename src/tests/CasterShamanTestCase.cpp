@@ -23,22 +23,22 @@ public:
 		setupEngine(new ShamanAiObjectContext(ai), "caster", NULL);
 
         addAura("water shield");
-        addTargetAura("flame shock");
+        addTargetAura("earth shock");
     }
 
 protected:
     void combat()
     {
-        removeTargetAura("flame shock");
+        removeTargetAura("earth shock");
 
 		tick();
         tick();
-        addTargetAura("earth shock");
+        addTargetAura("flame shock");
 
 		tick();
 		tick();
 
-        assertActions(">T:flame shock>T:earth shock>S:searing totem>T:lightning bolt");
+        assertActions(">T:earth shock>T:flame shock>S:searing totem>T:lightning bolt");
     }
 
     void buff()

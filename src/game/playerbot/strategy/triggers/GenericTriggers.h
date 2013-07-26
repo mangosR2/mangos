@@ -315,7 +315,7 @@ namespace ai
     class OftenTrigger : public RandomTrigger
     {
     public:
-        OftenTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 5) {}
+        OftenTrigger(PlayerbotAI* ai) : RandomTrigger(ai, 50) {}
         virtual string getName() { return "often"; }
     };
 
@@ -398,7 +398,7 @@ namespace ai
 
 	class HasAuraTrigger : public Trigger {
 	public:
-		HasAuraTrigger(PlayerbotAI* ai, string spell) : Trigger(ai, spell) {}
+		HasAuraTrigger(PlayerbotAI* ai, string spell) : Trigger(ai, spell, 5) {}
 
 		virtual string GetTargetName() { return "self target"; }
 		virtual bool IsActive();

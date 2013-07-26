@@ -36,7 +36,7 @@ public:
 
     virtual bool AllowExecution(Action* action, Event event) { return false; }
     virtual bool OverrideResult(Action* action, bool executed, Event event) { return executed; }
-    virtual void After(Action* action, Event event) {}
+    virtual void After(Action* action, bool executed, Event event) {}
 
 private:
     MockPlayerbotAIBase *ai;
