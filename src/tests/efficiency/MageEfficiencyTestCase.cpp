@@ -3,23 +3,18 @@
 #include "../aitest.h"
 #include "../../game/playerbot/strategy/mage/MageAiObjectContext.h"
 #include "EfficiencyActionExecutionListener.h"
+#include "AbstractEfficiencyTestCase.h"
 
 using namespace ai;
 
 
-class MageEfficiencyTestCase : public EngineTestBase
+class MageEfficiencyTestCase : public AbstractEfficiencyTestCase
 {
   CPPUNIT_TEST_SUITE( MageEfficiencyTestCase );
   CPPUNIT_TEST( lvl19_frost );
   CPPUNIT_TEST( lvl19_fire );
   CPPUNIT_TEST( lvl19_arcane );
   CPPUNIT_TEST_SUITE_END();
-
-public:
-    void setUp()
-    {
-		EngineTestBase::setUp();
-    }
 
 protected:
     map<string, SpellInfo> lvl19()
@@ -40,51 +35,19 @@ protected:
  	void lvl19_frost()
 	{
         setupEngine(new MageAiObjectContext(ai), "frost", NULL);
-        EfficiencyActionExecutionListener* listener = new EfficiencyActionExecutionListener(ai, lvl19(), 888);
-        engine->AddActionExecutionListener(listener);
-
-        while (listener->CanContinue())
- 	    {
-            tick();
-            spellAvailable("frostbolt");
-            spellAvailable("frost nova");
- 	    }
-        cout << "Act: " << ai->buffer << "\n";
-        listener->Report();
+        run(lvl19(), 888);
 	}
 
  	void lvl19_fire()
 	{
         setupEngine(new MageAiObjectContext(ai), "fire", NULL);
-        EfficiencyActionExecutionListener* listener = new EfficiencyActionExecutionListener(ai, lvl19(), 888);
-        engine->AddActionExecutionListener(listener);
-
-        while (listener->CanContinue())
- 	    {
-            tick();
-            spellAvailable("fireball");
-            spellAvailable("fire blast");
-            spellAvailable("frost nova");
- 	    }
-        cout << "Act: " << ai->buffer << "\n";
-        listener->Report();
+        run(lvl19(), 888);
 	}
 
  	void lvl19_arcane()
 	{
         setupEngine(new MageAiObjectContext(ai), "arcane", NULL);
-        EfficiencyActionExecutionListener* listener = new EfficiencyActionExecutionListener(ai, lvl19(), 888);
-        engine->AddActionExecutionListener(listener);
-
-        while (listener->CanContinue())
- 	    {
-            tick();
-            spellAvailable("arcane missiles");
-            spellAvailable("arcane explosion");
-            spellAvailable("frost nova");
- 	    }
-        cout << "Act: " << ai->buffer << "\n";
-        listener->Report();
+        run(lvl19(), 888);
 	}
 
 };

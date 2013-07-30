@@ -47,5 +47,6 @@ private:
     map<string, double> cooldown;
     double mana, castTime, damage, fullMana;
     MockPlayerbotAIBase *ai;
+    string log;
 };
 

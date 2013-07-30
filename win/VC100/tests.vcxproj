@@ -495,9 +495,12 @@
     <ClCompile Include="..\..\src\tests\DruidNonCombatTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\DpsHunterEngineTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\DuelTestCase.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\DruidEfficiencyTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\efficiency\EfficiencyActionExecutionListener.cpp" />
     <ClCompile Include="..\..\src\tests\efficiency\MageEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\PriestEfficiencyTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\efficiency\ShamanEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\..\src\tests\efficiency\WarlockEfficiencyTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\EventTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\ExternalEventHelperTestCase.cpp" />
     <ClCompile Include="..\..\src\tests\HealDruidTestCase.cpp" />

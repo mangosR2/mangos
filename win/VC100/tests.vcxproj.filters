@@ -205,6 +205,15 @@
     <ClCompile Include="..\..\src\tests\efficiency\MageEfficiencyTestCase.cpp">
       <Filter>efficiency</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\WarlockEfficiencyTestCase.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\PriestEfficiencyTestCase.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tests\efficiency\DruidEfficiencyTestCase.cpp">
+      <Filter>efficiency</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\tests\EngineTestBase.h">

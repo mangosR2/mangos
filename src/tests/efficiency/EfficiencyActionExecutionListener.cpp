@@ -7,7 +7,7 @@
 
 
 EfficiencyActionExecutionListener::EfficiencyActionExecutionListener(MockPlayerbotAIBase *ai, map<string, SpellInfo> spellInfo, double mana) :
-    ai(ai), spellInfo(spellInfo), mana(mana), castTime(0), damage(0), fullMana(mana)
+    ai(ai), spellInfo(spellInfo), mana(mana), castTime(0), damage(0), fullMana(mana), log("")
 {
 }
 
@@ -67,11 +67,15 @@ void EfficiencyActionExecutionListener::After(Action* action, bool executed, Eve
     string sharedCooldown = spell.sharedCooldown.empty() ? name : spell.sharedCooldown;
     cooldown[sharedCooldown] = spell.cooldown;
     damage += spell.damage;
+    if (!log.empty())
+        log += ",";
+    log += name;
 }
 
 void EfficiencyActionExecutionListener::Report()
 {
-    cout << "Time: " << castTime << endl <<
+    cout << endl << log << endl <<
+            "Time: " << castTime << endl <<
             "Damage: " << damage << endl <<
             "Mana: " << mana << endl;
     if (damage > 0 && castTime > 0)

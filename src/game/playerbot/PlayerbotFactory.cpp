@@ -424,11 +424,15 @@ bool PlayerbotFactory::CanEquipWeapon(ItemPrototype const* proto)
             return false;
         break;
     case CLASS_SHAMAN:
-        if (proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE)
+        if (proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE2 &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_STAFF)
             return false;
         break;
     case CLASS_DRUID:
-        if (proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE2 &&
+        if (proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE2 &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_DAGGER &&
                 proto->SubClass != ITEM_SUBCLASS_WEAPON_STAFF)
             return false;
         break;
@@ -442,6 +446,8 @@ bool PlayerbotFactory::CanEquipWeapon(ItemPrototype const* proto)
         break;
     case CLASS_ROGUE:
         if (proto->SubClass != ITEM_SUBCLASS_WEAPON_DAGGER &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_SWORD &&
+                proto->SubClass != ITEM_SUBCLASS_WEAPON_MACE &&
                 proto->SubClass != ITEM_SUBCLASS_WEAPON_GUN &&
                 proto->SubClass != ITEM_SUBCLASS_WEAPON_CROSSBOW &&
                 proto->SubClass != ITEM_SUBCLASS_WEAPON_BOW &&
@@ -615,7 +621,7 @@ bool PlayerbotFactory::IsDesiredReplacement(Item* item)
 
 void PlayerbotFactory::InitSecondEquipmentSet()
 {
-    if (bot->getClass() != CLASS_WARRIOR && bot->getClass() != CLASS_PALADIN && bot->getClass() != CLASS_SHAMAN)
+    if (bot->getClass() == CLASS_MAGE || bot->getClass() == CLASS_WARLOCK || bot->getClass() == CLASS_PRIEST)
         return;
 
     map<uint32, vector<uint32> > items;

@@ -224,7 +224,7 @@ namespace ahbot
             return proto->Quality > ITEM_QUALITY_POOR && (
                 proto->Class == ITEM_CLASS_MISC ||
                 proto->Class == ITEM_CLASS_GENERIC ||
-                proto->Class == ITEM_CLASS_MONEY) && proto->ItemLevel > 1;
+                proto->Class == ITEM_CLASS_MONEY) && proto->ItemLevel > 1 && proto->SubClass != ITEM_SUBCLASS_JUNK_MOUNT;
         }
         virtual string GetName() { return "other"; }
 
