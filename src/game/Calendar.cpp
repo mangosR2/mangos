@@ -637,6 +637,7 @@ void CalendarMgr::LoadFromDB()
         do
         {
             Field* field = eventsQuery->Fetch();
+            bar.step();
 
             uint32 eventId = field[0].GetUInt32();
             ObjectGuid eventGuid = ObjectGuid(HIGHGUID_CALENDAR_EVENT, eventId);
@@ -688,6 +689,7 @@ void CalendarMgr::LoadFromDB()
             do
             {
                 Field* field = invitesQuery->Fetch();
+                bar.step();
 
                 uint32 eventId = field[1].GetUInt32();
                 ObjectGuid eventGuid = ObjectGuid(HIGHGUID_CALENDAR_EVENT, eventId);

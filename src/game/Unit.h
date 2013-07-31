@@ -469,8 +469,6 @@ enum UnitMoveType
 
 #define MAX_MOVE_TYPE     9
 
-extern float baseMoveSpeed[MAX_MOVE_TYPE];
-
 #define BASE_CHARGE_SPEED 27.0f
 
 enum CombatRating
@@ -2224,6 +2222,9 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         // Vehicle system (direct operation)
         void _EnterVehicle(VehicleKitPtr vehicle, int8 seatId = -1);
         void _ExitVehicle(bool forceDismount = false);
+
+        void EjectVehiclePassenger(Unit* pPassenger);
+        void EjectVehiclePassenger(int8 seatId = -1);
 
         void ChangeSeat(int8 seatId, bool next = true);
         VehicleKitPtr GetVehicle() const { return m_pVehicle; }

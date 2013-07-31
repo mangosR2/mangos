@@ -525,13 +525,14 @@ void AchievementMgr::DeleteFromDB(ObjectGuid guid)
 
 void AchievementMgr::SaveToDB()
 {
-    static SqlStatementID delComplAchievements ;
-    static SqlStatementID insComplAchievements ;
-    static SqlStatementID delProgress ;
-    static SqlStatementID insProgress ;
-
     if (!m_completedAchievements.empty())
     {
+        static SqlStatementID delComplAchievements;
+        static SqlStatementID insComplAchievements;
+
+        SqlStatement delStmt = CharacterDatabase.CreateStatement(delComplAchievements, "DELETE FROM character_achievement WHERE guid = ? AND achievement = ?");
+        SqlStatement insStmt = CharacterDatabase.CreateStatement(insComplAchievements, "INSERT INTO character_achievement (guid, achievement, date) VALUES (?, ?, ?)");
+
         // delete existing achievements in the loop
         for (CompletedAchievementMap::iterator iter = m_completedAchievements.begin(); iter != m_completedAchievements.end(); ++iter)
         {
@@ -541,18 +542,21 @@ void AchievementMgr::SaveToDB()
             /// mark as saved in db
             iter->second.changed = false;
 
-            SqlStatement stmt = CharacterDatabase.CreateStatement(delComplAchievements, "DELETE FROM character_achievement WHERE guid = ? AND achievement = ?");
-            stmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first);
-
-            stmt = CharacterDatabase.CreateStatement(insComplAchievements, "INSERT INTO character_achievement (guid, achievement, date) VALUES (?, ?, ?)");
-            stmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first, uint64(iter->second.date));
+            delStmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first);
+            insStmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first, uint64(iter->second.date));
         }
     }
 
     if (!m_criteriaProgress.empty())
     {
+        static SqlStatementID delProgress;
+        static SqlStatementID insProgress;
+
+        SqlStatement delStmt = CharacterDatabase.CreateStatement(delProgress, "DELETE FROM character_achievement_progress WHERE guid = ? AND criteria = ?");
+        SqlStatement insStmt = CharacterDatabase.CreateStatement(insProgress, "INSERT INTO character_achievement_progress (guid, criteria, counter, date) VALUES (?, ?, ?, ?)");
+
         // insert achievements
-        for (CriteriaProgressMap::iterator iter = m_criteriaProgress.begin(); iter != m_criteriaProgress.end(); ++iter)
+        for (CriteriaProgressMap::iterator iter = m_criteriaProgress.begin(); iter!=m_criteriaProgress.end(); ++iter)
         {
             if (!iter->second.changed)
                 continue;
@@ -561,8 +565,7 @@ void AchievementMgr::SaveToDB()
             iter->second.changed = false;
 
             // new/changed record data
-            SqlStatement stmt = CharacterDatabase.CreateStatement(delProgress, "DELETE FROM character_achievement_progress WHERE guid = ? AND criteria = ?");
-            stmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first);
+            delStmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first);
 
             bool needSave = iter->second.counter != 0;
             if (!needSave)
@@ -572,10 +575,7 @@ void AchievementMgr::SaveToDB()
             }
 
             if (needSave)
-            {
-                stmt = CharacterDatabase.CreateStatement(insProgress, "INSERT INTO character_achievement_progress (guid, criteria, counter, date) VALUES (?, ?, ?, ?)");
-                stmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first, iter->second.counter, uint64(iter->second.date));
-            }
+                insStmt.PExecute(GetPlayer()->GetGUIDLow(), iter->first, iter->second.counter, uint64(iter->second.date));
         }
     }
 }
