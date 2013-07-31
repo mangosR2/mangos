@@ -1877,10 +1877,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool SetPosition(Position const& pos, bool teleport = false);
         void UpdateUnderwaterState(Map * m, float x, float y, float z);
 
-        void SendMessageToSet(WorldPacket *data, bool self);// overwrite Object::SendMessageToSet
-        void SendMessageToSetInRange(WorldPacket *data, float fist, bool self);
-                                                            // overwrite Object::SendMessageToSetInRange
-        void SendMessageToSetInRange(WorldPacket *data, float dist, bool self, bool own_team_only);
+        void SendMessageToSet(WorldPacket* data, bool self) const override;// overwrite Object::SendMessageToSet
+        void SendMessageToSetInRange(WorldPacket* data, float fist, bool self) const override;
+        // overwrite Object::SendMessageToSetInRange
+        void SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only) const;
 
         Corpse *GetCorpse() const;
         void SpawnCorpseBones();
@@ -2052,7 +2052,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         time_t const& GetLastWorldStateUpdateTime() { return m_lastWSUpdateTime; };
         void SetLastWorldStateUpdateTime(time_t _time)   { m_lastWSUpdateTime = _time; };
 
-        void SendDirectMessage(WorldPacket *data);
+        void SendDirectMessage(WorldPacket* data) const;
 
         void SendAurasForTarget(Unit *target);
 
@@ -2359,7 +2359,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SetGroupUpdateFlag(uint32 flag) { m_groupUpdateMask |= flag; }
         const uint64& GetAuraUpdateMask() const { return m_auraUpdateMask; }
         void SetAuraUpdateMask(uint8 slot) { m_auraUpdateMask |= (uint64(1) << slot); }
-        Player* GetNextRandomRaidMember(float radius);
+        Player* GetNextRandomRaidMember(float radius, bool onlyAlive);
         PartyResult CanUninviteFromGroup() const;
         // BattleGround Group System
         void SetBattleGroundRaid(Group *group, int8 subgroup = -1);

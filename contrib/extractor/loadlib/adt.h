@@ -27,13 +27,14 @@ enum LiquidType
 //
 class adt_MCVT
 {
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
-public:
-    float height_map[(ADT_CELL_SIZE+1)*(ADT_CELL_SIZE+1)+ADT_CELL_SIZE*ADT_CELL_SIZE];
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
+        uint32 size;
+    public:
+        float height_map[(ADT_CELL_SIZE + 1) * (ADT_CELL_SIZE + 1) + ADT_CELL_SIZE* ADT_CELL_SIZE];
 
     bool  prepareLoadedData();
 };
@@ -43,21 +44,23 @@ public:
 //
 class adt_MCLQ
 {
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
-public:
-    float height1;
-    float height2;
-    struct liquid_data{
-        uint32 light;
-        float  height;
-    } liquid[ADT_CELL_SIZE+1][ADT_CELL_SIZE+1];
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
+        uint32 size;
+    public:
+        float height1;
+        float height2;
+        struct liquid_data
+        {
+            uint32 light;
+            float  height;
+        } liquid[ADT_CELL_SIZE + 1][ADT_CELL_SIZE + 1];
 
-    // 1<<0 - ochen
-    // 1<<1 - lava/slime
+        // 1<<0 - ochen
+        // 1<<1 - lava/slime
     // 1<<2 - water
     // 1<<6 - all water
     // 1<<7 - dark water
@@ -72,13 +75,14 @@ public:
 //
 class adt_MCNK
 {
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
-public:
-    uint32 flags;
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
+        uint32 size;
+    public:
+        uint32 flags;
     uint32 ix;
     uint32 iy;
     uint32 nLayers;
@@ -132,18 +136,20 @@ public:
 //
 class adt_MCIN
 {
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
-public:
-    struct adt_CELLS{
-        uint32 offsMCNK;
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
         uint32 size;
-        uint32 flags;
-        uint32 asyncId;
-    } cells[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+    public:
+        struct adt_CELLS
+        {
+            uint32 offsMCNK;
+            uint32 size;
+            uint32 flags;
+            uint32 asyncId;
+        } cells[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 
     bool   prepareLoadedData();
     // offset from begin file (used this-84)
@@ -152,13 +158,14 @@ public:
         if (cells[x][y].offsMCNK)
             return (adt_MCNK *)((uint8 *)this + cells[x][y].offsMCNK - 84);
         return 0;
-    }
+        }
 };
 
 #define ADT_LIQUID_HEADER_FULL_LIGHT   0x01
 #define ADT_LIQUID_HEADER_NO_HIGHT     0x02
 
-struct adt_liquid_header{
+struct adt_liquid_header
+{
     uint16 liquidType;             // Index from LiquidType.dbc
     uint16 formatFlags;
     float  heightLevel1;
@@ -176,20 +183,22 @@ struct adt_liquid_header{
 //
 class adt_MH2O
 {
-public:
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
+    public:
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
+        uint32 size;
 
-    struct adt_LIQUID{
-        uint32 offsData1;
-        uint32 used;
-        uint32 offsData2;
-    } liquid[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
+        struct adt_LIQUID
+        {
+            uint32 offsData1;
+            uint32 used;
+            uint32 offsData2;
+        } liquid[ADT_CELLS_PER_GRID][ADT_CELLS_PER_GRID];
 
-    bool   prepareLoadedData();
+        bool   prepareLoadedData();
 
     adt_liquid_header *getLiquidData(int x, int y)
     {
@@ -198,7 +207,7 @@ public:
         return 0;
     }
 
-    float *getLiquidHeightMap(adt_liquid_header *h)
+    float *getLiquidHeightMap(adt_liquid_header *h) 
     {
         if (h->formatFlags & ADT_LIQUID_HEADER_NO_HIGHT)
             return 0;
@@ -207,7 +216,7 @@ public:
         return 0;
     }
 
-    uint8 *getLiquidLightMap(adt_liquid_header *h)
+    uint8 *getLiquidLightMap(adt_liquid_header *h) 
     {
         if (h->formatFlags&ADT_LIQUID_HEADER_FULL_LIGHT)
             return 0;
@@ -220,7 +229,7 @@ public:
         return 0;
     }
 
-    uint32 *getLiquidFullLightMap(adt_liquid_header *h)
+    uint32 *getLiquidFullLightMap(adt_liquid_header *h) 
     {
         if (!(h->formatFlags&ADT_LIQUID_HEADER_FULL_LIGHT))
             return 0;
@@ -233,7 +242,7 @@ public:
         return 0;
     }
 
-    uint64 getLiquidShowMap(adt_liquid_header *h)
+    uint64 getLiquidShowMap(adt_liquid_header *h)   
     {
         if (h->offsData2a)
             return *((uint64 *)((uint8*)this + 8 + h->offsData2a));
@@ -248,20 +257,21 @@ public:
 //
 class adt_MHDR
 {
-    union{
-        uint32 fcc;
-        char   fcc_txt[4];
-    };
-    uint32 size;
+        union
+        {
+            uint32 fcc;
+            char   fcc_txt[4];
+        };
+        uint32 size;
 
-    uint32 pad;
+        uint32 pad;
     uint32 offsMCIN;           // MCIN
     uint32 offsTex;	           // MTEX
-    uint32 offsModels;	       // MMDX
-    uint32 offsModelsIds;	   // MMID
-    uint32 offsMapObejcts;	   // MWMO
-    uint32 offsMapObejctsIds;  // MWID
-    uint32 offsDoodsDef;       // MDDF
+    uint32 offsModels;	       // MMDX	
+    uint32 offsModelsIds;	   // MMID	
+    uint32 offsMapObejcts;	   // MWMO	
+    uint32 offsMapObejctsIds;  // MWID		
+    uint32 offsDoodsDef;       // MDDF	
     uint32 offsObjectsDef;     // MODF
     uint32 offsMFBO;           // MFBO
     uint32 offsMH2O;           // MH2O
@@ -271,17 +281,18 @@ class adt_MHDR
     uint32 data4;
     uint32 data5;
 public:
-    bool prepareLoadedData();
-    adt_MCIN *getMCIN(){ return (adt_MCIN *)((uint8 *)&pad+offsMCIN);}
-    adt_MH2O *getMH2O(){ return offsMH2O ? (adt_MH2O *)((uint8 *)&pad+offsMH2O) : 0;}
+        bool prepareLoadedData();
+        adt_MCIN* getMCIN() { return (adt_MCIN*)((uint8*)&pad + offsMCIN);}
+        adt_MH2O* getMH2O() { return offsMH2O ? (adt_MH2O*)((uint8*)&pad + offsMH2O) : 0;}
 
 };
 
-class ADT_file : public FileLoader{
-public:
-    bool prepareLoadedData();
-    ADT_file();
-    ~ADT_file();
+class ADT_file : public FileLoader
+{
+    public:
+        bool prepareLoadedData();
+        ADT_file();
+        ~ADT_file();
     void free();
 
     adt_MHDR *a_grid;

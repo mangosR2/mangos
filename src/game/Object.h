@@ -30,6 +30,7 @@
 #include "WorldObjectEvents.h"
 #include "WorldLocation.h"
 #include "LootMgr.h"
+#include "Util.h"
 
 #include <set>
 #include <string>
@@ -250,8 +251,9 @@ class MANGOS_DLL_SPEC Object
 
         void ApplyPercentModFloatValue(uint16 index, float val, bool apply)
         {
-            val = val != -100.0f ? val : -99.9f ;
-            SetFloatValue(index, GetFloatValue(index) * (apply?(100.0f+val)/100.0f : 100.0f / (100.0f+val)) );
+            float var = GetFloatValue(index);
+            ApplyPercentModFloatVar(var, val, apply);
+            SetFloatValue(index, var);
         }
 
         void SetFlag( uint16 index, uint32 newFlag );
@@ -597,23 +599,23 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         virtual void CleanupsBeforeDelete();                   // used in destructor or explicitly before mass creature delete to remove cross-references to already deleted units
 
-        virtual void SendMessageToSet(WorldPacket *data, bool self);
-        virtual void SendMessageToSetInRange(WorldPacket *data, float dist, bool self);
-        void SendMessageToSetExcept(WorldPacket *data, Player const* skipped_receiver);
+        virtual void SendMessageToSet(WorldPacket* data, bool self) const;
+        virtual void SendMessageToSetInRange(WorldPacket* data, float dist, bool self) const;
+        void SendMessageToSetExcept(WorldPacket* data, Player const* skipped_receiver) const;
 
-        void MonsterSay(const char* text, uint32 language, Unit* target = NULL);
-        void MonsterYell(const char* text, uint32 language, Unit* target = NULL);
-        void MonsterTextEmote(const char* text, Unit* target, bool IsBossEmote = false);
-        void MonsterWhisper(const char* text, Unit* target, bool IsBossWhisper = false);
-        void MonsterSay(int32 textId, uint32 language, Unit* target = NULL);
-        void MonsterYell(int32 textId, uint32 language, Unit* target = NULL);
-        void MonsterTextEmote(int32 textId, Unit* target, bool IsBossEmote = false);
-        void MonsterWhisper(int32 textId, Unit* receiver, bool IsBossWhisper = false);
-        void MonsterYellToZone(int32 textId, uint32 language, Unit* target);
-        static void BuildMonsterChat(WorldPacket *data, ObjectGuid senderGuid, uint8 msgtype, char const* text, uint32 language, char const* name, ObjectGuid targetGuid, char const* targetName);
+        void MonsterSay(const char* text, uint32 language, Unit const* target = NULL) const;
+        void MonsterYell(const char* text, uint32 language, Unit const* target = NULL) const;
+        void MonsterTextEmote(const char* text, Unit const* target, bool IsBossEmote = false) const;
+        void MonsterWhisper(const char* text, Unit const* target, bool IsBossWhisper = false) const;
+        void MonsterSay(int32 textId, uint32 language, Unit const* target = NULL) const;
+        void MonsterYell(int32 textId, uint32 language, Unit const* target = NULL) const;
+        void MonsterTextEmote(int32 textId, Unit const* target, bool IsBossEmote = false) const;
+        void MonsterWhisper(int32 textId, Unit const* receiver, bool IsBossWhisper = false) const;
+        void MonsterYellToZone(int32 textId, uint32 language, Unit const* target) const;
+        static void BuildMonsterChat(WorldPacket* data, ObjectGuid senderGuid, uint8 msgtype, char const* text, uint32 language, char const* name, ObjectGuid targetGuid, char const* targetName);
 
-        void PlayDistanceSound(uint32 sound_id, Player* target = NULL);
-        void PlayDirectSound(uint32 sound_id, Player* target = NULL);
+        void PlayDistanceSound(uint32 sound_id, Player const* target = NULL) const;
+        void PlayDirectSound(uint32 sound_id, Player const* target = NULL) const;
 
         void SendObjectDeSpawnAnim(ObjectGuid guid);
         void SendGameObjectCustomAnim(ObjectGuid guid, uint32 animId = 0);

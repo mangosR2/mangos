@@ -27,14 +27,14 @@ namespace MMAP
 {
     // ######################## MMapFactory ########################
     // our global singelton copy
-    MMapManager *g_MMapManager = NULL;
+    MMapManager* g_MMapManager = NULL;
 
     // stores list of mapids which do not use pathfinding
     std::set<uint32>* g_mmapDisabledIds = NULL;
 
     MMapManager* MMapFactory::createOrGetMMapManager()
     {
-        if(g_MMapManager == NULL)
+        if (g_MMapManager == NULL)
             g_MMapManager = new MMapManager();
 
         return g_MMapManager;
@@ -42,10 +42,10 @@ namespace MMAP
 
     void MMapFactory::preventPathfindingOnMaps(const char* ignoreMapIds)
     {
-        if(!g_mmapDisabledIds)
+        if (!g_mmapDisabledIds)
             g_mmapDisabledIds = new std::set<uint32>();
 
-        uint32 strLenght = strlen(ignoreMapIds)+1;
+        uint32 strLenght = strlen(ignoreMapIds) + 1;
         char* mapList = new char[strLenght];
         memcpy(mapList, ignoreMapIds, sizeof(char)*strLenght);
 
@@ -97,9 +97,9 @@ namespace MMAP
             return true;
 
         // load and init dtNavMesh - read parameters from file
-        uint32 pathLen = sWorld.GetDataPath().length() + strlen("mmaps/%03i.mmap")+1;
-        char *fileName = new char[pathLen];
-        snprintf(fileName, pathLen, (sWorld.GetDataPath()+"mmaps/%03i.mmap").c_str(), mapId);
+        uint32 pathLen = sWorld.GetDataPath().length() + strlen("mmaps/%03i.mmap") + 1;
+        char* fileName = new char[pathLen];
+        snprintf(fileName, pathLen, (sWorld.GetDataPath() + "mmaps/%03i.mmap").c_str(), mapId);
 
         FILE* file = fopen(fileName, "rb");
         if (!file)
@@ -116,15 +116,16 @@ namespace MMAP
 
         dtNavMesh* mesh = dtAllocNavMesh();
         MANGOS_ASSERT(mesh);
-        if (DT_SUCCESS != mesh->init(&params))
+        dtStatus dtResult = mesh->init(&params);
+        if (dtStatusFailed(dtResult))
         {
             dtFreeNavMesh(mesh);
             sLog.outError("MMAP:loadMapData: Failed to initialize dtNavMesh for mmap %03u from file %s", mapId, fileName);
-            delete [] fileName;
+            delete[] fileName;
             return false;
         }
 
-        delete [] fileName;
+        delete[] fileName;
 
         DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "MMAP:loadMapData: Loaded %03i.mmap", mapId);
 
@@ -144,7 +145,7 @@ namespace MMAP
     bool MMapManager::loadMap(uint32 mapId, int32 x, int32 y)
     {
         // make sure the mmap is loaded and ready to load tiles
-        if(!loadMapData(mapId))
+        if (!loadMapData(mapId))
             return false;
 
         // get this mmap data
@@ -160,9 +161,9 @@ namespace MMAP
         }
 
         // load this tile :: mmaps/MMMXXYY.mmtile
-        uint32 pathLen = sWorld.GetDataPath().length() + strlen("mmaps/%03i%02i%02i.mmtile")+1;
+        uint32 pathLen = sWorld.GetDataPath().length() + strlen("mmaps/%03i%02i%02i.mmtile") + 1;
         char* fileName = new char[pathLen];
-        snprintf(fileName, pathLen, (sWorld.GetDataPath()+"mmaps/%03i%02i%02i.mmtile").c_str(), mapId, x, y);
+        snprintf(fileName, pathLen, (sWorld.GetDataPath() + "mmaps/%03i%02i%02i.mmtile").c_str(), mapId, x, y);
 
         FILE* file = fopen(fileName, "rb");
         if (!file)
@@ -171,7 +172,7 @@ namespace MMAP
             delete[] fileName;
             return false;
         }
-        delete [] fileName;
+        delete[] fileName;
 
         // read header
         MmapTileHeader fileHeader;
@@ -198,7 +199,7 @@ namespace MMAP
         size_t result = fread(data, fileHeader.size, 1, file);
         fclose(file);
 
-        if(!result)
+        if (!result)
         {
             sLog.outError("MMAP:loadMap: Bad header or data in mmap %03u%02i%02i.mmtile", mapId, x, y);
             return false;
@@ -207,14 +208,14 @@ namespace MMAP
         dtMeshHeader* header = (dtMeshHeader*)data;
         dtTileRef tileRef = 0;
 
-        dtStatus stat;
+        dtStatus dtResult;
         {
             ReadGuard Guard(GetLock(mapId));
-            stat = mmap->navMesh->addTile(data, fileHeader.size, DT_TILE_FREE_DATA, 0, &tileRef);
+            dtResult = mmap->navMesh->addTile(data, fileHeader.size, DT_TILE_FREE_DATA, 0, &tileRef);
         }
 
         // memory allocated for data is now managed by detour, and will be deallocated when the tile is removed
-        if ( stat == DT_SUCCESS )
+        if (dtStatusSucceed(dtResult))
         {
             mmap->mmapLoadedTiles.insert(std::pair<uint32, dtTileRef>(packedGridPos, tileRef));
             ++loadedTiles;
@@ -254,13 +255,13 @@ namespace MMAP
 
         dtTileRef tileRef = mmap->mmapLoadedTiles[packedGridPos];
 
-        dtStatus status;
+        dtStatus dtResult;
         {
             WriteGuard Guard(GetLock(mapId));
-            status = mmap->navMesh->removeTile(tileRef, NULL, NULL);
+            dtResult = mmap->navMesh->removeTile(tileRef, NULL, NULL);
         }
         // unload, and mark as non loaded
-        if (status != DT_SUCCESS)
+        if (dtStatusFailed(dtResult))
         {
             // this is technically a memory leak
             // if the grid is later reloaded, dtNavMesh::addTile will return error but no extra memory is used
@@ -294,7 +295,8 @@ namespace MMAP
         {
             uint32 x = (i->first >> 16);
             uint32 y = (i->first & 0x0000FFFF);
-            if(DT_SUCCESS != mmap->navMesh->removeTile(i->second, NULL, NULL))
+            dtStatus dtResult = mmap->navMesh->removeTile(i->second, NULL, NULL);
+            if (dtStatusFailed(dtResult))
                 sLog.outError("MMAP:unloadMap: Could not unload %03u%02i%02i.mmtile from navmesh", mapId, x, y);
             else
             {
@@ -352,10 +354,11 @@ namespace MMAP
         MMapData* mmap = loadedMMaps[mapId];
         if (mmap->navMeshQueries.find(instanceId) == mmap->navMeshQueries.end())
         {
-             // allocate mesh query
+            // allocate mesh query
             dtNavMeshQuery* query = dtAllocNavMeshQuery();
             MANGOS_ASSERT(query);
-            if(DT_SUCCESS != query->init(mmap->navMesh, 1024))
+            dtStatus dtResult = query->init(mmap->navMesh, 1024);
+            if (dtStatusFailed(dtResult))
             {
                 dtFreeNavMeshQuery(query);
                 sLog.outError("MMAP:GetNavMeshQuery: Failed to initialize dtNavMeshQuery for mapId %03u instanceId %u", mapId, instanceId);

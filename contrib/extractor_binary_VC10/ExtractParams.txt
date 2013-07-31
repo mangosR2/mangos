@@ -1,0 +1,6 @@
+For best results (more size, but rather data):
+
+ad.exe -f 0
+vmapExtractor3.exe -l
+md vmaps
+vmap_assembler.exe buildings vmaps

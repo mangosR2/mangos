@@ -3330,7 +3330,7 @@ void Unit::SendMeleeAttackStart(Unit* pVictim)
     data << pVictim->GetObjectGuid();
 
     SendMessageToSet(&data, true);
-    DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStart %s start attacking %s", GetObjectGuid().GetString().c_str(), pVictim ? pVictim->GetObjectGuid().GetString().c_str() : "<none>");
+    DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStart %s start attacking %s", GetObjectGuid().GetString().c_str(), pVictim ? pVictim->GetObjectGuid().GetString().c_str() : "<none>");
 }
 
 void Unit::SendMeleeAttackStop(Unit* victim)
@@ -3342,7 +3342,7 @@ void Unit::SendMeleeAttackStop(Unit* victim)
     SendMessageToSet(&data, true);
 
     if (victim)
-        DETAIL_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStop %s stopped attacking %s", GetObjectGuid().GetString().c_str(), victim ? victim->GetObjectGuid().GetString().c_str() : "<none>");
+        DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "Unit::SendMeleeAttackStop %s stopped attacking %s", GetObjectGuid().GetString().c_str(), victim ? victim->GetObjectGuid().GetString().c_str() : "<none>");
 
     /*if (victim->GetTypeId() == TYPEID_UNIT)
         ((Creature*)victim)->AI().EnterEvadeMode(this);*/
@@ -12997,28 +12997,29 @@ bool Unit::hasNegativeAuraWithInterruptFlag(uint32 flag)
     return false;
 }
 
-void Unit::ApplyAttackTimePercentMod( WeaponAttackType att,float val, bool apply )
+void Unit::ApplyAttackTimePercentMod(WeaponAttackType att,float val, bool apply)
 {
     if (val > 0)
     {
         ApplyPercentModFloatVar(m_modAttackSpeedPct[att], val, !apply);
-        ApplyPercentModFloatValue(UNIT_FIELD_BASEATTACKTIME+att,val,!apply);
+        ApplyPercentModFloatValue(UNIT_FIELD_BASEATTACKTIME + att, val, !apply);
     }
     else
     {
         ApplyPercentModFloatVar(m_modAttackSpeedPct[att], -val, apply);
-        ApplyPercentModFloatValue(UNIT_FIELD_BASEATTACKTIME+att,-val,apply);
+        ApplyPercentModFloatValue(UNIT_FIELD_BASEATTACKTIME + att, -val, apply);
     }
+
     if (GetTypeId() == TYPEID_PLAYER && IsInWorld())
-        ((Player*)this)->CallForAllControlledUnits(ApplyScalingBonusWithHelper(SCALING_TARGET_ATTACKSPEED, 0, false),CONTROLLED_PET|CONTROLLED_GUARDIANS);
+        ((Player*)this)->CallForAllControlledUnits(ApplyScalingBonusWithHelper(SCALING_TARGET_ATTACKSPEED, 0, false), CONTROLLED_PET | CONTROLLED_GUARDIANS);
 }
 
-void Unit::ApplyCastTimePercentMod(float val, bool apply )
+void Unit::ApplyCastTimePercentMod(float val, bool apply)
 {
     if (val > 0)
-        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED,val,!apply);
+        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, val, !apply);
     else
-        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED,-val,apply);
+        ApplyPercentModFloatValue(UNIT_MOD_CAST_SPEED, -val, apply);
 }
 
 void Unit::UpdateAuraForGroup(uint8 slot)
@@ -13572,6 +13573,42 @@ void Unit::_ExitVehicle(bool forceDismount)
 
     if (isAlive() && GetTypeId() == TYPEID_PLAYER)
         ((Player*)this)->ResummonPetTemporaryUnSummonedIfAny();
+}
+
+void Unit::EjectVehiclePassenger(Unit* pPassenger)
+{
+    if (!pPassenger)
+        return;
+
+    VehicleKitPtr vehKit = GetVehicleKit();
+    if (!vehKit)
+        return;
+
+    int8 seatId = vehKit->GetSeatId(pPassenger);
+    if (seatId >= 0)
+        EjectVehiclePassenger(seatId);
+}
+
+void Unit::EjectVehiclePassenger(int8 seatId/*=-1*/)
+{
+    VehicleKitPtr vehKit = GetVehicleKit();
+    if (!vehKit)
+        return;
+
+    if (seatId < 0) // any passenger
+    {
+        for (int8 i = 0; i < MAX_VEHICLE_SEAT; ++i)
+        {
+            if (vehKit->GetPassenger(i))
+            {
+                seatId = i;
+                break;
+            }
+        }
+    }
+
+    if (seatId >= 0 && seatId < MAX_VEHICLE_SEAT)
+       AddEvent(new PassengerEjectEvent(seatId, *this), 1);
 }
 
 void Unit::SetPvP( bool state )

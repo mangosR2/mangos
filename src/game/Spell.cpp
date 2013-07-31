@@ -5841,7 +5841,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         case SPELL_TARGET_TYPE_DEAD:
                         default:
                         {
-                            Creature *p_Creature = NULL;
+                            Creature* p_Creature = NULL;
 
                             // check if explicit target is provided and check it up against database valid target entry/state
                             if (Unit* pTarget = m_targets.getUnitTarget())
@@ -5887,9 +5887,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                             break;
                         }
                     }
-
-                    if (creatureScriptTarget || goScriptTarget)
-                        break;
                 }
 
                 if (creatureScriptTarget)

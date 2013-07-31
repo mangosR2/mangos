@@ -147,6 +147,7 @@
     <ClInclude Include="..\..\Include\DetourNavMeshBuilder.h" />
     <ClInclude Include="..\..\Include\DetourNavMeshQuery.h" />
     <ClInclude Include="..\..\Include\DetourNode.h" />
+    <ClInclude Include="..\..\Include\DetourStatus.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\DetourAlloc.cpp" />

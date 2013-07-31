@@ -6305,7 +6305,7 @@ void Player::SaveRecallPosition()
     m_recall = GetPosition();
 }
 
-void Player::SendMessageToSet(WorldPacket *data, bool self)
+void Player::SendMessageToSet(WorldPacket* data, bool self) const
 {
     if (IsInWorld())
         GetMap()->MessageBroadcast(this, data, false);
@@ -6316,7 +6316,7 @@ void Player::SendMessageToSet(WorldPacket *data, bool self)
         GetSession()->SendPacket(data);
 }
 
-void Player::SendMessageToSetInRange(WorldPacket *data, float dist, bool self)
+void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self) const
 {
     if (IsInWorld())
         GetMap()->MessageDistBroadcast(this, data, dist, false);
@@ -6325,7 +6325,7 @@ void Player::SendMessageToSetInRange(WorldPacket *data, float dist, bool self)
         GetSession()->SendPacket(data);
 }
 
-void Player::SendMessageToSetInRange(WorldPacket *data, float dist, bool self, bool own_team_only)
+void Player::SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only) const
 {
     if (IsInWorld())
         GetMap()->MessageDistBroadcast(this, data, dist, false, own_team_only);
@@ -6334,7 +6334,7 @@ void Player::SendMessageToSetInRange(WorldPacket *data, float dist, bool self, b
         GetSession()->SendPacket(data);
 }
 
-void Player::SendDirectMessage(WorldPacket *data)
+void Player::SendDirectMessage(WorldPacket* data) const
 {
     GetSession()->SendPacket(data);
 }
@@ -21822,30 +21822,28 @@ void Player::SendCorpseReclaimDelay(bool load)
     GetSession()->SendPacket(&data);
 }
 
-Player* Player::GetNextRandomRaidMember(float radius)
+Player* Player::GetNextRandomRaidMember(float radius, bool onlyAlive)
 {
-    Group *pGroup = GetGroup();
+    Group* pGroup = GetGroup();
     if (!pGroup)
         return NULL;
 
     std::vector<Player*> nearMembers;
     nearMembers.reserve(pGroup->GetMembersCount());
 
-    for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+    for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
     {
-        Player* Target = itr->getSource();
+        Player* pMember = itr->getSource();
 
         // IsHostileTo check duel and controlled by enemy
-        if (Target && Target != this && IsWithinDistInMap(Target, radius) &&
-            !Target->HasInvisibilityAura() && !IsHostileTo(Target))
-            nearMembers.push_back(Target);
+        if (pMember && pMember != this &&
+            (!onlyAlive || pMember->isAlive()) &&
+            IsWithinDistInMap(pMember, radius) &&
+            !pMember->HasInvisibilityAura() && !IsHostileTo(pMember))
+            nearMembers.push_back(pMember);
     }
 
-    if (nearMembers.empty())
-        return NULL;
-
-    uint32 randTarget = urand(0,nearMembers.size()-1);
-    return nearMembers[randTarget];
+    return nearMembers.empty() ? NULL : nearMembers[urand(0, nearMembers.size() - 1)];
 }
 
 PartyResult Player::CanUninviteFromGroup() const

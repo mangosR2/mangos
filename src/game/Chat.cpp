@@ -415,7 +415,8 @@ ChatCommand* ChatHandler::getCommandTable()
         { "loadedtiles",    SEC_GAMEMASTER,     false, &ChatHandler::HandleMmapLoadedTilesCommand,     "", NULL },
         { "stats",          SEC_GAMEMASTER,     false, &ChatHandler::HandleMmapStatsCommand,           "", NULL },
         { "testarea",       SEC_GAMEMASTER,     false, &ChatHandler::HandleMmapTestArea,               "", NULL },
-        { "",               SEC_ADMINISTRATOR,  false, &ChatHandler::HandleMmap,                       "", NULL },
+        { "on",             SEC_ADMINISTRATOR,  false, &ChatHandler::HandleMmapOn,                     "", NULL },
+        { "off",            SEC_ADMINISTRATOR,  false, &ChatHandler::HandleMmapOff,                    "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 

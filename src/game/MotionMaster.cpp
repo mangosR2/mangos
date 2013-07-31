@@ -112,6 +112,7 @@ void MotionMaster::MoveTargetedHome()
             {
                 case COMMAND_STAY:
                     MoveIdle();
+                    m_owner->StopMoving(true);
                     break;
                 case COMMAND_FOLLOW:
                 case COMMAND_ATTACK:

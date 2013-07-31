@@ -10126,6 +10126,41 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     return;
                 }
+                case 60603:                                 // Eject Passenger 1
+                case 64629:                                 // Eject Passenger 1 (with visual eff)
+                case 68183:                                 // Eject Passenger 1
+                case 62539:                                 // Eject Passenger 2
+                case 64630:                                 // Eject Passenger 2 (with visual eff)
+                case 64631:                                 // Eject Passenger 3 (with visual eff)
+                case 52205:                                 // Eject Passenger 3
+                case 64614:                                 // Eject Passenger 4
+                case 64632:                                 // Eject Passenger 4 (with visual eff)
+                case 64633:                                 // Eject Passenger 5 (with visual eff)
+                case 64634:                                 // Eject Passenger 6 (with visual eff)
+                case 64635:                                 // Eject Passenger 7 (with visual eff)
+                case 64636:                                 // Eject Passenger 8 (with visual eff)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    int8 seatId;
+                    switch (m_spellInfo->Id)
+                    {
+                        case 60603:
+                        case 68183:
+                            seatId = 0;
+                            break;
+                        case 52205:
+                            seatId = 2;
+                            break;
+                        default:
+                            seatId = m_spellInfo->EffectBasePoints[EFFECT_INDEX_0];
+                            break;
+                    }
+
+                    unitTarget->EjectVehiclePassenger(seatId);
+                    return;
+                }
                 case 62217:                                 // Unstable Energy (Ulduar: Freya's elder)
                 {
                     uint32 spellId = m_spellInfo->CalculateSimpleValue(eff_idx);

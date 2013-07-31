@@ -4784,7 +4784,7 @@ SpellAuraProcResult Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Damag
     return SPELL_AURA_PROC_OK;
 }
 
-SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* /*procSpell*/, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/ )
+SpellAuraProcResult Unit::HandleMendingAuraProc(Unit* /*pVictim*/, DamageInfo* damageInfo, Aura const* triggeredByAura, SpellEntry const* /*procSpell*/, uint32 /*procFlag*/, uint32 /*procEx*/, uint32 /*cooldown*/ )
 {
     // aura can be deleted at casts
     SpellEntry const* spellProto = triggeredByAura->GetSpellProto();
@@ -4793,10 +4793,13 @@ SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* 
     ObjectGuid caster_guid = triggeredByAura->GetCasterGuid();
 
     // jumps
-    int32 jumps = triggeredByAura->GetHolder()->GetAuraCharges()-1;
+    int32 jumps = triggeredByAura->GetHolder()->GetAuraCharges() - 1;
+
+    // current aura holder expire
+    triggeredByAura->GetHolder()->SetAuraCharges(1, false);
 
     // next target selection
-    if (jumps > 0 && GetTypeId()==TYPEID_PLAYER && caster_guid.IsPlayer())
+    if (jumps > 0 && GetTypeId() == TYPEID_PLAYER && caster_guid.IsPlayer())
     {
         float radius;
         if (spellProto->EffectRadiusIndex[effIdx])
@@ -4810,13 +4813,13 @@ SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* 
 
             SpellAuraHolderPtr holder = GetSpellAuraHolder(spellProto->Id, caster->GetObjectGuid());
 
-            if (Player* target = ((Player*)this)->GetNextRandomRaidMember(radius))
+            if (Player* target = ((Player*)this)->GetNextRandomRaidMember(radius, true))
             {
                 SpellAuraHolderPtr new_holder = CreateSpellAuraHolder(spellProto, target, caster);
 
                 for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
                 {
-                    Aura *aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i));
+                    Aura* aur = holder->GetAuraByEffectIndex(SpellEffectIndex(i));
                     if (!aur)
                         continue;
 
@@ -4829,13 +4832,11 @@ SpellAuraProcResult Unit::HandleMendingAuraProc( Unit* /*pVictim*/, DamageInfo* 
                 // when applied to new one)
                 target->AddSpellAuraHolder(new_holder);
             }
-            else
-                holder->SetAuraCharges(1,false);
         }
     }
 
     // heal
-    CastCustomSpell(this,33110,&heal,NULL,NULL,true,NULL,NULL,caster_guid, spellProto);
+    CastCustomSpell(this, 33110, &heal, NULL, NULL, true, NULL, NULL, caster_guid, spellProto);
     return SPELL_AURA_PROC_OK;
 }
 

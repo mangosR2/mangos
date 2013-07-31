@@ -7358,26 +7358,18 @@ bool ChatHandler::HandleShowGearScoreCommand(char* args)
     return true;
 }
 
-bool ChatHandler::HandleMmap(char* args)
+bool ChatHandler::HandleMmapOn(char* /*args*/)
 {
-    bool on;
-    if (ExtractOnOff(&args, on))
-    {
-        if (on)
-        {
-            sWorld.setConfig(CONFIG_BOOL_MMAP_ENABLED, true);
-            SendSysMessage("WORLD: mmaps are now ENABLED (individual map settings still in effect)");
-        }
-        else
-        {
-            sWorld.setConfig(CONFIG_BOOL_MMAP_ENABLED, false);
-            SendSysMessage("WORLD: mmaps are now DISABLED");
-        }
-        return true;
-    }
+    sWorld.setConfig(CONFIG_BOOL_MMAP_ENABLED, true);
+    SendSysMessage("WORLD: mmaps are now ENABLED (individual map settings still in effect)");
 
-    on = sWorld.getConfig(CONFIG_BOOL_MMAP_ENABLED);
-    PSendSysMessage("mmaps are %sabled", on ? "en" : "dis");
+    return true;
+}
+
+bool ChatHandler::HandleMmapOff(char* /*args*/)
+{
+    sWorld.setConfig(CONFIG_BOOL_MMAP_ENABLED, false);
+    SendSysMessage("WORLD: mmaps are now DISABLED");
 
     return true;
 }
