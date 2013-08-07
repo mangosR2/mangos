@@ -1,1 +1,1 @@
-1.0.5;106;http://www.google.hu
+1.0.5;105;http://www.google.hu
