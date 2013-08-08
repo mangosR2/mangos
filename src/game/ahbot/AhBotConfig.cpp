@@ -44,7 +44,8 @@ bool AhBotConfig::Initialize()
 
     updateInterval = config.GetIntDefault("AhBot.UpdateIntervalInSeconds", 300);
     historyDays = config.GetIntDefault("AhBot.History.Days", 30);
-    itemBuyInterval = config.GetIntDefault("AhBot.ItemBuyInterval", 3600 * 4);
+    itemBuyInterval = config.GetIntDefault("AhBot.ItemBuyInterval", 3600 * 2);
+    itemSellInterval = config.GetIntDefault("AhBot.ItemSellInterval", 900);
     alwaysAvailableMoney = config.GetIntDefault("AhBot.AlwaysAvailableMoney", 10000);
     priceMultiplier = config.GetFloatDefault("AhBot.PriceMultiplier", 1.0f);
     defaultMinPrice = config.GetIntDefault("AhBot.DefaultMinPrice", 20);
@@ -52,8 +53,6 @@ bool AhBotConfig::Initialize()
     maxRequiredLevel = config.GetIntDefault("AhBot.MaxRequiredLevel", 80);
     priceQualityMultiplier = config.GetFloatDefault("AhBot.PriceQualityMultiplier", 1.0f);
     underPriceProbability = config.GetFloatDefault("AhBot.UnderPriceProbability", 0.05f);
-    buyProbability = config.GetFloatDefault("AhBot.BuyProbability", 0.25f);
-    sellProbability = config.GetFloatDefault("AhBot.SellProbability", 1.0f);
     LoadSet<set<uint32> >(config.GetStringDefault("AhBot.IgnoreItemIds", "49283,52200,8494,6345,6891,2460,37164,34835"), ignoreItemIds);
 
 

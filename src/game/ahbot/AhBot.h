@@ -13,6 +13,7 @@
 #define AHBOT_WON_SELF 2
 #define AHBOT_WON_BID 3
 #define AHBOT_WON_DELAY 4
+#define AHBOT_SELL_DELAY 5
 
 namespace ahbot
 {
@@ -21,7 +22,7 @@ namespace ahbot
     class AhBot
     {
     public:
-        AhBot() : nextAICheckTime(0), player(NULL), session(NULL) {}
+        AhBot() : nextAICheckTime(0), player(NULL), session(NULL), updating(false) {}
         virtual ~AhBot();
 
     public:
@@ -60,7 +61,10 @@ namespace ahbot
                 int& auction);
         void FindMinPrice(const AuctionHouseObject::AuctionEntryMap& auctionEntryMap, AuctionEntry*& entry, Item*& item, uint32* minBid,
                 uint32* minBuyout);
-        uint32 GetBuyTime(uint32 itemId, uint32 auctionHouse, string category);
+        uint32 GetBuyTime(uint32 entry, uint32 itemId, uint32 auctionHouse, string category, double priceLevel);
+        uint32 GetTime(string category, uint32 id, uint32 auctionHouse, uint32 type);
+        void SetTime(string category, uint32 id, uint32 auctionHouse, uint32 type, uint32 value);
+        uint32 GetSellTime(uint32 itemId, uint32 auctionHouse, string category);
 
     public:
         static uint32 auctionIds[MAX_AUCTIONS];
@@ -76,6 +80,7 @@ namespace ahbot
         map<string, uint64> categoryMultiplierExpireTimes;
         map<uint32, vector<uint32> > bidders;
         set<uint32> allBidders;
+        bool updating;
     };
 };
 

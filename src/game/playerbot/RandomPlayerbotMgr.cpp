@@ -23,7 +23,7 @@ void RandomPlayerbotMgr::UpdateAIInternal(uint32 elapsed)
 {
     SetNextCheckDelay(sPlayerbotAIConfig.randomBotUpdateInterval * 1000);
 
-    if (!sPlayerbotAIConfig.randomBotAutologin)
+    if (!sPlayerbotAIConfig.randomBotAutologin || !sPlayerbotAIConfig.enabled)
         return;
 
     sLog.outBasic("Processing random bots...");
@@ -521,7 +521,7 @@ bool ChatHandler::HandlePlayerbotConsoleCommand(char* args)
 {
     if (!sPlayerbotAIConfig.enabled)
     {
-        PSendSysMessage("|cffff0000Playerbot system is currently disabled!");
+        PSendSysMessage("Playerbot system is currently disabled!");
         SetSentErrorMessage(true);
         return false;
     }

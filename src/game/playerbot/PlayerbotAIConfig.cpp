@@ -38,7 +38,10 @@ bool PlayerbotAIConfig::Initialize()
 
     enabled = config.GetBoolDefault("AiPlayerbot.Enabled", true);
     if (!enabled)
+    {
         sLog.outString("AI Playerbot is Disabled in aiplayerbot.conf");
+        return false;
+    }
 
     globalCoolDown = (uint32) config.GetIntDefault("AiPlayerbot.GlobalCooldown", 500);
     maxWaitForMove = config.GetIntDefault("AiPlayerbot.MaxWaitForMove", 5000);
