@@ -2214,6 +2214,8 @@ struct SpellEntry
     inline uint32 GetMechanic() const { return Mechanic; };
     inline uint32 GetManaCost() const { return manaCost; };
     inline uint32 GetSpellFamilyName() const { return SpellFamilyName; };
+    inline uint32 GetRecoveryTime() const { return RecoveryTime; };
+    inline uint32 GetCategoryRecoveryTime() const { return CategoryRecoveryTime; };
     inline uint32 GetAuraInterruptFlags() const { return AuraInterruptFlags; };
     inline uint32 GetStackAmount() const { return StackAmount; };
     inline uint32 GetEffectImplicitTargetAByIndex(SpellEffectIndex j) const { return EffectImplicitTargetA[j];};
