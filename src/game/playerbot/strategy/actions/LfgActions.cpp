@@ -99,22 +99,13 @@ bool LfgJoinAction::JoinProposal()
             continue;
 
         int botLevel = (int)bot->getLevel();
-        if (dungeon->recminlevel && botLevel < (int)dungeon->recminlevel)
-            continue;
-
         if (dungeon->minlevel && botLevel < (int)dungeon->minlevel)
-            continue;
-
-        if (dungeon->recminlevel && botLevel > (int)dungeon->recminlevel + 10)
             continue;
 
         if (dungeon->minlevel && botLevel > (int)dungeon->minlevel + 10)
             continue;
 
         if (dungeon->maxlevel && botLevel > (int)dungeon->maxlevel)
-            continue;
-
-        if (dungeon->recmaxlevel && botLevel > (int)dungeon->recmaxlevel)
             continue;
 
         if (heroic && !dungeon->difficulty)

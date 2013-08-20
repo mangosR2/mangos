@@ -8,6 +8,7 @@
 #include "../../shared/Database/DatabaseEnv.h"
 #include "PlayerbotAI.h"
 #include "../Player.h"
+#include "AiFactory.h"
 
 INSTANTIATE_SINGLETON_1(RandomPlayerbotMgr);
 
@@ -694,6 +695,7 @@ void RandomPlayerbotMgr::PrintStats()
         perClass[cls] = 0;
     }
 
+    int dps = 0, heal = 0, tank = 0;
     for (PlayerBotMap::iterator i = playerBots.begin(); i != playerBots.end(); ++i)
     {
         Player* bot = i->second;
@@ -704,6 +706,46 @@ void RandomPlayerbotMgr::PrintStats()
 
         perRace[bot->getRace()]++;
         perClass[bot->getClass()]++;
+
+        int spec = AiFactory::GetPlayerSpecTab(bot);
+        switch (bot->getClass())
+        {
+        case CLASS_DRUID:
+            if (spec == 2)
+                heal++;
+            else
+                dps++;
+            break;
+        case CLASS_PALADIN:
+            if (spec == 1)
+                tank++;
+            else if (spec == 0)
+                heal++;
+            else
+                dps++;
+            break;
+        case CLASS_PRIEST:
+            if (spec != 2)
+                heal++;
+            else
+                dps++;
+            break;
+        case CLASS_SHAMAN:
+            if (spec == 2)
+                heal++;
+            else
+                dps++;
+            break;
+        case CLASS_WARRIOR:
+            if (spec == 2)
+                tank++;
+            else
+                dps++;
+            break;
+        default:
+            dps++;
+            break;
+        }
     }
 
     sLog.outString("Per level:");
@@ -730,6 +772,10 @@ void RandomPlayerbotMgr::PrintStats()
         if (perClass[cls])
             sLog.outString("    %s: %d", ChatHelper::formatClass(cls).c_str(), perClass[cls]);
     }
+    sLog.outString("Per role:");
+    sLog.outString("    tank: %d", tank);
+    sLog.outString("    heal: %d", heal);
+    sLog.outString("    dps: %d", dps);
 }
 
 double RandomPlayerbotMgr::GetBuyMultiplier(Player* bot)

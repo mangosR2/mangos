@@ -107,6 +107,15 @@ bool PlayerbotAIConfig::Initialize()
     randomBotCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotCombatStrategies", "+dps,+attack weak");
     randomBotNonCombatStrategies = config.GetStringDefault("AiPlayerbot.RandomBotNonCombatStrategies", "+grind,+move random,+loot");
 
+    for (uint32 cls = 0; cls < MAX_CLASSES; ++cls)
+    {
+        for (uint32 spec = 0; spec < 3; ++spec)
+        {
+            ostringstream os; os << "AiPlayerbot.RandomClassSpecProbability." << cls << "." << spec;
+            specProbability[cls][spec] = config.GetIntDefault(os.str().c_str(), 33);
+        }
+    }
+
     CreateRandomBots();
     sLog.outString("AI Playerbot configuration loaded");
 

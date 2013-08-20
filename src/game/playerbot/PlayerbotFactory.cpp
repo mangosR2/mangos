@@ -202,7 +202,12 @@ void PlayerbotFactory::InitSpells()
 
 void PlayerbotFactory::InitTalents()
 {
-    uint32 specNo = urand(0, 2);
+    uint32 point = urand(0, 100);
+    uint8 cls = bot->getClass();
+    uint32 p1 = sPlayerbotAIConfig.specProbability[cls][0];
+    uint32 p2 = p1 + sPlayerbotAIConfig.specProbability[cls][1];
+
+    uint32 specNo = (point < p1 ? 0 : (point < p2 ? 1 : 2));
     InitTalents(specNo);
 
     if (bot->GetFreeTalentPoints())

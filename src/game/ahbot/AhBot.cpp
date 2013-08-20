@@ -502,6 +502,12 @@ int AhBot::AddAuctions(int auction, Category* category, ItemBag* inAuctionItems)
                     proto->Name1, auctionIds[auction], sellTime - time(0));
             continue;
         }
+        else if (time(0) - sellTime > sAhBotConfig.maxSellInterval)
+        {
+            sLog.outDetail("%s in auction %d: too old (%d secs)",
+                    proto->Name1, auctionIds[auction], time(0) - sellTime);
+            continue;
+        }
 
         inAuctionItems->Add(proto);
         added += AddAuction(auction, category, proto);

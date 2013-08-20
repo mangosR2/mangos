@@ -48,6 +48,7 @@ public:
     std::string randomBotCombatStrategies, randomBotNonCombatStrategies;
     uint32 randomBotMinLevel, randomBotMaxLevel;
     float randomChangeMultiplier;
+    uint32 specProbability[MAX_CLASSES][3];
 
     uint32 iterationsPerTick;
 

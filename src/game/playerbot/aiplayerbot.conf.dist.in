@@ -111,3 +111,40 @@ AiPlayerbot.SpellDump = 0
 AiPlayerbot.LogInGroupOnly = 1
 AiPlayerbot.LogValuesPerTick = 0
 AiPlayerbot.RandomChangeMultiplier = 1
+
+# Warrior
+AiPlayerbot.RandomClassSpecProbability.1.0 = 20
+AiPlayerbot.RandomClassSpecProbability.1.1 = 30
+AiPlayerbot.RandomClassSpecProbability.1.2 = 50
+# Paladin
+AiPlayerbot.RandomClassSpecProbability.2.0 = 20
+AiPlayerbot.RandomClassSpecProbability.2.1 = 50
+AiPlayerbot.RandomClassSpecProbability.2.2 = 30
+# Hunter
+AiPlayerbot.RandomClassSpecProbability.3.0 = 25
+AiPlayerbot.RandomClassSpecProbability.3.1 = 50
+AiPlayerbot.RandomClassSpecProbability.3.2 = 25
+# Rogue
+AiPlayerbot.RandomClassSpecProbability.4.0 = 40
+AiPlayerbot.RandomClassSpecProbability.4.1 = 50
+AiPlayerbot.RandomClassSpecProbability.4.2 = 10
+# Priest
+AiPlayerbot.RandomClassSpecProbability.5.0 = 40
+AiPlayerbot.RandomClassSpecProbability.5.1 = 40
+AiPlayerbot.RandomClassSpecProbability.5.2 = 20
+# Shaman
+AiPlayerbot.RandomClassSpecProbability.7.0 = 10
+AiPlayerbot.RandomClassSpecProbability.7.1 = 45
+AiPlayerbot.RandomClassSpecProbability.7.2 = 45
+# Mage
+AiPlayerbot.RandomClassSpecProbability.8.0 = 20
+AiPlayerbot.RandomClassSpecProbability.8.1 = 10
+AiPlayerbot.RandomClassSpecProbability.8.2 = 70
+# Warlock
+AiPlayerbot.RandomClassSpecProbability.9.0 = 33
+AiPlayerbot.RandomClassSpecProbability.9.1 = 33
+AiPlayerbot.RandomClassSpecProbability.9.2 = 33
+# Druid
+AiPlayerbot.RandomClassSpecProbability.11.0 = 10
+AiPlayerbot.RandomClassSpecProbability.11.1 = 45
+AiPlayerbot.RandomClassSpecProbability.11.2 = 45
