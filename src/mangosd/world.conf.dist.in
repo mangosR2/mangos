@@ -14,7 +14,7 @@ ConfVersion=2013012201
 #    DataDir
 #        Data directory setting.
 #        Important: DataDir needs to be quoted, as it is a string which may contain space characters.
-#        Example: "@CMAKE_INSTALL_PREFIX@/share/mangos"
+#        Example: "C:/SingleCore/share/mangos"
 #
 #    LogsDir
 #        Logs directory setting.
@@ -254,32 +254,32 @@ PlayerLimit = 1000
 SaveRespawnTimeImmediately = 1
 MaxOverspeedPings = 2
 GridUnload = 1
-GridCleanUpDelay = 300000
+GridCleanUpDelay = 60000
 MapUpdateInterval = 100
 ChangeWeatherInterval = 600000
 PlayerSave.Interval = 300000
-PlayerSave.Stats.MinLevel = 0
-PlayerSave.Stats.SaveOnlyOnLogout = 1
+PlayerSave.Stats.MinLevel = 1
+PlayerSave.Stats.SaveOnlyOnLogout = 0
 vmap.ignoreSpellIds = "7720"
 vmap.enableIndoorCheck = 1
 DetectPosCollision = 1
 TargetPosRecalculateRange = 1.5
 mmap.enabled = 1
-mmap.ignoreMapIds = "631"
+mmap.ignoreMapIds = ""
 UpdateUptimeInterval = 10
 MaxCoreStuckTime = 0
 AddonChannel = 1
 CleanCharacterDB = 1
 WorldState.ExpireTime = 604800
 MapUpdate.Threads = 1
-MapUpdate.DynamicThreadsCount = 0
+MapUpdate.DynamicThreadsCount = 1
 MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
 ObjectLoadingSplitter.MaxAllowedTime = 10
 Calendar.RemoveExpiredEvents = -1
-MapUpdate.PositionUpdateDelay = 400
+MapUpdate.PositionUpdateDelay = 2000
 vmap.Dynamic.DoubleCheck = 0
 
 ###################################################################################################################
@@ -1337,7 +1337,7 @@ CreatureFamilyAssistanceRadius = 10
 CreatureFamilyAssistanceDelay = 1500
 CreatureFamilyFleeDelay = 7000
 WorldBossLevelDiff = 3
-Corpse.EmptyLootShow = 1
+Corpse.EmptyLootShow = 0
 Corpse.Decay.NORMAL = 300
 Corpse.Decay.RARE = 900
 Corpse.Decay.ELITE = 600
@@ -1782,7 +1782,7 @@ DurabilityLossChance.Block  = 0.05
 Death.SicknessLevel = 11
 Death.CorpseReclaimDelay.PvP = 1
 Death.CorpseReclaimDelay.PvE = 1
-Death.Bones.World = 1
+Death.Bones.World = 0
 Death.Bones.BattlegroundOrArena = 1
 Death.Ghost.RunSpeed.World = 1.0
 Death.Ghost.RunSpeed.Battleground = 1.0
@@ -1970,7 +1970,7 @@ OutdoorPvp.WGEnabled = 1
 #
 ###################################################################################################################
 
-Network.Threads = 1
+Network.Threads = 4
 Network.OutKBuff = -1
 Network.OutUBuff = 65536
 Network.TcpNodelay = 1
@@ -2063,10 +2063,10 @@ SOAP.Port = 7878
 #
 ###################################################################################################################
 
-Anticheat.Enable = 1
+Anticheat.Enable = 0
 Anticheat.DelayAfterAction = 30
 Anticheat.GmLevel = 0
-Anticheat.Warden  = 1
+Anticheat.Warden  = 0
 
 ###################################################################################################################
 #    CharDelete.Method

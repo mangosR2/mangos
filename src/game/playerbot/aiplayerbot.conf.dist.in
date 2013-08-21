@@ -47,7 +47,7 @@ AiPlayerbot.LowMana = 15
 AiPlayerbot.MediumMana = 40
 
 # Enable random bot system
-AiPlayerbot.RandomBotAutologin = 0
+AiPlayerbot.RandomBotAutologin = 1
 
 # Random bot default strategies (applied after defaults)
 AiPlayerbot.RandomBotCombatStrategies = +dps,+attack weak
@@ -85,7 +85,7 @@ AiPlayerbot.RandomBotQuestItems = 6948,5175,5176,5177,5178
 AiPlayerbot.RandomBotSpellIds = 54197
 
 # Enable LFG for random bots
-AiPlayerbot.RandomBotJoinLfg = 0
+AiPlayerbot.RandomBotJoinLfg = 1
 
 # Intervals
 AiPlayerbot.RandomBotUpdateInterval = 60
@@ -101,7 +101,7 @@ AiPlayerbot.MinRandomBotsPriceChangeInterval = 7200
 AiPlayerbot.MaxRandomBotsPriceChangeInterval = 172800
 
 # Log on all random bots on start
-AiPlayerbot.RandomBotLoginAtStartup = 1
+AiPlayerbot.RandomBotLoginAtStartup = 0
 
 # How far random bots are teleported after death
 AiPlayerbot.RandomBotTeleportDistance = 400
