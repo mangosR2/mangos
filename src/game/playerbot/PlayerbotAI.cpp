@@ -313,7 +313,7 @@ uint32 PlayerbotAI::initSpell(uint32 spellId)
     for (SpellChainMapNext::const_iterator itr = nextMap.lower_bound(spellId); itr != nextMap.upper_bound(spellId); ++itr)
     {
         // Work around buggy chains
-        if (sSpellStore.LookupEntry(spellId)->SpellIconID != sSpellStore.LookupEntry(itr->second)->SpellIconID)
+        if (sSpellStore.LookupEntry(spellId)->GetSpellIconID() != sSpellStore.LookupEntry(itr->second)->GetSpellIconID())
             continue;
 
         SpellChainNode const* node = sSpellMgr.GetSpellChainNode(itr->second);
@@ -333,7 +333,7 @@ uint32 PlayerbotAI::initSpell(uint32 spellId)
 
         // Add spell to spellrange map
         Spell *spell = new Spell(m_bot, pSpellInfo, false);
-        SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(pSpellInfo->rangeIndex);
+        SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(pSpellInfo->GetRangeIndex());
         float range = GetSpellMaxRange(srange, IsPositiveSpell(spellId));
         m_bot->ApplySpellMod(spellId, SPELLMOD_RANGE, range);
         m_spellRangeMap.insert(std::pair<uint32, float>(spellId, range));
@@ -363,7 +363,7 @@ uint32 PlayerbotAI::initPetSpell(uint32 spellIconId)
         if (!pSpellInfo)
             continue;
 
-        if (pSpellInfo->SpellIconID == spellIconId)
+        if (pSpellInfo->GetSpellIconID() == spellIconId)
             return spellId;
     }
 
@@ -3379,7 +3379,7 @@ bool PlayerbotAI::IsInRange(Unit* Target, uint32 spellId)
     if (!pSpellInfo)
         return false;
 
-    SpellRangeEntry const* TempRange = GetSpellRangeStore()->LookupEntry(pSpellInfo->rangeIndex);
+    SpellRangeEntry const* TempRange = GetSpellRangeStore()->LookupEntry(pSpellInfo->GetRangeIndex());
 
     //Spell has invalid range store so we can't use it
     if (!TempRange)
@@ -3454,7 +3454,7 @@ bool PlayerbotAI::CastSpell(uint32 spellId)
     float CastTime = 0.0f;
 
     // stop movement to prevent cancel spell casting
-    SpellCastTimesEntry const * castTimeEntry = sSpellCastTimesStore.LookupEntry(pSpellInfo->CastingTimeIndex);
+    SpellCastTimesEntry const * castTimeEntry = sSpellCastTimesStore.LookupEntry(pSpellInfo->GetCastingTimeIndex());
     if (castTimeEntry && castTimeEntry->CastTime)
     {
         CastTime = (castTimeEntry->CastTime / 1000);
@@ -4641,10 +4641,10 @@ void PlayerbotAI::UseItem(Item *item, uint32 targetFlag, ObjectGuid targetGUID)
         return;
     }
 
-    SpellCastTimesEntry const * castingTimeEntry = sSpellCastTimesStore.LookupEntry(spellInfo->CastingTimeIndex);
+    SpellCastTimesEntry const * castingTimeEntry = sSpellCastTimesStore.LookupEntry(spellInfo->GetCastingTimeIndex());
     if (!castingTimeEntry)
     {
-        TellMaster("Can't find casting time entry for spell %u with index %u", spellId, spellInfo->CastingTimeIndex);
+        TellMaster("Can't find casting time entry for spell %u with index %u", spellId, spellInfo->GetCastingTimeIndex());
         return;
     }
 

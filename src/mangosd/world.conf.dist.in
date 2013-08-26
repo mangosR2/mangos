@@ -823,7 +823,7 @@ LexicsCutterNoActionOnGM = 1
 #        Max amount triggered spell casts in chain by one caster, prevent stack overflow crash
 #        Too Low value will make some correct triggered casts fail
 #                 0 (no limit)
-#        Default: 20
+#        Default: 255
 #
 #   BirthdayTime
 #        Set to birthday (date in unix time), By default 28th August 2005, when MaNGOS got it's name
@@ -1099,7 +1099,7 @@ AllFlightPaths = 0
 AlwaysMaxSkillForLevel = 0
 ActivateWeather = 1
 CastUnstuck = 1
-MaxSpellCastsInChain = 20
+MaxSpellCastsInChain = 255
 BirthdayTime = 1125180000
 RabbitDay = 0
 Instance.IgnoreLevel = 0
