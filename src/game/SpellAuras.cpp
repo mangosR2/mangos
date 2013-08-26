@@ -3216,6 +3216,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 target->CastSpell(target, 47287, true, NULL, this);
                 return;
             }
+            case 46637:                                     // Break Ice
+            {
+                target->CastSpell(target, 46638, true);
+                return;
+            }
             case 47744:                                     // Rage of Jin'arrak
             {
                 if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
