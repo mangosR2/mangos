@@ -21,6 +21,7 @@
 #include "AcceptDuelAction.h"
 #include "ReadyCheckAction.h"
 #include "LfgActions.h"
+#include "SecurityCheckAction.h"
 
 namespace ai
 {
@@ -60,9 +61,11 @@ namespace ai
             creators["lfg accept"] = &WorldPacketActionContext::lfg_accept;
             creators["lfg role check"] = &WorldPacketActionContext::lfg_role_check;
             creators["lfg leave"] = &WorldPacketActionContext::lfg_leave;
+            creators["security check"] = &WorldPacketActionContext::security_check;
         }
 
     private:
+        static Action* security_check(PlayerbotAI* ai) { return new SecurityCheckAction(ai); }
         static Action* lfg_leave(PlayerbotAI* ai) { return new LfgLeaveAction(ai); }
         static Action* lfg_accept(PlayerbotAI* ai) { return new LfgAcceptAction(ai); }
         static Action* lfg_role_check(PlayerbotAI* ai) { return new LfgRoleCheckAction(ai); }

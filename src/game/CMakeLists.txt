@@ -604,6 +604,8 @@ playerbot/strategy/actions/WhoAction.h
 playerbot/strategy/actions/WorldPacketActionContext.h
 playerbot/strategy/actions/SaveManaAction.h
 playerbot/strategy/actions/SaveManaAction.cpp
+playerbot/strategy/actions/SecurityCheckAction.h
+playerbot/strategy/actions/SecurityCheckAction.cpp
 playerbot/strategy/druid/BearTankDruidStrategy.cpp
 playerbot/strategy/druid/BearTankDruidStrategy.h
 playerbot/strategy/druid/CasterDruidStrategy.cpp

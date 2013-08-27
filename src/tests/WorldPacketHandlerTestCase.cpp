@@ -34,6 +34,7 @@ class WorldPacketHandlerTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( uninvite );
       CPPUNIT_TEST( lfg );
       CPPUNIT_TEST( lfg_leave );
+      CPPUNIT_TEST( security_check );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -242,6 +243,14 @@ protected:
         tick();
 
         assertActions(">S:lfg leave");
+    }
+
+    void security_check()
+    {
+        trigger("often");
+        tick();
+
+        assertActions(">S:security check");
     }
 
 };

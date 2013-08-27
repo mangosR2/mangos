@@ -66,6 +66,7 @@ class ChatCommandTestCase : public MockedAiObjectContextTestCase
       CPPUNIT_TEST( who );
       CPPUNIT_TEST( save_mana );
       CPPUNIT_TEST( max_dps );
+      CPPUNIT_TEST( tell_attackers );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -431,6 +432,13 @@ protected:
         trigger("max dps");
         tick();
         assertActions(">S:max dps chat shortcut");
+    }
+
+    void tell_attackers()
+    {
+        trigger("attackers");
+        tick();
+        assertActions(">S:tell attackers");
     }
 
 };

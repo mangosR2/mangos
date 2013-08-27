@@ -68,12 +68,19 @@ bool QueryItemUsageAction::QueryItemUsage(ItemPrototype const *item)
     if (item->InventoryType == INVTYPE_NON_EQUIP)
         return false;
 
-    uint16 eDest;
-    uint8 msg = bot->CanEquipNewItem(NULL_SLOT, eDest, item->ItemId, true);
-    if( msg != EQUIP_ERR_OK )
+    Item *pItem = Item::CreateItem(item->ItemId, 1, bot);
+    if (!pItem)
         return false;
 
-    Item* existingItem = bot->GetItemByPos(eDest);
+    uint16 dest;
+    InventoryResult result = bot->CanEquipItem(NULL_SLOT, dest, pItem, true, false);
+    pItem->RemoveFromUpdateQueueOf(bot);
+    delete pItem;
+
+    if( result != EQUIP_ERR_OK )
+        return false;
+
+    Item* existingItem = bot->GetItemByPos(dest);
     if (!existingItem)
     {
         ai->TellMaster("Equip");
@@ -121,7 +128,7 @@ void QueryItemUsageAction::QueryItemPrice(ItemPrototype const *item)
         for (list<Item*>::iterator i = items.begin(); i != items.end(); ++i)
         {
             Item* sell = *i;
-            int32 sellPrice = auctionbot.GetSellPrice(sell->GetProto()) * sRandomPlayerbotMgr.GetSellMultiplier(bot);
+            int32 sellPrice = sell->GetCount() * auctionbot.GetSellPrice(sell->GetProto()) * sRandomPlayerbotMgr.GetSellMultiplier(bot);
             ostringstream out;
             out << "Selling " << chat->formatItem(sell->GetProto(), sell->GetCount()) << " for " << chat->formatMoney(sellPrice);
             ai->TellMaster(out.str());

@@ -442,6 +442,7 @@
     <ClCompile Include="..\..\src\game\WorldLocation.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.cpp" />
     <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.cpp" />
+    <ClCompile Include="..\..\src\game\playerbot\strategy\actions\SecurityCheckAction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\game\ahbot\AhBot.h" />
@@ -955,6 +956,7 @@
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\AttackerWithoutAuraTargetValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\values\ManaSaveLevelValue.h" />
     <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SaveManaAction.h" />
+    <ClInclude Include="..\..\src\game\playerbot\strategy\actions\SecurityCheckAction.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\game\Makefile.in" />

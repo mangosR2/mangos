@@ -70,8 +70,9 @@ protected:
         tickInMeleeRange();
         tickWithAttackerCount(3);
         tickWithAttackerCount(3);
+        tickWithAttackerCount(3);
 
-        assertActions(">S:searing totem>S:magma totem>T:fire nova");
+        assertActions(">S:searing totem>S:strength of earth totem>S:magma totem>T:fire nova");
     }
 
     void boost()

@@ -18,6 +18,7 @@ class HealShamanTestCase : public EngineTestBase
 	CPPUNIT_TEST( cure );
 	CPPUNIT_TEST( lowMana );
 	CPPUNIT_TEST( range );
+	CPPUNIT_TEST( aoe );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -122,6 +123,13 @@ protected:
         tickOutOfSpellRange();
 
         assertActions(">T:reach spell");
+    }
+
+    void aoe()
+    {
+        tickWithAttackerCount(3);
+
+        assertActions(">S:healing stream totem");
     }
 };
 

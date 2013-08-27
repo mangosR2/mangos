@@ -90,62 +90,81 @@ namespace ai
         CastWindfuryWeaponAction(PlayerbotAI* ai) : CastEnchantItemAction(ai, "windfury weapon") {}
     };
 
-    class CastStoneskinTotemAction : public CastBuffSpellAction {
+    class CastTotemAction : public CastBuffSpellAction
+    {
     public:
-        CastStoneskinTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "stoneskin totem") {}
+        CastTotemAction(PlayerbotAI* ai, string spell) : CastBuffSpellAction(ai, spell) {}
+        virtual bool isUseful() { return CastBuffSpellAction::isUseful() && !AI_VALUE2(bool, "has totem", name); }
     };
 
-    class CastEarthbindTotemAction : public CastBuffSpellAction {
+    class CastStoneskinTotemAction : public CastTotemAction
+    {
     public:
-        CastEarthbindTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "earthbind totem") {}
+        CastStoneskinTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "stoneskin totem") {}
     };
 
-    class CastStrengthOfEarthTotemAction : public CastBuffSpellAction {
+    class CastEarthbindTotemAction : public CastTotemAction
+    {
     public:
-        CastStrengthOfEarthTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "strength of earth totem") {}
+        CastEarthbindTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "earthbind totem") {}
     };
 
-    class CastManaSpringTotemAction : public CastBuffSpellAction {
+    class CastStrengthOfEarthTotemAction : public CastTotemAction
+    {
     public:
-        CastManaSpringTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "mana spring totem") {}
+        CastStrengthOfEarthTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "strength of earth totem") {}
     };
 
-	class CastManaTideTotemAction : public CastSpellAction {
+    class CastManaSpringTotemAction : public CastTotemAction
+    {
+    public:
+        CastManaSpringTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "mana spring totem") {}
+    };
+
+	class CastManaTideTotemAction : public CastTotemAction
+	{
 	public:
-		CastManaTideTotemAction(PlayerbotAI* ai) : CastSpellAction(ai, "mana tide totem") {}
+		CastManaTideTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "mana tide totem") {}
 		virtual string GetTargetName() { return "self target"; }
 	};
 
-	class CastHealingStreamTotemAction : public CastBuffSpellAction {
+	class CastHealingStreamTotemAction : public CastTotemAction
+	{
 	public:
-		CastHealingStreamTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "healing stream totem") {}
+		CastHealingStreamTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "healing stream totem") {}
 	};
 
-    class CastCleansingTotemAction : public CastBuffSpellAction {
+    class CastCleansingTotemAction : public CastTotemAction
+    {
     public:
-        CastCleansingTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "cleansing totem") {}
+        CastCleansingTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "cleansing totem") {}
     };
 
-    class CastFlametongueTotemAction : public CastBuffSpellAction {
+    class CastFlametongueTotemAction : public CastTotemAction
+    {
     public:
-        CastFlametongueTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "flametongue totem") {}
+        CastFlametongueTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "flametongue totem") {}
     };
 
-    class CastWindfuryTotemAction : public CastBuffSpellAction {
+    class CastWindfuryTotemAction : public CastTotemAction
+    {
     public:
-        CastWindfuryTotemAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "windfury totem") {}
+        CastWindfuryTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "windfury totem") {}
     };
 
-    class CastSearingTotemAction : public CastSpellAction {
+    class CastSearingTotemAction : public CastTotemAction
+    {
     public:
-        CastSearingTotemAction(PlayerbotAI* ai) : CastSpellAction(ai, "searing totem") {}
+        CastSearingTotemAction(PlayerbotAI* ai) : CastTotemAction(ai, "searing totem") {}
         virtual string GetTargetName() { return "self target"; }
     };
 
-    class CastMagmaTotemAction : public CastMeleeSpellAction {
+    class CastMagmaTotemAction : public CastMeleeSpellAction
+    {
     public:
         CastMagmaTotemAction(PlayerbotAI* ai) : CastMeleeSpellAction(ai, "magma totem") {}
         virtual string GetTargetName() { return "self target"; }
+        virtual bool isUseful() { return CastMeleeSpellAction::isUseful() && !AI_VALUE2(bool, "has totem", name); }
     };
 
     class CastFireNovaAction : public CastSpellAction {
