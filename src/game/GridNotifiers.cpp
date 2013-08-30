@@ -191,7 +191,7 @@ void ObjectUpdater::Visit(GridRefManager<T>& m)
 bool RaiseDeadObjectCheck::operator()(Corpse* u)
 {
     // ignore bones
-    if(u->GetType() == CORPSE_BONES)
+    if (u->GetType() == CORPSE_BONES || !u->IsInWorld())
         return false;
 
     Player* owner = ObjectAccessor::FindPlayer(u->GetOwnerGuid());

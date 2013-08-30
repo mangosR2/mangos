@@ -2514,6 +2514,9 @@ bool SpellMgr::IsGroupBuff(SpellEntry const *spellInfo)
 
 bool SpellMgr::IsTargetMatchedWithCreatureType(SpellEntry const* pSpellInfo, Unit* pTarget)
 {
+    if (!pSpellInfo || !pTarget || !pTarget->IsInitialized())
+        return false;
+
     uint32 spellCreatureTargetMask = pSpellInfo->TargetCreatureType;
 
     if (IsSpellWithCasterSourceTargetsOnly(pSpellInfo))

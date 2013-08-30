@@ -546,7 +546,7 @@ namespace MaNGOS
             WorldObject const& GetFocusObject() const { return *i_fobj; }
             bool operator()(Player* u)
             {
-                if (u->isAlive() || u->IsTaxiFlying())
+                if (!u->IsInWorld() || u->isAlive() || u->IsTaxiFlying())
                     return false;
 
                 if (i_fobj->IsWithinDistInMap(u, i_range))
@@ -559,7 +559,7 @@ namespace MaNGOS
             bool operator()(Corpse* u);
             bool operator()(Creature* u)
             {
-                if (u->isAlive() || u->IsDeadByDefault() ||
+                if (!u->IsInWorld() || u->isAlive() || u->IsDeadByDefault() ||
                    ((i_typeMask && !(u->GetCreatureTypeMask() & i_typeMask)) ||
                    (i_typeMask == CREATURE_TYPEMASK_NONE && !(u->GetCreatureTypeMask() & CREATURE_TYPEMASK_HUMANOID_OR_UNDEAD))))
                     return false;
