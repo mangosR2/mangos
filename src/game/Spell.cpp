@@ -8755,7 +8755,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList &targetUnitMap)
         case 59796:
         case 63023: // Searing Light (normal&heroic) (XT-002 in Ulduar)
         case 65120:
-        case 72456: // Mutated Slime (ICC - Professor Putricide)
         {
             FillAreaTargets(targetUnitMap, radius, PUSH_DEST_CENTER, SPELL_TARGETS_HOSTILE);
             break;
