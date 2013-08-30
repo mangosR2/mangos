@@ -87,10 +87,6 @@ void DpsHunterStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("call pet", 60.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
-        "hunters pet dead",
-        NextAction::array(0, new NextAction("revive pet", 5.0f), NULL)));
-
-    triggers.push_back(new TriggerNode(
         "hunters pet low health",
         NextAction::array(0, new NextAction("mend pet", 60.0f), NULL)));
 

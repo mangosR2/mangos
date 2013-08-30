@@ -35,6 +35,8 @@ class MANGOS_DLL_SPEC RandomPlayerbotMgr : public PlayerbotHolder
         void PrintStats();
         double GetBuyMultiplier(Player* bot);
         double GetSellMultiplier(Player* bot);
+        uint32 GetLootAmount(Player* bot);
+        void SetLootAmount(Player* bot, uint32 value);
         void Refresh(Player* bot);
 
 	protected:

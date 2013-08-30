@@ -84,34 +84,13 @@ void AhBot::Init()
     factions[6] = 2;
     factions[7] = 3;
 
-    session = new WorldSession(sAhBotConfig.account, NULL, SEC_PLAYER, true, 0, LOCALE_enUS);
-    player = new Player(session);
-    if (!player->MinimalLoadFromDB(NULL, GetAHBplayerGUID()))
-    {
-        sLog.outString("AhBot character [account=%d, guid=%d] not found. AhBot is disabled.",
-                sAhBotConfig.account, sAhBotConfig.guid);
-        delete player;
-        delete session;
-        player = NULL;
-        session = NULL;
-        return;
-    }
-
-    ObjectAccessor::Instance().AddObject(player);
-
     availableItems.Init();
 
-    sLog.outString("AhBot loaded");
+    sLog.outString("AhBot configuration loaded");
 }
 
 AhBot::~AhBot()
 {
-    if (player)
-    {
-        ObjectAccessor::Instance().RemoveObject(player);
-        delete player;
-        delete session;
-    }
 }
 
 ObjectGuid AhBot::GetAHBplayerGUID()
@@ -146,7 +125,7 @@ void AhBot::Update()
 
 void AhBot::ForceUpdate()
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return;
 
     if (updating)
@@ -157,6 +136,12 @@ void AhBot::ForceUpdate()
 
     if (!allBidders.size())
         LoadRandomBots();
+
+    if (!allBidders.size())
+    {
+        sLog.outError("Ahbot is disabled but there is no bidders available");
+        return;
+    }
 
     CheckCategoryMultipliers();
 
@@ -355,10 +340,13 @@ int AhBot::Answer(int auction, Category* category, ItemBag* inAuctionItems)
             continue;
         }
 
-        if (entry->bidder && !IsBotAuction(entry->bidder))
-            player->GetSession()->SendAuctionOutbiddedMail(entry);
-
         uint32 bidder = GetRandomBidder(auctionIds[auction]);
+        if (!bidder)
+        {
+            sLog.outError("No bidders for auction %d", auctionIds[auction]);
+            break;
+        }
+
         entry->bidder = bidder;
         entry->bid = curPrice + urand(1, 1 + bidPrice / 10);
         availableMoney -= curPrice;
@@ -551,6 +539,12 @@ int AhBot::AddAuction(int auction, Category* category, ItemPrototype const* prot
     AuctionHouseObject* auctionHouse = sAuctionMgr.GetAuctionsMap(ahEntry);
 
     uint32 owner = GetRandomBidder(auctionIds[auction]);
+    if (!owner)
+    {
+        sLog.outError("No bidders for auction %d", auctionIds[auction]);
+        return 0;
+    }
+
     AuctionEntry* auctionEntry = new AuctionEntry;
     auctionEntry->Id = sObjectMgr.GenerateAuctionID();
     auctionEntry->itemGuidLow = item->GetGUIDLow();
@@ -577,7 +571,7 @@ int AhBot::AddAuction(int auction, Category* category, ItemPrototype const* prot
 
 void AhBot::HandleCommand(string command)
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return;
 
     if (command == "expire")
@@ -654,7 +648,7 @@ void AhBot::HandleCommand(string command)
 
 void AhBot::Expire(int auction)
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return;
 
     AuctionHouseEntry const* ahEntry = sAuctionHouseStore.LookupEntry(auctionIds[auction]);
@@ -684,7 +678,7 @@ void AhBot::Expire(int auction)
 
 void AhBot::PrintStats(int auction)
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return;
 
     AuctionHouseEntry const* ahEntry = sAuctionHouseStore.LookupEntry(auctionIds[auction]);
@@ -699,7 +693,7 @@ void AhBot::PrintStats(int auction)
 
 void AhBot::AddToHistory(AuctionEntry* entry, uint32 won)
 {
-    if (!player || !entry)
+    if (!sAhBotConfig.enabled || !entry)
         return;
 
     if (!IsBotAuction(entry->owner) && !IsBotAuction(entry->bidder))
@@ -875,16 +869,16 @@ void AhBot::updateMarketPrice(uint32 itemId, double price, uint32 auctionHouse)
 
 bool AhBot::IsBotAuction(uint32 bidder)
 {
-    return bidder == player->GetGUIDLow() || allBidders.find(bidder) != allBidders.end();
+    return allBidders.find(bidder) != allBidders.end();
 }
 
 uint32 AhBot::GetRandomBidder(uint32 auctionHouse)
 {
     vector<uint32> guids = bidders[factions[auctionHouse]];
-    int index = urand(0, guids.size() - 1);
-    if (guids.size() <= index)
-        return player->GetGUIDLow();
+    if (guids.empty())
+        return 0;
 
+    int index = urand(0, guids.size() - 1);
     return guids[index];
 }
 
@@ -913,12 +907,22 @@ void AhBot::LoadRandomBots()
         delete result;
     }
 
+    if (allBidders.empty() && sAhBotConfig.guid)
+    {
+        uint32 guid = sAhBotConfig.guid;
+        allBidders.insert(guid);
+        for (int i = 1; i <= 3; i++)
+        {
+            bidders[i].push_back(guid);
+        }
+    }
+
     sLog.outDetail("{A=%d,H=%d,N=%d} bidders loaded", bidders[1].size(), bidders[2].size(), bidders[3].size());
 }
 
 int32 AhBot::GetSellPrice(ItemPrototype const* proto)
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return 0;
 
     int32 maxPrice = 0;
@@ -944,7 +948,7 @@ int32 AhBot::GetSellPrice(ItemPrototype const* proto)
 
 int32 AhBot::GetBuyPrice(ItemPrototype const* proto)
 {
-    if (!player)
+    if (!sAhBotConfig.enabled)
         return 0;
 
     int32 maxPrice = 0;

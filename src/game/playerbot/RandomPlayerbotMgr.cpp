@@ -798,10 +798,22 @@ double RandomPlayerbotMgr::GetSellMultiplier(Player* bot)
     uint32 value = GetEventValue(id, "sellmultiplier");
     if (!value)
     {
-        value = urand(80, 500);
+        value = urand(80, 250);
         uint32 validIn = urand(sPlayerbotAIConfig.minRandomBotsPriceChangeInterval, sPlayerbotAIConfig.maxRandomBotsPriceChangeInterval);
         SetEventValue(id, "sellmultiplier", value, validIn);
     }
 
     return (double)value / 100.0;
+}
+
+uint32 RandomPlayerbotMgr::GetLootAmount(Player* bot)
+{
+    uint32 id = bot->GetObjectGuid();
+    return GetEventValue(id, "lootamount");
+}
+
+void RandomPlayerbotMgr::SetLootAmount(Player* bot, uint32 value)
+{
+    uint32 id = bot->GetObjectGuid();
+    SetEventValue(id, "lootamount", value, 24 * 3600);
 }

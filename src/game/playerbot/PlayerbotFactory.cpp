@@ -83,6 +83,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     InitPotions();
     InitSecondEquipmentSet();
     InitInventory();
+    InitGlyphs();
     bot->SetMoney(urand(level * 1000, level * 5 * 1000));
     bot->SaveToDB();
 
@@ -1497,4 +1498,112 @@ void PlayerbotFactory::InitInventoryEquip()
         if (StoreItem(itemId, 1) && count++ >= maxCount)
             break;
    }
+}
+
+void PlayerbotFactory::InitGlyphs()
+{
+    bot->InitGlyphsForLevel();
+
+    for (uint32 slotIndex = 0; slotIndex < MAX_GLYPH_SLOT_INDEX; ++slotIndex)
+    {
+        bot->SetGlyph(slotIndex, 0);
+        bot->ApplyGlyph(slotIndex, false);
+    }
+
+    uint32 level = bot->getLevel();
+    uint32 maxSlot = 0;
+    if (level >= 15)
+        maxSlot = 2;
+    if (level >= 30)
+        maxSlot = 3;
+    if (level >= 50)
+        maxSlot = 4;
+    if (level >= 70)
+        maxSlot = 5;
+    if (level >= 80)
+        maxSlot = 6;
+
+    if (!maxSlot)
+        return;
+
+    list<uint32> glyphs;
+    for (uint32 itemId = 0; itemId < sItemStorage.GetMaxEntry(); ++itemId)
+    {
+        ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+        if (!proto)
+            continue;
+
+        if (proto->Class != ITEM_CLASS_GLYPH)
+            continue;
+
+        if ((proto->AllowableClass & bot->getClassMask()) == 0 || (proto->AllowableRace & bot->getRaceMask()) == 0)
+            continue;
+
+        for (uint32 spell = 0; spell < MAX_ITEM_PROTO_SPELLS; spell++)
+        {
+            uint32 spellId = proto->Spells[spell].SpellId;
+            SpellEntry const *entry = sSpellStore.LookupEntry(spellId);
+            if (!entry)
+                continue;
+
+            for (uint32 effect = 0; effect < MAX_EFFECT_INDEX; ++effect)
+            {
+                if (entry->Effect[effect] != SPELL_EFFECT_APPLY_GLYPH)
+                    continue;
+
+                uint32 glyph = entry->EffectMiscValue[effect];
+                glyphs.push_back(glyph);
+            }
+        }
+    }
+
+    if (glyphs.empty())
+    {
+        sLog.outError("No glyphs found for bot %s", bot->GetName());
+        return;
+    }
+
+    set<uint32> chosen;
+    for (uint32 slotIndex = 0; slotIndex < maxSlot; ++slotIndex)
+    {
+        uint32 slot = bot->GetGlyphSlot(slotIndex);
+        GlyphSlotEntry const *gs = sGlyphSlotStore.LookupEntry(slot);
+        if (!gs)
+            continue;
+
+        vector<uint32> ids;
+        for (list<uint32>::iterator i = glyphs.begin(); i != glyphs.end(); ++i)
+        {
+            uint32 id = *i;
+            GlyphPropertiesEntry const *gp = sGlyphPropertiesStore.LookupEntry(id);
+            if (!gp || gp->TypeFlags != gs->TypeFlags)
+                continue;
+
+            ids.push_back(id);
+        }
+
+        int maxCount = urand(0, 3);
+        int count = 0;
+        bool found = false;
+        for (int attempts = 0; attempts < 15; ++attempts)
+        {
+            uint32 index = urand(0, ids.size() - 1);
+            if (index >= ids.size())
+                continue;
+
+            uint32 id = ids[index];
+            if (chosen.find(id) != chosen.end())
+                continue;
+
+            chosen.insert(id);
+
+            bot->SetGlyph(slotIndex, id);
+            found = true;
+            break;
+        }
+        if (!found)
+            sLog.outError("No glyphs found for bot %s index %d slot %d", bot->GetName(), slotIndex, slot);
+    }
+
+    bot->ApplyGlyphs(true);
 }

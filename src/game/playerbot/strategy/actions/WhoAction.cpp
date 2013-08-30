@@ -10,6 +10,13 @@ using namespace ai;
 
 map<uint32, string> WhoAction::skills;
 
+#ifndef WIN32
+inline int strcmpi(const char* s1, const char* s2)
+{
+    for (; *s1 && *s2 && (toupper(*s1) == toupper(*s2)); ++s1, ++s2);
+    return *s1 - *s2;
+}
+#endif
 
 bool WhoAction::Execute(Event event)
 {

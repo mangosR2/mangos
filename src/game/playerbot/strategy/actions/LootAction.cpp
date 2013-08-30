@@ -4,6 +4,8 @@
 
 #include "../../LootObjectStack.h"
 #include "../../PlayerbotAIConfig.h"
+#include "../../../ahbot/AhBot.h"
+#include "../../RandomPlayerbotMgr.h"
 
 using namespace ai;
 
@@ -238,6 +240,24 @@ bool StoreLootAction::Execute(Event event)
 
         if (loot_type != LOOT_SKINNING && !IsLootAllowed(itemid))
             continue;
+
+        if (sRandomPlayerbotMgr.IsRandomBot(bot))
+        {
+            ItemPrototype const *proto = sItemStorage.LookupEntry<ItemPrototype>(itemid);
+            if (proto)
+            {
+                uint32 price = itemcount * auctionbot.GetSellPrice(proto) * sRandomPlayerbotMgr.GetSellMultiplier(bot) + gold;
+                uint32 lootAmount = sRandomPlayerbotMgr.GetLootAmount(bot);
+                if (bot->GetGroup() && price)
+                {
+                    sRandomPlayerbotMgr.SetLootAmount(bot, lootAmount + price);
+                }
+                else if (lootAmount)
+                {
+                    sRandomPlayerbotMgr.SetLootAmount(bot, 0);
+                }
+            }
+        }
 
         WorldPacket* const packet = new WorldPacket(CMSG_AUTOSTORE_LOOT_ITEM, 1);
         *packet << itemindex;

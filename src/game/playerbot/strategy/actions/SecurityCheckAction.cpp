@@ -1,15 +1,14 @@
 #include "../../../pchdef.h"
 #include "../../playerbot.h"
+#include "../../RandomPlayerbotMgr.h"
 #include "SecurityCheckAction.h"
-#include "../../PlayerbotAIConfig.h"
 
 using namespace ai;
 
 
 bool SecurityCheckAction::isUseful()
 {
-    uint32 account = sObjectMgr.GetPlayerAccountIdByGUID(bot->GetObjectGuid());
-    return sPlayerbotAIConfig.IsInRandomAccountList(account) && ai->GetMaster() && ai->GetMaster()->GetSession()->GetSecurity() < SEC_GAMEMASTER;
+    return sRandomPlayerbotMgr.IsRandomBot(bot) && ai->GetMaster() && ai->GetMaster()->GetSession()->GetSecurity() < SEC_GAMEMASTER;
 }
 
 bool SecurityCheckAction::Execute(Event event)

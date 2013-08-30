@@ -22,7 +22,7 @@ namespace ahbot
     class AhBot
     {
     public:
-        AhBot() : nextAICheckTime(0), player(NULL), session(NULL), updating(false) {}
+        AhBot() : nextAICheckTime(0), updating(false) {}
         virtual ~AhBot();
 
     public:
@@ -72,8 +72,6 @@ namespace ahbot
 
     private:
         AvailableItemsBag availableItems;
-        WorldSession* session;
-        Player* player;
         time_t nextAICheckTime;
         map<string, double> categoryMultipliers;
         map<string, uint32> categoryMaxAuctionCount;

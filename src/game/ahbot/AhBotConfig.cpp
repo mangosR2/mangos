@@ -34,14 +34,11 @@ bool AhBotConfig::Initialize()
     }
 
     enabled = config.GetBoolDefault("AhBot.Enabled", true);
-    account = config.GetIntDefault("AhBot.Account", 0);
-    guid = (uint64)config.GetIntDefault("AhBot.GUID", 0);
-    if (!account || !guid)
-        enabled = false;
 
     if (!enabled)
         sLog.outString("AhBot is Disabled in ahbot.conf");
 
+    guid = (uint64)config.GetIntDefault("AhBot.GUID", 0);
     updateInterval = config.GetIntDefault("AhBot.UpdateIntervalInSeconds", 300);
     historyDays = config.GetIntDefault("AhBot.History.Days", 30);
     itemBuyInterval = config.GetIntDefault("AhBot.ItemBuyInterval", 7200);

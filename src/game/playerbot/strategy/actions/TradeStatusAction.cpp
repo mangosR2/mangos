@@ -47,7 +47,17 @@ bool TradeStatusAction::Execute(Event event)
 
         if (CheckTrade())
         {
+            int32 botMoney = CalculateCost(bot->GetTradeData(), true);
+
             bot->GetSession()->HandleAcceptTradeOpcode(p);
+            if (bot->GetTradeData())
+                return false;
+
+            if (sRandomPlayerbotMgr.IsRandomBot(bot))
+            {
+                int32 lootAmount = sRandomPlayerbotMgr.GetLootAmount(bot);
+                sRandomPlayerbotMgr.SetLootAmount(bot, max(0, lootAmount - botMoney * 10));
+            }
             return true;
         }
     }
@@ -73,6 +83,16 @@ void TradeStatusAction::BeginTrade()
 
     ai->TellMaster("=== Trade ===");
     TellItems(visitor.items);
+
+    if (sRandomPlayerbotMgr.IsRandomBot(bot))
+    {
+        uint32 discount = sRandomPlayerbotMgr.GetLootAmount(bot) / 10;
+        if (discount)
+        {
+            ostringstream out; out << "Free trade: " << chat->formatMoney(discount);
+            ai->TellMaster(out);
+        }
+    }
 }
 
 bool TradeStatusAction::CheckTrade()
@@ -107,6 +127,9 @@ bool TradeStatusAction::CheckTrade()
 
     int32 botMoney = CalculateCost(bot->GetTradeData(), true);
     int32 playerMoney = CalculateCost(master->GetTradeData(), false);
+
+    int32 discount = sRandomPlayerbotMgr.GetLootAmount(bot) / 10;
+    botMoney = max(0, botMoney - discount);
 
     if (playerMoney >= botMoney)
         return true;

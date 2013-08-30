@@ -39,8 +39,33 @@ bool SuggestWhatToDoAction::Execute(Event event)
 
 void SuggestWhatToDoAction::instance()
 {
-    if (bot->getLevel() > 15)
-        spam("I would like to do an instance. Would you like to join me?");
+    uint32 level = bot->getLevel();
+    if (level > 15)
+    {
+        switch (urand(0, 5))
+        {
+        case 0:
+            spam("Need a tank for an instance run");
+            break;
+        case 1:
+            spam("Need a healer for an instance run");
+            break;
+        case 2:
+            spam("I would like to do an instance run. Would you like to join me?");
+            break;
+        case 3:
+            spam("Need better equipment. Why not do an instance run?");
+            break;
+        case 4:
+            spam("Have dungeon quests? Can join your group!");
+            break;
+        case 5:
+            spam("Have group quests? Invite me!");
+            break;
+        default:
+            spam("Hey, why not join Dungeon Finder?");
+        }
+    }
 }
 
 vector<uint32> SuggestWhatToDoAction::GetIncompletedQuests()
@@ -78,18 +103,33 @@ void SuggestWhatToDoAction::newQuest()
 {
     vector<uint32> quests = GetIncompletedQuests();
     if (quests.size() < MAX_QUEST_LOG_SIZE - 5)
-        spam("I would like to pick up and do a new quest. Would you like to join me?");
+        spam("I would like to pick up and do a new quest. Just invite me!");
 }
 
 void SuggestWhatToDoAction::grindMaterials()
 {
-    if (bot->getLevel() > 5)
+    if (bot->getLevel() <= 5)
+        return;
+
+    switch (urand(0, 5))
+    {
+    case 0:
+        spam("Need help for tradeskill?");
+        break;
+    case 1:
+        spam("Can we have some trade material grinding?");
+        break;
+    case 2:
+        spam("I have some trade materials for sell");
+        break;
+    default:
         spam("I am going to grind some trade materials. Would you like to join me?");
+    }
 }
 
 void SuggestWhatToDoAction::grindReputation()
 {
-    if (bot->getLevel() > 50)
+    if (bot->getLevel() > 15)
         ai->TellMasterNoFacing("I think we should do something to improve our reputation", PLAYERBOT_SECURITY_ALLOW_ALL);
 }
 
@@ -106,7 +146,7 @@ void SuggestWhatToDoAction::relax()
 void SuggestWhatToDoAction::achievement()
 {
     if (bot->getLevel() > 15)
-        spam("I would like to do some achievement. Would you like to join me?");
+        spam("I would like to get some achievement. Would you like to join me?");
 }
 
 class FindTradeItemsVisitor : public IterateItemsVisitor

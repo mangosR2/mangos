@@ -13,7 +13,6 @@ public:
     bool Initialize();
 
     bool enabled;
-    uint32 account;
     uint64 guid;
     uint32 updateInterval;
     uint32 historyDays, itemBuyInterval, itemSellInterval, maxSellInterval;
