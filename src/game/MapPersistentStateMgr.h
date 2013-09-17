@@ -118,6 +118,8 @@ class MapPersistentState
                 UnloadIfEmpty();
         }
 
+        bool const& IsRequiresRemove() const { return m_needRemove; };
+
         time_t GetCreatureRespawnTime(uint32 loguid) const
         {
             RespawnTimes::const_iterator itr = m_creatureRespawnTimes.find(loguid);
@@ -162,6 +164,8 @@ class MapPersistentState
         uint32 m_mapid;
         Difficulty m_difficulty;
         Map* m_usedByMap;                                   // NULL if map not loaded, non-NULL lock MapPersistentState from unload
+
+        bool m_needRemove;
 
         // persistent data
         RespawnTimes m_creatureRespawnTimes;                // lock MapPersistentState from unload, for example for temporary bound dungeon unload delay
@@ -405,7 +409,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
 
         void GetStatistics(uint32& numStates, uint32& numBoundPlayers, uint32& numBoundGroups);
 
-        void Update() { m_Scheduler.Update(); }
+        void Update();
     private:
         typedef UNORDERED_MAP<uint32 /*InstanceId or MapId*/, MapPersistentState*> PersistentStateMap;
 

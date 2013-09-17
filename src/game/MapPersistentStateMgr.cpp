@@ -45,7 +45,7 @@ static uint32 resetEventTypeDelay[MAX_RESET_EVENT_TYPE] = { 0, 3600, 900, 300, 6
 //== MapPersistentState functions ==========================
 MapPersistentState::MapPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty)
 : m_instanceid(InstanceId), m_mapid(MapId),
-  m_difficulty(difficulty), m_usedByMap(NULL)
+  m_difficulty(difficulty), m_usedByMap(NULL), m_needRemove(false)
 {
 }
 
@@ -63,7 +63,7 @@ bool MapPersistentState::UnloadIfEmpty()
 {
     if (CanBeUnload())
     {
-        sMapPersistentStateMgr.RemovePersistentState(GetMapId(), GetInstanceId());
+        m_needRemove = true;
         return false;
     }
     else
@@ -1250,4 +1250,27 @@ void MapPersistentStateManager::LoadGameobjectRespawnTimes()
 
     sLog.outString(">> Loaded %u gameobject respawn times", count);
     sLog.outString();
+}
+
+void MapPersistentStateManager::Update()
+{
+    m_Scheduler.Update();
+
+    MapIDSet removedSet;
+
+    // instance cleanups
+    for (PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.begin(); itr != m_instanceSaveByInstanceId.end(); ++itr)
+    {
+        if (itr->second && itr->second->IsRequiresRemove())
+            removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
+    }
+    // map cleanups
+    for (PersistentStateMap::iterator itr = m_instanceSaveByMapId.begin(); itr != m_instanceSaveByMapId.end(); ++itr)
+    {
+        if (itr->second && itr->second->IsRequiresRemove())
+            removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
+    }
+
+    for (MapIDSet::const_iterator itr = removedSet.begin(); itr != removedSet.end(); ++itr)
+        RemovePersistentState(itr->GetId(), itr->GetInstanceId());
 }
