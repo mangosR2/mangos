@@ -247,6 +247,8 @@ struct LFGProposal
     LFGDungeonEntry const* GetDungeon() { return m_dungeon;};
     LFGType GetType();
 
+    uint32 GetDungeonId();
+
     void Start();
 
     void SetDeleted() { m_bDeleted = true; };
@@ -283,6 +285,8 @@ public:
     void SetState(LFGState state) { m_state = state; };
     LFGState GetState() { return m_state; };
 
+    ObjectGuid const& GetOwnerGuid() { return m_guid; };
+
     LFGProposal*   GetProposal()   { return m_proposal; };
     void           SetProposal(LFGProposal* proposal)   { m_proposal = proposal; };
 
@@ -291,8 +295,8 @@ public:
     void           RemoveFlags(uint32 flags) { m_uiFlags = m_uiFlags & ~flags;};
 
 protected:
-    LFGStateStructure()
-        : m_type(LFG_TYPE_NONE), m_uiFlags(0), m_bUpdate(false), m_state(LFG_STATE_NONE), m_proposal(NULL) {};
+    LFGStateStructure(ObjectGuid const& guid)
+        : m_guid(guid), m_type(LFG_TYPE_NONE), m_uiFlags(0), m_bUpdate(false), m_state(LFG_STATE_NONE), m_proposal(NULL) {};
     LFGType          m_type;
     uint32           m_uiFlags;
     bool             m_bUpdate;
@@ -300,6 +304,7 @@ protected:
     LFGDungeonSet    m_DungeonsList;                   // Dungeons the player have applied for
     LFGLockStatusMap m_LockMap;                        // Dungeons lock map
     LFGProposal*     m_proposal;
+    ObjectGuid const m_guid;                           // guid of object
 
 };
 
@@ -307,13 +312,13 @@ protected:
 struct MANGOS_DLL_SPEC LFGPlayerState : public LFGStateStructure
 {
 public:
-    explicit LFGPlayerState(Player* player) : m_pPlayer(player)
+    explicit LFGPlayerState(ObjectGuid const& playerGuid) : LFGStateStructure(playerGuid)
     {
         Clear();
     };
-    ~LFGPlayerState() {};
+    virtual ~LFGPlayerState() {};
 
-    void Clear();
+    void Clear() override;
     LFGLockStatusMap const* GetLockMap();
     std::string const&  GetComment()    { return m_comment; };
     void           SetComment(std::string comment);
@@ -334,14 +339,13 @@ public:
     void           SetAnswer(LFGAnswer _accept) { m_answer = _accept;};
     LFGAnswer      GetAnswer() { return m_answer;};
 
-
 private:
     LFGRoleMask    m_rolesMask;
     bool           m_bTeleported;
-    Player*        m_pPlayer;
     time_t         m_jointime;
     std::string    m_comment;
     LFGAnswer      m_answer;                           ///< Accept status (-1 not answer | 0 Not agree | 1 agree)
+
 };
 
 typedef UNORDERED_MAP<ObjectGuid, LFGAnswer> LFGAnswerMap;
@@ -350,15 +354,16 @@ struct MANGOS_DLL_SPEC LFGGroupState : public LFGStateStructure
 {
 
 public:
-    explicit LFGGroupState(Group* group) : m_pGroup(group)
+    explicit LFGGroupState(ObjectGuid const& groupGuid) : LFGStateStructure(groupGuid)
     {
         Clear();
     };
-    ~LFGGroupState() {};
+    virtual ~LFGGroupState() {};
 
-    void Clear();
+    void Clear() override;
     LFGDungeonEntry const* GetDungeon()   { return m_realdungeon; };
     void SetDungeon(LFGDungeonEntry const* dungeon)   { m_realdungeon = dungeon; };
+    uint32 GetDungeonId();
 
     // Current state operations
     void SaveState() { m_savedstate = m_state; };
@@ -395,7 +400,6 @@ public:
 
 private:
     bool           m_bQueued;
-    Group*         m_pGroup;
     LFGState       m_savedstate;
     LFGDungeonStatus     m_status;
     LFGDungeonEntry const* m_realdungeon;                       // real dungeon entry (if random or list)
@@ -410,7 +414,6 @@ private:
     LFGAnswerMap   m_bootVotes;                                 // Player votes (-1 not answer | 0 Not agree | 1 agree)
     ObjectGuid     m_bootVictim;                                // Player guid to be kicked (can't vote)
     std::string    m_bootReason;                                // kick reason
-
 };
 
 #endif
