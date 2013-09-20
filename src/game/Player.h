@@ -2339,8 +2339,6 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool NeedEjectFromThisMap();
 
-        // LFG
-        LFGPlayerState* GetLFGPlayerState() { return m_LFGState; }
         uint8 GetTalentsCount(uint8 tab);
         void ResetTalentsCount() { m_cachedTC[0] = 0; m_cachedTC[1] = 0; m_cachedTC[2] = 0; }
 
@@ -2766,9 +2764,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 _pendingBindTimer;
 
         uint8  m_cachedTC[3];
-
-        // LFG
-        LFGPlayerState* m_LFGState;
 
         uint32 m_cachedGS;
 };

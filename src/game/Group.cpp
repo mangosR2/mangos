@@ -82,8 +82,7 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 
 Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
     m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
-    m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
-    m_LFGState(LFGGroupState(this))
+    m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL)
 {
 }
 
@@ -119,7 +118,10 @@ Group::~Group()
 
     // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
     if (!GetObjectGuid().IsEmpty())
+    {
+        sLFGMgr.RemoveLFGState(GetObjectGuid());
         sObjectMgr.RemoveGroup(this);
+    }
 
     // Sub group counters clean up
     if (m_subGroupsCounts)
@@ -242,7 +244,7 @@ bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags
     if (player)
     {
         if (player->IsInWorld())
-            player->GetLFGPlayerState()->SetRoles(roles);
+            sLFGMgr.GetLFGPlayerState(player->GetObjectGuid())->SetRoles(roles);
     }
 
     return true;
@@ -1142,10 +1144,10 @@ void Group::SendUpdate()
         data << uint8(citr->group);                         // groupid
         data << uint8(citr->flags);                         // group flags
         data << (isLFGGroup() ? uint8(citr->roles) : uint8(0)); // roles mask
-        if(isLFGGroup())
+        if (isLFGGroup())
         {
-            uint32 dungeonID = GetLFGGroupState()->GetDungeon() ? GetLFGGroupState()->GetDungeon()->ID : 0;
-            data << uint8(GetLFGGroupState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
+            uint32 dungeonID = sLFGMgr.GetLFGGroupState(GetObjectGuid())->GetDungeon()->ID;
+            data << uint8(sLFGMgr.GetLFGGroupState(GetObjectGuid())->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
             data << uint32(dungeonID);
         }
         data << GetObjectGuid();                            // group guid
@@ -1245,7 +1247,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
     LFGRoleMask roles = LFG_ROLE_MASK_NONE;
 
     if (isLFGGroup() && sObjectMgr.GetPlayer(guid))
-        roles = sObjectMgr.GetPlayer(guid)->GetLFGPlayerState()->GetRoles();
+        roles = sLFGMgr.GetLFGPlayerState(guid)->GetRoles();
 
     if (m_subGroupsCounts)
     {
