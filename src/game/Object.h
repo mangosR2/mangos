@@ -651,10 +651,10 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         // low level function for visibility change code, must be define in all main world object subclasses
         virtual bool isVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const = 0;
 
-        void SetMap(Map * map);
-        Map * GetMap() const { return m_currMap; }
+        virtual void SetMap(Map* map);
+        Map* GetMap() const { return m_currMap; }
         //used to check all object's GetMap() calls when object is not in world!
-        void ResetMap() { m_currMap = NULL; }
+        virtual void ResetMap() { m_currMap = NULL; }
 
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT);
 
