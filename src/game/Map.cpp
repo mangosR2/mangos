@@ -82,7 +82,6 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
   : i_mapEntry (sMapStore.LookupEntry(id)), i_spawnMode(SpawnMode),
   i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
   m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
-  m_activeNonPlayersIter(m_activeNonPlayers.end()),
   i_gridExpiry(expiry), m_TerrainData(sTerrainMgr.LoadTerrain(id)),
   i_data(NULL), i_script_id(0)
 {
@@ -393,21 +392,20 @@ void Map::ActivateGrid(NGridType* nGrid)
     }
 }
 
-bool Map::Add(Player *player)
+bool Map::Add(Player* player)
 {
     player->GetMapRef().link(this, player);
     player->SetMap(this);
     CreateAttackersStorageFor(player->GetObjectGuid());
 
     // update player state for other player and visa-versa
-    CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
-    Cell cell(p);
-    EnsureGridLoadedAtEnter(cell, player);
+    AddToActive(player);
     player->AddToWorld();
-
     SendInitSelf(player);
     SendInitActiveObjects(player);
 
+    CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
+    Cell cell(p);
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
     player->GetViewPoint().Event_AddedToWorld(&(*grid)(cell.CellX(), cell.CellY()));
     UpdateObjectVisibility(player,cell,p);
@@ -416,7 +414,6 @@ bool Map::Add(Player *player)
         i_data->OnPlayerEnter(player);
 
     sLFGMgr.OnPlayerEnterMap(player, this);
-
     return true;
 }
 
@@ -589,11 +586,20 @@ void Map::Update(const uint32 &t_diff)
 
     UpdateEvents(t_diff);
 
-    /// update worldsessions for existing players
-    for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
+    /// update worldsessions for existing players (stage 1)
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
     {
-        Player* plr = m_mapRefIter->getSource();
-        if(plr && plr->IsInWorld())
+        ObjectGuid guid;
+        {
+            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            guid = *itr++;
+        }
+        if (!guid.IsPlayer())
+            continue;
+
+        Player* plr = GetPlayer(guid);
+
+        if (plr && plr->IsInWorld())
         {
             WorldSession * pSession = plr->GetSession();
             MapSessionFilter updater(pSession);
@@ -604,14 +610,40 @@ void Map::Update(const uint32 &t_diff)
         }
     }
 
-    /// update players at tick
-    for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
+    /// update active objects at tick (stage 2)
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
     {
-        Player* plr = m_mapRefIter->getSource();
-        if(plr && plr->IsInWorld())
+        ObjectGuid guid;
         {
-            WorldObject::UpdateHelper helper(plr);
-            helper.Update(t_diff);
+            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            guid = *itr++;
+        }
+        switch (guid.GetHigh())
+        {
+            case HIGHGUID_PLAYER:
+            {
+                Player* plr = GetPlayer(guid);
+                if (plr && plr->IsInWorld())
+                {
+                    WorldObject::UpdateHelper helper(plr);
+                    helper.Update(t_diff);
+                }
+                break;
+            }
+            case HIGHGUID_TRANSPORT:
+            case HIGHGUID_MO_TRANSPORT:
+            {
+                // FIXME - temphack for update active MO_TRANSPORT objects
+                WorldObject* obj = GetWorldObject(guid);
+                if (obj && obj->IsInWorld() && obj->isActiveObject() && obj->IsPositionValid())
+                {
+                    WorldObject::UpdateHelper helper(obj);
+                    helper.Update(t_diff);
+                }
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -624,19 +656,22 @@ void Map::Update(const uint32 &t_diff)
     // for pets
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
-    // the player iterator is stored in the map object
-    // to make sure calls to Map::Remove don't invalidate it
-    for(m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
+    // player and non-player active objects (only cells re-mark)
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
     {
-        Player* plr = m_mapRefIter->getSource();
+        ObjectGuid guid;
+        {
+            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            guid = *itr++;
+        }
+        WorldObject* obj = GetWorldObject(guid);
 
-        if (!plr || !plr->IsInWorld() || !plr->IsPositionValid())
+        if (!obj->IsInWorld() || !obj->isActiveObject() || !obj->IsPositionValid())
             continue;
 
         //lets update mobs/objects in ALL visible cells around player!
-        CellArea area = Cell::CalculateCellArea(plr->GetPositionX(), plr->GetPositionY(), GetVisibilityDistance());
-
-        for(uint32 x = area.low_bound.x_coord; x <= area.high_bound.x_coord; ++x)
+        CellArea area = Cell::CalculateCellArea(obj->GetPositionX(), obj->GetPositionY(), GetVisibilityDistance());
+        for (uint32 x = area.low_bound.x_coord; x <= area.high_bound.x_coord; ++x)
         {
             for(uint32 y = area.low_bound.y_coord; y <= area.high_bound.y_coord; ++y)
             {
@@ -651,52 +686,6 @@ void Map::Update(const uint32 &t_diff)
                     cell.SetNoCreate();
                     Visit(cell, grid_object_update);
                     Visit(cell, world_object_update);
-                }
-            }
-        }
-    }
-
-    // non-player active objects
-    if(!m_activeNonPlayers.empty())
-    {
-        for(m_activeNonPlayersIter = m_activeNonPlayers.begin(); m_activeNonPlayersIter != m_activeNonPlayers.end(); )
-        {
-            // skip not in world
-            WorldObject* obj = *m_activeNonPlayersIter;
-
-            // step before processing, in this case if Map::Remove remove next object we correctly
-            // step to next-next, and if we step to end() then newly added objects can wait next update.
-            ++m_activeNonPlayersIter;
-
-            if (!obj->IsInWorld() || !obj->IsPositionValid())
-                continue;
-
-            // FIXME - temphack for update active MO_TRANSPORT objects
-            if (obj->GetObjectGuid().IsMOTransport())
-            {
-                WorldObject::UpdateHelper helper(obj);
-                helper.Update(t_diff);
-            }
-
-            //lets update mobs/objects in ALL visible cells around player!
-            CellArea area = Cell::CalculateCellArea(obj->GetPositionX(), obj->GetPositionY(), GetVisibilityDistance());
-
-            for(uint32 x = area.low_bound.x_coord; x <= area.high_bound.x_coord; ++x)
-            {
-                for(uint32 y = area.low_bound.y_coord; y <= area.high_bound.y_coord; ++y)
-                {
-                    // marked cells are those that have been visited
-                    // don't visit the same cell twice
-                    uint32 cell_id = (y * TOTAL_NUMBER_OF_CELLS_PER_MAP) + x;
-                    if(!isCellMarked(cell_id))
-                    {
-                        markCell(cell_id);
-                        CellPair pair(x,y);
-                        Cell cell(pair);
-                        cell.SetNoCreate();
-                        Visit(cell, grid_object_update);
-                        Visit(cell, world_object_update);
-                    }
                 }
             }
         }
@@ -737,6 +726,8 @@ void Map::Remove(Player* player, bool remove)
 
     sLFGMgr.OnPlayerLeaveMap(player, this);
 
+    RemoveFromActive(player);
+
     if (remove)
         player->CleanupsBeforeDelete();
 
@@ -749,9 +740,10 @@ void Map::Remove(Player* player, bool remove)
     // when the first element of the list is being removed
     // nocheck_prev will return the padding element of the RefManager
     // instead of NULL in the case of prev
-    if(m_mapRefIter == player->GetMapRef())
+    if (m_mapRefIter == player->GetMapRef())
         m_mapRefIter = m_mapRefIter->nocheck_prev();
     player->GetMapRef().unlink();
+
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
@@ -803,8 +795,8 @@ Map::Remove(T* obj, bool remove)
         return;
 
     DEBUG_LOG("Remove object (GUID: %u TypeId:%u) from grid[%u,%u]", obj->GetGUIDLow(), obj->GetTypeId(), cell.data.Part.grid_x, cell.data.Part.grid_y);
-    NGridType *grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT( grid != NULL );
+    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    MANGOS_ASSERT(grid != NULL);
 
     RemoveFromActive(obj);
 
@@ -1178,16 +1170,21 @@ void Map::SendInitActiveObjects(Player* player)
 {
     if (!player)
         return;
-    ActiveNonPlayers const& activeObjects = GetActiveObjects();
+    GuidSet const& activeObjects = GetActiveObjects();
     if (activeObjects.empty())
         return;
 
     UpdateData initData;
     bool hasAny = false;
 
-    for (ActiveNonPlayers::iterator itr = m_activeNonPlayers.begin(); itr != m_activeNonPlayers.end(); ++itr)
+    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
     {
-        WorldObject* object = *itr;
+        ObjectGuid guid = *itr;
+        if (guid.IsPlayer())
+            continue;
+
+        WorldObject* object = GetWorldObject(guid);
+
         if (!object || !object->IsInWorld() || !object->isVisibleForInState(player,player,false) || !object->isActiveObject())
             continue;
 
@@ -1195,7 +1192,7 @@ void Map::SendInitActiveObjects(Player* player)
         object->AddNotifiedClient(player->GetObjectGuid());
         hasAny = true;
         DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Map::SendInitActiveObjects %s visibility initialized for %s",
-                      object->GetObjectGuid().GetString().c_str(), player->GetGuidStr().c_str());
+                      guid.GetString().c_str(), player->GetGuidStr().c_str());
     }
     if (!hasAny)
         return;
@@ -1209,16 +1206,21 @@ void Map::SendRemoveActiveObjects(Player* player)
 {
     if (!player)
         return;
-    ActiveNonPlayers const& activeObjects = GetActiveObjects();
+    GuidSet const& activeObjects = GetActiveObjects();
     if (activeObjects.empty())
         return;
 
     UpdateData initData;
     bool hasAny = false;
 
-    for (ActiveNonPlayers::iterator itr = m_activeNonPlayers.begin(); itr != m_activeNonPlayers.end(); ++itr)
+    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
     {
-        WorldObject* object = *itr;
+        ObjectGuid guid = *itr;
+        if (guid.IsPlayer())
+            continue;
+
+        WorldObject* object = GetWorldObject(guid);
+
         if (!object || !object->IsInWorld() || !object->isActiveObject())
             continue;
 
@@ -1226,7 +1228,7 @@ void Map::SendRemoveActiveObjects(Player* player)
         hasAny = true;
         object->RemoveNotifiedClient(player->GetObjectGuid());
         DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "Map::SendRemoveActiveObjects %s visibility removed for %s",
-                      object->GetObjectGuid().GetString().c_str(), player->GetGuidStr().c_str());
+                    guid.GetString().c_str(), player->GetGuidStr().c_str());
     }
     if (!hasAny)
         return;
@@ -1330,19 +1332,13 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
     cell_max >> cell_range;
     cell_max += cell_range;
 
-    for(MapRefManager::const_iterator iter = m_mapRefManager.begin(); iter != m_mapRefManager.end(); ++iter)
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
     {
-        Player* plr = iter->getSource();
+        ObjectGuid guid = *itr;
 
-        CellPair p = MaNGOS::ComputeCellPair(plr->GetPositionX(), plr->GetPositionY());
-        if( (cell_min.x_coord <= p.x_coord && p.x_coord <= cell_max.x_coord) &&
-            (cell_min.y_coord <= p.y_coord && p.y_coord <= cell_max.y_coord) )
-            return true;
-    }
-
-    for(ActiveNonPlayers::const_iterator iter = m_activeNonPlayers.begin(); iter != m_activeNonPlayers.end(); ++iter)
-    {
-        WorldObject* obj = *iter;
+        WorldObject const* obj = const_cast<Map*>(this)->GetWorldObject(guid);
+        if (!obj || !obj->isActiveObject())
+            continue;
 
         CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
         if( (cell_min.x_coord <= p.x_coord && p.x_coord <= cell_max.x_coord) &&
@@ -1355,9 +1351,15 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
 
 void Map::AddToActive(WorldObject* obj)
 {
-    m_activeNonPlayers.insert(obj);
+    if (!obj)
+        return;
+    {
+        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        m_activeObjects.insert(obj->GetObjectGuid());
+    }
+
     Cell cell = Cell(MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY()));
-    EnsureGridLoaded(cell);
+    EnsureGridLoadedAtEnter(cell);
 
     // also not allow unloading spawn grid to prevent creating creature clone at load
     if (obj->GetTypeId() == TYPEID_UNIT)
@@ -1380,7 +1382,7 @@ void Map::AddToActive(WorldObject* obj)
         }
     }
 
-    if (IsVisibleGlobally(obj->GetObjectGuid()))
+    if (obj->GetTypeId() != TYPEID_PLAYER && IsVisibleGlobally(obj->GetObjectGuid()))
     {
         PlayerList const& plist = GetPlayers();
         if (!plist.isEmpty())
@@ -1404,21 +1406,19 @@ void Map::AddToActive(WorldObject* obj)
     }
 }
 
-void Map::RemoveFromActive( WorldObject* obj )
+void Map::RemoveFromActive(WorldObject* obj)
 {
+    if (!obj)
+        return;
+
     // Map::Update for active object in proccess
-    if(m_activeNonPlayersIter != m_activeNonPlayers.end())
     {
-        ActiveNonPlayers::iterator itr = m_activeNonPlayers.find(obj);
-        if(itr == m_activeNonPlayersIter)
-            ++m_activeNonPlayersIter;
-        m_activeNonPlayers.erase(itr);
+        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        m_activeObjects.erase(obj->GetObjectGuid());
     }
-    else
-        m_activeNonPlayers.erase(obj);
 
     // also allow unloading spawn grid
-    if (obj->GetTypeId()==TYPEID_UNIT)
+    if (obj->GetTypeId() == TYPEID_UNIT)
     {
         Creature* c = (Creature*)obj;
 
