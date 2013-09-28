@@ -39,7 +39,9 @@ MapManager::MapManager()
 
 MapManager::~MapManager()
 {
-    i_maps.clear();
+    for(MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
+        delete iter->second;
+
     DeleteStateMachine();
 }
 
@@ -119,11 +121,11 @@ Map* MapManager::CreateMap(uint32 id, WorldObject const* obj)
     {
         //create regular non-instanceable map
         m = FindMap(id);
-        if (m == NULL)
+        if( m == NULL )
         {
             m = new WorldMap(id, i_gridCleanUpDelay);
             //add map into container
-            i_maps[MapID(id)] = MapPtr(m);
+            i_maps[MapID(id)] = m;
 
             // non-instanceable maps always expected have saved state
             m->CreateInstanceData(true);
@@ -136,6 +138,7 @@ Map* MapManager::CreateMap(uint32 id, WorldObject const* obj)
 Map* MapManager::CreateBgMap(uint32 mapid, BattleGround* bg)
 {
     sTerrainMgr.LoadTerrain(mapid);
+
     Guard _guard(*this);
     return CreateBattleGroundMap(mapid, sObjectMgr.GenerateInstanceLowGuid(), bg);
 }
@@ -143,16 +146,19 @@ Map* MapManager::CreateBgMap(uint32 mapid, BattleGround* bg)
 Map* MapManager::FindMap(uint32 mapid, uint32 instanceId) const
 {
     Guard guard(*this);
-    MapMapType::const_iterator iter = i_maps.find(MapID(mapid, instanceId));
 
-    if (iter == i_maps.end())
+    MapMapType::const_iterator iter = i_maps.find(MapID(mapid, instanceId));
+    if(iter == i_maps.end())
         return NULL;
 
     //this is a small workaround for transports
-    if (IsTransportMap(mapid))
+    if(instanceId == 0 && iter->second->Instanceable())
+    {
+        assert(false);
         return NULL;
+    }
 
-    return &*(iter->second);
+    return iter->second;
 }
 
 /*
@@ -171,14 +177,17 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player)
 void MapManager::DeleteInstance(uint32 mapid, uint32 instanceId)
 {
     Guard _guard(*this);
+
     MapMapType::iterator iter = i_maps.find(MapID(mapid, instanceId));
     if(iter != i_maps.end())
     {
-        MapPtr pMap = iter->second;
+        Map * pMap = iter->second;
         if (pMap->Instanceable())
         {
-            pMap->UnloadAll(true);
             i_maps.erase(iter);
+
+            pMap->UnloadAll(true);
+            delete pMap;
         }
     }
 }
@@ -200,7 +209,7 @@ void MapManager::Update(uint32 diff)
 
     UpdateLoadBalancer(true);
 
-    for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for (MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
     {
         if (m_updater.activated())
         {
@@ -219,17 +228,19 @@ void MapManager::Update(uint32 diff)
 
     UpdateLoadBalancer(false);
 
+
     //remove all maps which can be unloaded
     MapMapType::iterator iter = i_maps.begin();
-    while (iter != i_maps.end())
+    while(iter != i_maps.end())
     {
-        MapPtr pMap = iter->second;
-        MapID mapID = iter->first;
+        Map * pMap = iter->second;
         //check if map can be unloaded
-        if (pMap->CanUnload((uint32)i_timer.GetCurrent()))
+        if(pMap->CanUnload((uint32)i_timer.GetCurrent()))
         {
             pMap->UnloadAll(true);
-            i_maps.erase(mapID);
+            delete pMap;
+
+            i_maps.erase(iter++);
         }
         else
             ++iter;
@@ -240,7 +251,7 @@ void MapManager::Update(uint32 diff)
 
 void MapManager::RemoveAllObjectsInRemoveList()
 {
-    for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for(MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
         iter->second->RemoveAllObjectsInRemoveList();
 }
 
@@ -267,7 +278,10 @@ void MapManager::UnloadAll()
         iter->second->UnloadAll(true);
 
     while(!i_maps.empty())
+    {
+        delete i_maps.begin()->second;
         i_maps.erase(i_maps.begin());
+    }
 
     TerrainManager::Instance().UnloadAll();
 
@@ -278,26 +292,28 @@ void MapManager::UnloadAll()
 
 uint32 MapManager::GetNumInstances()
 {
+    Guard guard(*this);
+
     uint32 ret = 0;
-    for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    for(MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
     {
-        MapPtr map = itr->second;
-        if(!map->IsDungeon())
-            continue;
-        ++ret;
+        Map *map = itr->second;
+        if(!map->IsDungeon()) continue;
+            ret += 1;
     }
     return ret;
 }
 
 uint32 MapManager::GetNumPlayersInInstances()
 {
+    Guard guard(*this);
+
     uint32 ret = 0;
-    for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    for(MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
     {
-        MapPtr map = itr->second;
-        if(!map->IsDungeon())
-            continue;
-        ret += map->GetPlayers().getSize();
+        Map *map = itr->second;
+        if(!map->IsDungeon()) continue;
+            ret += map->GetPlayers().getSize();
     }
     return ret;
 }
@@ -341,7 +357,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
     //add a new map object into the registry
     if(pNewMap)
     {
-        i_maps[MapID(id, NewInstanceId)] = MapPtr(pNewMap);
+        i_maps[MapID(id, NewInstanceId)] = pNewMap;
         map = pNewMap;
     }
 
@@ -368,7 +384,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficult
 
     DEBUG_LOG("MapInstanced::CreateDungeonMap: %s map instance %d for %d created with difficulty %d", save?"":"new ", InstanceId, id, difficulty);
 
-    DungeonMap* map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
+    DungeonMap *map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
 
     // Dungeons can have saved instance data
     bool load_data = save != NULL;
@@ -385,13 +401,13 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
 
     uint8 spawnMode = bracketEntry ? bracketEntry->difficulty : REGULAR_DIFFICULTY;
 
-    BattleGroundMap* map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
+    BattleGroundMap *map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
     MANGOS_ASSERT(map->IsBattleGroundOrArena());
     map->SetBG(bg);
     bg->SetBgMap(map);
 
     //add map into map container
-    i_maps[MapID(id, InstanceId)] = MapPtr(map);
+    i_maps[MapID(id, InstanceId)] = map;
 
     // BGs/Arenas not have saved instance data
     map->CreateInstanceData(false);
