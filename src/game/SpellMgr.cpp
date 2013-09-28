@@ -862,6 +862,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                         case 27202:
                         case 27203:
                         case 47669:
+                        case 64996:                         // Reorigination
                             return true;
                         default:
                             break;
@@ -2284,6 +2285,18 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                 if (spellInfo_2->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_KINGS>())
                     return true;
             }
+            // Black Hole (damage) and Black Hole (phase) 
+            if (MatchedSpellIdPair(62169, 62168))
+                return false; 
+
+            // Black Hole (damage) and Worm Hole (phase) 
+            if (MatchedSpellIdPair(62169, 65250))
+                return false; 
+
+            // Black Hole (damage) and Phase Punch (phase) 
+            if (MatchedSpellIdPair(62169, 64417))
+                return false;
+
             break;
         }
         case SPELLFAMILY_WARLOCK:

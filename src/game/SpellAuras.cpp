@@ -1992,8 +1992,9 @@ void Aura::TriggerSpell()
 //                    // Shield Level 3
 //                    case 63132: break;
 //                    // Food
-//                    case 64345: break;
-//                    // Remove Player from Phase
+                    case 64345:                             // Remove Player from Phase
+                        target->RemoveSpellsCausingAura(SPELL_AURA_PHASE);
+                        return;
 //                    case 64445: break;
 //                    // Food
 //                    case 65418: break;
@@ -9694,14 +9695,6 @@ void Aura::PeriodicDummyTick()
                     target->CastSpell(target, 53521, true, NULL, this);
                     target->CastSpell(target, 53521, true, NULL, this);
                     return;
-                case 55592:                                 // Clean
-                    switch(urand(0,2))
-                    {
-                        case 0: target->CastSpell(target, 55731, true); break;
-                        case 1: target->CastSpell(target, 55738, true); break;
-                        case 2: target->CastSpell(target, 55739, true); break;
-                    }
-                    return;
                 case 54798: // FLAMING Arrow Triggered Effect
                 {
                     Unit * caster = GetCaster();
@@ -9740,6 +9733,20 @@ void Aura::PeriodicDummyTick()
                     }
 
                     break;
+                }
+                case 55592:                                 // Clean
+                    switch(urand(0,2))
+                    {
+                        case 0: target->CastSpell(target, 55731, true); break;
+                        case 1: target->CastSpell(target, 55738, true); break;
+                        case 2: target->CastSpell(target, 55739, true); break;
+                    }
+                    return;
+                case 62018:                                 // Collapse
+                {
+                    // lose 1% of health every second
+                    target->DealDamage(target, target->GetMaxHealth() * .01, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NONE, NULL, false);
+                    return;
                 }
                 case 62019:                                 // Rune of Summoning
                 {
@@ -9803,14 +9810,6 @@ void Aura::PeriodicDummyTick()
                         target->CastSpell(target, 63536, true, NULL, this);
                     return;
                 }
-                case 64217:                                 // Overcharged
-                {
-                    Unit *caster = GetCaster();
-
-                    if (caster && target)
-                        caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
-                    return;
-                }
                 case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
                 {
 
@@ -9829,11 +9828,40 @@ void Aura::PeriodicDummyTick()
                         target->CastSpell(target, 62836, true, NULL, this);
                     return;
                 }
-                case 69008:                                 // Soulstorm (OOC aura)
-                case 68870:                                 // Soulstorm
+                case 64217:                                 // Overcharged
                 {
-                    uint32 triggerSpells[8] = {68898, 68904, 68886, 68905, 68896, 68906, 68897, 68907};
-                    target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
+                    Unit *caster = GetCaster();
+
+                    if (caster && target)
+                        caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
+                    return;
+                }
+                case 64412:                                 // Phase Punch
+                {
+                    if (SpellAuraHolderPtr phaseAura = target->GetSpellAuraHolder(64412))
+                    {
+                        uint32 uiAuraId = 0;
+                        switch (phaseAura->GetStackAmount())
+                        {
+                            case 1: uiAuraId = 64435; break;
+                            case 2: uiAuraId = 64434; break;
+                            case 3: uiAuraId = 64428; break;
+                            case 4: uiAuraId = 64421; break;
+                            case 5: uiAuraId = 64417; break;
+                        }
+
+                        if (uiAuraId && !target->HasAura(uiAuraId))
+                        {
+                            target->CastSpell(target, uiAuraId, true, NULL, this);
+
+                            // remove original aura if phased
+                            if (uiAuraId == 64417)
+                            {
+                                target->RemoveAurasDueToSpell(64412);
+                                target->CastSpell(target, 62169, true, NULL, this);
+                            }
+                        }
+                    }
                     return;
                 }
                 case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
@@ -9870,6 +9898,13 @@ void Aura::PeriodicDummyTick()
                     target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
                     if (Unit* caster = GetCaster())
                         target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
+                    return;
+                }
+                case 68870:                                 // Soulstorm
+                case 69008:                                 // Soulstorm (OOC aura)
+                {
+                    uint32 triggerSpells[8] = {68898, 68904, 68886, 68905, 68896, 68906, 68897, 68907};
+                    target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
                     return;
                 }
                 case 68875:                                 // Wailing Souls
