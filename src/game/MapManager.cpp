@@ -32,7 +32,6 @@ INSTANTIATE_SINGLETON_2(MapManager, CLASS_LOCK);
 INSTANTIATE_CLASS_MUTEX(MapManager, ACE_Recursive_Thread_Mutex);
 
 MapManager::MapManager()
-    : i_gridCleanUpDelay(sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN))
 {
     i_timer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 }
@@ -93,7 +92,7 @@ Map* MapManager::CreateMap(uint32 id, WorldObject const* obj)
         m = FindMap(id);
         if (m == NULL)
         {
-            m = new WorldMap(id, i_gridCleanUpDelay);
+            m = new WorldMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN));
             //add map into container
             i_maps[MapID(id)] = MapPtr(m);
 
@@ -345,7 +344,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficult
 
     DEBUG_LOG("MapInstanced::CreateDungeonMap: %s map instance %d for %d created with difficulty %d", save?"":"new ", InstanceId, id, difficulty);
 
-    DungeonMap* map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
+    DungeonMap* map = new DungeonMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), InstanceId, difficulty);
 
     // Dungeons can have saved instance data
     bool load_data = save != NULL;
@@ -362,7 +361,7 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
 
     uint8 spawnMode = bracketEntry ? bracketEntry->difficulty : REGULAR_DIFFICULTY;
 
-    BattleGroundMap* map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
+    BattleGroundMap* map = new BattleGroundMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), InstanceId, spawnMode);
     MANGOS_ASSERT(map->IsBattleGroundOrArena());
     map->SetBG(bg);
     bg->SetBgMap(map);

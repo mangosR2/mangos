@@ -81,7 +81,7 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
   : i_mapEntry (sMapStore.LookupEntry(id)), i_spawnMode(SpawnMode),
   i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
   m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
-  i_gridExpiry(expiry), m_TerrainData(sTerrainMgr.LoadTerrain(id)),
+  m_TerrainData(sTerrainMgr.LoadTerrain(id)),
   i_data(NULL), i_script_id(0)
 {
     m_CreatureGuids.Set(sObjectMgr.GetFirstTemporaryCreatureLowGuid());
@@ -271,7 +271,7 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
+            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
                 p.x_coord, p.y_coord);
         }
 
@@ -279,6 +279,7 @@ Map::EnsureGridCreated(const GridPair &p)
         buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
 
         getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
+        ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
 
         //z coord
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
@@ -384,7 +385,7 @@ void Map::ActivateGrid(NGridType* nGrid)
 {
     if (nGrid)
     {
-        ResetGridExpiry(*nGrid, 0.1f);
+        ResetGridExpiry(*nGrid, 0.2f);
         if (nGrid->GetGridState() != GRID_STATE_ACTIVE)
             nGrid->SetGridState(GRID_STATE_ACTIVE);
     }
@@ -2776,19 +2777,25 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
                     stoper.StopN();
                     grid.SetGridState(GRID_STATE_IDLE);
                     DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] on map %u instance %u moved to IDLE state", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+                    ResetGridExpiry(grid, 0.1f);
                 }
                 else
                 {
-                    ResetGridExpiry(grid, 0.1f);
+                    ResetGridExpiry(grid, 0.2f);
                 }
             }
             break;
         }
         case GRID_STATE_IDLE:
         {
-            ResetGridExpiry(grid);
-            grid.SetGridState(GRID_STATE_REMOVAL);
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] on map %u instance %u moved to REMOVAL state", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+            // Only check grid activity very (grid_expiry/10) ms, because it's really useless to do it every cycle
+            info.UpdateTimeTracker(t_diff);
+            if (info.getTimeTracker().Passed())
+            {
+                ResetGridExpiry(grid, 0.8f);
+                grid.SetGridState(GRID_STATE_REMOVAL);
+                DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] on map %u instance %u moved to REMOVAL state", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+            }
             break;
         }
         case GRID_STATE_REMOVAL:
@@ -2816,4 +2823,9 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
         }
     }
     return true;
+}
+
+time_t Map::GetGridExpiry() const
+{
+    return sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN);
 }
