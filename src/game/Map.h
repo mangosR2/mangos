@@ -235,10 +235,12 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool GetUnloadLock(const GridPair &p) const { return getNGrid(p.x_coord, p.y_coord)->getUnloadLock(); }
         void SetUnloadLock(const GridPair &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadExplicitLock(on); }
         void LoadGrid(const Cell& cell, bool no_unload = false);
-        bool UnloadGrid(const uint32 &x, const uint32 &y, bool pForce);
+        bool UnloadGrid(NGridType& grid, bool pForce);
+        bool UpdateGridState(NGridType& grid, GridInfo& gridInfo, uint32 const& t_diff);
+
         virtual void UnloadAll(bool pForce);
 
-        void ResetGridExpiry(NGridType &grid, float factor = 1) const
+        void ResetGridExpiry(NGridType& grid, float factor = 1.0f) const
         {
             grid.ResetTimeTracker((time_t)((float)i_gridExpiry*factor));
         }
@@ -443,7 +445,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void setUnitCell(Creature* obj);
 
         bool IsGridObjectDataLoaded(NGridType const* grid) const;
-        void SetGridObjectDataLoaded(bool pLoaded, NGridType* grid);
+        void SetGridObjectDataLoaded(bool pLoaded, NGridType& grid);
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
         void ScriptsProcess();
