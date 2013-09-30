@@ -49,6 +49,14 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         void Initialize(void);
         void Update(uint32);
 
+        void SetGridCleanUpDelay(uint32 t)
+        {
+            if( t < MIN_GRID_DELAY )
+                i_gridCleanUpDelay = MIN_GRID_DELAY;
+            else
+                i_gridCleanUpDelay = t;
+        }
+
         void SetMapUpdateInterval(uint32 t)
         {
             if( t > MIN_MAP_UPDATE_DELAY )
@@ -131,6 +139,7 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         DungeonMap* CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save = NULL);
         BattleGroundMap* CreateBattleGroundMap(uint32 id, uint32 InstanceId, BattleGround* bg);
 
+        uint32 i_gridCleanUpDelay;
         MapMapType i_maps;
 
         MapUpdater m_updater;

@@ -242,10 +242,10 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 
         void ResetGridExpiry(NGridType& grid, float factor = 1.0f) const
         {
-            grid.ResetTimeTracker((time_t)((float)GetGridExpiry() * factor));
+            grid.ResetTimeTracker((time_t)((float)i_gridExpiry*factor));
         }
 
-        time_t GetGridExpiry() const;
+        time_t GetGridExpiry(void) const { return i_gridExpiry; }
         uint32 GetId(void) const { return i_id; }
 
         // some calls like isInWater should not use vmaps due to processor power
@@ -411,6 +411,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
     private:
         void LoadMapAndVMap(int gx, int gy);
 
+        void SetTimer(uint32 t) { i_gridExpiry = t < MIN_GRID_DELAY ? MIN_GRID_DELAY : t; }
+
         void SendInitSelf( Player * player );
 
         void SendInitActiveObjects(Player* player);
@@ -469,6 +471,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         MapStoredObjectTypesContainer m_objectsStore;
 
     private:
+        time_t i_gridExpiry;
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
