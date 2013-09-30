@@ -1397,7 +1397,7 @@ struct MapEntry
     {
         if (IsContinent())
             return false;
-        return map_type == MAP_COMMON && mapFlags == MAP_FLAG_INSTANCEABLE;
+        return map_type == MAP_COMMON && mapFlags == MAP_FLAG_INSTANCEABLE && linked_zone == 0;
     }
 };
 
