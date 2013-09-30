@@ -24,6 +24,7 @@
 #include "Policies/Singleton.h"
 #include "ace/Recursive_Thread_Mutex.h"
 #include "Map.h"
+#include "GridStates.h"
 #include "MapUpdater.h"
 
 class BattleGround;
@@ -42,6 +43,8 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         Map* CreateMap(uint32, const WorldObject* obj);
         Map* CreateBgMap(uint32 mapid, BattleGround* bg);
         Map* FindMap(uint32 mapid, uint32 instanceId = 0) const;
+
+        void UpdateGridState(grid_state_t state, Map& map, NGridType& ngrid, GridInfo& ginfo, const uint32 &x, const uint32 &y, const uint32 &t_diff);
 
         // only const version for outer users
         void DeleteInstance(uint32 mapid, uint32 instanceId);
@@ -129,11 +132,20 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 
     private:
 
+        // debugging code, should be deleted some day
+        GridState* si_GridStates[MAX_GRID_STATE];
+        int i_GridStateErrorCount;
+
+    private:
+
         MapManager();
         ~MapManager();
 
         MapManager(const MapManager &);
         MapManager& operator=(const MapManager &);
+
+        void InitStateMachine();
+        void DeleteStateMachine();
 
         Map* CreateInstance(uint32 id, Player * player);
         DungeonMap* CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save = NULL);

@@ -108,6 +108,8 @@ GridMap.h
 GridNotifiers.cpp
 GridNotifiers.h
 GridNotifiersImpl.h
+GridStates.cpp
+GridStates.h
 Group.cpp
 Group.h
 GroupHandler.cpp

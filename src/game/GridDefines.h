@@ -22,7 +22,6 @@
 #include "Common.h"
 #include "GameSystem/NGrid.h"
 #include <cmath>
-#include "ObjectHandler.h"
 
 // Forward class definitions
 class Corpse;
@@ -79,7 +78,6 @@ typedef GridRefManager<Player>          PlayerMapType;
 
 typedef Grid<Player, AllWorldObjectTypes, AllGridObjectTypes> GridType;
 typedef NGrid<MAX_NUMBER_OF_CELLS, Player, AllWorldObjectTypes, AllGridObjectTypes> NGridType;
-OBJECT_HANDLER(NGridType,GridPtr);
 
 typedef TypeMapContainer<AllGridObjectTypes> GridTypeMapContainer;
 typedef TypeMapContainer<AllWorldObjectTypes> WorldTypeMapContainer;

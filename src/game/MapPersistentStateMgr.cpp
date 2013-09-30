@@ -22,6 +22,7 @@
 #include "Player.h"
 #include "GridNotifiers.h"
 #include "Log.h"
+#include "GridStates.h"
 #include "CellImpl.h"
 #include "Map.h"
 #include "MapManager.h"
