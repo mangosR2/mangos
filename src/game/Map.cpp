@@ -21,7 +21,6 @@
 #include "Player.h"
 #include "GridNotifiers.h"
 #include "Log.h"
-#include "GridStates.h"
 #include "CellImpl.h"
 #include "InstanceData.h"
 #include "GridNotifiersImpl.h"
@@ -82,7 +81,7 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
   : i_mapEntry (sMapStore.LookupEntry(id)), i_spawnMode(SpawnMode),
   i_id(id), i_InstanceId(InstanceId), m_unloadTimer(0),
   m_VisibleDistance(DEFAULT_VISIBILITY_DISTANCE),
-  i_gridExpiry(expiry), m_TerrainData(sTerrainMgr.LoadTerrain(id)),
+  m_TerrainData(sTerrainMgr.LoadTerrain(id)),
   i_data(NULL), i_script_id(0)
 {
     m_CreatureGuids.Set(sObjectMgr.GetFirstTemporaryCreatureLowGuid());
@@ -272,7 +271,7 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
+            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
                 p.x_coord, p.y_coord);
         }
 
@@ -280,6 +279,7 @@ Map::EnsureGridCreated(const GridPair &p)
         buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
 
         getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
+        ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
 
         //z coord
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
@@ -330,7 +330,7 @@ bool Map::EnsureGridLoaded(const Cell &cell)
         //possible scenario:
         //active object A(loaded with loader.LoadN call and added to the  map)
         //summons some active object B, while B added to map grid loading called again and so on..
-        SetGridObjectDataLoaded(true, grid);
+        SetGridObjectDataLoaded(true, *grid);
         ObjectGridLoader loader(*grid, this, cell);
         loader.LoadN();
 
@@ -348,10 +348,9 @@ bool Map::IsGridObjectDataLoaded(NGridType const* grid) const
     return grid ? grid->isGridObjectDataLoaded() : false;
 }
 
-void Map::SetGridObjectDataLoaded(bool pLoaded, NGridType* grid) 
+void Map::SetGridObjectDataLoaded(bool pLoaded, NGridType& grid) 
 {
-    if (grid)
-        grid->setGridObjectDataLoaded(pLoaded);
+    grid.setGridObjectDataLoaded(pLoaded);
 }
 
 void Map::LoadGrid(const Cell& cell, bool no_unload)
@@ -386,7 +385,7 @@ void Map::ActivateGrid(NGridType* nGrid)
 {
     if (nGrid)
     {
-        ResetGridExpiry(*nGrid, 0.1f);
+        ResetGridExpiry(*nGrid, 0.2f);
         if (nGrid->GetGridState() != GRID_STATE_ACTIVE)
             nGrid->SetGridState(GRID_STATE_ACTIVE);
     }
@@ -587,13 +586,10 @@ void Map::Update(const uint32 &t_diff)
     UpdateEvents(t_diff);
 
     /// update worldsessions for existing players (stage 1)
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
+    MakeActiveObjectsSafeCopy();
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
     {
-        ObjectGuid guid;
-        {
-            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-            guid = *itr++;
-        }
+        ObjectGuid guid = *itr;
         if (!guid.IsPlayer())
             continue;
 
@@ -610,14 +606,12 @@ void Map::Update(const uint32 &t_diff)
         }
     }
 
-    /// update active objects at tick (stage 2)
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
+    /// update active objects (players also) at tick (stage 2)
+    MakeActiveObjectsSafeCopy();
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
     {
-        ObjectGuid guid;
-        {
-            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-            guid = *itr++;
-        }
+        ObjectGuid guid = *itr;
+
         switch (guid.GetHigh())
         {
             case HIGHGUID_PLAYER:
@@ -630,7 +624,6 @@ void Map::Update(const uint32 &t_diff)
                 }
                 break;
             }
-            case HIGHGUID_TRANSPORT:
             case HIGHGUID_MO_TRANSPORT:
             {
                 // FIXME - temphack for update active MO_TRANSPORT objects
@@ -642,6 +635,8 @@ void Map::Update(const uint32 &t_diff)
                 }
                 break;
             }
+            case HIGHGUID_TRANSPORT:
+            // do something
             default:
                 break;
         }
@@ -657,16 +652,14 @@ void Map::Update(const uint32 &t_diff)
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
     // player and non-player active objects (only cells re-mark)
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end();)
+    MakeActiveObjectsSafeCopy();
+    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
     {
-        ObjectGuid guid;
-        {
-            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-            guid = *itr++;
-        }
+        ObjectGuid guid = *itr;
+
         WorldObject* obj = GetWorldObject(guid);
 
-        if (!obj->IsInWorld() || !obj->isActiveObject() || !obj->IsPositionValid())
+        if (!obj || !obj->IsInWorld() || !obj->isActiveObject() || !obj->IsPositionValid())
             continue;
 
         //lets update mobs/objects in ALL visible cells around player!
@@ -707,7 +700,7 @@ void Map::Update(const uint32 &t_diff)
             GridInfo *info = i->getSource()->getGridInfoRef();
             ++i;                                                // The update might delete the map and we need the next map before the iterator gets invalid
             MANGOS_ASSERT(grid->GetGridState() >= 0 && grid->GetGridState() < MAX_GRID_STATE);
-            sMapMgr.UpdateGridState(grid->GetGridState(), *this, *grid, *info, grid->getX(), grid->getY(), t_diff);
+            UpdateGridState(*grid, *info, t_diff);
         }
     }
 
@@ -990,46 +983,39 @@ bool Map::CreatureRespawnRelocation(Creature *c)
         return false;
 }
 
-bool Map::UnloadGrid(const uint32 &x, const uint32 &y, bool pForce)
+bool Map::UnloadGrid(NGridType& grid, bool pForce)
 {
-    NGridType* grid = getNGrid(x, y);
+    if (!pForce && ActiveObjectsNearGrid(grid.getX(), grid.getY()))
+        return false;
 
-    if (grid != NULL)
-    {
-        if (!pForce && ActiveObjectsNearGrid(x, y))
-            return false;
+    // Make refcounted pointer for deleting object in destructor
+    GridPtr deletePtr = GridPtr(&grid);
 
-        SetGridObjectDataLoaded(false, grid);
+    SetGridObjectDataLoaded(false, grid);
+    ObjectGridUnloader unloader(grid);
 
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Unloading grid[%u,%u] for map %u", x, y, GetId());
-        ObjectGridUnloader unloader(*grid);
+    // Finish remove and delete all creatures with delayed remove before moving to respawn grids
+    // Must know real mob position before move
+    RemoveAllObjectsInRemoveList();
 
-        // Finish remove and delete all creatures with delayed remove before moving to respawn grids
-        // Must know real mob position before move
-        RemoveAllObjectsInRemoveList();
+    // move creatures to respawn grids if this is diff.grid or to remove list
+    unloader.MoveToRespawnN();
 
-        // move creatures to respawn grids if this is diff.grid or to remove list
-        unloader.MoveToRespawnN();
+    // Finish remove and delete all creatures with delayed remove before unload
+    RemoveAllObjectsInRemoveList();
 
-        // Finish remove and delete all creatures with delayed remove before unload
-        RemoveAllObjectsInRemoveList();
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    unloader.UnloadN();
+    setNGrid(NULL, grid.getX(), grid.getY());
 
-        unloader.UnloadN();
+    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::UnloadGrid unloading grid[%u,%u] for map %u finished", grid.getX(), grid.getY(), GetId(), GetInstanceId());
 
-        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
-        delete getNGrid(x, y);
-        setNGrid(NULL, x, y);
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Unloading grid[%u,%u] for map %u finished", x, y, GetId());
-    }
-    else
-        sLog.outError("Map::UnloadGrid trying unload grid[%u,%u] for map %u, but grid not created!", x,y, GetId());
-
-    int gx = (MAX_NUMBER_OF_GRIDS - 1) - x;
-    int gy = (MAX_NUMBER_OF_GRIDS - 1) - y;
+    int gx = (MAX_NUMBER_OF_GRIDS - 1) - grid.getX();
+    int gy = (MAX_NUMBER_OF_GRIDS - 1) - grid.getY();
 
     // unload GridMap - it is reference-countable so will be deleted safely when lockCount < 1
     // also simply set Map's pointer to corresponding GridMap object to NULL
-    if(m_bLoadedGrids[gx][gy])
+    if (m_bLoadedGrids[gx][gy])
     {
         m_bLoadedGrids[gx][gy] = false;
         m_TerrainData->Unload(gx, gy);
@@ -1048,9 +1034,9 @@ void Map::UnloadAll(bool pForce)
 
     for (GridRefManager<NGridType>::iterator i = GridRefManager<NGridType>::begin(); i != GridRefManager<NGridType>::end(); )
     {
-        NGridType &grid(*i->getSource());
+        NGridType& grid(*i->getSource());
         ++i;
-        UnloadGrid(grid.getX(), grid.getY(), pForce);       // deletes the grid and removes it from the GridRefManager
+        UnloadGrid(grid, pForce);       // deletes the grid and removes it from the GridRefManager
     }
 
     //if (GetInstanceId() && !sMapMgr.IsTransportMap(GetId()))
@@ -1238,7 +1224,7 @@ void Map::SendRemoveActiveObjects(Player* player)
     player->GetSession()->SendPacket(&packet);
 }
 
-inline void Map::setNGrid(NGridType *grid, uint32 x, uint32 y)
+inline void Map::setNGrid(NGridType* grid, uint32 x, uint32 y)
 {
     if(x >= MAX_NUMBER_OF_GRIDS || y >= MAX_NUMBER_OF_GRIDS)
     {
@@ -1354,7 +1340,7 @@ void Map::AddToActive(WorldObject* obj)
     if (!obj)
         return;
     {
-        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
         m_activeObjects.insert(obj->GetObjectGuid());
     }
 
@@ -1413,7 +1399,7 @@ void Map::RemoveFromActive(WorldObject* obj)
 
     // Map::Update for active object in proccess
     {
-        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
         m_activeObjects.erase(obj->GetObjectGuid());
     }
 
@@ -2765,4 +2751,80 @@ void Map::SendRemoveNotifyToStoredClients(WorldObject* object, bool destroy)
         object->GetObjectGuid().GetString().c_str(), object->GetNotifiedClients().size(), count);
 
     object->GetNotifiedClients().clear();
+}
+
+bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
+{
+    switch (grid.GetGridState())
+    {
+        case GRID_STATE_ACTIVE:
+        {
+            // Only check grid activity every (grid_expiry/10) ms, because it's really useless to do it every cycle
+            info.UpdateTimeTracker(t_diff);
+            if (info.getTimeTracker().Passed())
+            {
+                if (grid.ActiveObjectsInGrid() == 0 && !ActiveObjectsNearGrid(grid.getX(), grid.getY()))
+                {
+                    ObjectGridStoper stoper(grid);
+                    stoper.StopN();
+                    grid.SetGridState(GRID_STATE_IDLE);
+                    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] on map %u instance %u moved to IDLE state", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+                    ResetGridExpiry(grid, 0.1f);
+                }
+                else
+                {
+                    ResetGridExpiry(grid, 0.2f);
+                }
+            }
+            break;
+        }
+        case GRID_STATE_IDLE:
+        {
+            // Only check grid activity very (grid_expiry/10) ms, because it's really useless to do it every cycle
+            info.UpdateTimeTracker(t_diff);
+            if (info.getTimeTracker().Passed())
+            {
+                ResetGridExpiry(grid, 0.8f);
+                grid.SetGridState(GRID_STATE_REMOVAL);
+                DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] on map %u instance %u moved to REMOVAL state", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+            }
+            break;
+        }
+        case GRID_STATE_REMOVAL:
+        {
+            if (!info.getUnloadLock())
+            {
+                info.UpdateTimeTracker(t_diff);
+                if (info.getTimeTracker().Passed())
+                {
+                    if (!UnloadGrid(grid, false))
+                    {
+                        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] for map %u instance %u differed unloading due to players or active objects nearby", grid.getX(), grid.getY(), GetId(), GetInstanceId());
+                        ResetGridExpiry(grid);
+                    }
+                }
+            }
+            break;
+        }
+        case GRID_STATE_INVALID:
+        case MAX_GRID_STATE:
+        default:
+        {
+            sLog.outError("Map::UpdateGridState trying set invalid state (%u) to grid[%u,%u] on map %u instance %u", grid.GetGridState(), grid.getX(), grid.getY(), GetId(), GetInstanceId());
+            return false;
+        }
+    }
+    return true;
+}
+
+void Map::MakeActiveObjectsSafeCopy()
+{
+    m_activeObjectsSafeCopy.clear();
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    m_activeObjectsSafeCopy = m_activeObjects;
+}
+
+time_t Map::GetGridExpiry() const
+{
+    return sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN);
 }
