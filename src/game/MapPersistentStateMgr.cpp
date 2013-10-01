@@ -1068,19 +1068,19 @@ void MapPersistentStateManager::_ResetOrWarnAll(uint32 mapid, Difficulty difficu
     }
 
     // note: this isn't fast but it's meant to be executed very rarely
-    MapManager::MapMapType const& maps = sMapMgr.Maps();
+    const MapManager::MapMapType& maps = sMapMgr.Maps();
 
-    for (MapManager::MapMapType::const_iterator mitr = maps.begin(); mitr != maps.end(); ++mitr)
+    MapManager::MapMapType::const_iterator iter_last = maps.lower_bound(MapID(mapid + 1));
+    for(MapManager::MapMapType::const_iterator mitr = maps.lower_bound(MapID(mapid)); mitr != iter_last; ++mitr)
     {
-        MapPtr map2 = mitr->second;
-
+        Map *map2 = mitr->second;
         if(map2->GetId() != mapid)
             break;
 
         if (warn)
-            ((DungeonMap*)&*(map2))->SendResetWarnings(resetTime - now);
+            ((DungeonMap*)map2)->SendResetWarnings(resetTime - now);
         else
-            ((DungeonMap*)&*(map2))->Reset(INSTANCE_RESET_GLOBAL);
+            ((DungeonMap*)map2)->Reset(INSTANCE_RESET_GLOBAL);
     }
 }
 
