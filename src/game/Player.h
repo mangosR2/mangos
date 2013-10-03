@@ -2264,6 +2264,10 @@ class MANGOS_DLL_SPEC Player : public Unit
         void RelocateToHomebind() { SetLocationMapId(m_homebind.GetMapId()); Relocate(m_homebind); }
         bool TeleportToHomebind(uint32 options = TELE_TO_CHECKED) { return TeleportTo(m_homebind, options); }
 
+        // ChatSpy
+        void HandleChatSpyMessage(const std::string& msg, uint8 type, uint32 lang, Player* sender = NULL, std::string special = "");
+        ObjectGuid m_chatSpyGuid;
+
         Object* GetObjectByTypeMask(ObjectGuid guid, TypeMask typemask);
 
         // list of currently visible objects, stored at player client

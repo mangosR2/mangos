@@ -574,7 +574,10 @@ void Guild::BroadcastToGuild(WorldSession* session, const std::string& msg, uint
             Player* pl = ObjectAccessor::FindPlayer(ObjectGuid(HIGHGUID_PLAYER, itr->first));
 
             if (pl && pl->GetSession() && HasRankRight(pl->GetRank(), GR_RIGHT_GCHATLISTEN) && !pl->GetSocial()->HasIgnore(session->GetPlayer()->GetObjectGuid()))
+            {
                 pl->GetSession()->SendPacket(&data);
+                pl->HandleChatSpyMessage(msg, CHAT_MSG_GUILD, language, session->GetPlayer());
+            }
         }
     }
 }
@@ -591,7 +594,10 @@ void Guild::BroadcastToOfficers(WorldSession* session, const std::string& msg, u
             Player* pl = ObjectAccessor::FindPlayer(ObjectGuid(HIGHGUID_PLAYER, itr->first));
 
             if (pl && pl->GetSession() && HasRankRight(pl->GetRank(), GR_RIGHT_OFFCHATLISTEN) && !pl->GetSocial()->HasIgnore(session->GetPlayer()->GetObjectGuid()))
+            {   
                 pl->GetSession()->SendPacket(&data);
+                pl->HandleChatSpyMessage(msg, CHAT_MSG_OFFICER, language, session->GetPlayer());
+            }
         }
     }
 }

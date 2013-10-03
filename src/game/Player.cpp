@@ -566,6 +566,8 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_lastFallTime = 0;
     m_lastFallZ = 0;
 
+    m_chatSpyGuid.Clear();
+
     // Refer-A-Friend
     m_GrantableLevelsCount = 0;
 
@@ -18874,8 +18876,59 @@ void Player::BuildPlayerChat(WorldPacket *data, uint8 msgtype, const std::string
     *data << uint8(GetChatTag());
 }
 
+const char* chatNameColors[MAX_CHAT_MSG_TYPE][2] = {
+    { NULL,     NULL        },
+    { "ffffff", "Say"       },
+    { "aaaaff", "Party"     },
+    { "ff7f00", "Raid"      },
+    { "40ff40", "Guild"     },
+    { "40c040", "GOfficer"  },
+    { "ff4040", "Yell"      },
+    { "8e08c2", "W From Smb"},
+    { NULL,     NULL        },
+    { "ff20fc", "W To Smb"  },
+    { "ff8040", "Emote"     }, // Standard emote, not used by ChatSpy ?
+    { "ff8040", "TEmote"    }, // Text emote ("/me", "/e", "/em")
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { "ffc0c0", "Channel"   },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { "ff4809", "R Leader"  },
+    { "ff4800", "R Warning" },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { NULL,     NULL        },
+    { "ff7f00", "BG Leader" },
+    { "ffdbb7", "BG"        },
+    { NULL,     NULL        }
+};
+
 void Player::Say(const std::string& text, const uint32 language)
 {
+    HandleChatSpyMessage(text, CHAT_MSG_SAY, language);
     WorldPacket data(SMSG_MESSAGECHAT, 200);
     BuildPlayerChat(&data, CHAT_MSG_SAY, text, language);
     SendMessageToSetInRange(&data,sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY),true);
@@ -18883,6 +18936,7 @@ void Player::Say(const std::string& text, const uint32 language)
 
 void Player::Yell(const std::string& text, const uint32 language)
 {
+    HandleChatSpyMessage(text, CHAT_MSG_YELL, language);
     WorldPacket data(SMSG_MESSAGECHAT, 200);
     BuildPlayerChat(&data, CHAT_MSG_YELL, text, language);
     SendMessageToSetInRange(&data,sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_YELL),true);
@@ -18890,6 +18944,7 @@ void Player::Yell(const std::string& text, const uint32 language)
 
 void Player::TextEmote(const std::string& text)
 {
+    HandleChatSpyMessage(text, CHAT_MSG_EMOTE, LANG_UNIVERSAL);
     WorldPacket data(SMSG_MESSAGECHAT, 200);
     BuildPlayerChat(&data, CHAT_MSG_EMOTE, text, LANG_UNIVERSAL);
     SendMessageToSetInRange(&data,sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_TEXTEMOTE),true, !sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHAT));
@@ -18905,12 +18960,14 @@ void Player::Whisper(const std::string& text, uint32 language, ObjectGuid receiv
     WorldPacket data(SMSG_MESSAGECHAT, 200);
     BuildPlayerChat(&data, CHAT_MSG_WHISPER, text, language);
     rPlayer->GetSession()->SendPacket(&data);
+    rPlayer->HandleChatSpyMessage(text, CHAT_MSG_WHISPER, language, this);
 
     // not send confirmation for addon messages
     if (language != LANG_ADDON)
     {
         data.Initialize(SMSG_MESSAGECHAT, 200);
         rPlayer->BuildPlayerChat(&data, CHAT_MSG_WHISPER_INFORM, text, language);
+        HandleChatSpyMessage(text, CHAT_MSG_WHISPER_INFORM, language, rPlayer);
         GetSession()->SendPacket(&data);
     }
 
@@ -24529,6 +24586,70 @@ void Player::_fillGearScoreData(Item* item, GearScoreVec* gearScore, uint32& two
         default:
             break;
     }
+}
+
+void Player::HandleChatSpyMessage(const std::string& msg, uint8 type, uint32 lang, Player* sender, std::string special)
+{
+    if (!m_chatSpyGuid || lang == LANG_ADDON || sender == this)
+        return;
+
+    if (m_chatSpyGuid == GetObjectGuid())
+    {
+        m_chatSpyGuid.Clear();
+        return;
+    }
+
+    Player *plr = sObjectMgr.GetPlayer(m_chatSpyGuid);
+
+    if(!plr || !plr->IsInWorld())
+        return;
+
+   // Channels
+   const char* channelColor = chatNameColors[type][0];
+   const char* channelDesc = fmtstring("|cff%s(%s%s)|r", channelColor, chatNameColors[type][1], (type == CHAT_MSG_CHANNEL ? fmtstring(" '%s'", special.c_str()) : ""));
+
+    // Recipients
+    const char* from = fmtstring("|cffff0000%s|r", GetName());
+    const char* to = channelDesc;
+
+    // Special cases
+    switch(type)
+    {
+        // Public channels
+        case CHAT_MSG_CHANNEL:
+        case CHAT_MSG_SAY:
+        case CHAT_MSG_YELL:
+        case CHAT_MSG_EMOTE:
+        case CHAT_MSG_TEXT_EMOTE:
+        case CHAT_MSG_PARTY:
+        case CHAT_MSG_RAID:
+        case CHAT_MSG_RAID_LEADER:
+        case CHAT_MSG_RAID_WARNING:
+        case CHAT_MSG_GUILD:
+        case CHAT_MSG_OFFICER:
+        case CHAT_MSG_BATTLEGROUND:
+        case CHAT_MSG_BATTLEGROUND_LEADER:
+            if(sender)
+            {
+                from = sender->GetName();
+                to = fmtstring("|cffff0000%s|r %s", GetName(), channelDesc);
+            }
+            break;
+        // Private channels
+        case CHAT_MSG_WHISPER:
+            from = sender->GetName();
+            to = fmtstring("|cffff0000%s|r %s", GetName(), channelDesc);
+            break;
+        case CHAT_MSG_WHISPER_INFORM:
+            //from = to;
+            to = fmtstring("%s %s", sender->GetName(), channelDesc);
+            break;
+        default:
+            sLog.outError("ChatSpy: unknown msg type(%u), sender %u", type, (sender ? sender->GetGUIDLow() : 0));
+            return;
+    }
+
+    ChatHandler(plr->GetSession()).PSendSysMessage("%s => %s: %s", from, to, msg.c_str());
 }
 
 uint8 Player::GetTalentsCount(uint8 tab)

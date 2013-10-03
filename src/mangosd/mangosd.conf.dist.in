@@ -2296,3 +2296,54 @@ VMSS.ContinentsSkip = 1
 ###################################################################################################################
 DuelReset.Enable = 0
 DuelReset.AreaIds = "12,14,4570"
+
+
+###################################################################################################################
+# Chat disable under Level Configuration
+#
+#    ChatDisable.SayLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.YellLevel
+#        Chat disable in Yell by level
+#        Default: 0
+#
+#    ChatDisable.WhisperLevel
+#        Chat disable in Whisper by level
+#        Default: 0
+#
+#    ChatDisable.PartyLevel
+#        Chat disable in Party by level
+#        Default: 0
+#
+#    ChatDisable.GuildLevel
+#        Chat disable in Guild by level
+#        Default: 0
+#
+#    ChatDisable.OfficerLevel
+#        Chat disable in Officer by level
+#        Default: 0
+#
+#    ChatDisable.RaidLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.BGLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.ChannelLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+###################################################################################################################
+
+ChatDisable.SayLevel = 0
+ChatDisable.YellLevel = 0
+ChatDisable.WhisperLevel = 0
+ChatDisable.PartyLevel = 0
+ChatDisable.GuildLevel = 0
+ChatDisable.RaidLevel = 0
+ChatDisable.BGLevel = 0
+ChatDisable.ChannelLevel = 0

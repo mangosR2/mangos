@@ -539,6 +539,17 @@ void World::LoadConfigSettings(bool reload)
 
     setConfigMinMax(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE, "TargetPosRecalculateRange", 1.5f, CONTACT_DISTANCE, ATTACK_DISTANCE);
 
+    /// CHAT DISBALE BY LEVEL
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_SAYLEVEL, "ChatDisable.SayLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_YELLLEVEL, "ChatDisable.YellLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_WHISPERLEVEL, "ChatDisable.WhisperLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_PARTYLEVEL, "ChatDisable.PartyLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_GUILDLEVEL, "ChatDisable.GuildLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_RAIDLEVEL, "ChatDisable.RaidLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_BGLEVEL, "ChatDisable.BGLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_CHANNELLEVEL, "ChatDisable.ChannelLevel", 0);
+    /// CHAT DISBALE BY LEVEL END
+
     setConfigPos(CONFIG_FLOAT_RATE_DURABILITY_LOSS_DAMAGE, "DurabilityLossChance.Damage", 0.5f);
     setConfigPos(CONFIG_FLOAT_RATE_DURABILITY_LOSS_ABSORB, "DurabilityLossChance.Absorb", 0.5f);
     setConfigPos(CONFIG_FLOAT_RATE_DURABILITY_LOSS_PARRY,  "DurabilityLossChance.Parry",  0.05f);
