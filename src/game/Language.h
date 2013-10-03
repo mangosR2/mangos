@@ -1036,6 +1036,8 @@ enum MangosStrings
     // Use for custom patches             11000-11999
     LANG_INVALID_REALMID                = 11001,
 
+    LANG_YOU_RECEIVE_TOKEN              = 11050,
+
     //ChatSpy
     LANG_CHATSPY_APEENDED               = 11600,
     LANG_CHATSPY_CANCELLEDMASSIVE       = 11601,

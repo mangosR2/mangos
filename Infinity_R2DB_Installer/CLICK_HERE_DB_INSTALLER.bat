@@ -56,6 +56,7 @@ set dbpath2=Development\realmd
 set dbpath3=Development\scriptdev2
 set dbpath4=Development\mangosR2
 set dbpath5=Development\mangosR2sd2
+set dbpath6=Development
 set dbpath9=Development\Infinity_DB_Updates
 set dbpath10=Development\Run_Last
 set mysql=.
@@ -63,12 +64,23 @@ set mysql=.
 :checkpaths
 if not exist %dbpath% then goto patherror
 if not exist %mysql%\mysql.exe then goto patherror
-goto world
+goto Create
 
 :patherror
 echo Cannot find required files, please ensure you have gotten the full files
 pause
 goto :eof
+
+:Create
+if %quick% == off echo.
+if %quick% == off echo Do u need to create new databases
+if %quick% == off set /p yesno=Do you wish to continue? (y/n)
+if %quick% == off if %yesno% neq y if %yesno% neq Y goto World
+
+echo.
+echo Creating Databases
+
+for %%i in (%dbpath6%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
 
 :world
 if %quick% == off echo.
