@@ -42,6 +42,7 @@ LFGMgr::LFGMgr()
     }
 
     m_proposalID   = 1;
+    m_queueID      = 1;
     m_LFGupdateTimer.SetInterval(LFG_UPDATE_INTERVAL);
     m_LFGupdateTimer.Reset();
     m_LFRupdateTimer.SetInterval(LFR_UPDATE_INTERVAL);
@@ -521,10 +522,9 @@ void LFGMgr::AddToQueue(ObjectGuid guid, LFGType type, bool inBegin)
     RemoveFromQueue(guid);
 
     // Joining process
-    LFGQueueInfo newLFGQueueInfo = LFGQueueInfo(guid, type);
     {
         WriteGuard Guard(GetLock());
-        m_queueInfoMap.insert(std::make_pair(guid, newLFGQueueInfo));
+        m_queueInfoMap.insert(std::make_pair(guid, LFGQueueInfo(guid, type, GenerateQueueID())));
     }
     // we must be save, that we add this info in Queue
     LFGQueueInfo* pqInfo = GetQueueInfo(guid);
@@ -1233,9 +1233,12 @@ LFGProposal* LFGMgr::GetProposal(uint32 ID)
 
 uint32 LFGMgr::GenerateProposalID()
 {
-    uint32 newID = m_proposalID;
-    ++m_proposalID;
-    return newID;
+    return ++m_proposalID;
+}
+
+uint32 LFGMgr::GenerateQueueID()
+{
+    return ++m_queueID;
 }
 
 void LFGMgr::UpdateProposal(uint32 ID, ObjectGuid guid, bool accept)
@@ -2083,17 +2086,17 @@ bool LFGMgr::CheckRoles(Group* pGroup, Player* pPlayer /*=NULL*/)
     if (pPlayer && pPlayer->IsInWorld())
         rolesMap.insert(std::make_pair(pPlayer->GetObjectGuid(), pPlayer->GetLFGPlayerState()->GetRoles()));
 
-    bool retcode = CheckRoles(&rolesMap);
+    bool retcode = CheckRoles(rolesMap);
 
     return retcode;
 }
 
-bool LFGMgr::CheckRoles(LFGRolesMap* rolesMap)
+bool LFGMgr::CheckRoles(LFGRolesMap& rolesMap)
 {
-    if (!rolesMap || rolesMap->empty())
+    if (rolesMap.empty())
         return false;
 
-    if (rolesMap->size() > MAX_GROUP_SIZE)
+    if (rolesMap.size() > MAX_GROUP_SIZE)
         return false;
 
     uint8 tanks   = LFG_TANKS_NEEDED;
@@ -2101,7 +2104,7 @@ bool LFGMgr::CheckRoles(LFGRolesMap* rolesMap)
     uint8 dps     = LFG_DPS_NEEDED;
     std::vector<LFGRoleMask> rolesVector;
 
-    for (LFGRolesMap::const_iterator itr = rolesMap->begin(); itr != rolesMap->end(); ++itr)
+    for (LFGRolesMap::const_iterator itr = rolesMap.begin(); itr != rolesMap.end(); ++itr)
         rolesVector.push_back(LFGRoleMask(itr->second & ~LFG_ROLE_MASK_LEADER));
 
     std::sort(rolesVector.begin(),rolesVector.end());
@@ -2116,12 +2119,12 @@ bool LFGMgr::CheckRoles(LFGRolesMap* rolesMap)
             --dps;
     }
 
-    DEBUG_LOG("LFGMgr::CheckRoles healers %u tanks %u dps %u map size " SIZEFMTD, healers, tanks, dps, rolesMap->size());
+    DEBUG_LOG("LFGMgr::CheckRoles healers %u tanks %u dps %u map size " SIZEFMTD, healers, tanks, dps, rolesMap.size());
 
 //    if (sWorld.getConfig(CONFIG_BOOL_LFG_DEBUG_ENABLE))
 //        return true;
 
-    if ((healers + tanks + dps) > int8(MAX_GROUP_SIZE - rolesMap->size()))
+    if ((healers + tanks + dps) > int8(MAX_GROUP_SIZE - rolesMap.size()))
         return false;
 
     return true;
@@ -2203,11 +2206,12 @@ Player* LFGMgr::LeaderElection(GuidSet* playerGuids)
     return leader;
 }
 
-void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
+bool LFGMgr::SetRoles(LFGRolesMap& rolesMap)
 {
-    if (!rolesMap || rolesMap->empty())
-        return;
-    DEBUG_LOG("LFGMgr::SetRoles set roles for rolesmap size = %u",uint8(rolesMap->size()));
+    if (rolesMap.empty())
+        return false;
+
+    DEBUG_LOG("LFGMgr::SetRoles set roles for rolesmap size = %u",uint8(rolesMap.size()));
 
     LFGRoleMask oldRoles = LFG_ROLE_MASK_NONE;
     LFGRoleMask newRole = LFG_ROLE_MASK_NONE;
@@ -2216,8 +2220,10 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
 
     LFGRolesMap tmpMap;
 
+    WriteGuard Guard(GetLock());
+
     // strip double/triple roles
-    for (LFGRolesMap::iterator itr = rolesMap->begin(); itr != rolesMap->end(); ++itr)
+    for (LFGRolesMap::const_iterator itr = rolesMap.begin(); itr != rolesMap.end(); ++itr)
     {
         if (itr->second & LFG_ROLE_MASK_TANK)
             tmpMap.insert(*itr);
@@ -2233,7 +2239,7 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
         for (LFGRolesMap::iterator itr = tmpMap.begin(); itr != tmpMap.end(); ++itr)
         {
             tankGuid = itr->first;
-            LFGRolesMap::iterator itr2 = rolesMap->find(tankGuid);
+            LFGRolesMap::iterator itr2 = rolesMap.find(tankGuid);
             oldRoles = itr2->second;
             newRole    = LFGRoleMask(itr->second & ~LFG_ROLE_MASK_HEALER_DAMAGE);
 
@@ -2245,10 +2251,16 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
                 itr2->second = oldRoles;
         }
     }
-    rolesMap->find(tankGuid)->second = newRole;
+    LFGRolesMap::iterator currentRolesItr = rolesMap.find(tankGuid);
+    if (currentRolesItr == rolesMap.end())
+    {
+        sLog.outError("LFGMgr::SetRoles player %s removed from roles map (TANK role) while SetRoles() processing! SetRoles failed.", tankGuid.GetString().c_str());
+        return false;
+    }
+    currentRolesItr->second = newRole;
     tmpMap.clear();
 
-    for (LFGRolesMap::iterator itr = rolesMap->begin(); itr != rolesMap->end(); ++itr)
+    for (LFGRolesMap::const_iterator itr = rolesMap.begin(); itr != rolesMap.end(); ++itr)
     {
         if (itr->second & LFG_ROLE_MASK_HEALER)
             tmpMap.insert(*itr);
@@ -2264,7 +2276,7 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
         for (LFGRolesMap::iterator itr = tmpMap.begin(); itr != tmpMap.end(); ++itr)
         {
             healGuid = itr->first;
-            LFGRolesMap::iterator itr2 = rolesMap->find(healGuid);
+            LFGRolesMap::iterator itr2 = rolesMap.find(healGuid);
             oldRoles = itr2->second;
             newRole    = LFGRoleMask(itr->second & ~LFG_ROLE_MASK_TANK_DAMAGE);
 
@@ -2276,10 +2288,16 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
                 itr2->second = oldRoles;
         }
     }
-    rolesMap->find(healGuid)->second = newRole;
+    currentRolesItr = rolesMap.find(healGuid);
+    if (currentRolesItr == rolesMap.end())
+    {
+        sLog.outError("LFGMgr::SetRoles player %s removed from roles map (HEALER role) while SetRoles() processing! SetRoles failed.", healGuid.GetString().c_str());
+        return false;
+    }
+    currentRolesItr->second = newRole;
     tmpMap.clear();
 
-    for (LFGRolesMap::iterator itr = rolesMap->begin(); itr != rolesMap->end(); ++itr)
+    for (LFGRolesMap::iterator itr = rolesMap.begin(); itr != rolesMap.end(); ++itr)
     {
         if (itr->first != tankGuid && itr->first != healGuid)
         {
@@ -2288,16 +2306,16 @@ void LFGMgr::SetRoles(LFGRolesMap* rolesMap)
         }
     }
 
-    for (LFGRolesMap::iterator itr = rolesMap->begin(); itr != rolesMap->end(); ++itr)
+    for (LFGRolesMap::const_iterator itr = rolesMap.begin(); itr != rolesMap.end(); ++itr)
     {
         Player* pPlayer = sObjectMgr.GetPlayer(itr->first);
         if (pPlayer && pPlayer->IsInWorld())
         {
             pPlayer->GetLFGPlayerState()->SetRoles(itr->second);
-            DEBUG_LOG("LFGMgr::SetRoles role for player %u set to %u",pPlayer->GetObjectGuid().GetCounter(), uint8(itr->second));
+            DEBUG_LOG("LFGMgr::SetRoles role for player %s set to %u",pPlayer->GetObjectGuid().GetString().c_str(), uint8(itr->second));
         }
     }
-
+    return true;
 }
 
 void LFGMgr::SetGroupRoles(Group* pGroup, GuidSet* players)
@@ -2336,7 +2354,7 @@ void LFGMgr::SetGroupRoles(Group* pGroup, GuidSet* players)
     if (!hasMultiRoles)
         return;
 
-    SetRoles(&rolesMap);
+    SetRoles(rolesMap);
 }
 
 void LFGMgr::TryCompleteGroups(LFGType type)
@@ -2444,7 +2462,7 @@ bool LFGMgr::TryAddMembersToGroup(Group* pGroup, GuidSet* players)
            return false;
 
         rolesMap.insert(std::make_pair(pPlayer->GetObjectGuid(), pPlayer->GetLFGPlayerState()->GetRoles()));
-        if (!CheckRoles(&rolesMap))
+        if (!CheckRoles(rolesMap))
            return false;
 
         LFGDungeonSet const* playerDungeons = pPlayer->GetLFGPlayerState()->GetDungeons();
@@ -2537,7 +2555,7 @@ bool LFGMgr::TryCreateGroup(LFGType type)
             {
                 rolesMap.insert(std::make_pair(player1->GetObjectGuid(), player1->GetLFGPlayerState()->GetRoles()));
 
-                if (!CheckRoles(&rolesMap))
+                if (!CheckRoles(rolesMap))
                    continue;
 
                 newGroup.insert(guid);
@@ -2557,7 +2575,9 @@ bool LFGMgr::TryCreateGroup(LFGType type)
                 if (!groupCreated)
                    continue;
 
-                SetRoles(&rolesMap);
+                if (!SetRoles(rolesMap))
+                    continue;
+
                 break;
             }
         }
@@ -2605,8 +2625,8 @@ void LFGMgr::UpdateQueueStatus(LFGType type)
 
     for (LFGQueueInfoMap::const_iterator itr = m_queueInfoMap.begin(); itr != m_queueInfoMap.end(); ++itr)
     {
-        LFGQueueInfo pqInfo = itr->second;
-        ObjectGuid guid = itr->first;       // Player or Group guid
+        LFGQueueInfo const& pqInfo = itr->second;
+        ObjectGuid   const& guid   = itr->first;       // Player or Group guid
 
         if (pqInfo.GetDungeonType() != type)
             continue;
@@ -2636,7 +2656,7 @@ void LFGMgr::UpdateQueueStatus(LFGType type)
         }
     }
 
-    LFGQueueStatus status = m_queueStatus[type];
+    LFGQueueStatus& status = m_queueStatus[type];
 
     status.dps     = damagers;
     status.tanks   = tanks;

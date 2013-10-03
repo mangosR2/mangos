@@ -175,7 +175,7 @@ void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
 {
     if (m_isCombatMovement)
         m_creature->GetMotionMaster()->MoveChase(victim, m_attackDistance, m_attackAngle);
-    else
+    else if (m_creature->GetMotionMaster()->GetCurrentMovementGeneratorType() == CHASE_MOTION_TYPE)
     {
         m_creature->GetMotionMaster()->MoveIdle();
         m_creature->StopMoving();
@@ -186,7 +186,7 @@ void CreatureAI::HandleMovementOnAttackStart(Unit* victim)
 //                                      Event system
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CreatureAI::SendAIEvent(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue /*=0*/) const
+void CreatureAI::SendAIEventAround(AIEventType eventType, Unit* pInvoker, uint32 uiDelay, float fRadius, uint32 miscValue /*=0*/) const
 {
     if (fRadius > 0)
     {

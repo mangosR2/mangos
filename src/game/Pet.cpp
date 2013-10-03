@@ -606,8 +606,8 @@ void Pet::Update(uint32 update_diff, uint32 diff)
 
             if (isControlled())
             {
-                GroupPetList m_groupPets = owner->GetPets();
-                if (m_groupPets.find(GetObjectGuid()) == m_groupPets.end())
+                GuidSet const& groupPets = owner->GetPets();
+                if (groupPets.find(GetObjectGuid()) == groupPets.end())
                 {
                     sLog.outError("Pet::Update: %s controlled, but not in list, removed.", GetGuidStr().c_str());
                     Unsummon(getPetType() == HUNTER_PET ? PET_SAVE_AS_DELETED : PET_SAVE_NOT_IN_SLOT, owner);

@@ -118,6 +118,8 @@ class MapPersistentState
                 UnloadIfEmpty();
         }
 
+        bool const& IsRequiresRemove() const { return m_needRemove; };
+
         time_t GetCreatureRespawnTime(uint32 loguid) const
         {
             RespawnTimes::const_iterator itr = m_creatureRespawnTimes.find(loguid);
@@ -162,6 +164,8 @@ class MapPersistentState
         uint32 m_mapid;
         Difficulty m_difficulty;
         Map* m_usedByMap;                                   // NULL if map not loaded, non-NULL lock MapPersistentState from unload
+
+        bool m_needRemove;
 
         // persistent data
         RespawnTimes m_creatureRespawnTimes;                // lock MapPersistentState from unload, for example for temporary bound dungeon unload delay
@@ -224,13 +228,10 @@ class DungeonPersistentState : public MapPersistentState
         uint8 GetPlayerCount() const { return m_playerList.size(); }
         uint8 GetGroupCount() const { return m_groupList.size(); }
 
-        /* online players bound to the instance (perm/solo)
-           does not include the members of the group unless they have permanent saves */
-        void AddPlayer(Player *player) { m_playerList.push_back(player); }
-        bool RemovePlayer(Player *player) { m_playerList.remove(player); return UnloadIfEmpty(); }
-        /* all groups bound to the instance */
-        void AddGroup(Group *group) { m_groupList.push_back(group); }
-        bool RemoveGroup(Group *group) { m_groupList.remove(group); return UnloadIfEmpty(); }
+        /* online players (perm/solo) and all groups bound to the instance.
+           for players: does not include the members of the group unless they have permanent saves */
+        void AddToUnbindList(ObjectGuid const& guid);
+        void RemoveFromUnbindList(ObjectGuid const& guid);
 
         /* for normal instances this corresponds to max(creature respawn time) + X hours
            for raid/heroic instances this caches the global respawn time for the map */
@@ -273,9 +274,6 @@ class DungeonPersistentState : public MapPersistentState
         bool HasBounds() const { return !m_playerList.empty() || !m_groupList.empty(); }
 
     private:
-        typedef std::list<Player*> PlayerListType;
-        typedef std::list<Group*> GroupListType;
-
         time_t m_resetTime;
         bool m_canReset;
         bool m_isExtended;
@@ -283,8 +281,8 @@ class DungeonPersistentState : public MapPersistentState
         /* the only reason the instSave-object links are kept is because
            the object-instSave links need to be broken at reset time
            TODO: maybe it's enough to just store the number of players/groups */
-        PlayerListType m_playerList;                        // lock MapPersistentState from unload
-        GroupListType m_groupList;                          // lock MapPersistentState from unload
+        GuidSet m_playerList;                               // lock MapPersistentState from unload
+        GuidSet m_groupList;                                // lock MapPersistentState from unload
 
         SpawnedPoolData m_spawnedPoolData;                  // Pools spawns state for map copy
 
@@ -411,7 +409,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
 
         void GetStatistics(uint32& numStates, uint32& numBoundPlayers, uint32& numBoundGroups);
 
-        void Update() { m_Scheduler.Update(); }
+        void Update();
     private:
         typedef UNORDERED_MAP<uint32 /*InstanceId or MapId*/, MapPersistentState*> PersistentStateMap;
 

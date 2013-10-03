@@ -36,10 +36,10 @@ namespace MaNGOS
     {
         Camera& i_camera;
         UpdateData i_data;
-        GuidSet i_clientGUIDs;
+        GuidSet i_clientGuids;
         WorldObjectSet i_visibleNow;
 
-        explicit VisibleNotifier(Camera& c) : i_camera(c), i_clientGUIDs(c.GetOwner()->GetClientGuids()) {}
+        explicit VisibleNotifier(Camera& c) : i_camera(c), i_clientGuids(c.GetOwner()->GetClientGuids()) {}
         template<class T> void Visit(GridRefManager<T>& m);
         void Visit(CameraMapType& /*m*/) {}
         void Notify(void);
@@ -921,15 +921,15 @@ namespace MaNGOS
     class NearestAttackableUnitInObjectRangeCheck
     {
         public:
-            NearestAttackableUnitInObjectRangeCheck(WorldObject const* obj, float range) : i_obj(obj), i_range(range) 
+            NearestAttackableUnitInObjectRangeCheck(WorldObject const* obj, float range) : i_obj(obj), i_range(range)
             {
                 i_targetForPlayer = i_obj->IsControlledByPlayer();
             }
             WorldObject const& GetFocusObject() const { return *i_obj; }
             bool operator()(Unit* u)
             {
-                if (u->isTargetableForAttack() 
-                    && i_obj->IsWithinDistInMap(u, i_range) 
+                if (u->isTargetableForAttack()
+                    && i_obj->IsWithinDistInMap(u, i_range)
                     && (i_targetForPlayer ? !i_obj->IsFriendlyTo(u) : i_obj->IsHostileTo(u))
                     && (i_obj->GetTypeId() != TYPEID_UNIT || u->isVisibleForOrDetect((Unit*)i_obj, (Unit*)i_obj, false)))
                 {

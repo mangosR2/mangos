@@ -60,6 +60,26 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     return AOR_OK;                                          // everything's fine
 }
 
+AccountOpResult AccountMgr::CreateAccount(std::string username, std::string password, uint32 expansion)
+{
+    if (utf8length(username) > MAX_ACCOUNT_STR)
+        return AOR_NAME_TOO_LONG;                           // username's too long
+
+    normalizeString(username);
+    normalizeString(password);
+
+    if (GetId(username))
+    {
+        return AOR_NAME_ALREDY_EXIST;                       // username does already exist
+    }
+
+    if (!LoginDatabase.PExecute("INSERT INTO account(username,sha_pass_hash,joindate,expansion) VALUES('%s','%s',NOW(),'%u')", username.c_str(), CalculateShaPassHash(username, password).c_str(), expansion))
+        return AOR_DB_INTERNAL_ERROR;                       // unexpected error
+    LoginDatabase.Execute("INSERT INTO realmcharacters (realmid, acctid, numchars) SELECT realmlist.id, account.id, 0 FROM realmlist,account LEFT JOIN realmcharacters ON acctid=account.id WHERE acctid IS NULL");
+
+    return AOR_OK;                                          // everything's fine
+}
+
 AccountOpResult AccountMgr::DeleteAccount(uint32 accid)
 {
     QueryResult* result = LoginDatabase.PQuery("SELECT 1 FROM account WHERE id='%u'", accid);
@@ -277,7 +297,6 @@ RafLinkedList* AccountMgr::GetRAFAccounts(uint32 accid, bool referred)
             while (result->NextRow());
             delete result;
         }
-        ReadGuard Guard(GetLock());
         mRAFLinkedMap.insert(RafLinkedMap::value_type(std::pair<uint32,bool>(accid, referred), acclist));
         itr = mRAFLinkedMap.find(std::pair<uint32,bool>(accid, referred));
     }
@@ -400,7 +419,6 @@ void AccountMgr::ClearPlayerDataCache(ObjectGuid guid)
     {
         uint32 accId = cache->account;
 
-        WriteGuard Guard(GetLock());
         PlayerDataCacheMap::iterator itr = mPlayerDataCacheMap.find(guid);
         if (itr != mPlayerDataCacheMap.end())
             mPlayerDataCacheMap.erase(itr);
@@ -422,8 +440,6 @@ void AccountMgr::MakePlayerDataCache(Player* player)
 
     ObjectGuid guid = player->GetObjectGuid();
 
-    WriteGuard Guard(GetLock());
-
     PlayerDataCache cache;
     cache.account  = player->GetSession()->GetAccountId();;
     cache.lowguid  = guid.GetCounter();
@@ -437,7 +453,6 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid, bool forc
 {
     PlayerDataCacheMap::const_iterator itr;
     {
-        ReadGuard Guard(GetLock());
         itr = mPlayerDataCacheMap.find(guid);
         if (itr != mPlayerDataCacheMap.end()) 
             return &itr->second;
@@ -461,14 +476,12 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid, bool forc
             cache.name    = (*result)[1].GetCppString();
             cache.race    = (*result)[2].GetUInt8();
 
-            WriteGuard Guard(GetLock());
             mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
             delete result;
         }
     }
 
     {
-        ReadGuard Guard(GetLock());
         itr = mPlayerDataCacheMap.find(guid);
         if (itr != mPlayerDataCacheMap.end()) 
             return &itr->second;
@@ -480,7 +493,6 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(ObjectGuid guid, bool forc
 PlayerDataCache const* AccountMgr::GetPlayerDataCache(const std::string& name)
 {
     {
-        ReadGuard Guard(GetLock());
         for (PlayerDataCacheMap::const_iterator itr = mPlayerDataCacheMap.begin(); itr != mPlayerDataCacheMap.end(); ++itr)
             if (itr->second.name == name)
                 return &itr->second;
@@ -499,13 +511,11 @@ PlayerDataCache const* AccountMgr::GetPlayerDataCache(const std::string& name)
 
         guid = ObjectGuid(HIGHGUID_PLAYER, cache.lowguid);
 
-        WriteGuard Guard(GetLock());
         mPlayerDataCacheMap.insert(PlayerDataCacheMap::value_type(guid, cache));
         delete result;
     }
 
     {
-        ReadGuard Guard(GetLock());
         PlayerDataCacheMap::const_iterator itr = mPlayerDataCacheMap.find(guid);
         if (itr != mPlayerDataCacheMap.end()) 
             return &itr->second;

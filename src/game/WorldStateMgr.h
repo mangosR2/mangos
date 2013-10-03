@@ -319,8 +319,7 @@ inline void AddToWorldStateSet(WorldStateSet** wss, WorldState const* wState)
     (*wss)->add(wState);
 }
 
-// class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, ACE_Thread_Mutex> >
-class MANGOS_DLL_DECL WorldStateMgr
+class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, ACE_Thread_Mutex> >
 {
     public:
         WorldStateMgr() {}
@@ -403,15 +402,8 @@ class MANGOS_DLL_DECL WorldStateMgr
         uint32 GetMapIdByZoneId(uint32 zoneId) const;
 
     private:
-        // multithread locking
-        typedef   MANGOSR2_MUTEX_MODEL              LockType;
-        typedef   ACE_Read_Guard<LockType>     ReadGuard;
-        typedef   ACE_Write_Guard<LockType>    WriteGuard;
-        LockType& GetLock() { return i_lock; }
-
         WorldStateTemplateMap   m_worldStateTemplates;    // templates storage
         WorldStateMap           m_worldState;             // data storage
-        LockType                i_lock;
 };
 
 #define sWorldStateMgr MaNGOS::Singleton<WorldStateMgr>::Instance()

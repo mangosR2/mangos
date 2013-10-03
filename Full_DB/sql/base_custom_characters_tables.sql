@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS `character_battleground_random`;
 CREATE TABLE `character_battleground_random` (
     `guid` int(11) unsigned NOT NULL DEFAULT '0',
     PRIMARY KEY  (`guid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
 
 -- Anticheat tables from /dev/rsa
 
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `anticheat_log` (
     `action2` mediumint(8) NOT NULL default '0',
     PRIMARY KEY (`entry`),
     KEY idx_Player (`guid`)
-) DEFAULT CHARSET=utf8 COMMENT='Anticheat log table';
+) ENGINE=INNODB DEFAULT CHARSET=utf8 COMMENT='Anticheat log table';
 
 -- Anticheat
 -- Config
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `autobroadcast` (
   `text` longtext NOT NULL,
   `next` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+) ENGINE=INNODB  DEFAULT CHARSET=utf8;
 
 -- BOP item trade
 
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `item_soulbound_trade_data` (
     `itemGuid` int(16) unsigned NOT NULL DEFAULT '0',
     `allowedPlayers` varchar(255) NOT NULL DEFAULT '',
     PRIMARY KEY (`itemGuid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='BOP item trade cache';
+) ENGINE=INNODB DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='BOP item trade cache';
 
 -- Group flags and roles support
 -- Commit a5e57729fc5211bb6a2f
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS hidden_rating (
     rating3 INT(10) UNSIGNED NOT NULL,
     rating5 INT(10) UNSIGNED NOT NULL,
     PRIMARY KEY  (guid)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+) ENGINE=INNODB  DEFAULT CHARSET=utf8;
 
 -- ADVANCE CHARACTERS TABLE
 
@@ -252,7 +252,7 @@ CREATE TABLE `character_stats` (
   `activeSpec` tinyint(3) unsigned NOT NULL default '0',
   `data` longtext NOT NULL,
   PRIMARY KEY  (`guid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `worldstate_data`;
 CREATE TABLE IF NOT EXISTS `worldstate_data` (
@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS `worldstate_data` (
     `value`            int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Current value of WorldState',
     `renewtime`        bigint(11) unsigned NOT NULL DEFAULT '0' COMMENT 'Time of last renew of WorldState',
     PRIMARY KEY (`state_id`,`instance`, `type`, `condition`)
-) DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='WorldState data storage';
+) ENGINE=INNODB DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='WorldState data storage';
 
 DROP TABLE IF EXISTS `item_refund_instance`;
 CREATE TABLE `item_refund_instance` (
@@ -273,7 +273,7 @@ CREATE TABLE `item_refund_instance` (
   `paidMoney` int(11) unsigned NOT NULL DEFAULT '0',
   `paidExtendedCost` mediumint(8) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`itemGuid`,`playerGuid`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Item Refund System';
+) ENGINE=INNODB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Item Refund System';
 
 DROP TABLE IF EXISTS `calendar_events`;
 CREATE TABLE `calendar_events` (
@@ -287,7 +287,7 @@ CREATE TABLE `calendar_events` (
   `title`            varchar(256) NOT NULL DEFAULT '',
   `description`      varchar(1024) NOT NULL DEFAULT '',
   PRIMARY KEY  (`eventId`)
-) DEFAULT CHARSET=utf8;
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `calendar_invites`;
 CREATE TABLE `calendar_invites` (
@@ -300,7 +300,7 @@ CREATE TABLE `calendar_invites` (
   `rank`             tinyint(3) unsigned NOT NULL DEFAULT '0',
   `description`      varchar(256) NOT NULL DEFAULT '',
   PRIMARY KEY  (`inviteId`)
-) DEFAULT CHARSET=utf8;
+) ENGINE=INNODB DEFAULT CHARSET=utf8;
 
 -- chat log tables from mns
 DROP TABLE IF EXISTS `chat_log_bg`;

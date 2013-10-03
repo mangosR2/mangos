@@ -220,8 +220,8 @@ enum LFGDungeonStatus
     LFG_STATUS_COMPLETE              = 3,
 };
 
-typedef std::set<LFGDungeonEntry const*> LFGDungeonSet;
-typedef std::map<LFGDungeonEntry const*, LFGLockStatusType> LFGLockStatusMap;
+typedef std::set<LFGDungeonEntry const*> LFGDungeonSet;    // Must be ORDERED! FIXME - use set of dungeon numbers instead this.
+typedef UNORDERED_MAP<LFGDungeonEntry const*, LFGLockStatusType> LFGLockStatusMap;    //FIXME - use set of dungeon numbers instead this.
 
 /// Stores group data related to proposal to join
 struct LFGProposal
@@ -344,7 +344,7 @@ private:
     LFGAnswer      m_answer;                           ///< Accept status (-1 not answer | 0 Not agree | 1 agree)
 };
 
-typedef std::map<ObjectGuid, LFGAnswer> LFGAnswerMap;
+typedef UNORDERED_MAP<ObjectGuid, LFGAnswer> LFGAnswerMap;
 
 struct MANGOS_DLL_SPEC LFGGroupState : public LFGStateStructure
 {

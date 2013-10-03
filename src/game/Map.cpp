@@ -57,6 +57,8 @@ Map::~Map()
         i_data = NULL;
     }
 
+    sMapMgr.GetMapUpdater()->MapStatisticDataRemove(this);
+
     // unload instance specific navigation data
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(m_TerrainData->GetMapId(), GetInstanceId());
 
@@ -2213,6 +2215,7 @@ void Map::SendObjectUpdates()
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {
+            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
             if (obj->IsMarkedForClientUpdate())
                 obj->BuildUpdateData(update_players);
             if (obj->GetObjectsUpdateQueue() && !obj->GetObjectsUpdateQueue()->empty())
@@ -2432,7 +2435,7 @@ void Map::AddAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attacke
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2450,7 +2453,7 @@ void Map::RemoveAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& atta
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2463,7 +2466,7 @@ void Map::RemoveAllAttackersFor(ObjectGuid const& targetGuid)
     if (targetGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2473,8 +2476,18 @@ void Map::RemoveAllAttackersFor(ObjectGuid const& targetGuid)
 
 GuidSet& Map::GetAttackersFor(ObjectGuid const& targetGuid)
 {
-    ReadGuard Guard(GetLock());
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
     return m_attackersMap[targetGuid];
+}
+
+bool Map::IsInCombat(ObjectGuid const& targetGuid) const
+{
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock());
+    AttackersMap::const_iterator itr = m_attackersMap.find(targetGuid);
+    if (itr == m_attackersMap.end())
+        return false;
+
+    return !itr->second.empty();
 }
 
 void Map::CreateAttackersStorageFor(ObjectGuid const& targetGuid)
@@ -2644,6 +2657,7 @@ bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 
 template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
 {
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
     T* obj = new T;
     if(!obj->LoadFromDB(guid, this))
     {

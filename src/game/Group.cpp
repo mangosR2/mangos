@@ -112,8 +112,10 @@ Group::~Group()
     // will be unloaded first so we must be prepared for both cases
     // this may unload some dungeon persistent state
     for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+    {
         for (BoundInstancesMap::iterator itr2 = m_boundInstances[i].begin(); itr2 != m_boundInstances[i].end(); ++itr2)
-            itr2->second.state->RemoveGroup(this);
+            itr2->second.state->RemoveFromUnbindList(GetObjectGuid());
+    }
 
     // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
     if (!GetObjectGuid().IsEmpty())
@@ -1399,13 +1401,13 @@ void Group::_setLeader(ObjectGuid guid)
 
         if (player)
         {
-            for(uint8 i = 0; i < MAX_DIFFICULTY; ++i)
+            for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
             {
                 for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end();)
                 {
-                    if(itr->second.perm)
+                    if (itr->second.perm)
                     {
-                        itr->second.state->RemoveGroup(this);
+                        itr->second.state->RemoveFromUnbindList(GetObjectGuid());
                         m_boundInstances[i].erase(itr++);
                     }
                     else
@@ -1911,7 +1913,7 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
             itr = m_boundInstances[diff].begin();
             // this unloads the instance save unless online players are bound to it
             // (eg. permanent binds or GM solo binds)
-            state->RemoveGroup(this);
+            state->RemoveFromUnbindList(GetObjectGuid());
         }
         else
             ++itr;
@@ -1972,8 +1974,9 @@ InstanceGroupBind* Group::BindToInstance(DungeonPersistentState *state, bool per
         if (bind.state != state)
         {
             if (bind.state)
-                bind.state->RemoveGroup(this);
-            state->AddGroup(this);
+                bind.state->RemoveFromUnbindList(GetObjectGuid());
+
+            state->AddToUnbindList(GetObjectGuid());
         }
 
         bind.state = state;
@@ -1995,7 +1998,8 @@ void Group::UnbindInstance(uint32 mapid, uint8 difficulty, bool unload)
         if (!unload && IsNeedSave())
             CharacterDatabase.PExecute("DELETE FROM group_instance WHERE leaderGuid = '%u' AND instance = '%u'",
                 GetLeaderGuid().GetCounter(), itr->second.state->GetInstanceId());
-        itr->second.state->RemoveGroup(this);                // state can become invalid
+
+        itr->second.state->RemoveFromUnbindList(GetObjectGuid());  // state can become invalid
         m_boundInstances[difficulty].erase(itr);
     }
 }
@@ -2020,29 +2024,33 @@ void Group::BroadcastGroupUpdate(void)
 {
     for(member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
     {
-        Player *pp = sObjectMgr.GetPlayer(citr->guid);
-        if(pp && pp->IsInWorld())
+        Player* pp = sObjectMgr.GetPlayer(citr->guid);
+        if (pp && pp->IsInWorld())
         {
             pp->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
             pp->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);
             DEBUG_LOG("-- Forced group value update for '%s'", pp->GetName());
-            if(pp->GetPet())
+
+            if (pp->GetPet())
             {
-                GroupPetList m_groupPets = pp->GetPets();
-                if  (!m_groupPets.empty())
+                GuidSet const& groupPets = pp->GetPets();
+                if (!groupPets.empty())
                 {
-                     for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
+                     for (GuidSet::const_iterator itr = groupPets.begin(); itr != groupPets.end(); ++itr)
+                     {
                          if (Pet* _pet = pp->GetMap()->GetPet(*itr))
                          {
                              _pet->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
                              _pet->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);
                          }
+                     }
                 }
                 DEBUG_LOG("-- Forced group value update for '%s' pet '%s'", pp->GetName(), pp->GetPet()->GetName());
             }
-            for(uint32 i = 0; i < MAX_TOTEM_SLOT; ++i)
+
+            for (uint32 i = 0; i < MAX_TOTEM_SLOT; ++i)
             {
-                if(Unit *totem = pp->GetMap()->GetUnit(pp->GetTotemGuid(TotemSlot(i))))
+                if (Unit* totem = pp->GetMap()->GetUnit(pp->GetTotemGuid(TotemSlot(i))))
                 {
                     totem->ForceValuesUpdateAtIndex(UNIT_FIELD_BYTES_2);
                     totem->ForceValuesUpdateAtIndex(UNIT_FIELD_FACTIONTEMPLATE);

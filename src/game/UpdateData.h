@@ -54,20 +54,20 @@ class UpdateData
     public:
         UpdateData();
 
-        void AddOutOfRangeGUID(GuidSet& guids);
-        void AddOutOfRangeGUID(ObjectGuid const &guid);
-        void AddUpdateBlock(const ByteBuffer &block);
-        bool BuildPacket(WorldPacket *packet);
-        bool HasData() { return m_blockCount > 0 || !m_outOfRangeGUIDs.empty(); }
+        void AddOutOfRangeGuids(GuidSet& guids);
+        void AddOutOfRangeGuid(ObjectGuid const &guid);
+        void AddUpdateBlock(const ByteBuffer& block);
+        bool BuildPacket(WorldPacket* packet);
+        bool HasData() { return m_blockCount > 0 || !m_outOfRangeGuids.empty(); }
         void Clear();
 
-        GuidSet const& GetOutOfRangeGUIDs() const { return m_outOfRangeGUIDs; }
+        GuidSet const& GetOutOfRangeGuids() const { return m_outOfRangeGuids; }
 
     protected:
         uint32 m_blockCount;
-        GuidSet m_outOfRangeGUIDs;
+        GuidSet m_outOfRangeGuids;
         ByteBuffer m_data;
 
-        void Compress(void* dst, uint32 *dst_size, void* src, int src_size);
+        void Compress(void* dst, uint32* dst_size, void* src, int src_size);
 };
 #endif

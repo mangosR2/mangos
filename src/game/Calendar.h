@@ -301,13 +301,6 @@ class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLock
         void SendPacketToAllEventRelatives(WorldPacket packet, CalendarEvent const* event);
 
     private:
-        // multithread locking
-        typedef   MANGOSR2_MUTEX_MODEL         LockType;
-        typedef   ACE_Read_Guard<LockType>     ReadGuard;
-        typedef   ACE_Write_Guard<LockType>    WriteGuard;
-
-        LockType& GetLock() { return i_lock; }
-        LockType            i_lock;
 };
 
 #define sCalendarMgr MaNGOS::Singleton<CalendarMgr>::Instance()

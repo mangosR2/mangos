@@ -54,9 +54,21 @@ struct MANGOS_DLL_DECL MapID
         return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
     };
 
+    uint32 const& GetId() const { return nMapId; };
+    uint32 const& GetInstanceId() const { return nInstanceId; };
+
     uint32 nMapId;
     uint32 nInstanceId;
 };
+
+HASH_NAMESPACE_START
+template<> class hash <MapID>
+{
+    public: size_t operator()(const MapID& __x) const { return (size_t)((__x.GetId() << 16) | (__x.GetInstanceId())); }
+};
+HASH_NAMESPACE_END
+
+typedef UNORDERED_SET<MapID> MapIDSet;
 
 class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::ClassLevelLockable<MapManager, ACE_Recursive_Thread_Mutex> >
 {

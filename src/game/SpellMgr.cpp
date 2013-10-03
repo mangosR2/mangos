@@ -783,6 +783,8 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
             switch (spellproto->Id)
             {
                 case 46650:                                 // Open Brutallus Back Door
+                case 62488:                                 // Activate Construct
+                case 64503:                                 // Water
                     return true;
                 default:
                     break;
@@ -860,6 +862,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                         case 27202:
                         case 27203:
                         case 47669:
+                        case 64996:                         // Reorigination
                             return true;
                         default:
                             break;
@@ -2282,6 +2285,18 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                 if (spellInfo_2->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_KINGS>())
                     return true;
             }
+            // Black Hole (damage) and Black Hole (phase) 
+            if (MatchedSpellIdPair(62169, 62168))
+                return false; 
+
+            // Black Hole (damage) and Worm Hole (phase) 
+            if (MatchedSpellIdPair(62169, 65250))
+                return false; 
+
+            // Black Hole (damage) and Phase Punch (phase) 
+            if (MatchedSpellIdPair(62169, 64417))
+                return false;
+
             break;
         }
         case SPELLFAMILY_WARLOCK:
@@ -2517,28 +2532,35 @@ bool SpellMgr::IsTargetMatchedWithCreatureType(SpellEntry const* pSpellInfo, Uni
     if (!pSpellInfo || !pTarget || !pTarget->IsInitialized())
         return false;
 
-    uint32 spellCreatureTargetMask = pSpellInfo->TargetCreatureType;
 
     if (IsSpellWithCasterSourceTargetsOnly(pSpellInfo))
         return true;
 
-    // Curse of Doom: not find another way to fix spell target check :/
-    if (pSpellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && pSpellInfo->Category == 1179)
+    uint32 spellCreatureTargetMask = 0;
+
+    switch (pSpellInfo->Id)
     {
-        // not allow cast at player
-        if (pTarget->GetTypeId() == TYPEID_PLAYER)
-            return false;
+        // Curse of Doom: not find another way to fix spell target check :/
+        case 603:
+        case 30910:
+        case 47867:
+        {
+            // not allow cast at player
+            if (pTarget->GetTypeId() == TYPEID_PLAYER)
+                return false;
 
-        spellCreatureTargetMask = 0x7FF;
+            spellCreatureTargetMask = 0x7FF;
+            break;
+        }
+        // Dismiss Pet and Taming Lesson skipped
+        case 2641:
+        case 23356:
+            /*spellCreatureTargetMask =  0;*/
+            break;
+        default:
+            spellCreatureTargetMask = pSpellInfo->TargetCreatureType;
+            break;
     }
-
-    // Dismiss Pet and Taming Lesson skipped
-    if (pSpellInfo->Id == 2641 || pSpellInfo->Id == 23356)
-        spellCreatureTargetMask =  0;
-
-    // skip creature type check for Grounding Totem
-    if (pTarget->GetUInt32Value(UNIT_CREATED_BY_SPELL) == 8177)
-        return true;
 
     if (spellCreatureTargetMask)
     {
@@ -2875,6 +2897,9 @@ float SpellMgr::GetSpellRadiusWithCustom(SpellEntry const* spellInfo, Unit const
                     break;
                 case 67732:                                 // Destroy all Frost Patches (Trial of the Crusader, Anub'arak)
                     radius = 9.0f;
+                    break;
+                case 74086:                                 // Destroy Soul (Lich King)
+                    radius = 100.0f;
                     break;
                 case 69075:                                 // Bone Storm
                 case 69832:                                 // Unstable Ooze Explosion (Rotface)

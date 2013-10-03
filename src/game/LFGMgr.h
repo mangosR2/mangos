@@ -85,17 +85,18 @@ struct LFGReward
 // Stores player or group queue info
 struct LFGQueueInfo
 {
-    LFGQueueInfo(ObjectGuid _guid, LFGType type);
-    ObjectGuid guid;                                        // guid (player or group) of queue owner
+    LFGQueueInfo(ObjectGuid _guid, LFGType type, uint32 _queueID);
+    ObjectGuid const guid;                                  // guid (player or group) of queue owner
     time_t     joinTime;                                    // Player/group queue join time (to calculate wait times)
     uint8      tanks;                                       // Tanks needed
     uint8      healers;                                     // Healers needed
     uint8      dps;                                         // Dps needed
+    uint32 const queueID;                                   // Queue id
 
     // helpers
-    LFGType    GetDungeonType() {return m_type;};
+    LFGType const& GetDungeonType() const {return m_type;};
     private:
-        LFGType    m_type;
+    LFGType const   m_type;
 };
 
 struct LFGQueueStatus
@@ -128,16 +129,16 @@ struct LFGEvent
     bool          IsActive() { return ((executeTime > 0) && (time_t(time(NULL)) >= executeTime)); };
 };
 
-typedef std::multimap<uint32 /*dungeonId*/, LFGReward /*reward*/> LFGRewardMap;
+typedef UNORDERED_MULTIMAP<uint32 /*dungeonId*/, LFGReward /*reward*/> LFGRewardMap;
 typedef std::pair<LFGRewardMap::const_iterator, LFGRewardMap::const_iterator> LFGRewardMapBounds;
-typedef std::map<ObjectGuid /*group or player guid*/, LFGQueueInfo> LFGQueueInfoMap;
-typedef std::map<uint32/*dungeonID*/, LFGDungeonEntry const*> LFGDungeonMap;
-typedef std::map<uint32/*ID*/, LFGProposal> LFGProposalMap;
+typedef UNORDERED_MAP<ObjectGuid /*group or player guid*/, LFGQueueInfo> LFGQueueInfoMap;
+typedef UNORDERED_MAP<uint32/*dungeonID*/, LFGDungeonEntry const*> LFGDungeonMap;
+typedef UNORDERED_MAP<uint32/*ID*/, LFGProposal> LFGProposalMap;
 
-typedef std::map<LFGDungeonEntry const*, LFGQueueStatus> LFGQueueStatusMap;
-typedef std::map<ObjectGuid, LFGRoleMask>  LFGRolesMap;
-typedef std::set<LFGQueueInfo*> LFGQueue;
-typedef std::map<LFGDungeonEntry const*, GuidSet> LFGSearchMap;
+typedef UNORDERED_MAP<LFGDungeonEntry const*, LFGQueueStatus> LFGQueueStatusMap;
+typedef UNORDERED_MAP<ObjectGuid, LFGRoleMask>  LFGRolesMap;
+typedef UNORDERED_SET<LFGQueueInfo*> LFGQueue;
+typedef UNORDERED_MAP<LFGDungeonEntry const*, GuidSet> LFGSearchMap;
 typedef std::list<LFGEvent> LFGEventList;
 
 class LFGMgr
@@ -213,10 +214,10 @@ class LFGMgr
         void StartRoleCheck(Group* pGroup);
         void UpdateRoleCheck(Group* pGroup);
         bool CheckRoles(Group* pGroup, Player* pPlayer = NULL);
-        bool CheckRoles(LFGRolesMap* roleMap);
+        bool CheckRoles(LFGRolesMap& roleMap);
         bool RoleChanged(Player* pPlayer, LFGRoleMask roles);
         void SetGroupRoles(Group* pGroup, GuidSet* = NULL);
-        void SetRoles(LFGRolesMap* roleMap);
+        bool SetRoles(LFGRolesMap& roleMap);
 
         // Social check system
         bool HasIgnoreState(ObjectGuid guid1, ObjectGuid guid2);
@@ -273,6 +274,9 @@ class LFGMgr
     private:
         uint32 GenerateProposalID();
         uint32          m_proposalID;
+        uint32 GenerateQueueID();
+        uint32          m_queueID;
+
         LFGRewardMap    m_RewardMap;                        // Stores rewards for random dungeons
         LFGQueueInfoMap m_queueInfoMap;                     // Storage for queues
         LFGQueue        m_playerQueue[LFG_TYPE_MAX];        // Queue's for players

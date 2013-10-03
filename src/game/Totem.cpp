@@ -245,3 +245,13 @@ bool Totem::IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex 
 
     return Creature::IsImmuneToSpellEffect(spellInfo, index);
 }
+
+uint32 Totem::GetCreatureTypeMask() const
+{
+
+    // skip creature type check for Grounding Totem
+    if (GetUInt32Value(UNIT_CREATED_BY_SPELL) == 8177)
+        return 0x7FF;
+
+    return Unit::GetCreatureTypeMask();
+}

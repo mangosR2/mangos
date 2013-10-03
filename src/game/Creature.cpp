@@ -1801,7 +1801,7 @@ void Creature::CallAssistance()
     if (!m_AlreadyCallAssistance && getVictim() && !isCharmed())
     {
         SetNoCallAssistance(true);
-        AI()->SendAIEvent(AI_EVENT_CALL_ASSISTANCE, getVictim(), sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY), sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS));
+        AI()->SendAIEventAround(AI_EVENT_CALL_ASSISTANCE, getVictim(), sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY), sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS));
     }
 }
 
@@ -2153,7 +2153,7 @@ uint8 Creature::getRace() const
 
 bool Creature::IsInEvadeMode() const
 {
-    return IsInUnitState(UNIT_ACTION_HOME);
+    return IsInUnitState(UNIT_ACTION_HOME) || hasUnitState(UNIT_STAT_DELAYED_EVADE);
 }
 
 bool Creature::HasSpell(uint32 spellID)

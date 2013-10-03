@@ -2233,7 +2233,7 @@ PlayerbotAI.SellGarbage = 0
 #
 #    VMSS.MaxThreadBreaks
 #        Maximum single instance map fails before stopping world
-#        Default: 5
+#        Default: 3
 #
 #    VMSS.ThreadBreakRememberTime
 #        Time (in seconds) before cleaning counter of MaxThreadBreaks
@@ -2251,18 +2251,35 @@ PlayerbotAI.SellGarbage = 0
 #        Default: 1000 (1 sec) - default mangos freeze detect period.
 #
 #    VMSS.MapFreezeDetectTime
-#        Time (in milliseconds) for detect freeze in map thread
+#        Time period (in milliseconds) for detect freeze in map thread
 #        Default: 1000 (1 sec)
+#        if setted to 0 - don't check!
+#
+#    VMSS.TrySkipFirstThreadBreak
+#        Try skip first thread break (crush), and restore his update cycle fully - 
+#             possible this crush not code problem, but cheat/memory corruption
+#        Default: 1 (on)
+#
+#    VMSS.ForceUnloadDelay
+#        Time (in milliseconds) for delay force map unload ("synthetic crush"), if freeze detected
+#        Default: 3000 (3 sec)
+#
+#    VMSS.ContinentsSkip
+#        Skip continents in main VMSS operations.
+#        Continents has many object, and currently may be correctly handled only with 1-10 players max
+#        Default: 1 (on)
 #
 ###################################################################################################################
-VMSS.Enable = 1
-VMSS.MaxThreadBreaks = 5
+
+VMSS.Enable = 0
+VMSS.MaxThreadBreaks = 3
 VMSS.ThreadBreakRememberTime = 600
 VMSS.MapFreeMethod = 1
 VMSS.FreezeCheckPeriod = 1000
-VMSS.MapFreezeDetectTime = 2000
+VMSS.MapFreezeDetectTime = 1000
 VMSS.TrySkipFirstThreadBreak = 1
 VMSS.ForceUnloadDelay = 3000
+VMSS.ContinentsSkip = 1
 
 ###################################################################################################################
 #    Duel Reset System

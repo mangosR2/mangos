@@ -51,13 +51,14 @@ typedef std::map<ObjectGuid, PlayerDataCache> PlayerDataCacheMap;
 typedef std::vector<uint32> RafLinkedList;
 typedef std::map<std::pair<uint32, bool>, RafLinkedList > RafLinkedMap;
 
-class AccountMgr
+class AccountMgr : public MaNGOS::Singleton<AccountMgr, MaNGOS::ClassLevelLockable<AccountMgr, ACE_Thread_Mutex> >
 {
     public:
         AccountMgr();
         ~AccountMgr();
 
         AccountOpResult CreateAccount(std::string username, std::string password);
+        AccountOpResult CreateAccount(std::string username, std::string password, uint32 expansion);
         AccountOpResult DeleteAccount(uint32 accid);
         AccountOpResult ChangeUsername(uint32 accid, std::string new_uname, std::string new_passwd);
         AccountOpResult ChangePassword(uint32 accid, std::string new_passwd);
@@ -91,14 +92,7 @@ class AccountMgr
 
         static bool normalizeString(std::string& utf8str);
 
-        // multithread locking
-        typedef   MANGOSR2_MUTEX_MODEL         LockType;
-        typedef   ACE_Read_Guard<LockType>     ReadGuard;
-        typedef   ACE_Write_Guard<LockType>    WriteGuard;
-        LockType& GetLock() { return i_lock; }
-
-        private:
-        LockType            i_lock;
+    private:
         PlayerDataCacheMap  mPlayerDataCacheMap;
         RafLinkedMap        mRAFLinkedMap;
 };

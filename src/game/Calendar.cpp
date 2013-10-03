@@ -219,14 +219,12 @@ CalendarMgr::~CalendarMgr()
 
 CalendarEvent* CalendarMgr::GetEventById(ObjectGuid const& eventId)
 {
-    //ReadGuard guard(GetLock());
     CalendarEventStore::iterator iter = m_EventStore.find(eventId);
     return IsValidEvent(iter) ? &iter->second : NULL;
 }
 
 CalendarInvite* CalendarMgr::GetInviteById(ObjectGuid const& inviteId)
 {
-    //ReadGuard guard(GetLock());
     CalendarInviteStore::iterator iter = m_InviteStore.find(inviteId);
     return IsValidInvite(iter) ? &iter->second : NULL;
 }
@@ -239,7 +237,6 @@ CalendarEventsList* CalendarMgr::GetPlayerEventsList(ObjectGuid const& guid)
     Player* player = sObjectMgr.GetPlayer(guid);
     guildId = (player) ? player->GetGuildId() : Player::GetGuildIdFromDB(guid);
 
-    ReadGuard guard(GetLock());
     for (CalendarEventStore::iterator iter = m_EventStore.begin(); iter != m_EventStore.end(); ++iter)
     {
         if (IsDeletedEvent(iter))
@@ -269,7 +266,6 @@ CalendarInvitesList* CalendarMgr::GetPlayerInvitesList(ObjectGuid const& guid)
     Player* player = sObjectMgr.GetPlayer(guid);
     guildId = (player) ? player->GetGuildId() : Player::GetGuildIdFromDB(guid);
 
-    // ReadGuard guard(GetLock());
     // FIXME - need use main invites list instead of
 
     for (CalendarEventStore::iterator iter = m_EventStore.begin(); iter != m_EventStore.end(); ++iter)
@@ -327,7 +323,6 @@ CalendarEvent* CalendarMgr::AddEvent(ObjectGuid const& guid, std::string title, 
     uint32 guild = ((flags & CALENDAR_FLAG_GUILD_EVENT) || (flags && CALENDAR_FLAG_GUILD_ANNOUNCEMENT)) ? player->GetGuildId() : 0;
 
     {
-        WriteGuard guard(GetLock());
         m_EventStore.insert(CalendarEventStore::value_type(eventGuid,
             CalendarEvent(eventGuid, guid, guild, CalendarEventType(type), dungeonId, eventTime, flags, unkTime, title, description)));
     }
@@ -366,7 +361,6 @@ CalendarInvite* CalendarMgr::AddInvite(CalendarEvent* event, ObjectGuid const& s
 //    CalendarInvite* calendarInvite = new CalendarInvite(event, GetNewInviteId(), senderGuid, inviteeGuid, statusTime, status, rank, text);
     ObjectGuid inviteGuid = ObjectGuid(HIGHGUID_INVITE, GenerateInviteLowGuid());
     {
-        WriteGuard guard(GetLock());
         m_InviteStore.insert(CalendarInviteStore::value_type(inviteGuid, CalendarInvite(event, inviteGuid, senderGuid, inviteeGuid, statusTime, status, rank, text)));
     }
 
@@ -764,7 +758,6 @@ void CalendarMgr::SaveToDB()
                 dataSaved = true;
                 CharacterDatabase.BeginTransaction();
             }
-            WriteGuard guard(GetLock());
             DeleteEventFromDB(iter->first);
             m_EventStore.erase(iter++);
         }
@@ -792,7 +785,6 @@ void CalendarMgr::SaveToDB()
                 dataSaved = true;
                 CharacterDatabase.BeginTransaction();
             }
-            WriteGuard guard(GetLock());
             DeleteInviteFromDB(iter->first);
             m_InviteStore.erase(iter++);
         }
@@ -875,7 +867,6 @@ void CalendarMgr::Update()
 {
     {
         // Update part 1 - calculating (and mark for cleanup)
-        ReadGuard guard(GetLock());
         for (CalendarEventStore::iterator itr = m_EventStore.begin(); itr != m_EventStore.end(); ++itr)
         {
             CalendarEvent* event = &itr->second;

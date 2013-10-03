@@ -130,13 +130,25 @@ class MANGOS_DLL_DECL TransportBase
     public:
         template<typename Func> void CallForAllPassengers(Func const& func)
         {
-            if (!m_passengers.empty())
+            if (HasPassengers())
             {
-                for (PassengerMap::const_iterator itr = m_passengers.begin(); itr != m_passengers.end();)
+                // Make cache for passengers list
+                GuidSet passengerGuids;
                 {
-                    WorldObject* passenger = GetOwner()->GetMap()->GetWorldObject((itr++)->first);
+                    MAPLOCK_READ(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+                    for (PassengerMap::const_iterator itr = m_passengers.begin(); itr != m_passengers.end(); ++itr)
+                        if (itr->first)
+                            passengerGuids.insert(itr->first);
+                }
+
+                // Current passenger list (m_passengers) may be changed while "func". use cached value for iterate
+                for (GuidSet::const_iterator itr = passengerGuids.begin(); itr != passengerGuids.end(); ++itr)
+                {
+                    WorldObject* passenger = GetOwner()->GetMap()->GetWorldObject(*itr);
+
                     if (!passenger)
                         continue;
+
                     func(passenger);
                 }
             }

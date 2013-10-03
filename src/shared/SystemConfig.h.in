@@ -23,15 +23,11 @@
 #define _PACKAGENAME "SingleCore"
 #endif
 
-#include "config.h"
+#include "../../config.h"
 #include "Platform/Define.h"
 
 #ifndef _VERSION
-#if PLATFORM == PLATFORM_WINDOWS
-# define _VERSION(REVD,REVT,REVN,REVH) "0.17" " (" REVD " " REVT " Revision " REVN " - " REVH ")"
-#else
-# define _VERSION(REVN) "${MANGOS_VERSION}" " (Revision " REVN ")"
-#endif
+# define _VERSION(REVN) MANGOS_VERSION " (Revision " REVN ")"
 #endif
 
 #ifndef _R2VERSION
@@ -101,9 +97,7 @@
 #define _FULLVERSION(REVN) _PACKAGENAME "/" _VERSION(REVN)
 #define _R2FULLVERSION(REVD,REVT,REVN,REVH) _R2VERSION(REVD,REVT,REVN,REVH) " for " _ENDIAN_PLATFORM
 
-#define EXPECTED_MANGOSD_CLIENT_BUILD {${CLIENT_VERSION}, 0}
-
-#define CLIENT_VERSION ${CLIENT_VERSION}
+#define EXPECTED_MANGOSD_CLIENT_BUILD {CLIENT_VERSION, 0}
 
 #if CLIENT_VERSION >= 16057
     #define MAX_EXPANSION 4
