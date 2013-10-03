@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS hidden_rating (
     rating3 INT(10) UNSIGNED NOT NULL,
     rating5 INT(10) UNSIGNED NOT NULL,
     PRIMARY KEY  (guid)
-) ENGINE=INNODB  DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 -- ADVANCE CHARACTERS TABLE
 
@@ -268,7 +268,7 @@ CREATE TABLE `item_refund_instance` (
   `paidMoney` int(11) unsigned NOT NULL DEFAULT '0',
   `paidExtendedCost` mediumint(8) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`itemGuid`,`playerGuid`)
-) ENGINE=INNODB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Item Refund System';
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Item Refund System';
 
 DROP TABLE IF EXISTS `calendar_events`;
 CREATE TABLE `calendar_events` (
