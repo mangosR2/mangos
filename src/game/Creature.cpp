@@ -1303,7 +1303,8 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
         m_deathState = DEAD;
         if (CanFly())
         {
-            Position loc = pos.m_pos;
+            WorldLocation loc = GetPosition();
+            loc.SetPosition(pos.m_pos);
             float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
             if (loc.z - tz > 0.1)
             {
@@ -1337,7 +1338,8 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             // Just set to dead, so need to relocate like above
             if (CanFly())
             {
-                Position loc = pos.m_pos;
+                WorldLocation loc = GetPosition();
+                loc.SetPosition(pos.m_pos);
                 float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
                 if (loc.z - tz > 0.1)
                 {

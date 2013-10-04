@@ -633,6 +633,7 @@ class MANGOS_DLL_SPEC GameObject : public WorldObject
         GameObjectInfo const* GetGOInfo() const;
 
         virtual bool IsTransport() const override;
+        virtual bool IsMOTransport() const override;
         bool IsDynTransport() const;
 
         bool HasStaticDBSpawnData() const;                  // listed in `gameobject` table and have fixed in DB guid

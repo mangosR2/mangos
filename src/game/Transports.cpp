@@ -378,7 +378,7 @@ bool Transport::RemovePassenger(WorldObject* passenger)
 
 void Transport::Update(uint32 update_diff, uint32 p_time)
 {
-    UpdateSplineMovement(p_time);
+    GameObject::Update(update_diff, p_time);
 
     if (!movespline->Finalized())
         return;
@@ -516,6 +516,7 @@ void Transport::Start()
         );
     SetActiveObjectState(true);
     BuildStartMovePacket(GetMap());
+    SetLootState(GO_ACTIVATED);
 }
 
 void Transport::Stop()
@@ -528,6 +529,7 @@ void Transport::Stop()
         );
     SetActiveObjectState(false);
     BuildStopMovePacket(GetMap());
+    SetLootState(GO_JUST_DEACTIVATED);
 }
 
 // Return true, only if transport has correct position!

@@ -57,7 +57,7 @@ class MANGOS_DLL_SPEC Transport : public GameObject
 
         uint32 GetTransportMapId() const { return GetGOInfo() ? GetGOInfo()->moTransport.mapID : 0; };
 
-        virtual bool IsTransport() const override { return bool(m_transportKit); };
+        virtual bool IsMOTransport() const override { return bool(m_transportKit); };
         TransportBase* GetTransportBase() { return (TransportBase*)m_transportKit; };
 
     private:

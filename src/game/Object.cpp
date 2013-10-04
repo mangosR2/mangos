@@ -1124,26 +1124,11 @@ ObjectLockType& WorldObject::GetLock(MapLockType _lockType)
     return GetMap() ? GetMap()->GetLock(_lockType) : sWorld.GetLock(_lockType);
 }
 
-// Attention! This method cannot must call while relocation to other map!
-void WorldObject::Relocate(Position const& position)
-{
-    bool positionChanged    = !bool(position == m_position);
-    bool orientationChanged = bool(fabs(position.o - m_position.o) > M_NULL_F);
-
-    m_position = position;
-
-    if (isType(TYPEMASK_UNIT))
-    {
-        if (positionChanged)
-            ((Unit*)this)->m_movementInfo.ChangePosition(m_position);
-        else if (orientationChanged)
-            ((Unit*)this)->m_movementInfo.ChangeOrientation(m_position.o);
-    }
-}
-
 void WorldObject::SetOrientation(float orientation)
 {
-    Relocate(Position(GetPositionX(), GetPositionY(), GetPositionZ(), orientation, GetPhaseMask()));
+    WorldLocation loc = GetPosition();
+    loc.SetOrientation(orientation);
+    Relocate(loc);
 }
 
 void WorldObject::Relocate(WorldLocation const& location)
@@ -1164,8 +1149,38 @@ void WorldObject::Relocate(WorldLocation const& location)
             sLog.outError("WorldObject::Relocate %s try relocate to non-existance map %u!", GetObjectGuid().GetString().c_str(), location.GetMapId());
     }
 
-    Relocate(Position(location));
+    bool positionChanged    = IsOnTransport() ? 
+                                        !bool(location.GetTransportPos().IsEmpty() || (GetTransportPosition() == location.GetTransportPos())) :
+                                        !bool(location == GetPosition());
+    bool orientationChanged = IsOnTransport() ? 
+                                        bool(fabs(location.getO() - GetPosition().getO()) > M_NULL_F) :
+                                        bool(!location.GetTransportPos().IsEmpty() && fabs(GetTransportPosition().getO() - location.GetTransportPos().getO()) > M_NULL_F);
+
+    m_position.SetPosition(location);
+
+    if (isType(TYPEMASK_UNIT))
+    {
+        if (positionChanged)
+        {
+            ((Unit*)this)->m_movementInfo.ChangePosition(m_position);
+        }
+        else if (orientationChanged)
+            ((Unit*)this)->m_movementInfo.ChangeOrientation(m_position.o);
+    }
+
+    if ((positionChanged || orientationChanged) &&
+        !location.GetTransportPos().IsEmpty())
+        SetTransportPosition(location.GetTransportPos());
 }
+
+void WorldObject::SetTransportPosition(Position const& pos)
+{
+    m_position.SetTransportPosition(pos);
+    if (IsBoarded())
+        GetTransportInfo()->SetLocalPosition(pos);
+    if (isType(TYPEMASK_UNIT))
+        ((Unit*)this)->m_movementInfo.ChangeTransportPosition(pos);
+};
 
 uint32 WorldObject::GetZoneId() const
 {
@@ -1206,7 +1221,7 @@ float WorldObject::GetDistance(WorldLocation const& loc) const
 float WorldObject::GetDistance2d(float x, float y) const
 {
     float sizefactor = GetObjectBoundingRadius();
-    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ())) - sizefactor;
+    float dist = GetPosition().GetDistance(Location(x, y, GetPositionZ() + GetTransOffsetZ())) - sizefactor;
     return ( dist > M_NULL_F ? dist : 0.0f);
 }
 
