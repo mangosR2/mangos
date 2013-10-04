@@ -6291,11 +6291,11 @@ ActionButton const* Player::GetActionButton(uint8 button)
     return &buttonItr->second;
 }
 
-bool Player::SetPosition(Position const& pos, bool teleport)
+bool Player::SetPosition(WorldLocation const& loc, bool teleport)
 {
-    bool groupUpdate = (GetGroup() && (teleport || abs(GetPositionX() - pos.x) > 1.0f || abs(GetPositionY() - pos.y) > 1.0f));
+    bool groupUpdate = (GetGroup() && (teleport || abs(GetPositionX() - loc.getX()) > 1.0f || abs(GetPositionY() - loc.getY()) > 1.0f));
 
-    if (!Unit::SetPosition(pos, teleport))
+    if (!Unit::SetPosition(loc, teleport))
         return false;
 
     if (GetTrader() && !IsWithinDistInMap(GetTrader(), INTERACTION_DISTANCE))
@@ -6310,7 +6310,7 @@ bool Player::SetPosition(Position const& pos, bool teleport)
         SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
 
     // code block for underwater state update
-    UpdateUnderwaterState(GetMap(), pos.x, pos.y, pos.z);
+    UpdateUnderwaterState(GetMap(), loc.getX(), loc.getY(), loc.getY());
 
     // code block for outdoor state and area-explore check
     CheckAreaExploreAndOutdoor();

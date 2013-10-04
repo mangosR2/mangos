@@ -473,30 +473,31 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void SetTransportInfo(TransportInfo* transportInfo) { m_transportInfo = transportInfo; }
 
         virtual bool IsTransport() const { return false; };
+        virtual bool IsMOTransport() const { return false; };
         TransportBase* GetTransportBase();
 
         void Relocate(WorldLocation const& location);
-        void Relocate(Position const& position);
         void SetOrientation(float orientation);
 
         // FIXME - need remove wrapper after cleanup SD2
-        void Relocate(float x, float y, float z, float orientation = 0.0f) { Relocate(Position(x, y, z, orientation, GetPhaseMask())); };
+        void Relocate(float x, float y, float z, float orientation = 0.0f) { Relocate(WorldLocation(GetMapId(), x, y, z, orientation, GetPhaseMask())); };
 
-        float const& GetPositionX() const     { return m_position.x; }
-        float const& GetPositionY() const     { return m_position.y; }
-        float const& GetPositionZ() const     { return m_position.z; }
-        float const& GetOrientation() const   { return m_position.orientation; }
+        float const& GetPositionX() const     { return GetPosition().getX(); }
+        float const& GetPositionY() const     { return GetPosition().getY(); }
+        float const& GetPositionZ() const     { return GetPosition().getZ(); }
+        float const& GetOrientation() const   { return GetPosition().getO(); }
         void GetPosition(float &x, float &y, float &z ) const { x = m_position.x; y = m_position.y; z = m_position.z; }
         WorldLocation const& GetPosition() const { return m_position; };
 
         virtual bool IsOnTransport() const;
         virtual Transport* GetTransport() const;
-        float GetTransOffsetX() const { return m_position.GetTransportPos().getX(); }
-        float GetTransOffsetY() const { return m_position.GetTransportPos().getY(); }
-        float GetTransOffsetZ() const { return m_position.GetTransportPos().getZ(); }
-        float GetTransOffsetO() const { return m_position.GetTransportPos().getO(); }
-        Position const& GetTransportPosition() const { return m_position.GetTransportPos(); };
-        void SetTransportPosition(Position const& pos) { m_position.SetTransportPosition(pos); };
+        float GetTransOffsetX() const { return GetPosition().GetTransportPos().getX(); }
+        float GetTransOffsetY() const { return GetPosition().GetTransportPos().getY(); }
+        float GetTransOffsetZ() const { return GetPosition().GetTransportPos().getZ(); }
+        float GetTransOffsetO() const { return GetPosition().GetTransportPos().getO(); }
+        Position const& GetTransportPosition() const { return GetPosition().GetTransportPos(); };
+        void SetTransportPosition(Position const& pos);
+        bool HasTransportPosition() const { return !GetTransportPosition().IsEmpty(); };
         void ClearTransportData() { m_position.ClearTransportData(); };
 
         /// Gives a 2d-point in distance distance2d in direction absAngle around the current position (point-to-point)

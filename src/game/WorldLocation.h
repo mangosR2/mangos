@@ -47,6 +47,8 @@ struct MANGOS_DLL_SPEC Location : public Vector3
     virtual ~Location()
     {};
 
+    virtual bool HasMap() const { return false; };
+
     Location& operator = (Location const& loc);
     bool operator == (Location const& loc) const;
 
@@ -96,7 +98,7 @@ struct MANGOS_DLL_SPEC Position : public Location
     virtual void SetPhaseMask(uint32 newPhaseMask) { m_phaseMask = newPhaseMask; };
     uint32 GetPhaseMask() const { return m_phaseMask; }
 
-    virtual bool HasMap() const { return false; };
+    virtual bool HasMap() const override { return false; };
 
     Position& operator = (Position const& pos);
     bool operator == (Position const& pos) const;
@@ -114,7 +116,7 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
         : Position(), mapid(-1), instance(0), realmid(0), m_Tpos(Position())
     {}
 
-    explicit WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0, uint32 phaseMask = PHASEMASK_NORMAL, uint32 _instance = 0, uint32 _realmid = 0);
+    explicit WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o = 0.0f, uint32 phaseMask = PHASEMASK_NORMAL, uint32 _instance = 0, uint32 _realmid = 0);
 
     explicit WorldLocation(uint32 _mapid, uint32 _instance, uint32 _realmid)
         : Position(), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position())
@@ -142,7 +144,7 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
     uint32 GetAreaId() const;
 
     uint32 GetRealmId()    const { return realmid; };
-    uint32 GetMapId()      const { return HasMap() ? abs(mapid) :  UINT32_MAX; };
+    uint32 GetMapId()      const { return HasMap() ? uint32(mapid) :  UINT32_MAX; };
     uint32 GetInstanceId() const { return HasMap() ? instance :  0; };
 
 
@@ -155,8 +157,10 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
     void SetOrientation(float value);
 
     WorldLocation& operator = (WorldLocation const& loc);
-
     WorldLocation& operator = (Position const& pos);
+
+    void SetPosition(Position const& pos);
+    void SetPosition(WorldLocation const& loc);
 
     float GetDistance(WorldLocation const& loc) const;
 

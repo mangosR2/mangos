@@ -210,7 +210,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         // Half-hack method for use with visible-over-grid active objects (like big WB and MOTransport)
         bool IsVisibleGlobally(ObjectGuid const& guid);
 
-        template<class T> void Relocation(T* object, Position const& pos);
+        template<class T> void Relocation(T* object, WorldLocation const& loc);
 
         // FIXME - remove this wrapper after SD2 correct
         void CreatureRelocation(Creature* object, float x, float y, float z, float orientation);
