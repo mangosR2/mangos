@@ -496,32 +496,32 @@ bool Unit::haveOffhandWeapon() const
     }
 }
 
-bool Unit::SetPosition(WorldLocation const& loc, bool teleport)
+bool Unit::SetPosition(Position const& pos, bool teleport)
 {
     // prevent crash when a bad coord is sent by the client
-    if (!MaNGOS::IsValidMapCoord(loc.getX(), loc.getY(), loc.getZ(), loc.getO()))
+    if (!MaNGOS::IsValidMapCoord(pos.x, pos.y, pos.z, pos.orientation))
     {
-        DEBUG_LOG("Unit::SetPosition(%f, %f, %f, %f, %d) .. bad coordinates for unit %s!", loc.getX(), loc.getY(), loc.getZ(), loc.getO(), teleport, GetObjectGuid().GetString().c_str());
+        DEBUG_LOG("Unit::SetPosition(%f, %f, %f, %f, %d) .. bad coordinates for unit %s!", pos.x, pos.y, pos.z, pos.orientation, teleport, GetObjectGuid().GetString().c_str());
         return false;
     }
 
-    bool relocate = IsOnTransport() ? 
-                        !bool(loc.GetTransportPos().IsEmpty() || (GetTransportPosition() == loc.GetTransportPos())) :
-                        !bool(loc == GetPosition());
-    bool turn     = IsOnTransport() ? 
-                        bool(fabs(loc.getO() - GetPosition().getO()) > M_NULL_F) :
-                        bool(!loc.GetTransportPos().IsEmpty() && fabs(GetTransportPosition().getO() - loc.GetTransportPos().getO()) > M_NULL_F);
+    bool turn = fabs(GetOrientation() - pos.orientation) > M_NULL_F;
+    bool relocate = !((Position)GetPosition() == pos);
 
     if (turn)
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TURNING);
 
     if (relocate)
+    {
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOVE);
 
-    if (GetTypeId() == TYPEID_PLAYER)
-        GetMap()->Relocation((Player*)this, loc);
-    else
-        GetMap()->Relocation((Creature*)this, loc);
+        if (GetTypeId() == TYPEID_PLAYER)
+            GetMap()->Relocation((Player*)this, pos);
+        else
+            GetMap()->Relocation((Creature*)this, pos);
+    }
+    else if (turn)
+        SetOrientation(pos.orientation);
 
     return relocate || turn;
 }
@@ -12602,10 +12602,10 @@ void Unit::InterruptMoving(bool ignoreMoveState /*=false*/)
 
     if (!movespline->Finalized())
     {
-        WorldLocation loc = GetPosition();
-        IsBoarded() ? loc.SetTransportPosition(movespline->ComputePosition()) : loc.SetPosition(movespline->ComputePosition());
+        Position pos = movespline->ComputePosition();
+        pos.SetPhaseMask(GetPhaseMask());
         movespline->_Interrupt();
-        SetPosition(loc);
+        SetPosition(pos);
         isMoving = true;
     }
 
@@ -14240,9 +14240,16 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
     if (m_movesplineTimer.Passed() || arrived)
     {
         m_movesplineTimer.Reset(sWorld.getConfig(CONFIG_UINT32_POSITION_UPDATE_DELAY));
-        WorldLocation loc = GetPosition();
-        IsBoarded() ? loc.SetTransportPosition(movespline->ComputePosition()) : loc.SetPosition(movespline->ComputePosition());
-        SetPosition(loc);
+        Position pos = movespline->ComputePosition();
+        pos.SetPhaseMask(GetPhaseMask());
+
+        if (IsBoarded())
+        {
+            m_movementInfo.ChangeTransportPosition(pos);
+            GetTransportInfo()->SetLocalPosition(pos);
+        }
+        else
+            SetPosition(pos);
     }
 }
 

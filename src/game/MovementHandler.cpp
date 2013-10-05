@@ -577,10 +577,10 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
             // now client not include swimming flag in case jumping under water
             plMover->SetInWater( !plMover->IsInWater() || plMover->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z) );
         }
-        WorldLocation loc = plMover->GetPosition();
-        loc.SetPosition(movementInfo.GetPosition());
-        loc.SetTransportPosition(movementInfo.GetTransportPosition());
-        plMover->SetPosition(loc);
+
+        plMover->SetPosition(Position(movementInfo.GetPosition(), plMover->GetPosition().GetPhaseMask()));
+        if (plMover->IsOnTransport())
+            plMover->SetTransportPosition(movementInfo.GetTransportPosition());
 
         plMover->m_movementInfo = movementInfo;
 
@@ -620,10 +620,9 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         if (mover->IsInWorld())
         {
             mover->m_movementInfo = movementInfo;
-            WorldLocation loc = plMover->GetPosition();
-            loc.SetPosition(movementInfo.GetPosition());
-            loc.SetTransportPosition(movementInfo.GetTransportPosition());
-            mover->SetPosition(loc);
+            mover->SetPosition(Position(movementInfo.GetPosition(), mover->GetPosition().GetPhaseMask()));
+            if (mover->IsOnTransport())
+                mover->SetTransportPosition(movementInfo.GetTransportPosition());
         }
     }
 }

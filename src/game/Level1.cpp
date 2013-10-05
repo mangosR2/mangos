@@ -339,6 +339,14 @@ bool ChatHandler::HandleGPSCommand(char* args)
     uint32 have_map = GridMap::ExistMap(obj->GetMapId(), gx, gy) ? 1 : 0;
     uint32 have_vmap = GridMap::ExistVMap(obj->GetMapId(), gx, gy) ? 1 : 0;
     TerrainInfo const *terrain = obj->GetTerrain();
+    if (have_vmap)
+    {
+        if (terrain->IsOutdoors(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ()))
+            PSendSysMessage("You are OUTdoor");
+        else
+            PSendSysMessage("You are INdoor");
+    }
+    else PSendSysMessage("no VMAP available for area info");
 
     PSendSysMessage(LANG_MAP_POSITION,
                     obj->GetMapId(), (mapEntry ? mapEntry->name[GetSessionDbcLocale()] : "<unknown>"),
@@ -372,35 +380,13 @@ bool ChatHandler::HandleGPSCommand(char* args)
 
     // Additional vmap debugging help
 #ifdef _DEBUG_VMAPS
-    if (have_vmap)
-    {
-        if (terrain->IsOutdoors(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ()))
-            PSendSysMessage("You are OUTdoor");
-        else
-            PSendSysMessage("You are INdoor");
-    }
-    else PSendSysMessage("no VMAP available for area info");
-
     PSendSysMessage("Static terrain height (maps only): %f", obj->GetTerrain()->GetHeightStatic(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), false));
+
     if (VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager())
         PSendSysMessage("Vmap Terrain Height %f", vmgr->getHeight(obj->GetMapId(), obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ()+2.0f, 10000.0f));
 
     PSendSysMessage("Static map height (maps and vmaps): %f", obj->GetTerrain()->GetHeightStatic(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ()));
 #endif
-
-    if (obj->IsBoarded())
-    {
-        PSendSysMessage("Object on transport raw position: %f %f %f %f (transport offset %f %f %f %f)",
-                obj->GetPositionX(),
-                obj->GetPositionY(),
-                obj->GetPositionZ(),
-                obj->GetOrientation(),
-                obj->GetTransOffsetX(),
-                obj->GetTransOffsetY(),
-                obj->GetTransOffsetZ(),
-                obj->GetTransOffsetO()
-                );
-    }
 
     return true;
 }

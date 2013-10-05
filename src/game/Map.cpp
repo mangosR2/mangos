@@ -825,34 +825,34 @@ Map::Remove(T* obj, bool remove)
 }
 
 template<class T>
-void Map::Relocation(T* obj, WorldLocation const& loc)
+void Map::Relocation(T* obj, Position const& pos)
 {
     sLog.outError("Map::Relocation unhandled relocation call (object %s)!", obj ? obj->GetObjectGuid().GetString().c_str() : "<none>");
     MANGOS_ASSERT(false);
 };
 
 template<>
-void Map::Relocation(Player* player, WorldLocation const& loc)
+void Map::Relocation(Player* player, Position const& pos)
 {
     MANGOS_ASSERT(player);
 
     CellPair old_val = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
-    CellPair new_val = MaNGOS::ComputeCellPair(loc.getX(), loc.getY());
+    CellPair new_val = MaNGOS::ComputeCellPair(pos.x, pos.y);
 
     Cell old_cell(old_val);
     Cell new_cell(new_val);
     bool same_cell = (new_cell == old_cell);
 
-    player->Relocate(loc);
+    player->Relocate(pos);
 
-    if (old_cell.DiffGrid(new_cell) || old_cell.DiffCell(new_cell))
+    if( old_cell.DiffGrid(new_cell) || old_cell.DiffCell(new_cell) )
     {
         DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Player %s relocation grid[%u,%u]cell[%u,%u]->grid[%u,%u]cell[%u,%u]", player->GetName(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.GridX(), new_cell.GridY(), new_cell.CellX(), new_cell.CellY());
 
         NGridType* oldGrid = getNGrid(old_cell.GridX(), old_cell.GridY());
         RemoveFromGrid(player, oldGrid,old_cell);
-        if (!old_cell.DiffGrid(new_cell))
-            AddToGrid(player, oldGrid, new_cell);
+        if( !old_cell.DiffGrid(new_cell) )
+            AddToGrid(player, oldGrid,new_cell);
         else
             EnsureGridLoadedAtEnter(new_cell, player);
 
@@ -867,18 +867,18 @@ void Map::Relocation(Player* player, WorldLocation const& loc)
 };
 
 template<>
-void Map::Relocation(Creature* creature, WorldLocation const& loc)
+void Map::Relocation(Creature* creature, Position const& pos)
 {
     MANGOS_ASSERT(CheckGridIntegrity(creature,false));
 
 //    Cell old_cell = creature->GetCurrentCell();
-    Cell new_cell(MaNGOS::ComputeCellPair(loc.getX(), loc.y));
+    Cell new_cell(MaNGOS::ComputeCellPair(pos.x, pos.y));
 
     // do move or do move to respawn or remove creature if previous all fail
     if (CreatureCellRelocation(creature,new_cell))
     {
         // update pos
-        creature->Relocate(loc);
+        creature->Relocate(pos);
         creature->OnRelocated();
     }
     // if creature can't be move in new cell/grid (not loaded) move it to repawn cell/grid
@@ -893,39 +893,34 @@ void Map::Relocation(Creature* creature, WorldLocation const& loc)
 };
 
 template<>
-void Map::Relocation(GameObject* go, WorldLocation const& loc)
+void Map::Relocation(GameObject* go, Position const& pos)
 {
     MANGOS_ASSERT(go);
 
     CellPair old_val = MaNGOS::ComputeCellPair(go->GetPositionX(), go->GetPositionY());
-    CellPair new_val = MaNGOS::ComputeCellPair(loc.getX(), loc.getY());
+    CellPair new_val = MaNGOS::ComputeCellPair(pos.x, pos.y);
 
     Cell old_cell(old_val);
     Cell new_cell(new_val);
 
-    go->Relocate(loc);
+    go->Relocate(pos);
 
     if (old_cell != new_cell)
     {
         // Need check for spawn some GO in not loaded grids
         EnsureGridLoadedAtEnter(old_cell);
+
         NGridType* oldGrid = getNGrid(old_cell.GridX(), old_cell.GridY());
-        if (old_cell.DiffGrid(new_cell))
-        {
-            NGridType* newGrid = getNGrid(new_cell.GridX(), new_cell.GridY());
-            RemoveFromGrid(go, oldGrid,old_cell);
-            EnsureGridLoadedAtEnter(new_cell);
-            ActivateGrid(newGrid);
-            AddToGrid(go, newGrid, new_cell);
-            DEBUG_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "Map::Relocation %s moved from grid[%u,%u] cell[%u,%u] to grid[%u,%u] cell[%u,%u].", go->GetObjectGuid().GetString().c_str(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.GridX(), new_cell.GridY(), new_cell.CellX(), new_cell.CellY());
-            go->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
-        }
-        else
-        {
-            AddToGrid(go, oldGrid, new_cell);
-            DEBUG_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "Map::Relocation %s moved in grid[%u,%u] from cell[%u,%u] to cell[%u,%u].", go->GetObjectGuid().GetString().c_str(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.CellX(), new_cell.CellY());
-            go->GetViewPoint().Event_GridChanged(&(*oldGrid)(new_cell.CellX(),new_cell.CellY()));
-        }
+
+        RemoveFromGrid(go, oldGrid,old_cell);
+        EnsureGridLoadedAtEnter(new_cell);
+        NGridType* newGrid = getNGrid(new_cell.GridX(), new_cell.GridY());
+        ActivateGrid(newGrid);
+
+        AddToGrid(go, newGrid, new_cell);
+
+        go->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
+        DEBUG_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "GO %s moved in grid[%u,%u] from cell[%u,%u] to cell[%u,%u].", go->GetObjectGuid().GetString().c_str(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.CellX(), new_cell.CellY());
     }
 
     go->UpdateObjectVisibility();
@@ -934,7 +929,7 @@ void Map::Relocation(GameObject* go, WorldLocation const& loc)
 
 void Map::CreatureRelocation(Creature* object, float x, float y, float z, float orientation)
 {
-    Relocation(object, WorldLocation(GetId(), x, y, z, orientation, object->GetPhaseMask(), GetInstanceId()));
+    Relocation(object, Position(x, y, z, orientation, object->GetPhaseMask()));
 };
 
 bool Map::CreatureCellRelocation(Creature* c, Cell new_cell)
@@ -952,23 +947,14 @@ bool Map::CreatureCellRelocation(Creature* c, Cell new_cell)
 
     if (old_cell != new_cell)
     {
+        DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Creature (GUID: %u Entry: %u) moved in grid[%u,%u] from cell[%u,%u] to cell[%u,%u].", c->GetGUIDLow(), c->GetEntry(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.CellX(), new_cell.CellY());
         NGridType* oldGrid = getNGrid(old_cell.GridX(), old_cell.GridY());
-        if (old_cell.DiffGrid(new_cell))
-        {
-            NGridType* newGrid = getNGrid(new_cell.GridX(), new_cell.GridY());
-            RemoveFromGrid(c, oldGrid, old_cell);
-            if (c->isActiveObject())
-                ActivateGrid(newGrid);
-            AddToGrid(c, newGrid, new_cell);
-            DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Map::Relocation %s moved from grid[%u,%u] cell[%u,%u] to grid[%u,%u] cell[%u,%u].", c->GetObjectGuid().GetString().c_str(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.GridX(), new_cell.GridY(), new_cell.CellX(), new_cell.CellY());
-            c->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
-        }
-        else
-        {
-            AddToGrid(c, oldGrid, new_cell);
-            DEBUG_FILTER_LOG(LOG_FILTER_CREATURE_MOVES, "Map::Relocation %s moved in grid[%u,%u] from cell[%u,%u] to cell[%u,%u].", c->GetObjectGuid().GetString().c_str(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.CellX(), new_cell.CellY());
-            c->GetViewPoint().Event_GridChanged(&(*oldGrid)(new_cell.CellX(),new_cell.CellY()));
-        }
+        NGridType* newGrid = getNGrid(new_cell.GridX(), new_cell.GridY());
+        RemoveFromGrid(c, oldGrid, old_cell);
+        if (c->isActiveObject())
+            ActivateGrid(newGrid);
+        AddToGrid(c, newGrid, new_cell);
+        c->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
     }
     return true;
 }
@@ -1141,7 +1127,7 @@ void Map::UpdateObjectVisibility(WorldObject* obj, Cell cell, CellPair cellpair)
     MaNGOS::VisibleChangesNotifier notifier(*obj);
     TypeContainerVisitor<MaNGOS::VisibleChangesNotifier, WorldTypeMapContainer > player_notifier(notifier);
     cell.Visit(cellpair, player_notifier, *this, *obj, GetVisibilityDistance(obj));
-    if (obj->IsMOTransport() && obj->GetTransportBase() && obj->GetTransportBase()->HasPassengers())
+    if (obj->IsTransport() && obj->GetTransportBase() && obj->GetTransportBase()->HasPassengers())
         obj->GetTransportBase()->CallForAllPassengers(UpdateObjectVisibilityWithHelper(obj, cell, cellpair));
 }
 

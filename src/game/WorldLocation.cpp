@@ -138,27 +138,6 @@ WorldLocation& WorldLocation::operator = (Position const& pos)
     return *this;
 }
 
-void WorldLocation::SetPosition(Position const& pos)
-{
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
-    //m_phaseMask = pos.GetPhaseMask();
-}
-
-void WorldLocation::SetPosition(WorldLocation const& loc)
-{
-    // This method not set transport position!
-    mapid       = loc.mapid;
-    instance    = loc.instance;
-    x           = loc.x;
-    y           = loc.y;
-    z           = loc.z;
-    orientation = loc.orientation;
-    m_phaseMask = loc.GetPhaseMask();
-}
-
 uint32 WorldLocation::GetAreaId() const
 {
     if (!HasMap())
@@ -177,20 +156,14 @@ uint32 WorldLocation::GetZoneId() const
 
 float WorldLocation::GetDistance(WorldLocation const& loc) const
 {
-    if (!HasMap() || !loc.HasMap() || ((GetMapId() == loc.GetMapId()) && (GetInstanceId() == loc.GetInstanceId())))
-    {
-        if (GetTransportPos().IsEmpty() && loc.GetTransportPos().IsEmpty())
-            return ((Position)*this).GetDistance((Position)loc);
-        else if (GetPhaseMask() & loc.GetPhaseMask() &&  GetTransportPos().GetPhaseMask() & loc.GetTransportPos().GetPhaseMask())
-            return (((Vector3)*this + (Vector3)GetTransportPos()) - ((Vector3)loc + (Vector3)loc.GetTransportPos())).magnitude();
-    }
-
-    return MAX_VISIBILITY_DISTANCE + 1.0f;
+    return (!HasMap() || !loc.HasMap() || ((GetMapId() == loc.GetMapId()) && (GetInstanceId() == loc.GetInstanceId()))) ?
+        ((Position)*this).GetDistance((Position)loc) :
+        MAX_VISIBILITY_DISTANCE + 1.0f;
 };
 
 float WorldLocation::GetDistance(Location const& loc) const
 {
-    return (((Vector3)*this + (Vector3)GetTransportPos()) - (Vector3)loc).magnitude();
+    return ((Location)*this).GetDistance(loc);
 };
 
 ByteBuffer& operator << (ByteBuffer& buf, Location const& loc)

@@ -1876,7 +1876,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         void SendResetInstanceFailed(uint32 reason, uint32 MapId);
         void SendResetFailedNotify(uint32 mapid);
 
-        bool SetPosition(WorldLocation const& loc, bool teleport = false);
+        bool SetPosition(Position const& pos, bool teleport = false);
         void UpdateUnderwaterState(Map * m, float x, float y, float z);
 
         void SendMessageToSet(WorldPacket* data, bool self) const override;// overwrite Object::SendMessageToSet
