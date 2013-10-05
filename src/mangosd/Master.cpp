@@ -76,7 +76,7 @@ public:
         w_loops = 0;
         m_lastchange = 0;
         w_lastchange = 0;
-        while(!World::IsStopped())
+        while (!World::IsStopped())
         {
             ACE_Based::Thread::Sleep(sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD));
 
@@ -84,13 +84,13 @@ public:
                 sMapMgr.GetMapUpdater()->FreezeDetect();
 
             uint32 curtime = WorldTimer::getMSTime();
-            //DEBUG_LOG("anti-freeze: time=%u, counters=[%u; %u]",curtime,Master::m_masterLoopCounter,World::m_worldLoopCounter);
 
             // normal work
-            if (w_loops != World::m_worldLoopCounter)
+            uint32 worldLoopCounter = World::m_worldLoopCounter.value();
+            if (w_loops != worldLoopCounter)
             {
                 w_lastchange = curtime;
-                w_loops = World::m_worldLoopCounter;
+                w_loops      = worldLoopCounter;
             }
             // possible freeze
             else if (WorldTimer::getMSTimeDiff(w_lastchange, curtime) > _delaytime)
