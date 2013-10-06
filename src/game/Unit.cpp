@@ -78,20 +78,18 @@ void MovementInfo::Read(ByteBuffer &data)
     data >> moveFlags;
     data >> moveFlags2;
     data >> time;
-    data >> loc.x;
-    data >> loc.y;
-    data >> loc.z;
-    data >> loc.o;
+    data >> pos.x;
+    data >> pos.y;
+    data >> pos.z;
+    data >> pos.o;
 
     if (HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        ObjectGuid t_guid;
         data >> t_guid.ReadAsPacked();
-        loc.SetTransportGuid(t_guid);
-        data >> loc.GetTransportPosition().x;
-        data >> loc.GetTransportPosition().y;
-        data >> loc.GetTransportPosition().z;
-        data >> loc.GetTransportPosition().o;
+        data >> t_pos.x;
+        data >> t_pos.y;
+        data >> t_pos.z;
+        data >> t_pos.o;
         data >> t_time;
         data >> t_seat;
 
@@ -125,19 +123,18 @@ void MovementInfo::Write(ByteBuffer &data) const
     data << moveFlags;
     data << moveFlags2;
     data << time;
-    data << loc.getX();
-    data << loc.getY();
-    data << loc.getZ();
-    data << loc.getO();
+    data << pos.x;
+    data << pos.y;
+    data << pos.z;
+    data << pos.o;
 
     if (HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        ObjectGuid t_guid = loc.GetTransportGuid();
         data << t_guid.WriteAsPacked();
-        data << loc.GetTransportPos().getX();
-        data << loc.GetTransportPos().getY();
-        data << loc.GetTransportPos().getZ();
-        data << loc.GetTransportPos().getO();
+        data << t_pos.x;
+        data << t_pos.y;
+        data << t_pos.z;
+        data << t_pos.o;
         data << t_time;
         data << t_seat;
 
