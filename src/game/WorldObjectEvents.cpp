@@ -371,7 +371,10 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
                 return true;
 
             if (c_owner->IsAILocked())
+            {
+                m_owner.addUnitState(UNIT_STAT_DELAYED_EVADE);
                 return false;
+            }
 
             if (c_owner->IsDespawned() || c_owner->isCharmed() || c_owner->hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
                 return true;
@@ -391,36 +394,31 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
             if (!c_owner)
                 return true;
 
-            if (m_owner.GetOwner() && m_owner.GetOwner()->GetTypeId() == TYPEID_UNIT && m_owner.GetOwner()->SelectHostileTarget(false))
+            Unit* petOwner = m_owner.GetOwner();
+
+            if (petOwner && petOwner->GetTypeId() == TYPEID_UNIT && petOwner->SelectHostileTarget(false))
                 return true;
 
             if (c_owner->IsAILocked())
+            {
+                m_owner.addUnitState(UNIT_STAT_DELAYED_EVADE);
                 return false;
+            }
 
             if (c_owner->IsDespawned())
                 return true;
 
-            Pet* p_owner = (Pet*)(&m_owner);
-            if (!p_owner)
-                return true;
+            if (CreatureAI* ai = c_owner->AI())
+                ai->EnterEvadeMode();
 
-            CreatureAI* ai = p_owner->AI();
-            if (ai)
+            if (petOwner && petOwner->GetTypeId() == TYPEID_UNIT)
             {
-                if (PetAI* pai = (PetAI*)ai)
-                    pai->EnterEvadeMode();
-                else
-                    ai->EnterEvadeMode();
-            }
-
-            if (p_owner->GetOwner() && p_owner->GetOwner()->GetTypeId() == TYPEID_UNIT)
-            {
-                if (InstanceData* mapInstance = p_owner->GetInstanceData())
+                if (InstanceData* mapInstance = c_owner->GetInstanceData())
                     mapInstance->OnCreatureEvade(c_owner);
             }
             break;
         }
-        case HIGHGUID_PLAYER:
+        // case HIGHGUID_PLAYER:
         default:
             sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetGuidStr().c_str());
         break;

@@ -45,6 +45,7 @@
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
 #include "MapManager.h"
+#include "Group.h"
 #include "ScriptMgr.h"
 #include "CreatureAIRegistry.h"
 #include "Policies/Singleton.h"
@@ -901,6 +902,8 @@ void World::LoadConfigSettings(bool reload)
     }
 
     setConfig(CONFIG_UINT32_INSTANT_LOGOUT, "InstantLogout", SEC_MODERATOR);
+
+    setConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD, "GroupLeaderReconnectPeriod", 180);
 
     setConfigMin(CONFIG_UINT32_GUILD_EVENT_LOG_COUNT, "Guild.EventLogRecordsCount", GUILD_EVENTLOG_MAX_RECORDS, GUILD_EVENTLOG_MAX_RECORDS);
     setConfigMin(CONFIG_UINT32_GUILD_BANK_EVENT_LOG_COUNT, "Guild.BankEventLogRecordsCount", GUILD_BANK_MAX_LOGS, GUILD_BANK_MAX_LOGS);
@@ -1784,6 +1787,13 @@ void World::Update(uint32 diff)
 
     /// <li> Handle session updates
     UpdateSessions(diff);
+
+    /// <li> Update groups
+    for (ObjectMgr::GroupMap::iterator itr = sObjectMgr.GetGroupMapBegin(); itr != sObjectMgr.GetGroupMapEnd(); ++itr)
+    {
+        if (Group* group = itr->second)
+            group->Update(diff);
+    }
 
     /// <li> Handle weather updates when the timer has passed
     if (m_timers[WUPDATE_WEATHERS].Passed())

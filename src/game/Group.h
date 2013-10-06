@@ -123,15 +123,18 @@ enum GroupFlagMask
     GROUP_MAIN_TANK      = (1 << GROUP_FLAG_MAIN_TANK),
 
     // unions
-    GROUP_MEMBER_AMT     = ( GROUP_ASSISTANT   |
-                             GROUP_MAIN_ASSISTANT |
-                             GROUP_MAIN_TANK      ),
-    GROUP_MEMBER_AT      = ( GROUP_ASSISTANT   |
-                             GROUP_MAIN_TANK      ),
-    GROUP_MEMBER_AM      = ( GROUP_ASSISTANT   |
-                             GROUP_MAIN_ASSISTANT ),
-    GROUP_MEMBER_MT      = ( GROUP_MAIN_ASSISTANT |
-                             GROUP_MAIN_TANK      ),
+    GROUP_MEMBER_AMT     = (GROUP_ASSISTANT |
+                            GROUP_MAIN_ASSISTANT |
+                            GROUP_MAIN_TANK),
+
+    GROUP_MEMBER_AT      = (GROUP_ASSISTANT |
+                            GROUP_MAIN_TANK),
+
+    GROUP_MEMBER_AM      = (GROUP_ASSISTANT |
+                            GROUP_MAIN_ASSISTANT),
+
+    GROUP_MEMBER_MT      = (GROUP_MAIN_ASSISTANT |
+                            GROUP_MAIN_TANK),
 
 };
 
@@ -254,6 +257,8 @@ class MANGOS_DLL_SPEC Group
         bool   AddMember(ObjectGuid guid, const char* name);
         uint32 RemoveMember(ObjectGuid guid, uint8 method); // method: 0=just remove, 1=kick
         void   ChangeLeader(ObjectGuid guid);
+        void CheckLeader(ObjectGuid const& guid, bool isLogout);
+        bool ChangeLeaderToFirstSuitableMember(bool onlySet = false);
         void   SetLootMethod(LootMethod method) { m_lootMethod = method; }
         void   SetLooterGuid(ObjectGuid guid) { m_looterGuid = guid; }
         void   UpdateLooterGuid(WorldObject* pSource, bool ifneed = false);
@@ -280,20 +285,29 @@ class MANGOS_DLL_SPEC Group
         bool IsLeader(ObjectGuid guid) const { return GetLeaderGuid() == guid; }
         ObjectGuid GetMemberGuid(const std::string& name)
         {
-            for(member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            for (member_citerator itr = m_memberSlots.begin(); itr != m_memberSlots.end(); ++itr)
+            {
                 if (itr->name == name)
                     return itr->guid;
-
+            }
             return ObjectGuid();
         }
-        bool IsAssistant(ObjectGuid guid) const
+        bool IsGroupRole(ObjectGuid const& guid, GroupFlagMask role) const
         {
             member_citerator mslot = _getMemberCSlot(guid);
-            if (mslot==m_memberSlots.end())
+            if (mslot == m_memberSlots.end())
                 return false;
 
-            return mslot->flags & GROUP_ASSISTANT;
+            if (role == GROUP_MEMBER)
+                return true;
+            else
+                return mslot->flags & role;
         }
+        bool IsMainAssistant(ObjectGuid const& guid) const { return IsGroupRole(guid, GROUP_MAIN_ASSISTANT); }
+        bool IsMainTank(ObjectGuid const& guid) const { return IsGroupRole(guid, GROUP_MAIN_TANK); }
+        bool IsAssistant(ObjectGuid const& guid) const { return IsGroupRole(guid, GROUP_ASSISTANT); }
+        Player* GetMemberWithRole(GroupFlagMask role);
+
         Player* GetInvited(ObjectGuid guid) const;
         Player* GetInvited(const std::string& name) const;
 
@@ -343,6 +357,7 @@ class MANGOS_DLL_SPEC Group
 
         void SendTargetIconList(WorldSession *session);
         void SendUpdate();
+        void Update(uint32 diff);
         void UpdatePlayerOutOfRange(Player* pPlayer);
                                                             // ignore: GUID of player that will be ignored
         void BroadcastPacket(WorldPacket *packet, bool ignorePlayersInBGRaid, int group=-1, ObjectGuid ignore = ObjectGuid());
@@ -466,5 +481,7 @@ class MANGOS_DLL_SPEC Group
         Rolls               RollId;
         BoundInstancesMap   m_boundInstances[MAX_DIFFICULTY];
         uint8*              m_subGroupsCounts;
+
+        time_t              m_leaderLogoutTime;
 };
 #endif

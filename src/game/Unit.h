@@ -740,8 +740,8 @@ class MovementInfo
             t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
 
         // Read/Write methods
-        void Read(ByteBuffer &data);
-        void Write(ByteBuffer &data) const;
+        void Read(ByteBuffer& data);
+        void Write(ByteBuffer& data) const;
 
         // Movement flags manipulations
         void AddMovementFlag(MovementFlags f) { moveFlags |= f; }
@@ -765,16 +765,19 @@ class MovementInfo
         void ClearTransportData()
         {
             loc.ClearTransportData();
+            moveFlags2 = MOVEFLAG2_NONE;
             t_time = 0;
             t_seat = -1;
             t_seatInfo = NULL;
-            moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return loc.GetTransportGuid(); }
         Position const* GetTransportPos() const { return &loc.GetTransportPos(); }
         int8 GetTransportSeat() const { return t_seat; }
+
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
         uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
+
+        uint32 GetTime() const { return time; }
         uint32 GetTransportTime() const { return t_time; }
         uint32 GetFallTime() const { return fallTime; }
         void ChangeOrientation(float o) { loc.o = o; }
@@ -791,19 +794,19 @@ class MovementInfo
         struct JumpInfo
         {
             JumpInfo() : velocity(0.f), sinAngle(0.f), cosAngle(0.f), xyspeed(0.f) {}
-            float   velocity, sinAngle, cosAngle, xyspeed;
+            float velocity, sinAngle, cosAngle, xyspeed;
         };
 
         JumpInfo const& GetJumpInfo() const { return jump; }
 
-        MovementInfo& operator=(const MovementInfo &targetInfo)
+        MovementInfo& operator = (const MovementInfo& targetInfo)
         {
             uint32 moveFlagsTmp = targetInfo.moveFlags;
             if (moveFlags & MOVEFLAG_ONTRANSPORT)
                 moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
 
             moveFlags  = moveFlagsTmp;
-            splineElevation     = targetInfo.splineElevation;
+            splineElevation = targetInfo.splineElevation;
             time       = targetInfo.time;
             loc        = targetInfo.loc;
             s_pitch    = targetInfo.s_pitch;
