@@ -38,7 +38,6 @@
 #include "Weather.h"
 #include "CreatureLinkingMgr.h"
 #include "ObjectLock.h"
-#include "ObjectHandler.h"
 #include "vmap/DynamicTree.h"
 #include "WorldObjectEvents.h"
 
@@ -98,49 +97,7 @@ enum LevelRequirementVsMode
 
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
 
-struct MANGOS_DLL_DECL MapID
-{
-    explicit MapID(uint32 id) : nMapId(id), nInstanceId(0) {}
-    MapID(uint32 id, uint32 instid) : nMapId(id), nInstanceId(instid) {}
-
-    bool operator<(const MapID& val) const
-    {
-        if (nMapId == val.nMapId)
-            return nInstanceId < val.nInstanceId;
-
-        if (IsContinent() && !val.IsContinent())
-            return true;
-        else if (!IsContinent() && val.IsContinent())
-            return false;
-
-        return nMapId < val.nMapId;
-    }
-
-    bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
-
-    bool IsContinent() const
-    {
-        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
-    };
-
-    uint32 const& GetId() const { return nMapId; };
-    uint32 const& GetInstanceId() const { return nInstanceId; };
-
-    uint32 nMapId;
-    uint32 nInstanceId;
-};
-
-HASH_NAMESPACE_START
-template<> class hash <MapID>
-{
-    public: size_t operator()(const MapID& __x) const { return (size_t)((__x.GetId() << 16) | (__x.GetInstanceId())); }
-};
-HASH_NAMESPACE_END
-
-typedef UNORDERED_SET<MapID> MapIDSet;
-
-
-typedef UNORDERED_MAP<ObjectGuid,GuidSet>  AttackersMap;
+typedef std::map<ObjectGuid,GuidSet>  AttackersMap;
 
 struct LoadingObjectQueueMember
 {

@@ -2146,20 +2146,6 @@ void Player::RemoveFromWorld(bool remove)
     Unit::RemoveFromWorld(remove);
 }
 
-void Player::SetMap(Map* map)
-{
-    WorldObject::SetMap(map);
-    // Lock map from unload while player on his
-    m_mapPtr = sMapMgr.GetMapPtr(map->GetId(), map->GetInstanceId());
-}
-
-void Player::ResetMap()
-{
-    WorldObject::ResetMap();
-    // Unlock map
-    m_mapPtr = MapPtr();
-}
-
 void Player::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)
 {
     float addRage;
