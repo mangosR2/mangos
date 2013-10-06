@@ -686,6 +686,8 @@ void Group::Disband(bool hideDestroy)
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, false, NULL);
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, true, NULL);
     }
+    if (GetObjectGuid())
+        sObjectMgr.RemoveGroup(this);
 
     m_leaderGuid.Clear();
     m_leaderName = "";
