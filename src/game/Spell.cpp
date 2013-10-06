@@ -254,8 +254,16 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
     if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
     {
         m_src = caster->GetPosition();
-        data >> m_srcTransportGUID.ReadAsPacked();
-        data >> m_src.x >> m_src.y >> m_src.z;
+        ObjectGuid transGuid;
+        data >> transGuid.ReadAsPacked();
+        if (transGuid)
+        {
+            m_src.SetTransportGuid(transGuid);
+            data >> m_src.GetTransportPosition().x >> m_src.GetTransportPosition().y >> m_src.GetTransportPosition().z;
+        }
+        else
+            data >> m_src.x >> m_src.y >> m_src.z;
+
         if(!MaNGOS::IsValidMapCoord(getSource().getX(), getSource().getY(), getSource().getZ()))
             throw ByteBufferException(false, data.rpos(), 0, data.size());
     }
@@ -263,8 +271,16 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
     if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
         m_dest = caster->GetPosition();
-        data >> m_destTransportGUID.ReadAsPacked();
-        data >> m_dest.x >> m_dest.y >> m_dest.z;
+        ObjectGuid transGuid;
+        data >> transGuid.ReadAsPacked();
+        if (transGuid)
+        {
+            m_dest.SetTransportGuid(transGuid);
+            data >> m_dest.GetTransportPosition().x >> m_dest.GetTransportPosition().y >> m_dest.GetTransportPosition().z;
+        }
+        else
+            data >> m_dest.x >> m_dest.y >> m_dest.z;
+
         if(!MaNGOS::IsValidMapCoord(getDestination().getX(), getDestination().getY(), getDestination().getZ()))
             throw ByteBufferException(false, data.rpos(), 0, data.size());
     }
@@ -312,14 +328,22 @@ void SpellCastTargets::write( ByteBuffer& data ) const
 
     if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
     {
-        data << m_srcTransportGUID.WriteAsPacked();
-        data << m_src.x << m_src.y << m_src.z;
+        ObjectGuid transGuid = m_src.GetTransportGuid();
+        data << transGuid.WriteAsPacked();
+        if (transGuid)
+            data << m_src.GetTransportPos().getX() << m_src.GetTransportPos().getY() << m_src.GetTransportPos().getZ();
+        else
+            data << m_src.getX() << m_src.getY() << m_src.getZ();
     }
 
     if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
-        data << m_destTransportGUID.WriteAsPacked();
-        data << m_dest.x << m_dest.y << m_dest.z;
+        ObjectGuid transGuid = m_dest.GetTransportGuid();
+        data << transGuid.WriteAsPacked();
+        if (transGuid)
+            data << m_dest.GetTransportPos().getX() << m_dest.GetTransportPos().getY() << m_dest.GetTransportPos().getZ();
+        else
+            data << m_dest.x << m_dest.y << m_dest.z;
     }
 
     if ( m_targetMask & TARGET_FLAG_STRING )

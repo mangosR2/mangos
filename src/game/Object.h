@@ -668,10 +668,12 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         Creature* SummonCreature(uint32 id, float x, float y, float z, float ang, TempSummonType spwtype, uint32 despwtime, bool asActiveObject = false);
         Creature* SummonCreature(uint32 id, TempSummonType spwType, uint32 despwTime, bool asActiveObject = false)
         {
-            return SummonCreature(id, 0.0f, 0.0f, 0.0f, 0.0f, spwType, despwTime, asActiveObject);
+            return SummonCreature(id, GetPosition(), spwType, despwTime, asActiveObject);
         }
+        Creature* SummonCreature(uint32 id, WorldLocation const& loc, TempSummonType spwtype, uint32 despwtime, bool asActiveObject = false);
 
         GameObject* SummonGameobject(uint32 id, float x, float y, float z, float angle, uint32 despwtime);
+        GameObject* SummonGameobject(uint32 id, WorldLocation const& loc, uint32 despwtime);
 
         // Loot System
         Loot loot;

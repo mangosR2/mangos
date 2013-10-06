@@ -437,31 +437,35 @@ struct CreatureCreatePos
                 m_closeObject(NULL), m_angle(0.0f), m_dist(0.0f)
             {
             }
+
         // if dist == 0.0f -> exactly object coordinates used, in other case close point to object (CONTACT_DIST can be used as minimal distances)
         CreatureCreatePos(WorldObject* closeObject, float ori, float dist = 0.0f, float angle = 0.0f)
-            : m_pos(closeObject->GetPosition()), m_map(closeObject->GetMap()), m_closeObject(closeObject),
-                m_angle(angle), m_dist(dist)
+            : m_pos(closeObject->GetPosition()), m_map(closeObject->GetMap()), m_closeObject(closeObject), m_angle(angle), m_dist(dist)
             {
                 m_pos.o = ori;
             }
+
         // Constructor for use with casttarget
         CreatureCreatePos(Map* map, WorldLocation const& loc)
             : m_pos(loc), m_map(map), m_closeObject(NULL), m_angle(0.0f), m_dist(0.0f)
             {
             }
     public:
-        Map* GetMap() const { return m_map; }
+        Map* GetMap();
         uint32 GetPhaseMask() const { return m_pos.GetPhaseMask(); }
         void SelectFinalPoint(Creature* cr, bool checkLOS = false);
         bool Relocate(Creature* cr) const;
+        WorldLocation const& GetPosition();
+        void SetTransportGuid(ObjectGuid const& guid) { m_pos.SetTransportGuid(guid); };
+        ObjectGuid const& GetTransportGuid() { return m_pos.GetTransportGuid(); };
+        WorldLocation const& GetPos() const { return m_pos; };
 
-        // read only after SelectFinalPoint
-        WorldLocation m_pos;
     private:
         Map* m_map;
         WorldObject* m_closeObject;
         float m_angle;
         float m_dist;
+        WorldLocation m_pos;
 };
 
 enum CreatureSubtype
@@ -510,9 +514,9 @@ class MANGOS_DLL_SPEC Creature : public Unit
         virtual void RegenerateAll(uint32 update_diff);
 
         void GetRespawnCoord(float& x, float& y, float& z, float* ori = NULL, float* dist = NULL) const;
-        void SetSummonPoint(CreatureCreatePos const& pos) { m_respawnPos = pos.m_pos; }
+        void SetSummonPoint(CreatureCreatePos const& pos) { m_respawnPos = pos.GetPos(); }
         void SetRespawnCoord(float x, float y, float z, float ori) { m_respawnPos.x = x; m_respawnPos.y = y; m_respawnPos.z = z; m_respawnPos.o = ori; }
-        void SetRespawnCoord(CreatureCreatePos const& pos) { m_respawnPos = pos.m_pos; }
+        void SetRespawnCoord(CreatureCreatePos const& pos) { m_respawnPos = pos.GetPos(); }
         void ResetRespawnCoord();
         WorldLocation const& GetRespawnCoord() const { return m_respawnPos; };
         void SetRespawnCoord(WorldLocation const& loc) { m_respawnPos = loc; }

@@ -620,7 +620,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         if (mover->IsInWorld())
         {
             mover->m_movementInfo = movementInfo;
-            WorldLocation loc = plMover->GetPosition();
+            WorldLocation loc = mover->GetPosition();
             loc.SetPosition(movementInfo.GetPosition());
             loc.SetTransportPosition(movementInfo.GetTransportPosition());
             mover->SetPosition(loc);

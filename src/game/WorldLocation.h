@@ -175,11 +175,14 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
     public:
     Position const& GetTransportPos() const { return m_Tpos; };
     Position& GetTransportPosition() { return m_Tpos; };
-    void ClearTransportData() { m_Tpos = Position(); };
+    void ClearTransportData() { m_Tguid = ObjectGuid(); m_Tpos = Position(); };
     void SetTransportPosition(Position const& pos) { m_Tpos = pos; };
+    ObjectGuid const& GetTransportGuid() const { return m_Tguid; };
+    void SetTransportGuid(ObjectGuid const& guid) { m_Tguid = guid; };
 
     private:
-    Position  m_Tpos;
+    Position    m_Tpos;
+    ObjectGuid  m_Tguid;
 };
 
 ByteBuffer& operator << (ByteBuffer& buf, Location const& loc);

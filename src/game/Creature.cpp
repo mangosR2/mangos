@@ -49,6 +49,7 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "TemporarySummon.h"
+#include "Transports.h"
 #include "movement/MoveSplineInit.h"
 #include "CreatureLinkingMgr.h"
 
@@ -97,6 +98,28 @@ VendorItem const* VendorItemData::FindItemCostPair(uint32 item_id, uint32 extend
             return *i;
     }
     return NULL;
+}
+
+Map* CreatureCreatePos::GetMap()
+{
+    if (GetTransportGuid())
+    {
+        Transport* transport = sObjectMgr.GetTransportByGuid(GetTransportGuid());
+        if (transport && transport->GetMap())
+            m_map = transport->GetMap();
+    }
+    return m_map;
+}
+
+WorldLocation const& CreatureCreatePos::GetPosition()
+{
+    if (GetTransportGuid())
+    {
+        Transport* transport = sObjectMgr.GetTransportByGuid(GetTransportGuid());
+        if (transport && transport->GetMap())
+            m_pos.SetPosition(transport->GetPosition());
+    }
+    return m_pos;
 }
 
 void CreatureCreatePos::SelectFinalPoint(Creature* cr, bool checkLOS)
@@ -1304,7 +1327,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
         if (CanFly())
         {
             WorldLocation loc = GetPosition();
-            loc.SetPosition(pos.m_pos);
+            loc.SetPosition(pos.GetPosition());
             float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
             if (loc.z - tz > 0.1)
             {
@@ -1339,7 +1362,7 @@ bool Creature::LoadFromDB(uint32 guidlow, Map* map)
             if (CanFly())
             {
                 WorldLocation loc = GetPosition();
-                loc.SetPosition(pos.m_pos);
+                loc.SetPosition(pos.GetPosition());
                 float tz = GetMap()->GetHeight(GetPhaseMask(), loc.x, loc.y, loc.z);
                 if (loc.z - tz > 0.1)
                 {

@@ -94,7 +94,8 @@ bool WorldLocation::operator == (WorldLocation const& loc) const
             (realmid == 0 || realmid == loc.realmid)
         && (!HasMap() || GetMapId()  == loc.GetMapId())
         && (GetInstanceId() == 0 || GetInstanceId() == loc.GetInstanceId())
-        && ((Position)*this) == ((Position)loc));
+        && ((Position)*this) == ((Position)loc)
+        && GetTransportPos() == loc.GetTransportPos());
 }
 
 void WorldLocation::SetMapId(uint32 value)
@@ -125,6 +126,7 @@ WorldLocation& WorldLocation::operator = (WorldLocation const& loc)
     z           = loc.z;
     orientation = loc.orientation;
     m_phaseMask = loc.GetPhaseMask();
+    m_Tguid     = loc.GetTransportGuid();
     return *this;
 }
 
@@ -156,7 +158,7 @@ void WorldLocation::SetPosition(WorldLocation const& loc)
     y           = loc.y;
     z           = loc.z;
     orientation = loc.orientation;
-    m_phaseMask = loc.GetPhaseMask();
+    //m_phaseMask = loc.GetPhaseMask();
 }
 
 uint32 WorldLocation::GetAreaId() const

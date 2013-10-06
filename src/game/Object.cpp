@@ -1786,9 +1786,16 @@ void WorldObject::RemoveObjectFromRemoveList()
     GetMap()->RemoveObjectFromRemoveList(this);
 }
 
-Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, float ang,TempSummonType spwtype,uint32 despwtime, bool asActiveObject)
+Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, float ang, TempSummonType spwtype, uint32 despwtime, bool asActiveObject)
 {
-    CreatureInfo const *cinfo = ObjectMgr::GetCreatureTemplate(id);
+    WorldLocation summonLocation = GetPosition();
+    IsBoarded() ? summonLocation.SetTransportPosition(Position(x,y,z,ang)) : summonLocation.SetPosition(Position(x,y,z,ang));
+    return SummonCreature(id, summonLocation, spwtype, despwtime, asActiveObject);
+}
+
+Creature* WorldObject::SummonCreature(uint32 id, WorldLocation const& loc, TempSummonType spwtype, uint32 despwtime, bool asActiveObject)
+{
+    CreatureInfo const* cinfo = ObjectMgr::GetCreatureTemplate(id);
     if(!cinfo)
     {
         sLog.outErrorDb("WorldObject::SummonCreature: Creature (Entry: %u) not existed for summoner: %s. ", id, GetGuidStr().c_str());
@@ -1797,14 +1804,13 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
 
     TemporarySummon* pCreature = new TemporarySummon(GetObjectGuid());
 
-    Team team = TEAM_NONE;
-    if (GetTypeId()==TYPEID_PLAYER)
-        team = ((Player*)this)->GetTeam();
+    Team team = (GetTypeId() == TYPEID_PLAYER) ? ((Player*)this)->GetTeam() : TEAM_NONE;
 
-    CreatureCreatePos pos(GetMap(), x, y, z, ang, GetPhaseMask());
-
-    if (fabs(x) < M_NULL_F && fabs(y) < M_NULL_F && fabs(z) < M_NULL_F)
-        pos = CreatureCreatePos(this, GetOrientation(), CONTACT_DISTANCE, ang);
+    CreatureCreatePos pos = (loc == GetPosition()) ?
+                                                CreatureCreatePos(this, GetOrientation(), CONTACT_DISTANCE, loc.getO()) :
+                                                CreatureCreatePos(GetMap(), loc);
+    if (IsOnTransport())
+        pos.SetTransportGuid(GetTransport()->GetObjectGuid());
 
     if (!pCreature->Create(GetMap()->GenerateLocalLowGuid(cinfo->GetHighGuid()), pos, cinfo, team))
     {
@@ -1819,6 +1825,9 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
 
     pCreature->Summon(spwtype, despwtime);                  // Also initializes the AI and MMGen
 
+    if (IsOnTransport())
+        GetTransport()->AddPassenger(pCreature, loc.GetTransportPos());
+
     if (GetTypeId()==TYPEID_UNIT && ((Creature*)this)->AI())
         ((Creature*)this)->AI()->JustSummoned(pCreature);
 
@@ -1832,23 +1841,31 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
 
 GameObject* WorldObject::SummonGameobject(uint32 id, float x, float y, float z, float angle, uint32 despwtime)
 {
+    WorldLocation summonLocation = GetPosition();
+    IsBoarded() ? summonLocation.SetTransportPosition(Position(x,y,z,angle)) : summonLocation.SetPosition(Position(x,y,z,angle));
+    return SummonGameobject(id, summonLocation, despwtime);
+}
+
+GameObject* WorldObject::SummonGameobject(uint32 id, WorldLocation const& loc, uint32 despwtime)
+{
     GameObject* pGameObj = new GameObject;
 
-    Map *map = GetMap();
+    Map* map = GetMap();
 
     if (!map)
         return NULL;
 
-    if(!pGameObj->Create(map->GenerateLocalLowGuid(HIGHGUID_GAMEOBJECT), id, map,
-        GetPhaseMask(), x, y, z, angle))
+    if (!pGameObj->Create(map->GenerateLocalLowGuid(HIGHGUID_GAMEOBJECT), id, map,
+        GetPhaseMask(), loc.getX(), loc.getY(), loc.getZ(), loc.getO()))
     {
         delete pGameObj;
         return NULL;
     }
-
+    map->Add(pGameObj);
     pGameObj->SetRespawnTime(despwtime/IN_MILLISECONDS);
 
-    map->Add(pGameObj);
+    if (IsOnTransport())
+        GetTransport()->AddPassenger(pGameObj, loc.GetTransportPos());
 
     return pGameObj;
 }
