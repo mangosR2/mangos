@@ -253,7 +253,7 @@ void NotifyMapChangeBegin::operator() (WorldObject* obj) const
             if (plr->GetSession() && m_oldloc.GetMapId() != m_loc.GetMapId())
             {
                 WorldPacket data(SMSG_NEW_WORLD, 4);
-                data << uint32(plr->IsOnTransport() ? plr->GetTransport()->GetTransportMapId() : m_loc.GetMapId());
+                data << uint32(m_loc.GetMapId());
                 plr->GetSession()->SendPacket(&data);
             }
             plr->TeleportTo(m_loc, TELE_TO_NOT_LEAVE_TRANSPORT | TELE_TO_NODELAY);

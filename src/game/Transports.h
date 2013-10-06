@@ -35,30 +35,53 @@ class MANGOS_DLL_SPEC Transport : public GameObject
         explicit Transport();
         virtual ~Transport();
 
-        static uint32 GetPossibleMapByEntry(uint32 entry, bool start = true);
-        static bool   IsSpawnedAtDifficulty(uint32 entry, Difficulty difficulty);
-
-        bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress, uint16 dynamicHighValue);
-        bool GenerateWaypoints(uint32 pathid, std::set<uint32> &mapids);
-        void Update(uint32 update_diff, uint32 p_time) override;
-
-        bool SetPosition(WorldLocation const& loc, bool teleport);
+        virtual void Update(uint32 update_diff, uint32 p_time) override;
 
         bool AddPassenger(WorldObject* passenger, Position const& transportPos);
         bool RemovePassenger(WorldObject* passenger);
 
-        void Start();
-        void Stop();
+        virtual void Start() {};
+        virtual void Stop() {};
 
         TransportKit* GetTransportKit() { return m_transportKit; };
 
-        void BuildStartMovePacket(Map const *targetMap);
-        void BuildStopMovePacket(Map const *targetMap);
+        virtual bool IsTransport() const override { return bool(m_transportKit); };
+        TransportBase* GetTransportBase() { return (TransportBase*)m_transportKit; };
+
+        uint32 GetPeriod(bool isDB = false) const { return isDB ? m_period : GetUInt32Value(GAMEOBJECT_LEVEL);}
+
+        void SetDBPeriod(uint32 _period) { m_period = _period; };
+        void SetPeriod(uint32 time) { SetUInt32Value(GAMEOBJECT_LEVEL, time);}
+
+    private:
+        uint32 m_period;
+
+    protected:
+        bool m_isInitialized;
+        TransportKit* m_transportKit;
+};
+
+class MANGOS_DLL_SPEC MOTransport : public Transport
+{
+    public:
+        explicit MOTransport();
+        virtual ~MOTransport();
+
+        static uint32 GetPossibleMapByEntry(uint32 entry, bool start = true);
+        static bool   IsSpawnedAtDifficulty(uint32 entry, Difficulty difficulty);
+
+        bool Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint8 animprogress, uint16 dynamicHighValue);
+        bool GenerateWaypoints(uint32 pathid, std::set<uint32>& mapids);
+
+        virtual void Update(uint32 update_diff, uint32 p_time) override;
+        bool SetPosition(WorldLocation const& loc, bool teleport);
 
         uint32 GetTransportMapId() const { return GetGOInfo() ? GetGOInfo()->moTransport.mapID : 0; };
 
+        virtual void Start() override;
+        virtual void Stop() override;
+
         virtual bool IsMOTransport() const override { return bool(m_transportKit); };
-        TransportBase* GetTransportBase() { return (TransportBase*)m_transportKit; };
 
     private:
         struct WayPoint
@@ -75,31 +98,26 @@ class MANGOS_DLL_SPEC Transport : public GameObject
             uint32 departureEventID;
         };
 
-        typedef std::map<uint32, WayPoint> WayPointMap;
-
-        WayPointMap::const_iterator m_curr;
-        WayPointMap::const_iterator m_next;
-        uint32 m_pathTime;
-        uint32 m_timer;
-
     public:
-        WayPointMap m_WayPoints;
-        uint32 m_nextNodeTime;
-        uint32 m_period;
-
-        WayPointMap::const_iterator GetCurrent() { return m_curr; }
-        WayPointMap::const_iterator GetNext()    { return m_next; }
+        typedef std::map<uint32, WayPoint> WayPointMap;
 
     private:
         void DoEventIfAny(WayPointMap::value_type const& node, bool departure);
         void MoveToNextWayPoint();                          // move m_next/m_cur to next points
 
-        void SetPeriod(uint32 time) { SetUInt32Value(GAMEOBJECT_LEVEL, time);}
-        uint32 GetPeriod() const { return GetUInt32Value(GAMEOBJECT_LEVEL);}
-
-        TransportKit* m_transportKit;
+        WayPointMap m_WayPoints;
+        uint32 m_timer;
+        uint32 m_pathTime;
+        uint32 m_nextNodeTime;
         IntervalTimer  m_anchorageTimer;
 
+        WayPointMap::const_iterator m_curr;
+        WayPointMap::const_iterator m_next;
+
+    public:
+        WayPointMap::const_iterator GetCurrent() { return m_curr; }
+        WayPointMap::const_iterator GetNext()    { return m_next; }
+        WayPoint const& GetWayPoint(uint32 index) { return index < m_WayPoints.size() ? m_WayPoints[index] : m_WayPoints[0]; }
 };
 
 class  MANGOS_DLL_SPEC TransportKit : public TransportBase
@@ -123,7 +141,6 @@ class  MANGOS_DLL_SPEC TransportKit : public TransportBase
     private:
         // Internal use to calculate the boarding position
         virtual Position CalculateBoardingPositionOf(Position const& pos) const override;
-
         bool m_isInitialized;
 };
 
