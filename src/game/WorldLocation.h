@@ -24,6 +24,8 @@
 #include "ByteBuffer.h"
 #include <G3D/Vector3.h>
 
+class MovementInfo;
+
 using G3D::Vector3;
 
 struct MANGOS_DLL_SPEC Location : public Vector3
@@ -161,6 +163,7 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
 
     void SetPosition(Position const& pos);
     void SetPosition(WorldLocation const& loc);
+    void SetPosition(MovementInfo const& mi);
 
     float GetDistance(WorldLocation const& loc) const;
 

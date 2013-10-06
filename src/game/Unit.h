@@ -753,11 +753,10 @@ class MovementInfo
         void AddMovementFlag2(MovementFlags2 f) { moveFlags2 |= f; }
 
         // Position manipulations
-        Position const* GetPos() const { return &pos; }
         void SetTransportData(ObjectGuid guid, Position const& pos, uint32 time, int8 seat, VehicleSeatEntry const* seatInfo = NULL)
         {
-            t_guid = guid;
-            t_pos = pos;
+            loc.SetTransportGuid(guid);
+            loc.SetTransportPosition(pos);
             t_time = time;
             t_seat = seat;
             t_seatInfo = seatInfo;
@@ -765,17 +764,13 @@ class MovementInfo
         void ClearTransportData()
         {
             moveFlags2 = MOVEFLAG2_NONE;
-            t_guid = ObjectGuid();
-            t_pos.x = 0.0f;
-            t_pos.y = 0.0f;
-            t_pos.z = 0.0f;
-            t_pos.o = 0.0f;
+            loc.ClearTransportData();
             t_time = 0;
             t_seat = -1;
             t_seatInfo = NULL;
         }
-        ObjectGuid const& GetTransportGuid() const { return t_guid; }
-        Position const* GetTransportPos() const { return &t_pos; }
+        ObjectGuid const& GetTransportGuid() const { return loc.GetTransportGuid(); }
+        Position const* GetTransportPos() const { return &loc.GetTransportPos(); }
         int8 GetTransportSeat() const { return t_seat; }
 
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
@@ -784,14 +779,14 @@ class MovementInfo
         uint32 GetTime() const { return time; }
         uint32 GetTransportTime() const { return t_time; }
         uint32 GetFallTime() const { return fallTime; }
-        void ChangeOrientation(float o) { pos.o = o; }
-        void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
-        void ChangeTransportPosition(float x, float y, float z, float o) { t_pos.x = x; t_pos.y = y; t_pos.z = z; t_pos.o = o; }
+        void ChangeOrientation(float o) { loc.o = o; }
+        void ChangePosition(float x, float y, float z, float o) { loc.SetPosition(Position(x, y, z, o)); }
+        void ChangeTransportPosition(float x, float y, float z, float o) { loc.SetTransportPosition(Position(x, y, z, o)); }
 
-        void ChangePosition(Position const& _pos) { pos = _pos; }
-        void ChangeTransportPosition(Position const& _pos) { t_pos = _pos; }
-        Position const& GetPosition() const { return pos; }
-        Position const& GetTransportPosition() const { return t_pos; }
+        void ChangePosition(Position const& _pos) { loc.SetPosition(_pos); }
+        void ChangeTransportPosition(Position const& _pos) { loc.SetTransportPosition(_pos); }
+        WorldLocation const& GetPosition() const { return loc; }
+        Position const& GetTransportPosition() const { return loc.GetTransportPos(); }
 
         void UpdateTime(uint32 _time) { time = _time; }
 
@@ -812,16 +807,16 @@ class MovementInfo
             moveFlags  = moveFlagsTmp;
             splineElevation = targetInfo.splineElevation;
             time       = targetInfo.time;
-            pos        = targetInfo.pos;
+            loc        = targetInfo.loc;
             s_pitch    = targetInfo.s_pitch;
             fallTime   = targetInfo.fallTime;
             jump       = targetInfo.jump;
 
-            if (!t_guid || (t_guid && t_guid == targetInfo.t_guid))
+            if (!loc.GetTransportGuid() || (loc.GetTransportGuid() && loc.GetTransportGuid() == targetInfo.loc.GetTransportGuid()))
             {
                 moveFlags2 = targetInfo.moveFlags2;
-                t_guid     = targetInfo.t_guid;
-                t_pos      = targetInfo.t_pos;
+                loc.SetTransportGuid(targetInfo.GetTransportGuid());
+                loc.SetTransportPosition(targetInfo.GetTransportPosition());
                 t_time     = targetInfo.t_time;
                 t_seat     = targetInfo.t_seat;
                 t_seatInfo = targetInfo.t_seatInfo;
@@ -835,10 +830,8 @@ class MovementInfo
         uint32   moveFlags;                                 // see enum MovementFlags
         uint16   moveFlags2;                                // see enum MovementFlags2
         uint32   time;
-        Position pos;
+        WorldLocation loc;
         // transport
-        ObjectGuid t_guid;
-        Position t_pos;
         uint32   t_time;
         int8     t_seat;
         VehicleSeatEntry const* t_seatInfo;

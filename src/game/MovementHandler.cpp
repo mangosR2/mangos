@@ -541,13 +541,13 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo, ObjectGu
     if (guid != _player->GetMover()->GetObjectGuid())
         return false;
 
-    if (!MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o))
+    if (!MaNGOS::IsValidMapCoord(movementInfo.GetPosition().getX(), movementInfo.GetPosition().getY(), movementInfo.GetPosition().getZ(), movementInfo.GetPosition().getO()))
         return false;
 
     if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        if( !MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x + movementInfo.GetTransportPos()->x, movementInfo.GetPos()->y + movementInfo.GetTransportPos()->y,
-            movementInfo.GetPos()->z + movementInfo.GetTransportPos()->z, movementInfo.GetPos()->o + movementInfo.GetTransportPos()->o) )
+        if( !MaNGOS::IsValidMapCoord(movementInfo.GetPosition().getX() + movementInfo.GetTransportPosition().getX(), movementInfo.GetPosition().getY() + movementInfo.GetTransportPosition().getY(),
+            movementInfo.GetPosition().getZ() + movementInfo.GetTransportPosition().getZ(), movementInfo.GetPosition().getO() + movementInfo.GetTransportPosition().getO()) )
         {
             return false;
         }
@@ -566,14 +566,14 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
     {
         if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
         {
-            if (!plMover->IsOnTransport())
+            if (!plMover->IsOnTransport() && plMover->GetMap())
             {
                 /* process anticheat check */
-                GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_TRANSPORT,movementInfo);
+                GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_TRANSPORT, movementInfo);
 
                 // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid can be found in the transport list
-                if (Transport* transport = sObjectMgr.GetTransportByGuid(movementInfo.GetTransportGuid()))
-                    transport->AddPassenger(plMover, Position());
+                if (Transport* transport = plMover->GetMap()->GetTransport(movementInfo.GetTransportGuid()))
+                    transport->AddPassenger(plMover, movementInfo.GetTransportPosition());
             }
         }
         else if (plMover->IsOnTransport())               // if we were on a transport, leave
@@ -582,17 +582,16 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         if (movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING) != plMover->IsInWater())
         {
             // now client not include swimming flag in case jumping under water
-            plMover->SetInWater( !plMover->IsInWater() || plMover->GetTerrain()->IsUnderWater(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z) );
+            plMover->SetInWater( !plMover->IsInWater() || plMover->GetTerrain()->IsUnderWater(movementInfo.GetPosition().getX(), movementInfo.GetPosition().getY(), movementInfo.GetPosition().getZ()) );
         }
         WorldLocation loc = plMover->GetPosition();
-        loc.SetPosition(movementInfo.GetPosition());
-        loc.SetTransportPosition(movementInfo.GetTransportPosition());
+        loc.SetPosition(movementInfo);
         plMover->SetPosition(loc);
 
         plMover->m_movementInfo = movementInfo;
 
-        if((movementInfo.GetPos()->z < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPos()->z < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPos()->z < 20.0f)
-        || (plMover->GetMapId() == 562 && movementInfo.GetPos()->z < -20.0f)) // Prevent falling under textures on some arenas
+        if((movementInfo.GetPosition().getZ() < -500.0f) || (plMover->GetMapId() == 617 && movementInfo.GetPosition().getZ() < 2.0f) || (plMover->GetMapId() == 572 && movementInfo.GetPosition().getZ() < 20.0f)
+        || (plMover->GetMapId() == 562 && movementInfo.GetPosition().getZ() < -20.0f)) // Prevent falling under textures on some arenas
         {
             if (plMover->GetBattleGround()
                     && plMover->GetBattleGround()->HandlePlayerUnderMap(_player))
@@ -628,8 +627,7 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
         {
             mover->m_movementInfo = movementInfo;
             WorldLocation loc = mover->GetPosition();
-            loc.SetPosition(movementInfo.GetPosition());
-            loc.SetTransportPosition(movementInfo.GetTransportPosition());
+            loc.SetPosition(movementInfo);
             mover->SetPosition(loc);
         }
     }

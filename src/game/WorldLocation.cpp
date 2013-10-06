@@ -19,23 +19,24 @@
 #include "GridMap.h"
 #include "MapManager.h"
 #include "Object.h"
+#include "Unit.h"
 #include "World.h"
 #include "WorldLocation.h"
 
 Location& Location::operator = (Location const& loc)
 {
-    x = loc.x;
-    y = loc.y;
-    z = loc.z;
-    orientation = loc.orientation;
+    x = loc.getX();
+    y = loc.getY();
+    z = loc.getZ();
+    orientation = loc.getO();
     return *this;
 }
 
 bool Location::operator == (Location const& loc) const
 {
-    return ((fabs(x - loc.x) < M_NULL_F)
-        && (fabs(y - loc.y) < M_NULL_F)
-        && (fabs(z - loc.z) < M_NULL_F));
+    return ((fabs(getX() - loc.getX()) < M_NULL_F)
+        && (fabs(getY() - loc.getY()) < M_NULL_F)
+        && (fabs(getZ() - loc.getZ()) < M_NULL_F));
 };
 
 float Location::GetDistance(Location const& loc) const
@@ -45,15 +46,15 @@ float Location::GetDistance(Location const& loc) const
 
 bool Location::IsEmpty() const
 {
-    return fabs(x) < M_NULL_F && fabs(y) < M_NULL_F && fabs(z) < M_NULL_F;
+    return fabs(getX()) < M_NULL_F && fabs(getY()) < M_NULL_F && fabs(getZ()) < M_NULL_F;
 }
 
 Position& Position::operator = (Position const& pos)
 {
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
+    x           = pos.getX();
+    y           = pos.getY();
+    z           = pos.getZ();
+    orientation = pos.getO();
     m_phaseMask = pos.GetPhaseMask();
 
     return *this;
@@ -107,7 +108,7 @@ void WorldLocation::SetMapId(uint32 value)
 
 void WorldLocation::SetOrientation(float value)
 {
-    if (fabs(orientation) > 2.0f * M_PI_F)
+    if (fabs(value) > 2.0f * M_PI_F)
         orientation = MapManager::NormalizeOrientation(value);
     else
         orientation = value;
@@ -118,13 +119,16 @@ WorldLocation& WorldLocation::operator = (WorldLocation const& loc)
     //if (!IsValidMapCoord(loc))
     //    sLog.outError("WorldLocation::operator = try set invalid location!");
 
-    mapid       = loc.mapid;
-    instance    = loc.instance;
+    if (loc.HasMap())
+    {
+        mapid       = loc.GetMapId();
+        instance    = loc.GetInstanceId();
+    }
     m_Tpos      = loc.m_Tpos;
-    x           = loc.x;
-    y           = loc.y;
-    z           = loc.z;
-    orientation = loc.orientation;
+    x           = loc.getX();
+    y           = loc.getY();
+    z           = loc.getZ();
+    orientation = loc.getO();
     m_phaseMask = loc.GetPhaseMask();
     m_Tguid     = loc.GetTransportGuid();
     return *this;
@@ -132,33 +136,59 @@ WorldLocation& WorldLocation::operator = (WorldLocation const& loc)
 
 WorldLocation& WorldLocation::operator = (Position const& pos)
 {
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
+    x           = pos.getX();
+    y           = pos.getY();
+    z           = pos.getZ();
+    orientation = pos.getO();
     m_phaseMask = pos.GetPhaseMask();
     return *this;
 }
 
 void WorldLocation::SetPosition(Position const& pos)
 {
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
+    x           = pos.getX();
+    y           = pos.getY();
+    z           = pos.getZ();
+    orientation = pos.getO();
     //m_phaseMask = pos.GetPhaseMask();
 }
 
 void WorldLocation::SetPosition(WorldLocation const& loc)
 {
     // This method not set transport position!
-    mapid       = loc.mapid;
-    instance    = loc.instance;
-    x           = loc.x;
-    y           = loc.y;
-    z           = loc.z;
-    orientation = loc.orientation;
+    if (loc.HasMap())
+    {
+        mapid       = loc.GetMapId();
+        instance    = loc.GetInstanceId();
+    }
+    x           = loc.getX();
+    y           = loc.getY();
+    z           = loc.getZ();
+    orientation = loc.getO();
     //m_phaseMask = loc.GetPhaseMask();
+}
+
+void WorldLocation::SetPosition(MovementInfo const& mi)
+{
+    // This method not set transport position!
+    if (mi.GetPosition().HasMap())
+    {
+        mapid       = mi.GetPosition().mapid;
+        instance    = mi.GetPosition().instance;
+    }
+    x           = mi.GetPosition().getX();
+    y           = mi.GetPosition().getY();
+    z           = mi.GetPosition().getZ();
+    orientation = mi.GetPosition().getO();
+    //m_phaseMask = loc.GetPhaseMask();
+
+    if (mi.GetTransportGuid())
+    {
+        SetTransportGuid(mi.GetTransportGuid());
+        SetTransportPosition(mi.GetTransportPosition());
+    }
+    else
+        ClearTransportData();
 }
 
 uint32 WorldLocation::GetAreaId() const
