@@ -1097,12 +1097,8 @@ StartHonorPoints = 0
 AllowHonorKillsTitles = 0
 MaxArenaPoints = 5000
 StartArenaPoints = 0
-<<<<<<< HEAD:src/mangosd/world.conf.dist.in
 InstantLogout = 0
-=======
-InstantLogout = 1
 GroupLeaderReconnectPeriod = 180
->>>>>>> 72d67a31107f9a35aec7a98bcbbe68ad23fc1338:src/mangosd/mangosd.conf.dist.in
 DisableWaterBreath = 4
 AllFlightPaths = 0
 AlwaysMaxSkillForLevel = 0
