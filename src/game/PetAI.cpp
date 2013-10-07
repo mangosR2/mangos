@@ -215,12 +215,15 @@ void PetAI::Reset()
         );
 }
 
-void PetAI::MoveInLineOfSight(Unit* u)
+void PetAI::MoveInLineOfSight(Unit* pWho)
 {
+    if (m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
+        return;
+
     if (m_creature->getVictim())
         return;
 
-    if (m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT))
+    if (m_savedTargetGuid && m_savedTargetGuid == pWho->GetObjectGuid())
         return;
 
     CharmInfo* charmInfo = m_creature->GetCharmInfo();
@@ -233,14 +236,14 @@ void PetAI::MoveInLineOfSight(Unit* u)
     if (!charmInfo->HasState(CHARM_STATE_REACT, REACT_AGGRESSIVE))
         return;
 
-    if (!u->isTargetableForAttack() || !m_creature->IsHostileTo(u) ||
-        !u->isInAccessablePlaceFor(m_creature) ||
-        !u->isVisibleForOrDetect(m_creature, m_creature, true))
+    if (!pWho->isTargetableForAttack() || !m_creature->IsHostileTo(pWho) ||
+        !pWho->isInAccessablePlaceFor(m_creature) ||
+        !pWho->isVisibleForOrDetect(m_creature, m_creature, true))
         return;
 
-    float attackRadius = m_creature->GetAttackDistance(u);
-    if (m_creature->IsWithinDistInMap(u, attackRadius) && m_creature->GetDistanceZ(u) <= CREATURE_Z_ATTACK_RANGE)
-        AttackStart(u);
+    float attackRadius = m_creature->GetAttackDistance(pWho);
+    if (m_creature->IsWithinDistInMap(pWho, attackRadius) && m_creature->GetDistanceZ(pWho) <= CREATURE_Z_ATTACK_RANGE)
+        AttackStart(pWho);
 }
 
 void PetAI::AttackStart(Unit* pTarget)
@@ -312,7 +315,7 @@ bool PetAI::UpdateAIType()
 
     if (m_AIType == PET_AI_RANGED)
     {
-        if (m_creature->GetPower(POWER_MANA) < m_creature->GetMaxPower(POWER_MANA)/10)
+        if (m_creature->GetPower(POWER_MANA) < m_creature->GetMaxPower(POWER_MANA) / 10)
         {
             m_AIType = PET_AI_RANGED_NOAMMO;
             MoveToVictim(m_creature->getVictim());
@@ -321,7 +324,7 @@ bool PetAI::UpdateAIType()
     }
     else if (m_AIType == PET_AI_RANGED_NOAMMO)
     {
-        if (m_creature->GetPower(POWER_MANA) > m_creature->GetMaxPower(POWER_MANA)/4)
+        if (m_creature->GetPower(POWER_MANA) > m_creature->GetMaxPower(POWER_MANA) / 4)
         {
             m_AIType = PET_AI_RANGED;
             MoveToVictim(m_creature->getVictim());
@@ -345,7 +348,7 @@ void PetAI::MoveToVictim(Unit* pTarget)
             break;
         case PET_AI_RANGED:
             if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI))
-                m_creature->GetMotionMaster()->MoveChase(pTarget, m_attackDistance, m_creature->GetAngle(pTarget) + frand(-M_PI_F/4.0f, M_PI_F/4.0f));
+                m_creature->GetMotionMaster()->MoveChase(pTarget, m_attackDistance, m_creature->GetAngle(pTarget) + frand(-M_PI_F / 4.0f, M_PI_F / 4.0f));
             else
                 m_creature->GetMotionMaster()->MoveChase(pTarget);
             break;
@@ -366,51 +369,57 @@ void PetAI::EnterEvadeMode()
     m_creature->GetMotionMaster()->MoveTargetedHome();
 }
 
-bool PetAI::IsVisible(Unit *pl) const
+bool PetAI::IsVisible(Unit* pl) const
 {
     return _isVisible(pl);
 }
 
 bool PetAI::_needToStop() const
 {
+    Unit* pVictim = m_creature->getVictim();
+    if (!pVictim)
+        return true;
+
     // This is needed for charmed creatures, as once their target was reset other effects can trigger threat
-    if (m_creature->isCharmed() && m_creature->getVictim() == m_creature->GetCharmer())
+    if (m_creature->isCharmed() && m_creature->GetCharmer() == pVictim)
         return true;
 
     Unit* owner = m_creature->GetCharmerOrOwner();
 
-    if (m_creature->getVictim() == owner)
+    if (owner == pVictim)
         return true;
 
-    if (!m_creature->getVictim()->isVisibleForOrDetect(m_creature, m_creature, false) &&
-        (owner && !m_creature->getVictim()->isVisibleForOrDetect(owner, owner, true)))
+    if (!pVictim->isVisibleForOrDetect(m_creature, m_creature, false))
         return true;
 
-    if (!m_primaryTargetGuid.IsEmpty() && m_creature->getVictim()->GetObjectGuid() != m_primaryTargetGuid)
+    if (owner && !pVictim->isVisibleForOrDetect(owner, owner, true))
         return true;
 
-    return !m_creature->getVictim()->isTargetableForAttack();
+    if (m_primaryTargetGuid && m_primaryTargetGuid != pVictim->GetObjectGuid())
+        return true;
+
+    return !pVictim->isTargetableForAttack();
 }
 
 void PetAI::_stopAttack()
 {
+    if (!IsInCombat())
+        return;
+
     inCombat = false;
 
-    if (IsInCombat())
-    {
-        m_creature->CastStop();
-        m_creature->AttackStop();
-        m_creature->GetMotionMaster()->Clear();
+    m_creature->CastStop();
+    m_creature->AttackStop();
+    m_creature->GetMotionMaster()->Clear(); // move idle
+
+    if (!m_savedTargetGuid)
         m_creature->GetMotionMaster()->MoveTargetedHome();
-    }
 }
 
 void PetAI::UpdateAI(const uint32 diff)
 {
     if (!m_creature->isAlive())
         return;
-
-    Unit* owner = m_creature->GetCharmerOrOwner();
 
     m_updateAlliesTimer.Update(diff);
     if (m_updateAlliesTimer.Passed())
@@ -419,22 +428,23 @@ void PetAI::UpdateAI(const uint32 diff)
         m_updateAlliesTimer.Reset();
     }
 
-    if (!inCombat && !m_savedTargetGuid.IsEmpty())
+    if (!inCombat && m_savedTargetGuid)
     {
-        if (Unit* saved_target = m_creature->GetMap()->GetUnit(m_savedTargetGuid))
+        if (Unit* savedTarget = m_creature->GetMap()->GetUnit(m_savedTargetGuid))
         {
-            if (!saved_target->isAlive())
+            if (!savedTarget->isAlive())
                 m_savedTargetGuid.Clear();
-            else if (!saved_target->IsCrowdControlled())
-                AttackStart(saved_target);
+            else if (!savedTarget->IsCrowdControlled())
+                AttackStart(savedTarget);
         }
         else
             m_savedTargetGuid.Clear();
     }
 
+    Unit* pVictim = m_creature->getVictim();
+
     if (inCombat &&
-        (!m_creature->getVictim() ||
-         !m_creature->getVictim()->isAlive() ||
+        (!pVictim || !pVictim->isAlive() ||
         (m_creature->IsPet() && m_creature->GetCharmInfo()->HasState(CHARM_STATE_ACTION, ACTIONS_DISABLE))))
         _stopAttack();
 
@@ -444,10 +454,12 @@ void PetAI::UpdateAI(const uint32 diff)
         return;
     }
 
+    Unit* owner = m_creature->GetCharmerOrOwner();
+
     // i_pet.getVictim() can't be used for check in case stop fighting, i_pet.getVictim() clear at Unit death etc.
-    if (m_creature->getVictim())
+    if (pVictim)
     {
-        bool meleeReach = m_creature->CanReachWithMeleeAttack(m_creature->getVictim());
+        bool meleeReach = m_creature->CanReachWithMeleeAttack(pVictim);
 
         if (_needToStop())
         {
@@ -455,15 +467,18 @@ void PetAI::UpdateAI(const uint32 diff)
             _stopAttack();
             return;
         }
-        else if (!m_creature->getVictim()->isAlive())        // Stop attack if target dead
+        else if (!pVictim->isAlive())                        // Stop attack if target dead
         {
             m_creature->InterruptNonMeleeSpells(false);
             _stopAttack();
             return;
         }
-        else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && IsInCombat() && m_creature->getVictim() && m_creature->getVictim()->IsCrowdControlled())  // Stop attack if target under CC effect
+        // Stop attack if target under CC effect
+        else if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && IsInCombat() &&
+            pVictim->IsCrowdControlled() &&
+            !m_creature->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
         {
-            m_savedTargetGuid = m_creature->getVictim()->GetObjectGuid();
+            m_savedTargetGuid = pVictim->GetObjectGuid();
             m_creature->InterruptSpell(CURRENT_GENERIC_SPELL, true);
             if (!m_creature->IsNonMeleeSpellCasted(false, false, true))
                 _stopAttack();
@@ -482,14 +497,14 @@ void PetAI::UpdateAI(const uint32 diff)
             // not required to be stopped case
             else if (DoMeleeAttackIfReady())
             {
-                if (!m_creature->getVictim())
-                    return;
+                if (pVictim = m_creature->getVictim())
+                {
+                    // if pet misses its target, it will also be the first in threat list
+                    pVictim->AddThreat(m_creature);
 
-                //if pet misses its target, it will also be the first in threat list
-                m_creature->getVictim()->AddThreat(m_creature);
-
-                if (_needToStop())
-                    _stopAttack();
+                    if (_needToStop())
+                        _stopAttack();
+                }
             }
         }
 
@@ -499,21 +514,21 @@ void PetAI::UpdateAI(const uint32 diff)
             if (m_attackDistanceRecheckTimer.Passed())
             {
                 m_attackDistanceRecheckTimer.Reset();
-                if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && m_AIType == PET_AI_RANGED)
+                if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI) && m_AIType == PET_AI_RANGED && pVictim)
                 {
-                    float dist = m_creature->GetDistance(m_creature->getVictim());
-                    if ((m_creature->CanReachWithMeleeAttack(m_creature->getVictim()) &&
-                        m_creature->IsWithinDist(m_creature->GetOwner(), m_creature->GetMap()->GetVisibilityDistance() / 2.0f)) ||
+                    float dist = m_creature->GetDistance(pVictim);
+                    if ((m_creature->CanReachWithMeleeAttack(pVictim) &&
+                        m_creature->IsWithinDist(owner, m_creature->GetMap()->GetVisibilityDistance() / 2.0f)) ||
                         dist > (m_attackDistance + 2.0f))
                     {
-                        MoveToVictim(m_creature->getVictim());
+                        MoveToVictim(pVictim);
                         return;
                     }
                 }
 
                 if (sWorld.getConfig(CONFIG_BOOL_PET_ADVANCED_AI))
                 {
-                    // AOE check
+                    // FIXME: AOE check
                 }
             }
         }
@@ -528,15 +543,14 @@ void PetAI::UpdateAI(const uint32 diff)
         {
             case REACT_DEFENSIVE:
             {
-                if (!m_creature->getVictim()
-                    || !m_creature->getVictim()->isAlive()
-                    || (m_primaryTargetGuid.IsEmpty() && owner->getVictim() != m_creature->getVictim() && owner->getVictim()->isAlive()))
+                if (!pVictim || !pVictim->isAlive() ||
+                    (!m_primaryTargetGuid && owner->getVictim() != pVictim && owner->getVictim()->isAlive()))
                     AttackStart(owner->getAttackerForHelper());
                 break;
             }
             case REACT_AGGRESSIVE:
             {
-                if (!m_creature->getVictim() || !m_creature->getVictim()->isAlive())
+                if (!pVictim || !pVictim->isAlive())
                     AttackStart(owner->getAttackerForHelper());
                 break;
             }
@@ -746,8 +760,10 @@ void PetAI::UpdateAI(const uint32 diff)
             if (m_creature->GetCharmInfo() && m_creature->GetCharmInfo()->GetGlobalCooldownMgr().HasGlobalCooldown(spellInfo))
                 continue;
 
-            Unit* pTarget =  m_creature->IsPet() ? ((Pet*)m_creature)->SelectPreferredTargetForSpell(spellInfo) :
-                                                   ((Creature*)m_creature)->SelectPreferredTargetForSpell(spellInfo);
+            Unit* pTarget = m_creature->IsPet()
+                ? ((Pet*)m_creature)->SelectPreferredTargetForSpell(spellInfo)
+                : ((Creature*)m_creature)->SelectPreferredTargetForSpell(spellInfo);
+
             bool b_castOk = false;
 
             if (pTarget)
@@ -758,6 +774,7 @@ void PetAI::UpdateAI(const uint32 diff)
                             m_AIType,
                             spellID,
                             pTarget ? pTarget->GetGuidStr().c_str() : "<none>");
+
                 switch (result)
                 {
                     case SPELL_FAILED_TOO_CLOSE:
@@ -778,15 +795,16 @@ void PetAI::UpdateAI(const uint32 diff)
                     {
                         if (DoCastSpellIfCan(pTarget, spellID) == CAST_OK)
                             b_castOk = true;
+
                         break;
                     }
                     default:
                     {
                         Player* owner = (Player*)m_creature->GetOwner();
                         if (owner)
-                            Spell::SendCastResult(owner,spellInfo,0,result, true);
+                            Spell::SendCastResult(owner, spellInfo, 0, result, true);
 
-                        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS,"PetAI::Update cast %s, AI %u Target %s spell %u result %u",
+                        DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "PetAI::Update cast %s, AI %u Target %s spell %u result %u",
                             m_creature->GetGuidStr().c_str(),
                             m_AIType,
                             pTarget ? pTarget->GetGuidStr().c_str() : "<none>",
@@ -803,7 +821,7 @@ void PetAI::UpdateAI(const uint32 diff)
             {
                 if (m_creature->IsPet())
                 {
-                    if(((Pet*)m_creature)->getPetType() == SUMMON_PET && (urand(0, 100) < 10))
+                    if (((Pet*)m_creature)->getPetType() == SUMMON_PET && (urand(0, 100) < 10))
                         m_creature->SendPetTalk((uint32)PET_TALK_SPECIAL_SPELL);
                     else
                         m_creature->SendPetAIReaction();
@@ -814,19 +832,19 @@ void PetAI::UpdateAI(const uint32 diff)
     }
 }
 
-bool PetAI::_isVisible(Unit *u) const
+bool PetAI::_isVisible(Unit* u) const
 {
-    return m_creature->IsWithinDist(u,sWorld.getConfig(CONFIG_FLOAT_SIGHT_GUARDER))
-        && u->isVisibleForOrDetect(m_creature,m_creature,true);
+    return m_creature->IsWithinDist(u, sWorld.getConfig(CONFIG_FLOAT_SIGHT_GUARDER))
+        && u->isVisibleForOrDetect(m_creature, m_creature, true);
 }
 
 void PetAI::UpdateAllies()
 {
     Unit* owner = m_creature->GetCharmerOrOwner();
-    Group* pGroup = NULL;
-
     if (!owner)
         return;
+
+    Group* pGroup = NULL;
 
     if (owner->GetTypeId() == TYPEID_PLAYER)
         pGroup = ((Player*)owner)->GetGroup();
@@ -841,9 +859,10 @@ void PetAI::UpdateAllies()
 
     m_AllySet.clear();
     m_AllySet.insert(m_creature->GetObjectGuid());
+
     if (pGroup)                                              // add group
     {
-        for (GroupReference *itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
+        for (GroupReference* itr = pGroup->GetFirstMember(); itr != NULL; itr = itr->next())
         {
             Player* target = itr->getSource();
             if (!target || !pGroup->SameSubGroup((Player*)owner, target))
@@ -867,7 +886,7 @@ void PetAI::AttackedBy(Unit* attacker)
         return;
     }
 
-    //when attacked, fight back in case 1)no victim already AND 2)not set to passive AND 3)not set to stay, unless can it can reach attacker with melee attack anyway
+    // when attacked, fight back in case 1) no victim already AND 2) not set to passive AND 3) not set to stay, unless can it can reach attacker with melee attack anyway
     if (!m_creature->getVictim() && m_creature->GetCharmInfo() && !m_creature->GetCharmInfo()->HasState(CHARM_STATE_REACT, REACT_PASSIVE) &&
         (!m_creature->GetCharmInfo()->HasState(CHARM_STATE_COMMAND, COMMAND_STAY) || m_creature->CanReachWithMeleeAttack(attacker)))
         AttackStart(attacker);
@@ -922,6 +941,7 @@ uint32 PetAI::GetSpellType(PetAutoSpellType type)
 
         tmpSet.push_back(_spellID);
     }
+
     if (tmpSet.empty())
         return 0;
     else
@@ -933,7 +953,7 @@ bool PetAI::IsInCombat()
     return (inCombat || m_creature->isInCombat());
 }
 
-bool  PetAI::SetPrimaryTarget(ObjectGuid const& guid)
+bool PetAI::SetPrimaryTarget(ObjectGuid const& guid)
 {
     if (!guid || (m_primaryTargetGuid.IsEmpty() || !GetPrimaryTarget()))
     {

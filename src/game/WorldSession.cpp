@@ -91,7 +91,7 @@ WorldSession::WorldSession(uint32 id, WorldSocket *sock, AccountTypes sec, uint8
 m_muteTime(mute_time), _player(NULL), m_Socket(sock),_security(sec), _accountId(id), m_expansion(expansion), _logoutTime(0),
 m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerRecentlyLogout(false), m_playerSave(false),
 m_sessionDbcLocale(sWorld.GetAvailableDbcLocale(locale)), m_sessionDbLocaleIndex(sObjectMgr.GetIndexForLocale(locale)),
-m_latency(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_Warden(NULL)
+m_latency(0), m_clientTimeDelay(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_Warden(NULL)
 {
     if (sock)
     {
@@ -427,7 +427,7 @@ void WorldSession::LogoutPlayer(bool Save)
             GetPlayer()->BuildPlayerRepop();
             GetPlayer()->RepopAtGraveyard();
         }
-        else if (GetPlayer()->IsInCombat() && GetPlayer()->GetMap())
+        else if (GetPlayer()->GetMap() && GetPlayer()->IsInCombat())
         {
             GetPlayer()->CombatStop();
             GetPlayer()->getHostileRefManager().setOnlineOfflineState(false);
@@ -525,15 +525,9 @@ void WorldSession::LogoutPlayer(bool Save)
         }
 
         ///- If the player is in a guild, update the guild roster and broadcast a logout message to other guild members
-        Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
-        if (guild)
+        if (Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId()))
         {
-            if (MemberSlot* slot = guild->GetMemberSlot(GetPlayer()->GetObjectGuid()))
-            {
-                slot->SetMemberStats(GetPlayer());
-                slot->UpdateLogoutTime();
-            }
-
+            guild->OnMemberLogout(GetPlayer());
             guild->BroadcastEvent(GE_SIGNED_OFF, GetPlayer()->GetObjectGuid(), GetPlayer()->GetName());
         }
 
@@ -560,14 +554,12 @@ void WorldSession::LogoutPlayer(bool Save)
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
         //_player->UninviteFromGroup();
 
-        // remove player from the group if he is:
-        // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
-        //if(_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket)
-        //    _player->RemoveFromGroup();
-
-        ///- Send update to group
-        if(GetPlayer()->GetGroup())
+        ///- Inform the group about leaving and send update to other members
+        if (GetPlayer()->GetGroup())
+        {
+            GetPlayer()->GetGroup()->CheckLeader(GetPlayer()->GetObjectGuid(), true); // logout check leader
             GetPlayer()->GetGroup()->SendUpdate();
+        }
 
         ///- Broadcast a logout message to the player's friends
         sSocialMgr.SendFriendStatus(GetPlayer(), FRIEND_OFFLINE, GetPlayer()->GetObjectGuid(), true);

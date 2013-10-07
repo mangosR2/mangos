@@ -32,17 +32,13 @@ INSTANTIATE_SINGLETON_2(MapManager, CLASS_LOCK);
 INSTANTIATE_CLASS_MUTEX(MapManager, ACE_Recursive_Thread_Mutex);
 
 MapManager::MapManager()
-    : i_gridCleanUpDelay(sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN))
 {
     i_timer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 }
 
 MapManager::~MapManager()
 {
-    for(MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
-        delete iter->second;
-
-    DeleteStateMachine();
+    i_maps.clear();
 }
 
 void
@@ -55,38 +51,11 @@ MapManager::Initialize()
     if (m_threadsCount > 0 && m_updater.activate(m_threadsCount) == -1)
         abort();
 
-    InitStateMachine();
-
     i_balanceTimer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)*100);
     m_previewTimeStamp = WorldTimer::getMSTime();
     m_workTimeStorage = 0;
     m_sleepTimeStorage = 0;
     m_tickCount = 0;
-}
-
-void MapManager::InitStateMachine()
-{
-    si_GridStates[GRID_STATE_INVALID] = new InvalidState;
-    si_GridStates[GRID_STATE_ACTIVE] = new ActiveState;
-    si_GridStates[GRID_STATE_IDLE] = new IdleState;
-    si_GridStates[GRID_STATE_REMOVAL] = new RemovalState;
-}
-
-void MapManager::DeleteStateMachine()
-{
-    delete si_GridStates[GRID_STATE_INVALID];
-    delete si_GridStates[GRID_STATE_ACTIVE];
-    delete si_GridStates[GRID_STATE_IDLE];
-    delete si_GridStates[GRID_STATE_REMOVAL];
-}
-
-void MapManager::UpdateGridState(grid_state_t state, Map& map, NGridType& ngrid, GridInfo& ginfo, const uint32 &x, const uint32 &y, const uint32 &t_diff)
-{
-    // TODO: The grid state array itself is static and therefore 100% safe, however, the data
-    // the state classes in it accesses is not, since grids are shared across maps (for example
-    // in instances), so some sort of locking will be necessary later.
-
-    si_GridStates[state]->Update(map, ngrid, ginfo, x, y, t_diff);
 }
 
 void MapManager::InitializeVisibilityDistanceInfo()
@@ -95,24 +64,27 @@ void MapManager::InitializeVisibilityDistanceInfo()
         (*iter).second->InitVisibilityDistance();
 }
 
-Map* MapManager::CreateMap(uint32 id, const WorldObject* obj)
+Map* MapManager::CreateMap(uint32 id, WorldObject const* obj)
 {
     MANGOS_ASSERT(obj);
     //if(!obj->IsInWorld()) sLog.outError("GetMap: called for map %d with object (typeid %d, guid %d, mapid %d, instanceid %d) who is not in world!", id, obj->GetTypeId(), obj->GetGUIDLow(), obj->GetMapId(), obj->GetInstanceId());
     Guard _guard(*this);
 
-    Map * m = NULL;
+    Map* m = NULL;
 
-    const MapEntry* entry = sMapStore.LookupEntry(id);
+    MapEntry const* entry = sMapStore.LookupEntry(id);
     if(!entry)
         return NULL;
 
-    if(entry->Instanceable())
+    if (entry->Instanceable())
     {
-        MANGOS_ASSERT(obj->GetTypeId() == TYPEID_PLAYER);
         //create DungeonMap object
-        if(obj->GetTypeId() == TYPEID_PLAYER)
+        if (obj->GetTypeId() == TYPEID_PLAYER)
             m = CreateInstance(id, (Player*)obj);
+        else if (obj->IsInitialized() && obj->GetObjectGuid().IsMOTransport())
+            DEBUG_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES,"MapManager::CreateMap %s try create map %u (no instance given), currently not implemented.",obj->IsInitialized() ? obj->GetObjectGuid().GetString().c_str() : "<uninitialized>", id);
+        else
+            DETAIL_LOG("MapManager::CreateMap %s try create map %u (no instance given), BUG, wrong usage!",obj->IsInitialized() ? obj->GetObjectGuid().GetString().c_str() : "<uninitialized>", id);
     }
     else
     {
@@ -120,7 +92,7 @@ Map* MapManager::CreateMap(uint32 id, const WorldObject* obj)
         m = FindMap(id);
         if( m == NULL )
         {
-            m = new WorldMap(id, i_gridCleanUpDelay);
+            m = new WorldMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN));
             //add map into container
             i_maps[MapID(id)] = m;
 
@@ -195,6 +167,15 @@ void MapManager::Update(uint32 diff)
     if( !i_timer.Passed())
         return;
 
+    if (m_threadsCountPreferred != m_threadsCount)
+    {
+        m_updater.reactivate(m_threadsCountPreferred);
+        sLog.outDetail("MapManager::Update map virtual server threads pool reactivated, new threads count is %u", m_threadsCountPreferred);
+        m_threadsCount = m_threadsCountPreferred;
+    }
+    else
+        m_updater.reactivate(m_threadsCount);
+
     UpdateLoadBalancer(true);
 
     for (MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
@@ -208,16 +189,14 @@ void MapManager::Update(uint32 diff)
     }
 
     if (m_updater.activated())
-        m_updater.wait();
+    {
+        int result = m_updater.queue_wait(sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME));
+        if (result != 0)
+            sLog.outError("MapManager::Update update thread bucket returned error %i after invoke, please report (count of unstopped threads %u).", result, m_updater.getActiveThreadsCount());
+    }
 
     UpdateLoadBalancer(false);
 
-    if (m_updater.IsBroken() || m_threadsCountPreferred != m_threadsCount)
-    {
-        m_updater.ReActivate(m_threadsCountPreferred);
-        sLog.outDetail("MapManager::Update map virtual server threads pool reactivated, new threads count is %u", m_threadsCountPreferred);
-        m_threadsCount = m_threadsCountPreferred;
-    }
 
     //remove all maps which can be unloaded
     MapMapType::iterator iter = i_maps.begin();
@@ -313,7 +292,7 @@ uint32 MapManager::GetNumPlayersInInstances()
 Map* MapManager::CreateInstance(uint32 id, Player * player)
 {
     Map* map = NULL;
-    Map * pNewMap = NULL;
+    Map* pNewMap = NULL;
     uint32 NewInstanceId = 0;                                   // instanceId of the resulting map
     const MapEntry* entry = sMapStore.LookupEntry(id);
 
@@ -374,7 +353,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficult
 
     DEBUG_LOG("MapInstanced::CreateDungeonMap: %s map instance %d for %d created with difficulty %d", save?"":"new ", InstanceId, id, difficulty);
 
-    DungeonMap *map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
+    DungeonMap* map = new DungeonMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), InstanceId, difficulty);
 
     // Dungeons can have saved instance data
     bool load_data = save != NULL;
@@ -391,7 +370,7 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
 
     uint8 spawnMode = bracketEntry ? bracketEntry->difficulty : REGULAR_DIFFICULTY;
 
-    BattleGroundMap *map = new BattleGroundMap(id, i_gridCleanUpDelay, InstanceId, spawnMode);
+    BattleGroundMap* map = new BattleGroundMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), InstanceId, spawnMode);
     MANGOS_ASSERT(map->IsBattleGroundOrArena());
     map->SetBG(bg);
     bg->SetBgMap(map);

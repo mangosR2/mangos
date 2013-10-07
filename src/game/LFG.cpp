@@ -100,6 +100,7 @@ LFGLockStatusMap const* LFGPlayerState::GetLockMap()
 
 void LFGPlayerState::SetRoles(LFGRoleMask roles)
 {
+    LFGMgr::WriteGuard Guard(sLFGMgr.GetLock());
     m_rolesMask = roles;
 
     if (Group* group = m_pPlayer->GetGroup())
@@ -291,24 +292,19 @@ void  LFGGroupState::DecreaseKicksLeft()
         --m_uiKicksLeft;
 }
 
-LFGQueueInfo::LFGQueueInfo(ObjectGuid _guid, LFGType type)
+LFGQueueInfo::LFGQueueInfo(ObjectGuid _guid, LFGType type, uint32 _queueID)
+    : guid(_guid), m_type(type), queueID(_queueID)
 {
-    guid = _guid;
-    m_type = type;
     MANGOS_ASSERT(!guid.IsEmpty());
-
     tanks = LFG_TANKS_NEEDED;
     healers = LFG_HEALERS_NEEDED;
     dps = LFG_DPS_NEEDED;
     joinTime = time_t(time(NULL));
-
 }
 
 LFGProposal::LFGProposal(LFGDungeonEntry const* _dungeon)
+    : m_dungeon(_dungeon), m_state(LFG_PROPOSAL_INITIATING), m_cancelTime(0)
 {
-    m_dungeon = _dungeon;
-    m_state = LFG_PROPOSAL_INITIATING;
-    m_cancelTime = 0;
     declinerGuids.clear();
     playerGuids.clear();
     m_bDeleted = false;

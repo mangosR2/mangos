@@ -66,18 +66,21 @@ void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool 
 
 void WorldObjectEventProcessor::RenewEvents()
 {
+    bool needInsert;
     while (!m_queue.empty())
     {
         if (m_queue.front().second)
         {
-            switch (m_queue.front().second->GetType())
+            needInsert = true;
+            WorldObjectEventType eventType = WorldObjectEventType(m_queue.front().second->GetType());
+            switch (eventType)
             {
                 case WORLDOBJECT_EVENT_TYPE_UNIQUE:
+                case WORLDOBJECT_EVENT_TYPE_EVADE_UNIQUE:
                 {
-                    bool needInsert = true;
                     for (EventList::const_iterator i = m_events.begin(); i != m_events.end(); ++i)
                     {
-                        if (i->second->GetType() == WORLDOBJECT_EVENT_TYPE_UNIQUE)
+                        if (i->second->GetType() == eventType)
                         {
                             BasicEvent* event = m_queue.front().second;
                             delete event;
@@ -85,17 +88,16 @@ void WorldObjectEventProcessor::RenewEvents()
                             break;
                         }
                     }
-                    if (needInsert)
-                        m_events.insert(m_queue.front());
                     break;
                 }
                 case WORLDOBJECT_EVENT_TYPE_REPEATABLE:
                 case WORLDOBJECT_EVENT_TYPE_DEATH:
                 case WORLDOBJECT_EVENT_TYPE_COMMON:
                 default:
-                    m_events.insert(m_queue.front());
                     break;
             }
+            if (needInsert)
+                m_events.insert(m_queue.front());
         }
         m_queue.pop();
     }
@@ -302,18 +304,16 @@ bool AttackResumeEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         return true;
 
     Unit* victim = m_owner.getVictim();
-
     if (!victim || !victim->IsInMap(&m_owner))
         return true;
 
-    switch(m_owner.GetObjectGuid().GetHigh())
+    switch (m_owner.GetObjectGuid().GetHigh())
     {
         case HIGHGUID_UNIT:
         case HIGHGUID_VEHICLE:
         {
             m_owner.AttackStop(!b_force);
-            CreatureAI* ai = ((Creature*)&m_owner)->AI();
-            if (ai)
+            if (CreatureAI* ai = ((Creature*)&m_owner)->AI())
             {
             // Reset EventAI now unsafe, temp disabled (require correct writing EventAI scripts)
             //    if (CreatureEventAI* eventai = (CreatureEventAI*)ai)
@@ -325,13 +325,13 @@ bool AttackResumeEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
         case HIGHGUID_PET:
         {
             m_owner.AttackStop(!b_force);
-           ((Pet*)&m_owner)->AI()->AttackStart(victim);
+            ((Pet*)&m_owner)->AI()->AttackStart(victim);
             break;
         }
         case HIGHGUID_PLAYER:
             break;
         default:
-            sLog.outError("AttackResumeEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
+            sLog.outError("AttackResumeEvent::Execute try execute for unsupported owner %s!", m_owner.GetGuidStr().c_str());
         break;
     }
     return true;
@@ -344,8 +344,17 @@ bool ForcedDespawnDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
     return true;
 }
 
+EvadeDelayEvent::EvadeDelayEvent(Unit& owner, bool force /*=false*/) :
+    BasicEvent(WORLDOBJECT_EVENT_TYPE_EVADE_UNIQUE), m_owner(owner), b_force(force)
+{
+    if (m_owner.GetTypeId() == TYPEID_UNIT)
+        m_owner.addUnitState(UNIT_STAT_DELAYED_EVADE);
+}
+
 bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
 {
+    m_owner.clearUnitState(UNIT_STAT_DELAYED_EVADE);
+
     if (m_owner.IsInEvadeMode())
         return true;
 
@@ -362,7 +371,10 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
                 return true;
 
             if (c_owner->IsAILocked())
+            {
+                m_owner.addUnitState(UNIT_STAT_DELAYED_EVADE);
                 return false;
+            }
 
             if (c_owner->IsDespawned() || c_owner->isCharmed() || c_owner->hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
                 return true;
@@ -382,38 +394,33 @@ bool EvadeDelayEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
             if (!c_owner)
                 return true;
 
-            if (m_owner.GetOwner() && m_owner.GetOwner()->GetTypeId() == TYPEID_UNIT && m_owner.GetOwner()->SelectHostileTarget(false))
+            Unit* petOwner = m_owner.GetOwner();
+
+            if (petOwner && petOwner->GetTypeId() == TYPEID_UNIT && petOwner->SelectHostileTarget(false))
                 return true;
 
             if (c_owner->IsAILocked())
+            {
+                m_owner.addUnitState(UNIT_STAT_DELAYED_EVADE);
                 return false;
+            }
 
             if (c_owner->IsDespawned())
                 return true;
 
-            Pet* p_owner = (Pet*)(&m_owner);
-            if (!p_owner)
-                return true;
+            if (CreatureAI* ai = c_owner->AI())
+                ai->EnterEvadeMode();
 
-            CreatureAI* ai = p_owner->AI();
-            if (ai)
+            if (petOwner && petOwner->GetTypeId() == TYPEID_UNIT)
             {
-                if (PetAI* pai = (PetAI*)ai)
-                    pai->EnterEvadeMode();
-                else
-                    ai->EnterEvadeMode();
-            }
-
-            if (p_owner->GetOwner() && p_owner->GetOwner()->GetTypeId() == TYPEID_UNIT)
-            {
-                if (InstanceData* mapInstance = p_owner->GetInstanceData())
+                if (InstanceData* mapInstance = c_owner->GetInstanceData())
                     mapInstance->OnCreatureEvade(c_owner);
             }
             break;
         }
-        case HIGHGUID_PLAYER:
+        // case HIGHGUID_PLAYER:
         default:
-            sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetObjectGuid().GetString().c_str());
+            sLog.outError("EvadeDelayEvent::Execute try execute for unsupported owner %s!", m_owner.GetGuidStr().c_str());
         break;
     }
     return true;
@@ -577,4 +584,3 @@ void BGQueueRemoveEvent::Abort(uint64 /*e_time*/)
 {
     //do nothing
 }
-

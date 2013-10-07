@@ -99,10 +99,9 @@ class MANGOS_DLL_SPEC ViewPoint
 
     public:
 
-        ViewPoint(WorldObject& object) : m_grid(NULL), m_body(object) 
-        {
-            m_cameras.clear();
-        }
+        ViewPoint(WorldObject& object) : m_grid(NULL), m_body(object), m_cameras(CameraList())
+        {}
+
         ~ViewPoint();
 
         WorldObject* GetBody() { return &m_body;}

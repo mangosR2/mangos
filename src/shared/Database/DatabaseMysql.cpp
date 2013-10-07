@@ -138,9 +138,9 @@ bool MySQLConnection::Initialize(const char *infoString)
         return false;
     }
 
-    DETAIL_LOG("Connected to MySQL database %s@%s:%s/%s", user.c_str(), host.c_str(), port_or_socket.c_str(), database.c_str());
-    sLog.outString("MySQL client library: %s", mysql_get_client_info());
-    sLog.outString("MySQL server ver: %s ", mysql_get_server_info( mMysql));
+    DETAIL_LOG("BOOT: Connected to MySQL database %s@%s:%s/%s", user.c_str(), host.c_str(), port_or_socket.c_str(), database.c_str());
+    sLog.outString("BOOT: MySQL client library: %s", mysql_get_client_info());
+    sLog.outString("BOOT: MySQL server ver: %s ", mysql_get_server_info( mMysql));
 
     /*----------SET AUTOCOMMIT ON---------*/
     // It seems mysql 5.0.x have enabled this feature
@@ -154,9 +154,9 @@ bool MySQLConnection::Initialize(const char *infoString)
     // LEAVE 'AUTOCOMMIT' MODE ALWAYS ENABLED!!!
     // W/O IT EVEN 'SELECT' QUERIES WOULD REQUIRE TO BE WRAPPED INTO 'START TRANSACTION'<>'COMMIT' CLAUSES!!!
     if (!mysql_autocommit(mMysql, 1))
-        DETAIL_LOG("AUTOCOMMIT SUCCESSFULLY SET TO 1");
+        DETAIL_LOG("BOOT: MySQL autocommit succesfully enabled");
     else
-        DETAIL_LOG("AUTOCOMMIT NOT SET TO 1");
+        DETAIL_LOG("BOOT: MySQL cannot enable autocommit");
     /*-------------------------------------*/
 
     // set connection properties to UTF8 to properly handle locales for different
@@ -168,16 +168,16 @@ bool MySQLConnection::Initialize(const char *infoString)
         my_bool my_true = (my_bool)1;
         if (mysql_options(mMysql, MYSQL_OPT_RECONNECT, &my_true))
         {
-            sLog.outDetail("Failed to turn on MYSQL_OPT_RECONNECT.");
+            sLog.outDetail("BOOT: MySQL failed to turn on MYSQL_OPT_RECONNECT.");
         }
         else
         {
-            sLog.outDetail("Successfully turned on MYSQL_OPT_RECONNECT.");
+            sLog.outDetail("BOOT: MySQL successfully turned on MYSQL_OPT_RECONNECT.");
         }
 #else
-        sLog.outDetail("Your mySQL client lib version does not support reconnecting after a timeout.");
-        sLog.outDetail("If this causes you any trouble we advice you to upgrade");
-        sLog.outDetail("your mySQL client libs to at least mySQL 5.0.13 to resolve this problem.");
+        sLog.outDetail("BOOT: MySQL: Your client lib version does not support reconnecting after a timeout.");
+        sLog.outDetail("BOOT: MySQL: If this causes you any trouble we advice you to upgrade");
+        sLog.outDetail("BOOT: MySQL: your client libs to at least mySQL 5.0.13 to resolve this problem.");
 #endif
 
     return true;

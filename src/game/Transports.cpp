@@ -37,6 +37,12 @@ Transport::Transport() : GameObject(), m_transportKit(NULL)
 
 Transport::~Transport()
 {
+    if (IsInWorld())
+    {
+        if (GetMap())
+            GetMap()->Remove((GameObject*)this, true);
+    }
+
     if (m_transportKit)
         delete m_transportKit;
 }
@@ -341,13 +347,13 @@ bool Transport::AddPassenger(WorldObject* passenger, Position const& transportPo
     GetTransportKit()->AddPassenger(passenger, transportPos);
     if (passenger->isType(TYPEMASK_UNIT))
     {
-        GroupPetList m_groupPets = ((Unit*)passenger)->GetPets();
-        if (!m_groupPets.empty())
+        GuidSet const& groupPets = ((Unit*)passenger)->GetPets();
+        if (!groupPets.empty())
         {
-            for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
-                if (Pet* _pet = GetMap()->GetPet(*itr))
-                    if (_pet && _pet->IsInWorld())
-                        GetTransportKit()->AddPassenger(_pet, transportPos);
+            for (GuidSet::const_iterator itr = groupPets.begin(); itr != groupPets.end(); ++itr)
+                if (Pet* pPet = GetMap()->GetPet(*itr))
+                    if (pPet && pPet->IsInWorld())
+                        GetTransportKit()->AddPassenger(pPet, transportPos);
         }
     }
     return true;
@@ -358,13 +364,13 @@ bool Transport::RemovePassenger(WorldObject* passenger)
     GetTransportKit()->RemovePassenger(passenger);
     if (passenger->isType(TYPEMASK_UNIT))
     {
-        GroupPetList m_groupPets = ((Unit*)passenger)->GetPets();
-        if (!m_groupPets.empty())
+        GuidSet groupPetsCopy = ((Unit*)passenger)->GetPets();
+        if (!groupPetsCopy.empty())
         {
-            for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
-                if (Pet* _pet = GetMap()->GetPet(*itr))
-                    if (_pet && _pet->IsInWorld())
-                        GetTransportKit()->RemovePassenger(_pet);
+            for (GuidSet::const_iterator itr = groupPetsCopy.begin(); itr != groupPetsCopy.end(); ++itr)
+                if (Pet* pPet = GetMap()->GetPet(*itr))
+                    if (pPet && pPet->IsInWorld())
+                        GetTransportKit()->RemovePassenger(pPet);
         }
     }
     return true;
@@ -589,7 +595,7 @@ bool Transport::SetPosition(WorldLocation const& loc, bool teleport)
  * This classe contains the code needed for MaNGOS to provide abstract support for GO transporter
  */
 
- 
+
 TransportKit::TransportKit(Transport& base)
     : TransportBase(&base), m_isInitialized(false)
 {
@@ -621,7 +627,7 @@ bool TransportKit::AddPassenger(WorldObject* passenger, Position const& transpor
     // Calculate passengers local position, if not provided
     BoardPassenger(passenger, transportPos.IsEmpty() ? CalculateBoardingPositionOf(passenger->GetPosition()) : transportPos, -1);
 
-    DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES,"TransportKit::AddPassenger %s boarded on %s offset %f %f %f", 
+    DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES,"TransportKit::AddPassenger %s boarded on %s offset %f %f %f",
         passenger->GetObjectGuid().GetString().c_str(), GetBase()->GetObjectGuid().GetString().c_str(), transportPos.getX(), transportPos.getY(), transportPos.getZ());
 
     return true;
@@ -631,7 +637,7 @@ void TransportKit::RemovePassenger(WorldObject* passenger)
 {
     UnBoardPassenger(passenger);
 
-    DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES,"Transport::RemovePassenger %s unboarded from  %s.", 
+    DETAIL_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES,"Transport::RemovePassenger %s unboarded from  %s.",
         passenger->GetObjectGuid().GetString().c_str(), GetBase()->GetObjectGuid().GetString().c_str());
 }
 
@@ -645,4 +651,3 @@ Position TransportKit::CalculateBoardingPositionOf(Position const& pos) const
     l.o = MapManager::NormalizeOrientation(pos.o - GetBase()->GetOrientation());
     return l;
 }
-

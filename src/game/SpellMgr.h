@@ -304,7 +304,7 @@ bool IsSingleTargetSpells(SpellEntry const *spellInfo1, SpellEntry const *spellI
 
 inline bool IsCasterSourceTarget(uint32 target)
 {
-    switch (target )
+    switch (target)
     {
         case TARGET_SELF:
         case TARGET_PET:
@@ -336,22 +336,44 @@ inline bool IsCasterSourceTarget(uint32 target)
     return false;
 }
 
+inline bool IsCasterSourceAuraTarget(uint32 target)
+{
+    switch (target)
+    {
+        // Minimal set. Possible additional targets here.
+        case TARGET_SELF:
+        case TARGET_SINGLE_FRIEND:
+        case TARGET_SINGLE_FRIEND_2:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 inline bool IsSpellWithCasterSourceTargetsOnly(SpellEntry const* spellInfo)
 {
-    for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
+
+    for (int i = 0; i < MAX_EFFECT_INDEX; ++i)
     {
         if (spellInfo->Effect[i] == SPELL_EFFECT_NONE)
             continue;
 
-        uint32 targetA = spellInfo->EffectImplicitTargetA[i];
-        if (targetA && !IsCasterSourceTarget(targetA))
+        // All those spells - selfcasted in 3.3.5a (but not all has  standart targets set)
+        if (spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) && 
+            spellInfo->HasAttribute(SPELL_ATTR_HIDDEN_CLIENTSIDE) &&
+            IsAuraApplyEffect(spellInfo, SpellEffectIndex(i)) &&
+            IsCasterSourceAuraTarget(spellInfo->GetEffectImplicitTargetAByIndex(SpellEffectIndex(i))))
+            continue;
+
+        if (((spellInfo->GetEffectImplicitTargetAByIndex(SpellEffectIndex(i)) != TARGET_NONE) && 
+                !IsCasterSourceTarget(spellInfo->GetEffectImplicitTargetAByIndex(SpellEffectIndex(i)))) ||
+            ((spellInfo->GetEffectImplicitTargetBByIndex(SpellEffectIndex(i)) != TARGET_NONE) && 
+                !IsCasterSourceTarget(spellInfo->GetEffectImplicitTargetBByIndex(SpellEffectIndex(i)))))
             return false;
 
-        uint32 targetB = spellInfo->EffectImplicitTargetB[i];
-        if (targetB && !IsCasterSourceTarget(targetB))
-            return false;
-
-        if(!targetA && !targetB)
+        if (spellInfo->GetEffectImplicitTargetAByIndex(SpellEffectIndex(i)) == TARGET_NONE && 
+            spellInfo->GetEffectImplicitTargetBByIndex(SpellEffectIndex(i)) == TARGET_NONE)
             return false;
     }
     return true;

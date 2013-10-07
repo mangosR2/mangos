@@ -85,7 +85,7 @@ void WorldSession::HandlePetAction(WorldPacket& recv_data)
     }
 
     if (((Creature*)pet)->IsPet() || pet->isCharmed())
-        GetPlayer()->CallForAllControlledUnits(DoPetActionWithHelper(GetPlayer(), flag, spellid, petGuid, targetGuid),CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
+        GetPlayer()->CallForAllControlledUnits(DoPetActionWithHelper(GetPlayer(), flag, spellid, petGuid, targetGuid), CONTROLLED_PET | CONTROLLED_GUARDIANS | CONTROLLED_CHARM);
 }
 
 void WorldSession::HandlePetStopAttack(WorldPacket& recv_data)
@@ -98,13 +98,13 @@ void WorldSession::HandlePetStopAttack(WorldPacket& recv_data)
     Unit* pet = GetPlayer()->GetMap()->GetUnit(petGuid);    // pet or controlled creature/player
     if (!pet)
     {
-        sLog.outError("%s doesn't exist.", petGuid.GetString().c_str());
+        sLog.outError("WorldSession::HandlePetStopAttack: %s doesn't exist.", petGuid.GetString().c_str());
         return;
     }
 
     if (GetPlayer()->GetObjectGuid() != pet->GetCharmerOrOwnerGuid())
     {
-        sLog.outError("HandlePetStopAttack: %s isn't charm/pet of %s.", petGuid.GetString().c_str(), GetPlayer()->GetGuidStr().c_str());
+        sLog.outError("WorldSession::HandlePetStopAttack: %s isn't charm/pet of %s.", petGuid.GetString().c_str(), GetPlayer()->GetGuidStr().c_str());
         return;
     }
 
@@ -114,12 +114,14 @@ void WorldSession::HandlePetStopAttack(WorldPacket& recv_data)
         return;
     }
 
-    GroupPetList m_groupPets = GetPlayer()->GetPets();
-    if (!m_groupPets.empty())
+    GuidSet const& groupPets = GetPlayer()->GetPets();
+    if (!groupPets.empty())
     {
-        for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
-             if (Pet* _pet = GetPlayer()->GetMap()->GetPet(*itr))
-                 _pet->AttackStop();
+        for (GuidSet::const_iterator itr = groupPets.begin(); itr != groupPets.end(); ++itr)
+        {
+            if (Pet* pPet = GetPlayer()->GetMap()->GetPet(*itr))
+                pPet->AttackStop();
+        }
     }
     else
         pet->AttackStop();
@@ -195,7 +197,6 @@ void WorldSession::HandlePetSetAction(WorldPacket& recv_data)
         return;
     }
 
-
     CharmInfo* charmInfo = pet->GetCharmInfo();
     if (!charmInfo)
     {
@@ -269,40 +270,32 @@ void WorldSession::HandlePetSetAction(WorldPacket& recv_data)
         uint32 spell_id = UNIT_ACTION_BUTTON_ACTION(data[i]);
         uint8 act_state = UNIT_ACTION_BUTTON_TYPE(data[i]);
 
-        DETAIL_LOG( "Player %s has changed pet spell action. Position: %u, Spell: %u, State: 0x%X", _player->GetName(), position[i], spell_id, uint32(act_state));
+        DETAIL_LOG("Player %s has changed pet spell action. Position: %u, Spell: %u, State: 0x%X", _player->GetName(), position[i], spell_id, uint32(act_state));
 
         // if it's act for spell (en/disable/cast) and there is a spell given (0 = remove spell) which pet doesn't know, don't add
         if ((act_state == ACT_ENABLED || act_state == ACT_DISABLED || act_state == ACT_PASSIVE) && spell_id && ((Pet*)pet)->HasSpell(spell_id))
         {
-            GroupPetList const* m_groupPets = &_player->GetPets();
-            // sign for autocast
-            if (act_state == ACT_ENABLED && spell_id)
+            // sign for autocast on/off
+            if (act_state == ACT_ENABLED || act_state == ACT_DISABLED)
             {
+                bool enabled = act_state == ACT_ENABLED;
+
                 if (pet->isCharmed())
-                    charmInfo->ToggleCreatureAutocast(spell_id, true);
-                else if (!m_groupPets->empty())
+                    charmInfo->ToggleCreatureAutocast(spell_id, enabled);
+                else
                 {
-                    for (GroupPetList::const_iterator itr = m_groupPets->begin(); itr != m_groupPets->end(); ++itr)
-                        if (Pet* _pet = GetPlayer()->GetMap()->GetPet(*itr))
-                            if ( _pet->IsInWorld())
+                    GuidSet const& groupPets = _player->GetPets();
+                    if (!groupPets.empty())
+                    {
+                        for (GuidSet::const_iterator itr = groupPets.begin(); itr != groupPets.end(); ++itr)
+                        {
+                            if (Pet* pPet = GetPlayer()->GetMap()->GetPet(*itr))
                             {
-                                _pet->ToggleAutocast(spell_id, true);
+                                if (pPet->IsInWorld())
+                                    pPet->ToggleAutocast(spell_id, enabled);
                             }
-                }
-            }
-            // sign for no/turn off autocast
-            else if (act_state == ACT_DISABLED && spell_id)
-            {
-                if (pet->isCharmed())
-                    charmInfo->ToggleCreatureAutocast(spell_id, false);
-                else if (!m_groupPets->empty())
-                {
-                    for (GroupPetList::const_iterator itr = m_groupPets->begin(); itr != m_groupPets->end(); ++itr)
-                        if (Pet* _pet = GetPlayer()->GetMap()->GetPet(*itr))
-                            if ( _pet->IsInWorld())
-                            {
-                                _pet->ToggleAutocast(spell_id, false);
-                            }
+                        }
+                    }
                 }
             }
             charmInfo->SetActionBar(position[i], spell_id, ActiveStates(act_state));
@@ -403,7 +396,6 @@ void WorldSession::HandlePetAbandon(WorldPacket& recv_data)
                 pet->ModifyPower(POWER_HAPPINESS, -50000);
 
             ((Pet*)pet)->Unsummon(PET_SAVE_AS_DELETED, GetPlayer());
-
         }
         else if (pet->GetObjectGuid() == GetPlayer()->GetCharmGuid())
         {
@@ -440,19 +432,16 @@ void WorldSession::HandlePetSpellAutocastOpcode(WorldPacket& recvPacket)
     }
 
     if (pet->isCharmed())
-    {
-                                                            // state can be used as boolean
-        pet->GetCharmInfo()->ToggleCreatureAutocast(spellid, state);
-    }
+        pet->GetCharmInfo()->ToggleCreatureAutocast(spellid, state); // state can be used as boolean
     else
     {
-        GroupPetList m_groupPets = _player->GetPets();
-        if (!m_groupPets.empty())
+        GuidSet const& groupPets = _player->GetPets();
+        if (!groupPets.empty())
         {
-            for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end(); ++itr)
-                if (Pet* _pet = _player->GetMap()->GetPet(*itr))
-                    if ( _pet->IsInWorld())
-                        _pet->ToggleAutocast(spellid, state);
+            for (GuidSet::const_iterator itr = groupPets.begin(); itr != groupPets.end(); ++itr)
+                if (Pet* pPet = _player->GetMap()->GetPet(*itr))
+                    if (pPet->IsInWorld())
+                        pPet->ToggleAutocast(spellid, state);
         }
     }
 
@@ -479,6 +468,7 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
         sLog.outError("HandlePetCastSpellOpcode: %s isn't pet of %s .", guid.GetString().c_str(), GetPlayer()->GetGuidStr().c_str());
         return;
     }
+
     SpellCastTargets targets;
     recvPacket >> targets.ReadForCaster(pet);
 
@@ -507,7 +497,7 @@ void WorldSession::HandlePetCastSpellOpcode(WorldPacket& recvPacket)
         pet->InterruptNonMeleeSpells(false);
 
     if (pet->IsPet() || pet->isCharmed())
-        GetPlayer()->CallForAllControlledUnits(DoPetCastWithHelper(GetPlayer(), cast_count, &targets, spellInfo ),CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_CHARM);
+        GetPlayer()->CallForAllControlledUnits(DoPetCastWithHelper(GetPlayer(), cast_count, &targets, spellInfo),CONTROLLED_PET | CONTROLLED_GUARDIANS | CONTROLLED_CHARM);
 }
 
 void WorldSession::SendPetNameInvalid(uint32 error, const std::string& name, DeclinedName* declinedName)

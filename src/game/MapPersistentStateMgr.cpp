@@ -22,7 +22,6 @@
 #include "Player.h"
 #include "GridNotifiers.h"
 #include "Log.h"
-#include "GridStates.h"
 #include "CellImpl.h"
 #include "Map.h"
 #include "MapManager.h"
@@ -45,7 +44,7 @@ static uint32 resetEventTypeDelay[MAX_RESET_EVENT_TYPE] = { 0, 3600, 900, 300, 6
 //== MapPersistentState functions ==========================
 MapPersistentState::MapPersistentState(uint16 MapId, uint32 InstanceId, Difficulty difficulty)
 : m_instanceid(InstanceId), m_mapid(MapId),
-  m_difficulty(difficulty), m_usedByMap(NULL)
+  m_difficulty(difficulty), m_usedByMap(NULL), m_needRemove(false)
 {
 }
 
@@ -63,7 +62,7 @@ bool MapPersistentState::UnloadIfEmpty()
 {
     if (CanBeUnload())
     {
-        sMapPersistentStateMgr.RemovePersistentState(GetMapId(), GetInstanceId());
+        m_needRemove = true;
         return false;
     }
     else
@@ -216,16 +215,40 @@ DungeonPersistentState::DungeonPersistentState( uint16 MapId, uint32 InstanceId,
 
 DungeonPersistentState::~DungeonPersistentState()
 {
-    while(!m_playerList.empty())
+    while (!m_playerList.empty())
     {
-        Player *player = *(m_playerList.begin());
-        player->UnbindInstance(GetMapId(), GetDifficulty(), true);
+        GuidSet::iterator itr = m_playerList.begin();
+        if (Player* player = ObjectAccessor::FindPlayer(*itr))
+            player->UnbindInstance(GetMapId(), GetDifficulty(), true);
+        else
+            m_playerList.erase(itr);
     }
-    while(!m_groupList.empty())
+    while (!m_groupList.empty())
     {
-        Group *group = *(m_groupList.begin());
-        group->UnbindInstance(GetMapId(), GetDifficulty(), true);
+        GuidSet::iterator itr = m_groupList.begin();
+        if (Group* group = sObjectMgr.GetGroup(*itr))
+            group->UnbindInstance(GetMapId(), GetDifficulty(), true);
+        else
+            m_groupList.erase(itr);
     }
+}
+
+void DungeonPersistentState::AddToUnbindList(ObjectGuid const& guid)
+{
+    if (guid.IsPlayer())
+        m_playerList.insert(guid);
+    else if (guid.IsGroup())
+        m_groupList.insert(guid);
+}
+
+void DungeonPersistentState::RemoveFromUnbindList(ObjectGuid const& guid)
+{
+    if (guid.IsPlayer())
+        m_playerList.erase(guid);
+    else if (guid.IsGroup())
+        m_groupList.erase(guid);
+
+    UnloadIfEmpty();
 }
 
 bool DungeonPersistentState::CanBeUnload() const
@@ -1226,4 +1249,27 @@ void MapPersistentStateManager::LoadGameobjectRespawnTimes()
 
     sLog.outString(">> Loaded %u gameobject respawn times", count);
     sLog.outString();
+}
+
+void MapPersistentStateManager::Update()
+{
+    m_Scheduler.Update();
+
+    MapIDSet removedSet;
+
+    // instance cleanups
+    for (PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.begin(); itr != m_instanceSaveByInstanceId.end(); ++itr)
+    {
+        if (itr->second && itr->second->IsRequiresRemove())
+            removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
+    }
+    // map cleanups
+    for (PersistentStateMap::iterator itr = m_instanceSaveByMapId.begin(); itr != m_instanceSaveByMapId.end(); ++itr)
+    {
+        if (itr->second && itr->second->IsRequiresRemove())
+            removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
+    }
+
+    for (MapIDSet::const_iterator itr = removedSet.begin(); itr != removedSet.end(); ++itr)
+        RemovePersistentState(itr->GetId(), itr->GetInstanceId());
 }

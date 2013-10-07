@@ -172,8 +172,6 @@ enum UnitBytes1_Flags
     UNIT_BYTE1_FLAG_ALL          = 0xFF
 };
 
-#define UNIT_BYTE1_FLAG_UNK_2 UNIT_BYTE1_FLAG_HOVER
-
 // byte value (UNIT_FIELD_BYTES_2,0)
 enum SheathState
 {
@@ -416,7 +414,7 @@ enum UnitState
     UNIT_STAT_NO_COMBAT_MOVEMENT    = 0x01000000,           // Combat Movement for MoveChase stopped
     UNIT_STAT_RUNNING               = 0x02000000,           // SetRun for waypoints and such
     UNIT_STAT_WAYPOINT_PAUSED       = 0x04000000,           // Waypoint-Movement paused genericly (ie by script)
-
+    UNIT_STAT_DELAYED_EVADE         = 0x08000000,           // Creature in delayed evade event
     UNIT_STAT_IGNORE_PATHFINDING    = 0x10000000,           // do not use pathfinding in any MovementGenerator
 
     // masks (only for check)
@@ -742,8 +740,8 @@ class MovementInfo
             t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
 
         // Read/Write methods
-        void Read(ByteBuffer &data);
-        void Write(ByteBuffer &data) const;
+        void Read(ByteBuffer& data);
+        void Write(ByteBuffer& data) const;
 
         // Movement flags manipulations
         void AddMovementFlag(MovementFlags f) { moveFlags |= f; }
@@ -766,6 +764,7 @@ class MovementInfo
         }
         void ClearTransportData()
         {
+            moveFlags2 = MOVEFLAG2_NONE;
             t_guid = ObjectGuid();
             t_pos.x = 0.0f;
             t_pos.y = 0.0f;
@@ -774,15 +773,18 @@ class MovementInfo
             t_time = 0;
             t_seat = -1;
             t_seatInfo = NULL;
-            moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
         Position const* GetTransportPos() const { return &t_pos; }
         int8 GetTransportSeat() const { return t_seat; }
+
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
         uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
+
+        uint32 GetTime() const { return time; }
         uint32 GetTransportTime() const { return t_time; }
         uint32 GetFallTime() const { return fallTime; }
+
         void ChangeOrientation(float o) { pos.o = o; }
         void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
         void ChangeTransportPosition(float x, float y, float z, float o) { t_pos.x = x; t_pos.y = y; t_pos.z = z; t_pos.o = o; }
@@ -797,19 +799,19 @@ class MovementInfo
         struct JumpInfo
         {
             JumpInfo() : velocity(0.f), sinAngle(0.f), cosAngle(0.f), xyspeed(0.f) {}
-            float   velocity, sinAngle, cosAngle, xyspeed;
+            float velocity, sinAngle, cosAngle, xyspeed;
         };
 
         JumpInfo const& GetJumpInfo() const { return jump; }
 
-        MovementInfo& operator=(const MovementInfo &targetInfo)
+        MovementInfo& operator = (const MovementInfo& targetInfo)
         {
             uint32 moveFlagsTmp = targetInfo.moveFlags;
             if (moveFlags & MOVEFLAG_ONTRANSPORT)
                 moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
 
             moveFlags  = moveFlagsTmp;
-            splineElevation     = targetInfo.splineElevation;
+            splineElevation = targetInfo.splineElevation;
             time       = targetInfo.time;
             pos        = targetInfo.pos;
             s_pitch    = targetInfo.s_pitch;
@@ -1276,9 +1278,6 @@ struct SpellCooldown
 
 typedef std::map<uint32, SpellCooldown> SpellCooldowns;
 
-typedef GuidSet GuardianPetList;
-typedef GuidSet GroupPetList;
-
 // delay time next attack to prevent client attack animation problems
 #define ATTACK_DISPLAY_DELAY 200
 #define MAX_PLAYER_STEALTH_DETECT_RANGE 45.0f               // max distance for detection targets by player
@@ -1356,7 +1355,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool CanReachWithMeleeAttack(Unit* pVictim, float flat_mod = 0.0f) const;
         uint32 m_extraAttacks;
 
-        bool const IsInCombat() const { return GetMap() ? bool(GetMap()->GetAttackersFor(GetObjectGuid()).size() > 0) : false; }
+        bool IsInCombat() const { return GetMap() ? GetMap()->IsInCombat(GetObjectGuid()) : false; }
         Unit* getAttackerForHelper();                       // If someone wants to help, who to give them
         bool Attack(Unit *victim, bool meleeAttack);
         void AttackedBy(Unit* attacker);
@@ -1448,7 +1447,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool IsFFAPvP() const { return HasByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP); }
         void SetFFAPvP(bool state);
         uint32 GetCreatureType() const;
-        uint32 GetCreatureTypeMask() const
+        virtual uint32 GetCreatureTypeMask() const
         {
             uint32 creatureType = GetCreatureType();
             return (creatureType >= 1) ? (1 << (creatureType - 1)) : 0;
@@ -1723,19 +1722,19 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         void AddPetToList(Pet* pet);
         void RemovePetFromList(Pet* pet);
-        GroupPetList const& GetPets() { return m_groupPets; }
+        GuidSet const& GetPets() const { return m_groupPets; }
 
         void AddGuardian(Pet* pet);
         void RemoveGuardian(Pet* pet);
         void RemoveGuardians();
         Pet* FindGuardianWithEntry(uint32 entry);
-        GuardianPetList const& GetGuardians() const { return m_guardianPets; }
+        GuidSet const& GetGuardians() const { return m_guardianPets; }
         Pet* GetProtectorPet();                             // expected single case in guardian list
 
         bool isCharmed() const { return !GetCharmerGuid().IsEmpty(); }
 
         CharmInfo* GetCharmInfo() { return m_charmInfo; }
-        uint8  GetCharmState(CharmStateType type) const { return m_charmInfo ? m_charmInfo->GetState(type) : 0; };
+        uint8 GetCharmState(CharmStateType type) const { return m_charmInfo ? m_charmInfo->GetState(type) : 0; }
         CharmInfo* InitCharmInfo(Unit* charm);
 
         void SendCharmState();
@@ -2030,7 +2029,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         DynamicObject* GetDynObject(uint32 spellId);
         void AddDynObject(DynamicObject* dynObj);
         void RemoveDynObject(uint32 spellid);
-        void RemoveDynObjectWithGUID(ObjectGuid guid) { m_dynObjGUIDs.remove(guid); }
+        void RemoveDynObjectWithGuid(ObjectGuid const& guid) { m_dynObjGuids.remove(guid); }
         void RemoveAllDynObjects();
 
         GameObject* GetGameObject(uint32 spellId) const;
@@ -2283,7 +2282,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         // Store Auras for which the target must be tracked
         TrackedAuraTargetMap m_trackedAuraTargets[MAX_TRACKED_AURA_TYPES];
 
-        GuidList m_dynObjGUIDs;
+        GuidList m_dynObjGuids;
 
         typedef std::list<GameObject*> GameObjectList;
         GameObjectList m_gameObj;
@@ -2360,8 +2359,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         uint32 m_originalFaction;
 
-        GroupPetList m_groupPets;
-
+        GuidSet m_groupPets;
         GuidSet m_guardianPets;
 
         ObjectGuid m_TotemSlot[MAX_TOTEM_SLOT];
@@ -2399,8 +2397,8 @@ void Unit::CallForAllControlledUnits(Func const& func, uint32 controlledMask)
     {
         if (!m_groupPets.empty())
         {
-            GroupPetList m_groupPetsTmp = GetPets();  // Original list may be modified in this function
-            for (GroupPetList::const_iterator itr = m_groupPetsTmp.begin(); itr != m_groupPetsTmp.end(); ++itr)
+            GuidSet groupPetsCopy = GetPets();  // Original list may be modified in this function
+            for (GuidSet::const_iterator itr = groupPetsCopy.begin(); itr != groupPetsCopy.end(); ++itr)
             {
                 if (Pet* pet = _GetPet(*itr))
                     func(pet);
@@ -2409,8 +2407,10 @@ void Unit::CallForAllControlledUnits(Func const& func, uint32 controlledMask)
     }
 
     if (controlledMask & CONTROLLED_MINIPET)
+    {
         if (Unit* mini = GetMiniPet())
             func(mini);
+    }
 
     if (controlledMask & CONTROLLED_GUARDIANS)
     {
@@ -2419,32 +2419,40 @@ void Unit::CallForAllControlledUnits(Func const& func, uint32 controlledMask)
                 func(guardian);
     }
 
+    if (controlledMask & CONTROLLED_CHARM)
+    {
+        if (Unit* charm = GetCharm())
+            func(charm);
+    }
+
     if (controlledMask & CONTROLLED_TOTEMS)
     {
         for (int i = 0; i < MAX_TOTEM_SLOT; ++i)
             if (Unit *totem = _GetTotem(TotemSlot(i)))
                 func(totem);
     }
-
-    if (controlledMask & CONTROLLED_CHARM)
-        if (Unit* charm = GetCharm())
-            func(charm);
-
 }
 
 template<typename Func>
 bool Unit::CheckAllControlledUnits(Func const& func, uint32 controlledMask) const
 {
     if (controlledMask & CONTROLLED_PET)
-        for (GroupPetList::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end();)
-           if (Pet const* pet = _GetPet(*(itr++)))
-               if (func(pet))
-                   return true;
+    {
+        if (!m_groupPets.empty())
+        {
+            for (GuidSet::const_iterator itr = m_groupPets.begin(); itr != m_groupPets.end();)
+                if (Pet const* pet = _GetPet(*(itr++)))
+                    if (func(pet))
+                        return true;
+        }
+    }
 
     if (controlledMask & CONTROLLED_MINIPET)
+    {
         if (Unit const* mini = GetMiniPet())
             if (func(mini))
                 return true;
+    }
 
     if (controlledMask & CONTROLLED_GUARDIANS)
     {
@@ -2452,7 +2460,13 @@ bool Unit::CheckAllControlledUnits(Func const& func, uint32 controlledMask) cons
             if (Pet const* guardian = _GetPet(*(itr++)))
                 if (func(guardian))
                     return true;
+    }
 
+    if (controlledMask & CONTROLLED_CHARM)
+    {
+        if (Unit const* charm = GetCharm())
+            if (func(charm))
+                return true;
     }
 
     if (controlledMask & CONTROLLED_TOTEMS)
@@ -2462,11 +2476,6 @@ bool Unit::CheckAllControlledUnits(Func const& func, uint32 controlledMask) cons
                 if (func(totem))
                     return true;
     }
-
-    if (controlledMask & CONTROLLED_CHARM)
-        if (Unit const* charm = GetCharm())
-            if (func(charm))
-                return true;
 
     return false;
 }

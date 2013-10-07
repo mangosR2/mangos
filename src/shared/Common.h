@@ -20,7 +20,7 @@
 #define MANGOSSERVER_COMMON_H
 
 // config.h needs to be included 1st
-#ifdef HAVE_CONFIG_H
+#ifdef MANGOS_CONFIG_H
 #ifdef PACKAGE
 #undef PACKAGE
 #endif //PACKAGE
@@ -42,7 +42,7 @@
 #ifdef VERSION
 #undef VERSION
 #endif //VERSION
-# include "config.h"
+# include "../../config.h"
 #undef PACKAGE
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME
@@ -50,7 +50,7 @@
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#endif //HAVE_CONFIG_H
+#endif //MANGOS_CONFIG_H
 
 #include "Platform/Define.h"
 

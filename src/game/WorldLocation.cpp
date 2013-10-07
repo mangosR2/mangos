@@ -165,3 +165,19 @@ float WorldLocation::GetDistance(Location const& loc) const
 {
     return ((Location)*this).GetDistance(loc);
 };
+
+ByteBuffer& operator << (ByteBuffer& buf, Location const& loc)
+{
+    buf << loc.getX();
+    buf << loc.getY();
+    buf << loc.getZ();
+    return buf;
+}
+
+ByteBuffer& operator >> (ByteBuffer& buf, Location& loc)
+{
+    loc.x = buf.read<float>();
+    loc.y = buf.read<float>();
+    loc.z = buf.read<float>();
+    return buf;
+}

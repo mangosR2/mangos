@@ -41,6 +41,7 @@ namespace MaNGOS
         public:
 
             static T& Instance();
+            virtual void Update() {};
 
         protected:
 

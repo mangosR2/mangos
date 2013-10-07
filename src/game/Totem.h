@@ -58,6 +58,8 @@ class Totem : public Creature
 
         bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
 
+        virtual uint32 GetCreatureTypeMask() const override;
+
     protected:
         TotemType m_type;
         uint32 m_duration;

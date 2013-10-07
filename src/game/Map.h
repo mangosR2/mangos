@@ -193,15 +193,17 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool GetUnloadLock(const GridPair &p) const { return getNGrid(p.x_coord, p.y_coord)->getUnloadLock(); }
         void SetUnloadLock(const GridPair &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadExplicitLock(on); }
         void LoadGrid(const Cell& cell, bool no_unload = false);
-        bool UnloadGrid(const uint32 &x, const uint32 &y, bool pForce);
+        bool UnloadGrid(NGridType& grid, bool pForce);
+        bool UpdateGridState(NGridType& grid, GridInfo& gridInfo, uint32 const& t_diff);
+
         virtual void UnloadAll(bool pForce);
 
-        void ResetGridExpiry(NGridType &grid, float factor = 1) const
+        void ResetGridExpiry(NGridType& grid, float factor = 1.0f) const
         {
-            grid.ResetTimeTracker((time_t)((float)i_gridExpiry*factor));
+            grid.ResetTimeTracker((time_t)((float)GetGridExpiry() * factor));
         }
 
-        time_t GetGridExpiry(void) const { return i_gridExpiry; }
+        time_t GetGridExpiry() const;
         uint32 GetId(void) const { return i_id; }
 
         // some calls like isInWater should not use vmaps due to processor power
@@ -236,6 +238,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool IsBattleGround() const { return i_mapEntry && i_mapEntry->IsBattleGround(); }
         bool IsBattleArena() const { return i_mapEntry && i_mapEntry->IsBattleArena(); }
         bool IsBattleGroundOrArena() const { return i_mapEntry && i_mapEntry->IsBattleGroundOrArena(); }
+        bool IsContinent() const { return i_mapEntry && i_mapEntry->IsContinent(); }
 
         // can't be NULL for loaded map
         MapPersistentState* GetPersistentState() const;
@@ -270,12 +273,12 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams = SCRIPT_EXEC_PARAM_NONE);
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
 
-        typedef UNORDERED_SET<WorldObject*> ActiveNonPlayers;
         // must called with AddToWorld
         void AddToActive(WorldObject* obj);
         // must called with RemoveFromWorld
         void RemoveFromActive(WorldObject* obj);
-        ActiveNonPlayers const& GetActiveObjects() { return m_activeNonPlayers; };
+        GuidSet const& GetActiveObjects() const { return m_activeObjectsSafeCopy; };
+        void MakeActiveObjectsSafeCopy();
 
 
         Player* GetPlayer(ObjectGuid const& guid, bool globalSearch = false);
@@ -330,6 +333,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         GuidSet& GetAttackersFor(ObjectGuid const& targetGuid);
         void CreateAttackersStorageFor(ObjectGuid const& targetGuid);
         void RemoveAttackersStorageFor(ObjectGuid const& targetGuid);
+        bool IsInCombat(ObjectGuid const& targetGuid) const;
 
         // multithread locking
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT) { return i_lock[_locktype]; }
@@ -366,8 +370,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
     private:
         void LoadMapAndVMap(int gx, int gy);
 
-        void SetTimer(uint32 t) { i_gridExpiry = t < MIN_GRID_DELAY ? MIN_GRID_DELAY : t; }
-
         void SendInitSelf( Player * player );
 
         void SendInitActiveObjects(Player* player);
@@ -400,7 +402,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void setUnitCell(Creature* obj);
 
         bool IsGridObjectDataLoaded(NGridType const* grid) const;
-        void SetGridObjectDataLoaded(bool pLoaded, NGridType* grid);
+        void SetGridObjectDataLoaded(bool pLoaded, NGridType& grid);
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
         void ScriptsProcess();
@@ -422,12 +424,11 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         MapRefManager m_mapRefManager;
         MapRefManager::iterator m_mapRefIter;
 
-        ActiveNonPlayers m_activeNonPlayers;
-        ActiveNonPlayers::iterator m_activeNonPlayersIter;
+        GuidSet m_activeObjects;
+        GuidSet m_activeObjectsSafeCopy;
         MapStoredObjectTypesContainer m_objectsStore;
 
     private:
-        time_t i_gridExpiry;
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 

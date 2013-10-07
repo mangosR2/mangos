@@ -205,8 +205,7 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 # endif
 #endif
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
+#ifdef MANGOS_CONFIG_H
 # if defined(WITH_OPENSSL)
 #  ifndef HAVE_OPENSSL_SSL_H
 #   undef WITH_OPENSSL

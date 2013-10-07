@@ -31,10 +31,11 @@ struct WorldLocation;
 
 enum WorldObjectEventType
 {
-    WORLDOBJECT_EVENT_TYPE_COMMON         = 0,
-    WORLDOBJECT_EVENT_TYPE_UNIQUE         = 1,
-    WORLDOBJECT_EVENT_TYPE_REPEATABLE     = 2,
-    WORLDOBJECT_EVENT_TYPE_DEATH          = 3,
+    WORLDOBJECT_EVENT_TYPE_COMMON,
+    WORLDOBJECT_EVENT_TYPE_UNIQUE,
+    WORLDOBJECT_EVENT_TYPE_EVADE_UNIQUE,
+    WORLDOBJECT_EVENT_TYPE_REPEATABLE,
+    WORLDOBJECT_EVENT_TYPE_DEATH,
     WORLDOBJECT_EVENT_TYPE_MAX
 };
 
@@ -150,7 +151,7 @@ class AttackResumeEvent : public BasicEvent
 class EvadeDelayEvent : public BasicEvent
 {
     public:
-        EvadeDelayEvent(Unit& owner, bool force = false) : BasicEvent(WORLDOBJECT_EVENT_TYPE_UNIQUE), m_owner(owner), b_force(force) {};
+        EvadeDelayEvent(Unit& owner, bool force = false);
         bool Execute(uint64 e_time, uint32 p_time);
     private:
         EvadeDelayEvent();

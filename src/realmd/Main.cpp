@@ -31,6 +31,7 @@
 #include "revision.h"
 #include "revision_nr.h"
 #include "revision_sql.h"
+#include "revision_R2.h"
 #include "Util.h"
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
@@ -45,8 +46,8 @@
 #ifdef WIN32
 #include "ServiceWin32.h"
 char serviceName[] = "realmd";
-char serviceLongName[] = "MaNGOS realmd service";
-char serviceDescription[] = "Massive Network Game Object Server";
+char serviceLongName[] = "MangosR2 realmd service";
+char serviceDescription[] = "Massive Network Game Object R2 Server";
 /*
  * -1 - not in service mode
  *  0 - stopped
@@ -166,7 +167,7 @@ extern int main(int argc, char **argv)
 
     if (!sConfig.SetSource(cfg_file))
     {
-        sLog.outError("Could not find configuration file %s.", cfg_file);
+        sLog.outError("BOOT: Could not find configuration file %s.", cfg_file);
         Log::WaitBeforeContinueIfNeed();
         return 1;
     }
@@ -185,8 +186,8 @@ extern int main(int argc, char **argv)
 
     sLog.Initialize();
 
-    sLog.outString( "%s [realm-daemon]", _FULLVERSION(REVISION_NR) );
-    sLog.outString( "<Ctrl-C> to stop.\n" );
+    sLog.outString("BOOT: %s [realm-daemon]", _FULLVERSION(REVISION_R2));
+    sLog.outString("BOOT: Press <Ctrl-C> to stop." );
     sLog.outString("Using configuration file %s.", cfg_file);
 
     ///- Check the version of the configuration file
@@ -201,14 +202,14 @@ extern int main(int argc, char **argv)
         Log::WaitBeforeContinueIfNeed();
     }
 
-    sLog.outString("Using %s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    sLog.outString("BOOT: Using %s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
     if (SSLeay() < 0x009080bfL )
     {
-        DETAIL_LOG("WARNING: Outdated version of OpenSSL lib. Logins to server may not work!");
-        DETAIL_LOG("WARNING: Minimal required version [OpenSSL 0.9.8k]");
+        DETAIL_LOG("BOOT: WARNING: Outdated version of OpenSSL lib. Logins to server may not work!");
+        DETAIL_LOG("BOOT: WARNING: Minimal required version [OpenSSL 0.9.8k]");
     }
 
-    sLog.outString("Using ACE: %s", ACE_VERSION);
+    sLog.outString("BOOT: Using ACE %s", ACE_VERSION);
 
     // Manually delete this pointers, because memory allocating maked with overloaded mem manager
     // (function new) removed with 'delete' from internal (standard memman) ace library.
@@ -225,7 +226,7 @@ extern int main(int argc, char **argv)
     aceReactor = new ACE_Reactor(aceReactorImp, false);
     ACE_Reactor::instance(aceReactor, false);
 
-    sLog.outBasic("Max allowed open files is %d", ACE::max_handles());
+    sLog.outBasic("BOOT: Max allowed open files is %d", ACE::max_handles());
 
     /// realmd PID file creation
     std::string pidfile = sConfig.GetStringDefault("PidFile", "");
@@ -234,12 +235,12 @@ extern int main(int argc, char **argv)
         uint32 pid = CreatePIDFile(pidfile);
         if( !pid )
         {
-            sLog.outError( "Cannot create PID file %s.\n", pidfile.c_str() );
+            sLog.outError("BOOT: Cannot create PID file %s.\n", pidfile.c_str() );
             Log::WaitBeforeContinueIfNeed();
             return 1;
         }
 
-        sLog.outString( "Daemon PID: %u\n", pid );
+        sLog.outString("BOOT: Daemon PID: %u", pid );
     }
 
     ///- Initialize the database connection
@@ -253,7 +254,7 @@ extern int main(int argc, char **argv)
     sRealmList.Initialize(sConfig.GetIntDefault("RealmsStateUpdateDelay", 20));
     if (sRealmList.size() == 0)
     {
-        sLog.outError("No valid realms specified.");
+        sLog.outError("BOOT: No valid realms specified.");
         Log::WaitBeforeContinueIfNeed();
         return 1;
     }
@@ -275,7 +276,7 @@ extern int main(int argc, char **argv)
 
     if(acceptor.open(bind_addr, ACE_Reactor::instance(), ACE_NONBLOCK) == -1)
     {
-        sLog.outError("MaNGOS realmd can not bind to %s:%d", bind_ip.c_str(), rmport);
+        sLog.outError("BOOT:  realmd can not bind to %s:%d", bind_ip.c_str(), rmport);
         Log::WaitBeforeContinueIfNeed();
         return 1;
     }
@@ -300,14 +301,14 @@ extern int main(int argc, char **argv)
 
                 if(!curAff )
                 {
-                    sLog.outError("Processors marked in UseProcessors bitmask (hex) %x not accessible for realmd. Accessible processors bitmask (hex): %x",Aff,appAff);
+                    sLog.outError("BOOT: Processors marked in UseProcessors bitmask (hex) %x not accessible for realmd. Accessible processors bitmask (hex): %x",Aff,appAff);
                 }
                 else
                 {
                     if(SetProcessAffinityMask(hProcess,curAff))
-                        sLog.outString("Using processors (bitmask, hex): %x", curAff);
+                        sLog.outString("BOOT: Using processors (bitmask, hex): %x", curAff);
                     else
-                        sLog.outError("Can't set used processors (hex): %x", curAff);
+                        sLog.outError("BOOT: Can't set used processors (hex): %x", curAff);
                 }
             }
             sLog.outString();
@@ -318,9 +319,9 @@ extern int main(int argc, char **argv)
         if(Prio)
         {
             if(SetPriorityClass(hProcess,HIGH_PRIORITY_CLASS))
-                sLog.outString("realmd process priority class set to HIGH");
+                sLog.outString("BOOT: realmd process priority class set to HIGH");
             else
-                sLog.outError("Can't set realmd process priority class.");
+                sLog.outError("BOOT: Can't set realmd process priority class.");
             sLog.outString();
         }
     }
@@ -348,7 +349,7 @@ extern int main(int argc, char **argv)
         if( (++loopCounter) == numLoops )
         {
             loopCounter = 0;
-            DETAIL_LOG("Ping MySQL to keep connection alive");
+            DETAIL_LOG("BOOT: Ping MySQL to keep connection alive");
             LoginDatabase.Ping();
         }
 #ifdef WIN32
@@ -366,7 +367,7 @@ extern int main(int argc, char **argv)
     ///- Remove signal handling before leaving
     UnhookSignals();
 
-    sLog.outString( "Halting process..." );
+    sLog.outString("BOOT: Halting process..." );
     return 0;
 }
 
@@ -396,15 +397,15 @@ bool StartDB()
     std::string dbstring = sConfig.GetStringDefault("LoginDatabaseInfo", "");
     if(dbstring.empty())
     {
-        sLog.outError("Database not specified");
+        sLog.outError("BOOT: Database not specified");
         return false;
     }
 
-    sLog.outString("Login Database total connections: %i", 1 + 1);
+    sLog.outString("BOOT: Login Database total connections: %i", 1 + 1);
 
     if(!LoginDatabase.Initialize(dbstring.c_str()))
     {
-        sLog.outError("Cannot connect to database");
+        sLog.outError("BOOT: Cannot connect to database");
         return false;
     }
 

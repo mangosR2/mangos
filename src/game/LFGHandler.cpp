@@ -1013,7 +1013,7 @@ void WorldSession::SendLfgBootPlayer()
 
     if (!pGroup)
     {
-        sLog.outError("ERROR:SendLfgBootPlayer %u failed - player not in group!", GetPlayer()->GetObjectGuid().GetCounter());
+        sLog.outError("ERROR:SendLfgBootPlayer %s failed - player not in group!", GetPlayer()->GetObjectGuid().GetString().c_str());
         return;
     }
 
@@ -1022,11 +1022,18 @@ void WorldSession::SendLfgBootPlayer()
 
     if (votes->empty())
     {
-        sLog.outError("ERROR:SendLfgBootPlayer %u failed - votes map is empty!", GetPlayer()->GetObjectGuid().GetCounter());
+        sLog.outError("ERROR:SendLfgBootPlayer %s failed - votes map is empty!", GetPlayer()->GetObjectGuid().GetString().c_str());
         return;
     }
 
-    LFGAnswer playerVote = votes->find(guid)->second;
+    LFGAnswerMap::const_iterator votesitr = votes->find(guid);
+    if (votesitr == votes->end())
+    {
+        sLog.outError("ERROR:SendLfgBootPlayer %s failed - votes map not contain this player! Possible cheating.", GetPlayer()->GetObjectGuid().GetString().c_str());
+        return;
+    }
+
+    LFGAnswer playerVote = votesitr->second;
     uint8 votesNum = 0;
     uint8 agreeNum = 0;
     uint32 secsleft = uint8(pGroup->GetLFGGroupState()->GetBootCancelTime() - time(NULL));

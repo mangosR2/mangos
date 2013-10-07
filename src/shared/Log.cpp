@@ -30,7 +30,7 @@
 
 #include "ace/OS_NS_unistd.h"
 
-INSTANTIATE_SINGLETON_1( Log );
+INSTANTIATE_SINGLETON_1(Log);
 
 LogFilterData logFilterData[LOG_FILTER_COUNT] =
 {
@@ -51,9 +51,9 @@ LogFilterData logFilterData[LOG_FILTER_COUNT] =
     { "ahbot_seller",        "LogFilter_AhbotSeller",        true  },
     { "ahbot_buyer",         "LogFilter_AhbotBuyer",         true  },
     { "pathfinding",         "LogFilter_Pathfinding",        true  },
-    { "calendar",            "LogFilter_Calendar",           true  },
     { "map_loading",         "LogFilter_MapLoading",         true  },
     { "event_ai_dev",        "LogFilter_EventAiDev",         true  },
+    { "calendar",            "LogFilter_Calendar",           true  },
 };
 
 enum LogType
@@ -888,8 +888,6 @@ void Log::outWorldPacketDump(uint32 socket, uint32 opcode, char const* opcodeNam
 {
     if (!worldLogfile)
         return;
-
-    ACE_GUARD(ACE_Thread_Mutex, GuardObj, m_worldLogMtx);
 
     outTimestamp(worldLogfile);
 

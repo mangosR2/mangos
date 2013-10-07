@@ -45,6 +45,7 @@
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
 #include "MapManager.h"
+#include "Group.h"
 #include "ScriptMgr.h"
 #include "CreatureAIRegistry.h"
 #include "Policies/Singleton.h"
@@ -75,9 +76,9 @@
 
 INSTANTIATE_SINGLETON_1( World );
 
-volatile bool World::m_stopEvent = false;
+ACE_Atomic_Op<ACE_Thread_Mutex, bool> World::m_stopEvent = false;
 uint8 World::m_ExitCode = SHUTDOWN_EXIT_CODE;
-volatile uint32 World::m_worldLoopCounter = 0;
+ACE_Atomic_Op<ACE_Thread_Mutex, uint32> World::m_worldLoopCounter = 0;
 
 float World::m_MaxVisibleDistanceOnContinents = DEFAULT_VISIBILITY_DISTANCE;
 float World::m_MaxVisibleDistanceInInstances  = DEFAULT_VISIBILITY_INSTANCE;
@@ -475,13 +476,14 @@ void World::LoadConfigSettings(bool reload)
     }
 #endif
 
-    setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",5);
-    setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",600);
+    setConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS,     "VMSS.MaxThreadBreaks",3);
+    setConfig(CONFIG_UINT32_VMSS_TBREMTIME,           "VMSS.ThreadBreakRememberTime",3600);
     setConfig(CONFIG_UINT32_VMSS_MAPFREEMETHOD,       "VMSS.MapFreeMethod",1);
     setConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD,   "VMSS.FreezeCheckPeriod",1000);
     setConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME,    "VMSS.MapFreezeDetectTime",2000);
     setConfig(CONFIG_UINT32_VMSS_FORCEUNLOADDELAY,    "VMSS.ForceUnloadDelay",3000);
     setConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST,          "VMSS.TrySkipFirstThreadBreak", false);
+    setConfig(CONFIG_BOOL_VMSS_CONTINENTS_SKIP,       "VMSS.ContinentsSkip", true);
 
     ///- Read all rates from the config file
     setConfigPos(CONFIG_FLOAT_RATE_HEALTH, "Rate.Health", 1.0f);
@@ -574,8 +576,6 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_STATS_SAVE_ONLY_ON_LOGOUT, "PlayerSave.Stats.SaveOnlyOnLogout", true);
 
     setConfigMin(CONFIG_UINT32_INTERVAL_GRIDCLEAN, "GridCleanUpDelay", 5 * MINUTE * IN_MILLISECONDS, MIN_GRID_DELAY);
-    if (reload)
-        sMapMgr.SetGridCleanUpDelay(getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN));
 
     setConfig(CONFIG_UINT32_NUMTHREADS, "MapUpdate.Threads", 3);
     setConfig(CONFIG_BOOL_THREADS_DYNAMIC,"MapUpdate.DynamicThreadsCount", false);
@@ -899,13 +899,15 @@ void World::LoadConfigSettings(bool reload)
         if (clientCacheId > 0)
         {
             setConfig(CONFIG_UINT32_CLIENTCACHE_VERSION, clientCacheId);
-            sLog.outString("Client cache version set to: %u", clientCacheId);
+            sLog.outString("BOOT: Client cache version set to: %u", clientCacheId);
         }
         else
-            sLog.outError("ClientCacheVersion can't be negative %d, ignored.", clientCacheId);
+            sLog.outError("BOOT: ClientCacheVersion can't be negative %d, ignored.", clientCacheId);
     }
 
     setConfig(CONFIG_UINT32_INSTANT_LOGOUT, "InstantLogout", SEC_MODERATOR);
+
+    setConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD, "GroupLeaderReconnectPeriod", 180);
 
     setConfigMin(CONFIG_UINT32_GUILD_EVENT_LOG_COUNT, "Guild.EventLogRecordsCount", GUILD_EVENTLOG_MAX_RECORDS, GUILD_EVENTLOG_MAX_RECORDS);
     setConfigMin(CONFIG_UINT32_GUILD_BANK_EVENT_LOG_COUNT, "Guild.BankEventLogRecordsCount", GUILD_BANK_MAX_LOGS, GUILD_BANK_MAX_LOGS);
@@ -1022,7 +1024,7 @@ void World::LoadConfigSettings(bool reload)
     else
     {
         m_dataPath = dataPath;
-        sLog.outString("Using DataDir %s", m_dataPath.c_str());
+        sLog.outString("BOOT: Using DataDir %s", m_dataPath.c_str());
     }
 
     setConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK, "vmap.enableIndoorCheck", true);
@@ -1031,25 +1033,25 @@ void World::LoadConfigSettings(bool reload)
     std::string ignoreSpellIds = sConfig.GetStringDefault("vmap.ignoreSpellIds", "");
 
     if (!enableHeight)
-        sLog.outError("VMAP height use disabled! Creatures movements and other things will be in broken state.");
+        sLog.outError("BOOT: VMAP height use disabled! Creatures movements and other things will be in broken state.");
 
     VMAP::VMapFactory::createOrGetVMapManager()->setEnableLineOfSightCalc(enableLOS);
     VMAP::VMapFactory::createOrGetVMapManager()->setEnableHeightCalc(enableHeight);
     VMAP::VMapFactory::preventSpellsFromBeingTestedForLoS(ignoreSpellIds.c_str());
-    sLog.outString( "WORLD: VMap support included. LineOfSight:%i, getHeight:%i, indoorCheck:%i",
+    sLog.outString( "BOOT: VMap support included. LineOfSight:%i, getHeight:%i, indoorCheck:%i",
         enableLOS, enableHeight, getConfig(CONFIG_BOOL_VMAP_INDOOR_CHECK) ? 1 : 0);
-    sLog.outString( "WORLD: VMap data directory is: %svmaps",m_dataPath.c_str());
+    sLog.outString( "BOOT: VMap data directory is: %svmaps",m_dataPath.c_str());
 
     setConfig(CONFIG_BOOL_MMAP_ENABLED, "mmap.enabled", true);
     std::string ignoreMapIds = sConfig.GetStringDefault("mmap.ignoreMapIds", "");
     MMAP::MMapFactory::preventPathfindingOnMaps(ignoreMapIds.c_str());
-    sLog.outString("WORLD: mmap pathfinding %sabled", getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
+    sLog.outString("BOOT: mmap pathfinding %sabled", getConfig(CONFIG_BOOL_MMAP_ENABLED) ? "en" : "dis");
 
     // reset duel system
     setConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED, "DuelReset.Enable", false);
     std::string areaIdsEnabledDuel = sConfig.GetStringDefault("DuelReset.AreaIds", "");
     setDuelResetEnableAreaIds(areaIdsEnabledDuel.c_str());
-    sLog.outString("WORLD: reset duel area %sabled", getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) ? "en" : "dis");
+    sLog.outString("BOOT: reset duel area %sabled", getConfig(CONFIG_BOOL_RESET_DUEL_AREA_ENABLED) ? "en" : "dis");
 
     // chat log and lexics cutter settings
     if (reload)
@@ -1799,6 +1801,13 @@ void World::Update(uint32 diff)
     /// <li> Handle session updates
     UpdateSessions(diff);
 
+    /// <li> Update groups
+    for (ObjectMgr::GroupMap::iterator itr = sObjectMgr.GetGroupMapBegin(); itr != sObjectMgr.GetGroupMapEnd(); ++itr)
+    {
+        if (Group* group = itr->second)
+            group->Update(diff);
+    }
+
     /// <li> Handle weather updates when the timer has passed
     if (m_timers[WUPDATE_WEATHERS].Passed())
     {
@@ -2213,7 +2222,7 @@ void World::_UpdateGameTime()
     m_gameTime = thisTime;
 
     ///- if there is a shutdown timer
-    if(!m_stopEvent && m_ShutdownTimer > 0 && elapsed > 0)
+    if(!IsStopped() && m_ShutdownTimer > 0 && elapsed > 0)
     {
         ///- ... and it is overdue, stop the world (set m_stopEvent)
         if ( m_ShutdownTimer <= elapsed )
@@ -2237,7 +2246,7 @@ void World::_UpdateGameTime()
 void World::ShutdownServ(uint32 time, uint32 options, uint8 exitcode)
 {
     // ignore if server shutdown at next tick
-    if (m_stopEvent)
+    if (IsStopped())
         return;
 
     m_ShutdownMask = options;
@@ -2291,7 +2300,7 @@ void World::ShutdownMsg(bool show /*= false*/, Player* player /*= NULL*/)
 void World::ShutdownCancel()
 {
     // nothing cancel or too later
-    if(!m_ShutdownTimer || m_stopEvent)
+    if(!m_ShutdownTimer || IsStopped())
         return;
 
     ServerMessageType msgid = (m_ShutdownMask & SHUTDOWN_MASK_RESTART) ? SERVER_MSG_RESTART_CANCELLED : SERVER_MSG_SHUTDOWN_CANCELLED;

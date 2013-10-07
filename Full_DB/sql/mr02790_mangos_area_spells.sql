@@ -1,9 +1,7 @@
 -- Frostmourne area spells
-DELETE FROM spell_target_position WHERE id IN (70860, 72546, 73655);
-INSERT INTO spell_target_position VALUES
-    (70860, 631, 529.302, -2124.49, 840.857, 3.1765),
-    (72546, 631, 514.000, -2523.00, 1050.990, 3.1765),
-    (73655, 631, 495.708, -2523.76, 1050.990, 3.1765);
+DELETE FROM `spell_target_position` WHERE `id` = 70860;
+INSERT INTO `spell_target_position` VALUES
+(70860, 631, 529.302, -2124.49, 840.857, 3.1765);
 
 REPLACE INTO `gameobject` VALUES
 (8344, 202078, 631, 15, 1, 503.62, -2124.65, 836.607, 3.14159, 0, 0, 1, 0, 604800, 255, 1),

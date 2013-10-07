@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "SharedDefines.h"
+#include "ByteBuffer.h"
 #include <G3D/Vector3.h>
 
 using G3D::Vector3;
@@ -176,4 +177,8 @@ struct MANGOS_DLL_SPEC WorldLocation : public Position
     private:
     Position  m_Tpos;
 };
+
+ByteBuffer& operator << (ByteBuffer& buf, Location const& loc);
+ByteBuffer& operator >> (ByteBuffer& buf, Location&       loc);
+
 #endif

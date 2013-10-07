@@ -17,8 +17,6 @@
 #
 
 project(MaNGOS)
-set(MANGOS_VERSION 0.17)
-set(CLIENT_VERSION 12340)
 
 # CMake policies
 cmake_minimum_required(VERSION 2.8)
@@ -143,7 +141,7 @@ set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
 set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/config)
 # If win32 put it in the bin dir not lib
 if(WIN32)
-  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
+  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
@@ -403,7 +401,7 @@ if(XCODE)
   endif()
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 
 add_subdirectory(dep) # TODO: add vmap extractor build support
 
@@ -411,9 +409,7 @@ add_subdirectory(dep) # TODO: add vmap extractor build support
 # Don't place this above 'dep' subdirectory! Because of defines build will crash.
 set(DEFINITIONS
   DO_MYSQL
-  HAVE_CONFIG_H
-  VERSION="${MANGOS_VERSION}"
-  SYSCONFDIR="config/"
+  SYSCONFDIR="${CONF_DIR}/"
 )
 set(DEFINITIONS_RELEASE NDEBUG)
 set(DEFINITIONS_DEBUG _DEBUG MANGOS_DEBUG)

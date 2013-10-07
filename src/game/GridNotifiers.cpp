@@ -40,22 +40,22 @@ void VisibleChangesNotifier::Visit(CameraMapType& m)
 void VisibleNotifier::Notify()
 {
     Player& player = *i_camera.GetOwner();
-    // at this moment i_clientGUIDs have guids that not iterate at grid level checks
+    // at this moment i_clientGuids have guids that not iterate at grid level checks
     // but exist one case when this possible and object not out of range: transports
     // FIXME - need remove this hack after full repair per-grid visibility on transport!
     if (Transport* transport = player.GetTransport())
-        transport->GetTransportBase()->CallForAllPassengers(UpdateVisibilityOfWithHelper(player, i_clientGUIDs, i_data, i_visibleNow));
+        transport->GetTransportBase()->CallForAllPassengers(UpdateVisibilityOfWithHelper(player, i_clientGuids, i_data, i_visibleNow));
 
     // generate outOfRange for not iterate objects
-    for (GuidSet::iterator itr = i_clientGUIDs.begin(); itr != i_clientGUIDs.end(); ++itr)
+    for (GuidSet::iterator itr = i_clientGuids.begin(); itr != i_clientGuids.end(); ++itr)
     {
         ObjectGuid guid = *itr;
         if (!player.GetMap()->IsVisibleGlobally(guid))
         {
-            i_data.AddOutOfRangeGUID(guid);
+            i_data.AddOutOfRangeGuid(guid);
             player.RemoveClientGuid(guid);
             DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify %s is out of range (no in active cells set) now for %s",
-                          guid.GetString().c_str(), player.GetGuidStr().c_str());
+                guid.GetString().c_str(), player.GetGuidStr().c_str());
         }
         else
         {
@@ -63,10 +63,11 @@ void VisibleNotifier::Notify()
             {
                 object->AddNotifiedClient(player.GetObjectGuid());
                 DEBUG_FILTER_LOG(LOG_FILTER_VISIBILITY_CHANGES, "VisibleNotifier::Notify try make %s is out of range for %s, but his visible globally (distance %f). Need check movement trajectory.",
-                        guid.GetString().c_str(), player.GetGuidStr().c_str(), player.GetDistance(object));
+                    guid.GetString().c_str(), player.GetGuidStr().c_str(), player.GetDistance(object));
             }
             else
-                i_data.AddOutOfRangeGUID(guid);
+                i_data.AddOutOfRangeGuid(guid);
+
             player.RemoveClientGuid(guid);
         }
     }
@@ -79,7 +80,7 @@ void VisibleNotifier::Notify()
         player.GetSession()->SendPacket(&packet);
 
         // send out of range to other players if need
-        GuidSet const& oor = i_data.GetOutOfRangeGUIDs();
+        GuidSet const& oor = i_data.GetOutOfRangeGuids();
         for (GuidSet::const_iterator iter = oor.begin(); iter != oor.end(); ++iter)
         {
             if (!iter->IsPlayer())

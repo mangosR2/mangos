@@ -835,8 +835,8 @@ void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recv_data)
     }
     DEBUG_FILTER_LOG(LOG_FILTER_SPELL_CAST, "WorldSession::HandleUpdateMissileTrajectory spell %u ajusted coords: src %f/%f %f/%f %f/%f dst %f/%f %f/%f %f/%f speed %f/%f elevation %f/%f",
         spellId,
-        spell->m_targets.getSource().x, src.x, spell->m_targets.getSource().y, src.y, spell->m_targets.getSource().z, src.z,
-        spell->m_targets.getDestination().x, dst.x, spell->m_targets.getDestination().y, dst.y, spell->m_targets.getDestination().z, dst.z,
+        spell->m_targets.getSource().getX(), src.getX(), spell->m_targets.getSource().getY(), src.getY(), spell->m_targets.getSource().getZ(), src.getZ(),
+        spell->m_targets.getDestination().getX(), dst.getX(), spell->m_targets.getDestination().getY(), dst.getY(), spell->m_targets.getDestination().getZ(), dst.getZ(),
         spell->m_targets.GetSpeed(), speed, spell->m_targets.GetElevation(), elevation);
 
     spell->m_targets.setSource(src);

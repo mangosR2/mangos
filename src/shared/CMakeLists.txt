@@ -64,14 +64,13 @@ set(LIBRARY_SRCS
     Database/SQLStorage.cpp
     Database/SQLStorage.h
     Database/SQLStorageImpl.h
-    DelayExecutor.cpp
-    DelayExecutor.h
     Errors.h
     LockedMap.h
     LockedQueue.h
     LockedVector.h
     Log.cpp
     Log.h
+    ObjectUpdateTaskBase.h
     ProgressBar.cpp
     ProgressBar.h
     revision_nr.h

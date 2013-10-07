@@ -1247,7 +1247,7 @@ enum Targets
     TARGET_SELF                             = 1,
     TARGET_RANDOM_ENEMY_CHAIN_IN_AREA       = 2,                 // only one spell has that, but regardless, it's a target type after all
     TARGET_RANDOM_FRIEND_CHAIN_IN_AREA      = 3,
-    TARGET_4                                = 4,
+    TARGET_RANDOM_UNIT_CHAIN_IN_AREA        = 4,                 // targets - any enemies and friends
     TARGET_PET                              = 5,
     TARGET_CHAIN_DAMAGE                     = 6,
     TARGET_AREAEFFECT_INSTANT               = 7,                 // targets around provided destination point
@@ -1302,7 +1302,7 @@ enum Targets
     TARGET_ALL_RAID_AROUND_CASTER           = 56,
     TARGET_SINGLE_FRIEND_2                  = 57,
     TARGET_58                               = 58,
-    TARGET_59                               = 59,
+    TARGET_FRIENDLY_FRONTAL_CONE            = 59,
     TARGET_NARROW_FRONTAL_CONE              = 60,
     TARGET_AREAEFFECT_PARTY_AND_CLASS       = 61,
     TARGET_62                               = 62,
@@ -1313,7 +1313,7 @@ enum Targets
     TARGET_LEFT_FROM_VICTIM                 = 67,
     TARGET_68                               = 68,
     TARGET_69                               = 69,
-    TARGET_70                               = 70,
+    TARGET_SINGLE_ENEMY_2                   = 70,
     TARGET_71                               = 71,
     TARGET_RANDOM_NEARBY_LOC                = 72,                // used in teleport onto nearby locations
     TARGET_RANDOM_CIRCUMFERENCE_POINT       = 73,

@@ -84,6 +84,11 @@ CMakeCache.txt
 cmake_install.cmake
 
 #
+# System-internal temporary files
+#
+config.h
+
+#
 # OS specific
 #
 # MacOS

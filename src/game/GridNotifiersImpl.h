@@ -36,7 +36,7 @@ inline void MaNGOS::VisibleNotifier::Visit(GridRefManager<T>& m)
     for (typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
         i_camera.UpdateVisibilityOf(iter->getSource(), i_data, i_visibleNow);
-        i_clientGUIDs.erase(iter->getSource()->GetObjectGuid());
+        i_clientGuids.erase(iter->getSource()->GetObjectGuid());
     }
 }
 
@@ -87,8 +87,8 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
         lastUpdateTime = iter->getSource()->GetLastUpdateTime();
         diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
 
-        if (diffTime < (iter->getSource()->IsInCombat() ? 
-            sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE) : 5 * sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)) || 
+        if (diffTime < (iter->getSource()->IsInCombat() ?
+            sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE) : 5 * sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)) ||
             lastUpdateTime > minUpdateTime)
             continue;
 
