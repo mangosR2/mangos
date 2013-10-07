@@ -567,8 +567,7 @@ void GameObject::UpdateSplineMovement(uint32 t_diff)
         m_movesplineTimer.Reset(sWorld.getConfig(CONFIG_UINT32_POSITION_UPDATE_DELAY));
 
         WorldLocation loc = GetPosition();
-        IsBoarded() ? loc.SetTransportPosition(movespline->ComputePosition()) : loc.SetPosition(movespline->ComputePosition());
-
+        loc.SetPosition(movespline->ComputePosition());
         Relocate(loc);
     }
 

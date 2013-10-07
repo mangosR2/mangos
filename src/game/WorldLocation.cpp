@@ -75,7 +75,7 @@ float Position::GetDistance(Position const& pos) const
 WorldLocation const WorldLocation::Null = WorldLocation();
 
 WorldLocation::WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o, uint32 phaseMask, uint32 _instance, uint32 _realmid)
-    : Position(_x, _y, _z, _o, phaseMask), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position())
+    : Position(_x, _y, _z, _o, phaseMask), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position()), m_Tguid(ObjectGuid())
 {
     if (realmid == 0)
         SetRealmId(sWorld.getConfig(CONFIG_UINT32_REALMID));
@@ -124,7 +124,7 @@ WorldLocation& WorldLocation::operator = (WorldLocation const& loc)
         mapid       = loc.GetMapId();
         instance    = loc.GetInstanceId();
     }
-    m_Tpos      = loc.m_Tpos;
+    m_Tpos      = loc.GetTransportPos();
     x           = loc.getX();
     y           = loc.getY();
     z           = loc.getZ();
@@ -146,11 +146,16 @@ WorldLocation& WorldLocation::operator = (Position const& pos)
 
 void WorldLocation::SetPosition(Position const& pos)
 {
-    x           = pos.getX();
-    y           = pos.getY();
-    z           = pos.getZ();
-    orientation = pos.getO();
-    //m_phaseMask = pos.GetPhaseMask();
+    if (GetTransportGuid().IsEmpty())
+    {
+        x           = pos.getX();
+        y           = pos.getY();
+        z           = pos.getZ();
+        orientation = pos.getO();
+        //m_phaseMask = pos.GetPhaseMask();
+    }
+    else
+        SetTransportPosition(pos);
 }
 
 void WorldLocation::SetPosition(WorldLocation const& loc)
