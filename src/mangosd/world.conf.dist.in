@@ -2193,7 +2193,7 @@ LFG.DisableDungeonMapIds= ""
 #
 ###################################################################################################################
 
-VMSS.Enable = 1
+VMSS.Enable = 0
 VMSS.MaxThreadBreaks = 3
 VMSS.ThreadBreakRememberTime = 600
 VMSS.MapFreeMethod = 1
