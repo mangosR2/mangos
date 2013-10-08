@@ -60,12 +60,13 @@ if "%menu%"=="%menu%" echo. & echo Wrong number! & pause & goto menu
 
 :compiler
 cls
-echo 1 - VC10
-echo 2 - VC11
+
+echo 1 - VC11
+echo 2 - VC10
 
 set /P menu=Select a number: 
-if "%menu%"=="1" SET compiler=VC10 & goto menu
-if "%menu%"=="2" SET compiler=VC11 & goto menu
+if "%menu%"=="1" SET compiler=VC11 & goto menu
+if "%menu%"=="2" SET compiler=VC10 & goto menu
 if "%menu%"=="%menu%" echo. & echo Wrong number! & pause & goto compiler
 
 :path
