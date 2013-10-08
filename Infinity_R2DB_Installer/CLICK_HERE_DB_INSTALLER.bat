@@ -80,7 +80,7 @@ if %quick% == off if %yesno% neq y if %yesno% neq Y goto World
 echo.
 echo Creating Databases
 
-for %%i in (%dbpath6%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
+for %%i in (%dbpath6%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% < %%i
 
 :world
 if %quick% == off echo.
