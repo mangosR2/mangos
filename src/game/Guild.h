@@ -303,7 +303,6 @@ class Guild
         void CreateDefaultGuildRanks(int locale_idx);
         void Disband();
 
-        void DeleteGuildBankItems(bool alsoInDB = false);
         typedef UNORDERED_MAP<uint32, MemberSlot> MemberList;
         typedef std::vector<RankInfo> RankList;
 
@@ -398,52 +397,53 @@ class Guild
         void Roster(WorldSession* session = NULL);          // NULL = broadcast
         void Query(WorldSession* session);
 
+        void OnMemberLogin() { ++m_onlineMembers; }
+        void OnMemberLogout(Player* pPlayer);
+
         // Guild EventLog
-        void   LoadGuildEventLogFromDB();
-        void   DisplayGuildEventLog(WorldSession* session);
-        void   LogGuildEvent(uint8 EventType, ObjectGuid playerGuid1, ObjectGuid playerGuid2 = ObjectGuid(), uint8 newRank = 0);
+        void DisplayGuildEventLog(WorldSession* session);
+        void LogGuildEvent(uint8 EventType, ObjectGuid playerGuid1, ObjectGuid playerGuid2 = ObjectGuid(), uint8 newRank = 0);
 
         // ** Guild bank **
-        // Content & item deposit/withdraw
-        void   DisplayGuildBankContent(WorldSession* session, uint8 TabId);
-        void   DisplayGuildBankMoneyUpdate(WorldSession* session);
+        bool IsGuildBankLoaded() const { return m_loadState & GBLS_GUILD_BANK_LOADED; }
 
-        void   SwapItems(Player* pl, uint8 BankTab, uint8 BankTabSlot, uint8 BankTabDst, uint8 BankTabSlotDst, uint32 SplitedAmount);
-        void   MoveFromBankToChar(Player* pl, uint8 BankTab, uint8 BankTabSlot, uint8 PlayerBag, uint8 PlayerSlot, uint32 SplitedAmount);
-        void   MoveFromCharToBank(Player* pl, uint8 PlayerBag, uint8 PlayerSlot, uint8 BankTab, uint8 BankTabSlot, uint32 SplitedAmount);
+        // Content & item deposit/withdraw
+        void DisplayGuildBankContent(WorldSession* session, uint8 TabId);
+        void DisplayGuildBankMoneyUpdate(WorldSession* session);
+
+        void SwapItems(Player* pl, uint8 BankTab, uint8 BankTabSlot, uint8 BankTabDst, uint8 BankTabSlotDst, uint32 SplitedAmount);
+        void MoveFromBankToChar(Player* pl, uint8 BankTab, uint8 BankTabSlot, uint8 PlayerBag, uint8 PlayerSlot, uint32 SplitedAmount);
+        void MoveFromCharToBank(Player* pl, uint8 PlayerBag, uint8 PlayerSlot, uint8 BankTab, uint8 BankTabSlot, uint32 SplitedAmount);
 
         // Tabs
-        void   DisplayGuildBankTabsInfo(WorldSession* session);
-        void   CreateNewBankTab();
-        void   SetGuildBankTabText(uint8 TabId, std::string text);
-        void   SendGuildBankTabText(WorldSession* session, uint8 TabId);
-        void   SetGuildBankTabInfo(uint8 TabId, std::string name, std::string icon);
-        uint8  GetPurchasedTabs() const { return m_TabListMap.size(); }
+        void DisplayGuildBankTabsInfo(WorldSession* session);
+        void CreateNewBankTab();
+        void SetGuildBankTabText(uint8 TabId, std::string text);
+        void SendGuildBankTabText(WorldSession* session, uint8 TabId);
+        void SetGuildBankTabInfo(uint8 TabId, std::string name, std::string icon);
+        uint8  GetPurchasedTabs() const { return m_PurchasedTabs; }
         uint32 GetBankRights(uint32 rankId, uint8 TabId) const;
-        bool   IsMemberHaveRights(uint32 LowGuid, uint8 TabId, uint32 rights) const;
-        bool   CanMemberViewTab(uint32 LowGuid, uint8 TabId) const;
-        // Load
-        void   LoadGuildBankFromDB();
+        bool IsMemberHaveRights(uint32 LowGuid, uint8 TabId, uint32 rights) const;
+        bool CanMemberViewTab(uint32 LowGuid, uint8 TabId) const;
         // Money deposit/withdraw
-        void   SendMoneyInfo(WorldSession* session, uint32 LowGuid);
-        bool   MemberMoneyWithdraw(uint32 amount, uint32 LowGuid);
+        void SendMoneyInfo(WorldSession* session, uint32 LowGuid);
+        bool MemberMoneyWithdraw(uint32 amount, uint32 LowGuid);
         uint64 GetGuildBankMoney() { return m_GuildBankMoney; }
-        void   SetBankMoney(int64 money);
+        void SetBankMoney(int64 money);
         // per days
-        bool   MemberItemWithdraw(uint8 TabId, uint32 LowGuid);
+        bool MemberItemWithdraw(uint8 TabId, uint32 LowGuid);
         uint32 GetMemberSlotWithdrawRem(uint32 LowGuid, uint8 TabId);
         uint32 GetMemberMoneyWithdrawRem(uint32 LowGuid);
-        void   SetBankMoneyPerDay(uint32 rankId, uint32 money);
-        void   SetBankRightsAndSlots(uint32 rankId, uint8 TabId, uint32 right, uint32 SlotPerDay, bool db);
+        void SetBankMoneyPerDay(uint32 rankId, uint32 money);
+        void SetBankRightsAndSlots(uint32 rankId, uint8 TabId, uint32 right, uint32 SlotPerDay, bool db);
         uint32 GetBankMoneyPerDay(uint32 rankId);
         uint32 GetBankSlotPerDay(uint32 rankId, uint8 TabId);
         // rights per day
-        bool   LoadBankRightsFromDB(QueryResult* guildBankTabRightsResult);
+        bool LoadBankRightsFromDB(QueryResult* guildBankTabRightsResult);
         // Guild Bank Event Logs
-        void   LoadGuildBankEventLogFromDB();
-        void   DisplayGuildBankLogs(WorldSession* session, uint8 TabId);
-        void   LogBankEvent(uint8 EventType, uint8 TabId, uint32 PlayerGuidLow, uint32 ItemOrMoney, uint8 ItemStackCount = 0, uint8 DestTabId = 0);
-        bool   AddGBankItemToDB(uint32 GuildId, uint32 BankTab , uint32 BankTabSlot , uint32 GUIDLow, uint32 Entry);
+        void DisplayGuildBankLogs(WorldSession* session, uint8 TabId);
+        void LogBankEvent(uint8 EventType, uint8 TabId, uint32 PlayerGuidLow, uint32 ItemOrMoney, uint8 ItemStackCount = 0, uint8 DestTabId = 0);
+        bool AddGBankItemToDB(uint32 GuildId, uint32 BankTab , uint32 BankTabSlot , uint32 GUIDLow, uint32 Entry);
 
     protected:
         void AddRank(const std::string& name, uint32 rights, uint32 money);
@@ -481,7 +481,7 @@ class Guild
         uint32 m_GuildBankEventLogNextGuid_Item[GUILD_BANK_MAX_TABS];
 
         uint64 m_GuildBankMoney;
-
+        uint8 m_PurchasedTabs;
     private:
         void UpdateAccountsNumber() { m_accountsNumber = 0;}// mark for lazy calculation at request in GetAccountsNumber
         void _ChangeRank(ObjectGuid guid, MemberSlot* slot, uint32 newRank);
@@ -499,5 +499,28 @@ class Guild
         InventoryResult _CanStoreItem_InSpecificSlot(uint8 tab, uint8 slot, GuildItemPosCountVec& dest, uint32& count, bool swap, Item* pSrcItem) const;
         InventoryResult _CanStoreItem_InTab(uint8 tab, GuildItemPosCountVec& dest, uint32& count, bool merge, Item* pSrcItem, uint8 skip_slot) const;
         Item* _StoreItem(uint8 tab, uint8 slot, Item* pItem, uint32 count, bool clone);
+
+        enum GBLoadState
+        {
+            GBLS_NOT_LOADED        = 0,
+            GBLS_GUILD_BANK_LOADED = 1,
+            GBLS_EVENT_LOG_LOADED  = 2
+        };
+
+        void LoadGuildBankFromDB();
+        void UnloadGuildBank(bool deleteItemsInDB = false);
+
+        void LoadGuildBankEventLogFromDB();
+        void UnloadGuildBankEventLog();
+
+        void LoadGuildEventLogFromDB();
+        void UnloadGuildEventLog();
+
+        bool IsEventLogLoaded() const { return m_loadState & GBLS_EVENT_LOG_LOADED; }
+        void SetGuildBankLoaded(bool loaded) { loaded ? m_loadState |= GBLS_GUILD_BANK_LOADED : m_loadState &= ~GBLS_GUILD_BANK_LOADED; }
+        void SetEventLogLoaded(bool loaded) { loaded ? m_loadState |= GBLS_EVENT_LOG_LOADED : m_loadState &= ~GBLS_EVENT_LOG_LOADED; }
+
+        uint32 m_onlineMembers;
+        uint8  m_loadState;
 };
 #endif

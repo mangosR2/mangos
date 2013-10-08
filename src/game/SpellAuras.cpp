@@ -9735,6 +9735,7 @@ void Aura::PeriodicDummyTick()
                     break;
                 }
                 case 55592:                                 // Clean
+                {
                     switch(urand(0,2))
                     {
                         case 0: target->CastSpell(target, 55731, true); break;
@@ -9742,6 +9743,13 @@ void Aura::PeriodicDummyTick()
                         case 2: target->CastSpell(target, 55739, true); break;
                     }
                     return;
+                }
+                case 61968:                                 // Flash Freeze 
+                { 
+                    if (GetAuraTicks() == 1 && !target->HasAura(62464))
+                        target->CastSpell(target, 61970, true, NULL, this);
+                    return;
+                }
                 case 62018:                                 // Collapse
                 {
                     // lose 1% of health every second
@@ -9753,45 +9761,23 @@ void Aura::PeriodicDummyTick()
                     target->CastSpell(target, 62020, true, NULL, this);
                     return;
                 }
-                case 62038: // Biting Cold (Ulduar: Hodir)
-                {
+                case 62038:                                 // Biting Cold 
+                { 
                     if (target->GetTypeId() != TYPEID_PLAYER)
-                        return;
+                        return; 
 
-                    Unit * caster = GetCaster();
-                    if (!caster)
-                        return;
-
-                    if (!target->HasAura(62821))     // Toasty Fire
-                    {
-                        // dmg dealing every second
-                        target->CastSpell(target, 62188, true, 0, 0, caster->GetObjectGuid());
-                    }
-
-                    // aura stack increase every 3 (data in m_miscvalue) seconds and decrease every 1s
-                    // Reset reapply counter at move and decrease stack amount by 1
-                    if (((Player*)target)->isMoving() || target->HasAura(62821))
-                    {
-                        if (SpellAuraHolderPtr holder = target->GetSpellAuraHolder(62039))
-                        {
-                            if (holder->ModStackAmount(-1))
-                                target->RemoveSpellAuraHolder(holder);
-                        }
-                        m_modifier.m_miscvalue = 3;
-                        return;
-                    }
-                    // We are standing at the moment, countdown
-                    if (m_modifier.m_miscvalue > 0)
-                    {
-                        --m_modifier.m_miscvalue;
-                        return;
-                    }
-
-                    target->CastSpell(target, 62039, true);
-
-                    // recast every ~3 seconds
-                    m_modifier.m_miscvalue = 3;
+                    // if player is moving remove one aura stack
+                    if (((Player*)target)->isMoving())
+                        target->RemoveAuraHolderFromStack(62039);
+                    // otherwise add one aura stack each 3 seconds
+                    else if (GetAuraTicks() % 3 && !target->HasAura(62821))
+                        target->CastSpell(target, 62039, true, NULL, this);
                     return;
+                }
+                case 62039:                                 // Biting Cold 
+                { 
+                    target->CastSpell(target, 62188, true); 
+                    return; 
                 }
                 case 62566:                                 // Healthy Spore Summon Periodic
                 {
@@ -9863,6 +9849,11 @@ void Aura::PeriodicDummyTick()
                         }
                     }
                     return;
+                }
+                case 65272:                                 // Shatter Chest 
+                { 
+                    target->CastSpell(target, 62501, true, NULL, this); 
+                    return; 
                 }
                 case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
                 {

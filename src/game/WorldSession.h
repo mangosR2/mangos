@@ -361,6 +361,7 @@ class MANGOS_DLL_SPEC WorldSession
 
         uint32 GetLatency() const { return m_latency; }
         void SetLatency(uint32 latency) { m_latency = latency; }
+        void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
         uint32 getDialogStatus(Player *pPlayer, Object* questgiver, uint32 defstatus);
 
         // LFG
@@ -913,6 +914,7 @@ class MANGOS_DLL_SPEC WorldSession
         LocaleConstant m_sessionDbcLocale;
         int m_sessionDbLocaleIndex;
         uint32 m_latency;
+        uint32 m_clientTimeDelay;
         AccountData m_accountData[NUM_ACCOUNT_DATA_TYPES];
         uint32 m_Tutorials[8];
         TutorialDataState m_tutorialState;

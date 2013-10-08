@@ -1049,6 +1049,10 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void AddToWorld();
         virtual void RemoveFromWorld(bool remove) override;
+        virtual void SetMap(Map* map) override;
+        virtual void ResetMap() override;
+        // Used for lock map from unloading. Use with caution!
+        MapPtr GetMapPtr() { return m_mapPtr; };
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
@@ -2723,6 +2727,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         GridReference<Player> m_gridRef;
         MapReference m_mapRef;
+
+        MapPtr m_mapPtr;
 
          // Playerbot mod:
         PlayerbotAI* m_playerbotAI;

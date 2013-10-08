@@ -21,10 +21,10 @@
 
 DROP TABLE IF EXISTS `db_version`;
 CREATE TABLE `db_version` (
-  `version` varchar(120) default NULL,
-  `creature_ai_version` varchar(120) default NULL,
-  `cache_id` int(10) default '0',
-  `required_12540_01_mangos_command` bit(1) default NULL
+  `version` varchar(120) DEFAULT NULL,
+  `creature_ai_version` varchar(120) DEFAULT NULL,
+  `cache_id` int(10) DEFAULT '0',
+  `required_12562_01_mangos_playercreateinfo_action` bit(1) default NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Used DB version notes';
 
 --
@@ -10615,12 +10615,11 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `playercreateinfo_action`;
 CREATE TABLE `playercreateinfo_action` (
-  `race` tinyint(3) unsigned NOT NULL default '0',
-  `class` tinyint(3) unsigned NOT NULL default '0',
-  `button` smallint(5) unsigned NOT NULL default '0',
-  `action` int(11) unsigned NOT NULL default '0',
-  `type` smallint(5) unsigned NOT NULL default '0',
-  KEY `playercreateinfo_race_class_index` (`race`,`class`),
+  `race` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `class` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `button` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `action` int(11) unsigned NOT NULL DEFAULT '0',
+  `type` smallint(5) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`race`,`class`,`button`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 

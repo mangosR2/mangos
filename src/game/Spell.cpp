@@ -30,6 +30,7 @@
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Pet.h"
+#include "TemporarySummon.h"
 #include "Unit.h"
 #include "DynamicObject.h"
 #include "Group.h"
@@ -2664,9 +2665,21 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     targetUnitMap.push_back(target);
             break;
         case TARGET_UNIT_CREATOR:
-            if (Unit* target = m_caster->GetCreator())
+        {
+            WorldObject* caster = GetAffectiveCasterObject(); 
+            if (!caster) 
+                return; 
+
+            if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTemporarySummon()) 
+                targetUnitMap.push_back(((TemporarySummon*)(Creature*)caster)->GetSummoner()); 
+            else if (caster->GetTypeId() == TYPEID_GAMEOBJECT && !((GameObject*)caster)->HasStaticDBSpawnData()) 
+                targetUnitMap.push_back(((GameObject*)caster)->GetOwner()); 
+            else if (Unit* target = m_caster->GetCreator())
                 targetUnitMap.push_back(target);
+             else 
+                sLog.outError("Spell::SetTargetMap: Spell ID %u with target ID %u was used by unhandled object %s.", m_spellInfo->Id, targetMode, caster->GetGuidStr().c_str()); 
             break;
+        }
         case TARGET_OWNED_VEHICLE:
             if (VehicleKitPtr vehicle = m_caster->GetVehicle())
                 if (Unit* target = vehicle->GetBase())
@@ -6778,7 +6791,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell && !m_spellInfo->AreaGroupId)
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && 
+                        (m_caster->GetMap() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed()) && 
+                        !m_IsTriggeredSpell && 
+                        !m_spellInfo->AreaGroupId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 if (m_caster->IsInDisallowedMountForm())

@@ -499,12 +499,27 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void SetTransportPosition(Position const& pos) { m_position.SetTransportPosition(pos); };
         void ClearTransportData() { m_position.ClearTransportData(); };
 
-        void GetNearPoint2D( float &x, float &y, float distance, float absAngle) const;
-        void GetNearPoint(WorldObject const* searcher, float &x, float &y, float &z, float searcher_bounding_radius, float distance2d, float absAngle) const;
-        void GetClosePoint(float &x, float &y, float &z, float bounding_radius, float distance2d = 0.0f, float angle = 0.0f, WorldObject const* obj = NULL) const
+        /// Gives a 2d-point in distance distance2d in direction absAngle around the current position (point-to-point)
+        void GetNearPoint2D(float& x, float& y, float distance2d, float absAngle) const;
+        /** Gives a "free" spot for searcher in distance distance2d in direction absAngle on "good" height
+         * @param searcher          -           for whom a spot is searched for
+         * @param x, y, z           -           position for the found spot of the searcher
+         * @param searcher_bounding_radius  -   how much space the searcher will require
+         * @param distance2d        -           distance between the middle-points
+         * @param absAngle          -           angle in which the spot is preferred
+         */
+        void GetNearPoint(WorldObject const* searcher, float& x, float& y, float& z, float searcher_bounding_radius, float distance2d, float absAngle) const;
+        /** Gives a "free" spot for a searcher on the distance (including bounding-radius calculation)
+         * @param x, y, z           -           position for the found spot
+         * @param bounding_radius   -           radius for the searcher
+         * @param distance2d        -           range in which to find a free spot. Default = 0.0f (which usually means the units will have contact)
+         * @param angle             -           direction in which to look for a free spot. Default = 0.0f (direction in which 'this' is looking
+         * @param obj               -           for whom to look for a spot. Default = NULL
+         */
+        void GetClosePoint(float& x, float& y, float& z, float bounding_radius, float distance2d = 0.0f, float angle = 0.0f, const WorldObject* obj = NULL) const
         {
             // angle calculated from current orientation
-            GetNearPoint(obj, x, y, z, bounding_radius, distance2d, GetOrientation() + angle);
+            GetNearPoint(obj, x, y, z, bounding_radius, distance2d + GetObjectBoundingRadius() + bounding_radius, GetOrientation() + angle);
         }
 
         WorldLocation GetClosePoint(float bounding_radius, float distance2d = 0.0f, float angle = 0.0f, WorldObject const* obj = NULL)
@@ -514,10 +529,15 @@ class MANGOS_DLL_SPEC WorldObject : public Object
             return loc;
         }
 
-        void GetContactPoint( const WorldObject* obj, float &x, float &y, float &z, float distance2d = CONTACT_DISTANCE) const
+        /** Gives a "free" spot for a searcher in contact-range of "this" (including bounding-radius calculation)
+         * @param x, y, z           -           position for the found spot
+         * @param obj               -           for whom to find a contact position. The position will be searched in direction from 'this' towards 'obj'
+         * @param distance2d        -           distance which 'obj' and 'this' should have beetween their bounding radiuses. Default = CONTACT_DISTANCE
+         */
+        void GetContactPoint(const WorldObject* obj, float& x, float& y, float& z, float distance2d = CONTACT_DISTANCE) const
         {
             // angle to face `obj` to `this` using distance includes size of `obj`
-            GetNearPoint(obj, x, y, z, obj->GetObjectBoundingRadius(), distance2d, GetAngle(obj));
+            GetNearPoint(obj, x, y, z, obj->GetObjectBoundingRadius(), distance2d + GetObjectBoundingRadius() + obj->GetObjectBoundingRadius(), GetAngle(obj));
         }
 
         virtual float GetObjectBoundingRadius() const { return DEFAULT_WORLD_OBJECT_SIZE; }
@@ -630,10 +650,10 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         // low level function for visibility change code, must be define in all main world object subclasses
         virtual bool isVisibleForInState(Player const* u, WorldObject const* viewPoint, bool inVisibleList) const = 0;
 
-        void SetMap(Map * map);
-        Map * GetMap() const { return m_currMap; }
+        virtual void SetMap(Map* map);
+        Map* GetMap() const { return m_currMap; }
         //used to check all object's GetMap() calls when object is not in world!
-        void ResetMap() { m_currMap = NULL; }
+        virtual void ResetMap() { m_currMap = NULL; }
 
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT);
 

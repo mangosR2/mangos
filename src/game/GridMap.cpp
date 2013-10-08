@@ -20,7 +20,6 @@
 #include "Log.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
-#include "GridStates.h"
 #include "CellImpl.h"
 #include "Map.h"
 #include "DBCEnums.h"

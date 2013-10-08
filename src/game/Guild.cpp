@@ -92,18 +92,20 @@ Guild::Guild()
     m_CreatedDate = 0;
 
     m_GuildBankMoney = 0;
+    m_PurchasedTabs = 0;
 
     m_GuildEventLogNextGuid = 0;
     m_GuildBankEventLogNextGuid_Money = 0;
     for (uint8 i = 0; i < GUILD_BANK_MAX_TABS; ++i)
         m_GuildBankEventLogNextGuid_Item[i] = 0;
+
+    m_loadState = GBLS_NOT_LOADED;
+    m_onlineMembers = 0;
 }
 
 Guild::~Guild()
 {
-    DeleteGuildBankItems();
-    for (TabListMap::iterator itr = m_TabListMap.begin(); itr != m_TabListMap.end(); ++itr)
-        delete (*itr);
+    UnloadGuildBank();
 }
 
 bool Guild::Create(Player* leader, std::string gname)
@@ -120,6 +122,7 @@ bool Guild::Create(Player* leader, std::string gname)
     GINFO = "";
     MOTD = "No message set.";
     m_GuildBankMoney = 0;
+    m_PurchasedTabs = 0;
     m_Id = sObjectMgr.GenerateGuildId();
     m_CreatedDate = time(0);
 
@@ -283,16 +286,10 @@ bool Guild::LoadGuildFromDB(QueryResult* guildDataResult)
     MOTD              = fields[9].GetCppString();
     m_CreatedDate     = time_t(fields[10].GetUInt64());
     m_GuildBankMoney  = fields[11].GetUInt64();
+    m_PurchasedTabs   = fields[12].GetUInt32();
 
-    uint32 purchasedTabs   = fields[12].GetUInt32();
-
-    if (purchasedTabs > GUILD_BANK_MAX_TABS)
-        purchasedTabs = GUILD_BANK_MAX_TABS;
-
-    m_TabListMap.resize(purchasedTabs);
-
-    for (uint8 i = 0; i < purchasedTabs; ++i)
-        m_TabListMap[i] = new GuildBankTab;
+    if (m_PurchasedTabs > GUILD_BANK_MAX_TABS)
+        m_PurchasedTabs = GUILD_BANK_MAX_TABS;
 
     return true;
 }
@@ -408,7 +405,8 @@ bool Guild::LoadMembersFromDB(QueryResult* guildMembersResult)
         // this condition will be true when all rows in QueryResult are processed and new guild without members is going to be loaded - prevent crash
         if (!fields)
             break;
-        uint32 guildId       = fields[0].GetUInt32();
+
+        uint32 guildId = fields[0].GetUInt32();
         if (guildId < m_Id)
         {
             // there is in table guild_member record which doesn't have guildid in guild table, report error
@@ -532,8 +530,7 @@ bool Guild::DelMember(ObjectGuid guid, bool isDisbanding)
         SetLeader(newLeaderGUID);
 
         // If player not online data in data field will be loaded from guild tabs no need to update it !!
-        Player* newLeader = sObjectMgr.GetPlayer(newLeaderGUID);
-        if (newLeader)
+        if (Player* newLeader = sObjectMgr.GetPlayer(newLeaderGUID))
             newLeader->SetRank(GR_GUILDMASTER);
 
         // when leader non-exist (at guild load with deleted leader only) not send broadcasts
@@ -644,13 +641,17 @@ void Guild::MassInviteToEvent(WorldSession* session, uint32 minLevel, uint32 max
         }
 
         MemberSlot const* member = &itr->second;
-        uint32 level = Player::GetLevelFromDB(member->guid);
-
-        if (member->guid != session->GetPlayer()->GetObjectGuid() && level >= minLevel && level <= maxLevel && member->RankId <= minRank)
+        if (member->guid != session->GetPlayer()->GetObjectGuid())
         {
-            data << member->guid.WriteAsPacked();
-            data << uint8(level);
-            ++count;
+            Player* pPlayer = sObjectMgr.GetPlayer(member->guid);
+            uint32 level = pPlayer ? pPlayer->getLevel() : Player::GetLevelFromDB(member->guid);
+
+            if (level >= minLevel && level <= maxLevel && member->RankId <= minRank)
+            {
+                data << member->guid.WriteAsPacked();
+                data << uint8(level);
+                ++count;
+            }
         }
     }
 
@@ -759,7 +760,7 @@ void Guild::Disband()
     CharacterDatabase.PExecute("DELETE FROM guild_bank_tab WHERE guildid = '%u'", m_Id);
 
     // Free bank tab used memory and delete items stored in them
-    DeleteGuildBankItems(true);
+    UnloadGuildBank(true);
 
     CharacterDatabase.PExecute("DELETE FROM guild_bank_item WHERE guildid = '%u'", m_Id);
     CharacterDatabase.PExecute("DELETE FROM guild_bank_right WHERE guildid = '%u'", m_Id);
@@ -882,12 +883,37 @@ uint32 Guild::GetAccountsNumber()
     return m_accountsNumber;
 }
 
+void Guild::OnMemberLogout(Player* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    MemberSlot* slot = GetMemberSlot(pPlayer->GetObjectGuid());
+    if (!slot)
+        return;
+
+    slot->SetMemberStats(pPlayer);
+    slot->UpdateLogoutTime();
+
+    if (m_onlineMembers > 0)
+        --m_onlineMembers;
+
+    if (!m_onlineMembers)
+    {
+        UnloadGuildBank();
+        UnloadGuildEventLog();
+    }
+}
+
 // *************************************************
 // Guild Eventlog part
 // *************************************************
 // Display guild eventlog
 void Guild::DisplayGuildEventLog(WorldSession* session)
 {
+    if (!IsEventLogLoaded())
+        LoadGuildEventLogFromDB();
+
     // Sending result
     WorldPacket data(MSG_GUILD_EVENT_LOG_QUERY, 0);
     // count, max count == 100
@@ -914,6 +940,10 @@ void Guild::DisplayGuildEventLog(WorldSession* session)
 // Load guild eventlog from DB
 void Guild::LoadGuildEventLogFromDB()
 {
+    if (IsEventLogLoaded())
+        return;
+    SetEventLogLoaded(true);
+
     //                                                     0        1          2            3            4        5
     QueryResult* result = CharacterDatabase.PQuery("SELECT LogGuid, EventType, PlayerGuid1, PlayerGuid2, NewRank, TimeStamp FROM guild_eventlog WHERE guildid=%u ORDER BY TimeStamp DESC,LogGuid DESC LIMIT %u", m_Id, GUILD_EVENTLOG_MAX_RECORDS);
     if (!result)
@@ -947,6 +977,15 @@ void Guild::LoadGuildEventLogFromDB()
     }
     while (result->NextRow());
     delete result;
+}
+
+void Guild::UnloadGuildEventLog()
+{
+    if (!IsEventLogLoaded())
+        return;
+
+    m_GuildEventLog.clear();
+    SetEventLogLoaded(false);
 }
 
 // Add entry to guild eventlog
@@ -1003,6 +1042,9 @@ void Guild::DisplayGuildBankContent(WorldSession* session, uint8 TabId)
 
 void Guild::DisplayGuildBankMoneyUpdate(WorldSession* session)
 {
+    if (!IsGuildBankLoaded())
+        LoadGuildBankFromDB();
+
     WorldPacket data(SMSG_GUILD_BANK_LIST, 8 + 1 + 4 + 1 + 1);
 
     data << uint64(GetGuildBankMoney());
@@ -1109,6 +1151,9 @@ Item* Guild::GetItem(uint8 TabId, uint8 SlotId)
 
 void Guild::DisplayGuildBankTabsInfo(WorldSession* session)
 {
+    if (!IsGuildBankLoaded())
+        LoadGuildBankFromDB();
+
     WorldPacket data(SMSG_GUILD_BANK_LIST, 500);
 
     data << uint64(GetGuildBankMoney());
@@ -1136,6 +1181,7 @@ void Guild::CreateNewBankTab()
 
     uint32 tabId = GetPurchasedTabs();                      // next free id
     m_TabListMap.push_back(new GuildBankTab);
+    ++m_PurchasedTabs;
 
     CharacterDatabase.BeginTransaction();
     CharacterDatabase.PExecute("DELETE FROM guild_bank_tab WHERE guildid='%u' AND TabId='%u'", m_Id, tabId);
@@ -1170,14 +1216,21 @@ uint32 Guild::GetBankRights(uint32 rankId, uint8 TabId) const
 // This load should be called on startup only
 void Guild::LoadGuildBankFromDB()
 {
+    if (IsGuildBankLoaded())
+        return;
+
+    SetGuildBankLoaded(true);
+    LoadGuildBankEventLogFromDB();
+
     //                                                     0      1        2        3
     QueryResult* result = CharacterDatabase.PQuery("SELECT TabId, TabName, TabIcon, TabText FROM guild_bank_tab WHERE guildid='%u' ORDER BY TabId", m_Id);
     if (!result)
     {
-        m_TabListMap.clear();
+        m_PurchasedTabs = 0;
         return;
     }
 
+    m_TabListMap.resize(GetPurchasedTabs());
     do
     {
         Field* fields = result->Fetch();
@@ -1249,6 +1302,38 @@ void Guild::LoadGuildBankFromDB()
     while (result->NextRow());
 
     delete result;
+}
+
+void Guild::UnloadGuildBank(bool deleteItemsInDB /*=false*/)
+{
+    if (!IsGuildBankLoaded())
+    {
+        if (!deleteItemsInDB)
+            return;
+        // if disband - first load items for DeleteFromDB();
+        LoadGuildBankFromDB();
+    }
+
+    for (int8 i = m_TabListMap.size() - 1; i >= 0; --i)
+    {
+        for (int8 j = GUILD_BANK_MAX_SLOTS - 1 ; j >= 0; --j)
+        {
+            if (Item* pItem = m_TabListMap[i]->Slots[j])
+            {
+                pItem->RemoveFromWorld(true);
+
+                if (deleteItemsInDB)
+                    pItem->DeleteFromDB();
+
+                delete pItem;
+            }
+        }
+        delete m_TabListMap[i];
+    }
+    m_TabListMap.clear();
+
+    UnloadGuildBankEventLog();
+    SetGuildBankLoaded(false);
 }
 
 // *************************************************
@@ -1568,6 +1653,14 @@ void Guild::LoadGuildBankEventLogFromDB()
     }
     while (result->NextRow());
     delete result;
+}
+
+void Guild::UnloadGuildBankEventLog()
+{
+    m_GuildBankEventLog_Money.clear();
+
+    for (int8 i = GUILD_BANK_MAX_TABS - 1; i >= 0; --i)
+        m_GuildBankEventLog_Item[i].clear();
 }
 
 void Guild::DisplayGuildBankLogs(WorldSession* session, uint8 TabId)
@@ -2434,27 +2527,6 @@ void Guild::BroadcastEvent(GuildEvents event, ObjectGuid guid, char const* str1 
     BroadcastPacket(&data);
 
     DEBUG_LOG("WORLD: Sent SMSG_GUILD_EVENT");
-}
-
-void Guild::DeleteGuildBankItems(bool alsoInDB /*= false*/)
-{
-    for (size_t i = 0; i < m_TabListMap.size(); ++i)
-    {
-        for (uint8 j = 0; j < GUILD_BANK_MAX_SLOTS; ++j)
-        {
-            if (Item* pItem = m_TabListMap[i]->Slots[j])
-            {
-                pItem->RemoveFromWorld(true);
-
-                if (alsoInDB)
-                    pItem->DeleteFromDB();
-
-                delete pItem;
-            }
-        }
-        delete m_TabListMap[i];
-    }
-    m_TabListMap.clear();
 }
 
 bool GuildItemPosCount::isContainedIn(GuildItemPosCountVec const& vec) const
