@@ -271,8 +271,8 @@ MaxCoreStuckTime = 0
 AddonChannel = 1
 CleanCharacterDB = 1
 WorldState.ExpireTime = 604800
-MapUpdate.Threads = 1
-MapUpdate.DynamicThreadsCount = 1
+MapUpdate.Threads = 3
+MapUpdate.DynamicThreadsCount = 0
 MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
@@ -2068,10 +2068,10 @@ SOAP.Port = 7878
 #
 ###################################################################################################################
 
-Anticheat.Enable = 0
+Anticheat.Enable = 1
 Anticheat.DelayAfterAction = 30
 Anticheat.GmLevel = 0
-Anticheat.Warden  = 0
+Anticheat.Warden  = 1
 
 ###################################################################################################################
 #    CharDelete.Method
@@ -2193,7 +2193,7 @@ LFG.DisableDungeonMapIds= ""
 #
 ###################################################################################################################
 
-VMSS.Enable = 0
+VMSS.Enable = 1
 VMSS.MaxThreadBreaks = 3
 VMSS.ThreadBreakRememberTime = 600
 VMSS.MapFreeMethod = 1
