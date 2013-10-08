@@ -4,7 +4,7 @@ REM ****************************************************************************
 REM Set your compiler and another features here. Possible VC1, VC11 
 REM currently possible VC10 (MS Visual studio 10 Pro) and VC11 (MS Visual studio 11 or 2012 Pro/Ultimate)
 REM Warning! VS Express edition not supported! Also need check path (below) to VC10/11 binary
-SET compiler=VC10
+SET compiler=VC11
 
 REM Install path for MaNGOS (in this be created ./bin and ./etc folders)
 SET INSTALL_PATH="C:\\SingleCore"
