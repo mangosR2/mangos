@@ -118,6 +118,9 @@ class MapPersistentState
                 UnloadIfEmpty();
         }
 
+        virtual void AddToBindList(ObjectGuid const& guid) {};
+        virtual void RemoveFromBindList(ObjectGuid const& guid) {};
+
         bool const& IsRequiresRemove() const { return m_needRemove; };
 
         time_t GetCreatureRespawnTime(uint32 loguid) const
@@ -230,8 +233,8 @@ class DungeonPersistentState : public MapPersistentState
 
         /* online players (perm/solo) and all groups bound to the instance.
            for players: does not include the members of the group unless they have permanent saves */
-        void AddToUnbindList(ObjectGuid const& guid);
-        void RemoveFromUnbindList(ObjectGuid const& guid);
+        virtual void AddToBindList(ObjectGuid const& guid) override;
+        virtual void RemoveFromBindList(ObjectGuid const& guid) override;
 
         /* for normal instances this corresponds to max(creature respawn time) + X hours
            for raid/heroic instances this caches the global respawn time for the map */
@@ -410,6 +413,9 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
         void GetStatistics(uint32& numStates, uint32& numBoundPlayers, uint32& numBoundGroups);
 
         void Update();
+
+        void AddToUnbindQueue(ObjectGuid const& guid);
+
     private:
         typedef UNORDERED_MAP<uint32 /*InstanceId or MapId*/, MapPersistentState*> PersistentStateMap;
 
@@ -429,6 +435,7 @@ class MANGOS_DLL_DECL MapPersistentStateManager : public MaNGOS::Singleton<MapPe
         PersistentStateMap m_instanceSaveByMapId;
 
         DungeonResetScheduler m_Scheduler;
+        GuidSet               m_unloadQueue;
 };
 
 template<typename Do>
