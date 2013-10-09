@@ -1359,7 +1359,7 @@ void Map::AddToActive(WorldObject* obj)
     }
 
     Cell cell = Cell(MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY()));
-    EnsureGridLoadedAtEnter(cell);
+    EnsureGridLoadedAtEnter(cell, obj->GetTypeId() == TYPEID_PLAYER ? (Player*)obj : NULL);
 
     // also not allow unloading spawn grid to prevent creating creature clone at load
     if (obj->GetTypeId() == TYPEID_UNIT)

@@ -42,8 +42,7 @@ MapManager::~MapManager()
     i_maps.clear();
 }
 
-void
-MapManager::Initialize()
+void MapManager::Initialize()
 {
     m_threadsCount = sWorld.getConfig(CONFIG_BOOL_THREADS_DYNAMIC) ? 1 : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
     m_threadsCountPreferred = m_threadsCount;

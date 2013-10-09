@@ -2063,10 +2063,28 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
 
         if (SendMsgTo)
         {
-            if (isEmpty)
-                SendMsgTo->SendResetInstanceSuccess(state->GetMapId());
+            uint32 mapId = state->GetMapId();
+
+            if (!isEmpty)
+                SendMsgTo->SendResetInstanceFailed(0, mapId);
             else
-                SendMsgTo->SendResetInstanceFailed(0, state->GetMapId());
+            {
+                SendMsgTo->SendResetInstanceSuccess(mapId);
+
+                if (sWorld.getConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE))
+                {
+                    if (Group* group = SendMsgTo->GetGroup())
+                    {
+                        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                        {
+                            Player* pMember = itr->getSource();
+                            if (pMember && pMember != SendMsgTo &&
+                                pMember->GetSession() && pMember->IsInWorld())
+                                pMember->SendResetInstanceSuccess(mapId);
+                        }
+                    }
+                }
+            }
         }
 
         // TODO - Adapt here when clear how difficulty changes must be handled
