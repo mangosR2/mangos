@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{08700c49-7b32-4d68-a922-7a1e6683903e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dbc">
+      <UniqueIdentifier>{0e2850f6-d9d4-45c2-8c99-fcf6fe8d5102}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\dbc-structs">
+      <UniqueIdentifier>{447bfc15-afc3-4842-8b43-a17b9e09aee3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\main">
+      <UniqueIdentifier>{8435741c-3977-4280-abd3-7b26221dd449}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\common">
+      <UniqueIdentifier>{339c8032-424d-4632-99d1-d50ee7be2ce1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\dbc\dbc.cpp">
+      <Filter>src\dbc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\main\main.cpp">
+      <Filter>src\main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\common\progressbar.cpp">
+      <Filter>src\common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\dbc\dbc.h">
+      <Filter>src\dbc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\structs\achievement.h">
+      <Filter>src\dbc-structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\structs\achievement_category.h">
+      <Filter>src\dbc-structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\structs\achievement_criteria.h">
+      <Filter>src\dbc-structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\structs\spell.h">
+      <Filter>src\dbc-structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\common\common.h">
+      <Filter>src\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\common\progressbar.h">
+      <Filter>src\common</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
