@@ -7483,7 +7483,7 @@ SpellCastResult Spell::CheckPower()
     // health as power used - need check health amount
     if (Powers(m_spellInfo->GetPowerType()) == POWER_HEALTH)
     {
-        if (m_caster->GetHealth() <= abs(m_powerCost))
+        if (m_caster->GetHealth() <= uint32(abs(m_powerCost)))
             return SPELL_FAILED_CASTER_AURASTATE;
         return SPELL_CAST_OK;
     }
