@@ -41,7 +41,7 @@ class Player;
 class Group;
 class Map;
 
-typedef std::set<uint32> CellGuidSet;
+typedef UNORDERED_SET<uint32> CellGuidSet;
 
 struct MapCellObjectGuids
 {

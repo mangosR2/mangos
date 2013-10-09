@@ -373,6 +373,6 @@ struct AttackedByHelper
     Unit* attacker;
 };
 
-typedef std::map<uint32,std::string> KnownPetNames;
+typedef UNORDERED_MAP<uint32,std::string> KnownPetNames;
 
 #endif

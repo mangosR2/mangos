@@ -28,8 +28,8 @@
 
 #include <map>
 
-typedef std::map<uint16, uint32> AreaFlagByAreaID;
-typedef std::map<uint32, uint32> AreaFlagByMapID;
+typedef UNORDERED_MAP<uint16, uint32> AreaFlagByAreaID;
+typedef UNORDERED_MAP<uint32, uint32> AreaFlagByMapID;
 
 struct WMOAreaTableTripple
 {
@@ -37,9 +37,14 @@ struct WMOAreaTableTripple
     {
     }
 
-    bool operator <(const WMOAreaTableTripple& b) const
+    bool operator <(WMOAreaTableTripple const& b) const
     {
         return memcmp(this, &b, sizeof(WMOAreaTableTripple)) < 0;
+    }
+
+    bool operator == (WMOAreaTableTripple const& b) const
+    {
+        return (groupId == b.groupId && rootId == b.rootId && adtId == b.adtId);
     }
 
     // ordered by entropy; that way memcmp will have a minimal medium runtime
@@ -48,7 +53,14 @@ struct WMOAreaTableTripple
     int32 adtId;
 };
 
-typedef std::map<WMOAreaTableTripple, WMOAreaTableEntry const*> WMOAreaInfoByTripple;
+HASH_NAMESPACE_START
+template<> class hash <WMOAreaTableTripple>
+{
+    public: size_t operator()(const WMOAreaTableTripple& __x) const { return (size_t)((__x.groupId << 24) | (__x.rootId << 16) | __x.adtId); }
+};
+HASH_NAMESPACE_END
+
+typedef UNORDERED_MAP<WMOAreaTableTripple, WMOAreaTableEntry const*> WMOAreaInfoByTripple;
 
 DBCStorage <AreaTableEntry> sAreaStore(AreaTableEntryfmt);
 DBCStorage <AreaGroupEntry> sAreaGroupStore(AreaGroupEntryfmt);
@@ -815,11 +827,8 @@ int32 GetAreaFlagByAreaID(uint32 area_id)
 
 WMOAreaTableEntry const* GetWMOAreaTableEntryByTripple(int32 rootid, int32 adtid, int32 groupid)
 {
-        WMOAreaInfoByTripple::iterator i = sWMOAreaInfoByTripple.find(WMOAreaTableTripple(rootid, adtid, groupid));
-            if(i == sWMOAreaInfoByTripple.end())
-                        return NULL;
-                return i->second;
-
+    WMOAreaInfoByTripple::const_iterator i = sWMOAreaInfoByTripple.find(WMOAreaTableTripple(rootid, adtid, groupid));
+    return (i == sWMOAreaInfoByTripple.end()) ? NULL : i->second;
 }
 
 AreaTableEntry const* GetAreaEntryByAreaID(uint32 area_id)

@@ -63,13 +63,13 @@ bool IsTotemCategoryCompatiableWith(uint32 itemTotemCategoryId, uint32 requiredT
 bool Zone2MapCoordinates(float& x, float& y, uint32 zone);
 bool Map2ZoneCoordinates(float& x, float& y, uint32 zone);
 
-typedef std::map<uint32/* pair32(dungeonId,expansion) */,LFGDungeonExpansionEntry const*> LFGDungeonExpansionMap;
+typedef UNORDERED_MAP<uint32/* pair32(dungeonId,expansion) */,LFGDungeonExpansionEntry const*> LFGDungeonExpansionMap;
 LFGDungeonExpansionEntry const* GetLFGExpansionEntry(uint32 dungeonId, uint32 expansion);
 
-typedef std::map<uint32/*pair32(map,diff)*/,MapDifficultyEntry const*> MapDifficultyMap;
+typedef UNORDERED_MAP<uint32/*pair32(map,diff)*/,MapDifficultyEntry const*> MapDifficultyMap;
 MapDifficultyEntry const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty);
 
-typedef std::map<uint32 /*zone_id*/, WorldMapAreaEntry const*> WorldMapAreaMap;
+typedef UNORDERED_MAP<uint32 /*zone_id*/, WorldMapAreaEntry const*> WorldMapAreaMap;
 WorldMapAreaEntry const* GetWorldMapAreaByAreaId(uint32 area_id);
 
 // returns main WorldMapArea for all maps, overall WorldMapArea (zone_id = 0) for continents

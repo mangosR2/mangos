@@ -47,9 +47,17 @@ struct PlayerDataCache
 
 #define MAX_ACCOUNT_STR 16
 
-typedef std::map<ObjectGuid, PlayerDataCache> PlayerDataCacheMap;
+typedef UNORDERED_MAP<ObjectGuid, PlayerDataCache> PlayerDataCacheMap;
 typedef std::vector<uint32> RafLinkedList;
-typedef std::map<std::pair<uint32, bool>, RafLinkedList > RafLinkedMap;
+typedef std::pair<uint32, bool> RafLinkedPair;
+typedef UNORDERED_MAP<RafLinkedPair, RafLinkedList > RafLinkedMap;
+
+HASH_NAMESPACE_START
+template<> class hash <RafLinkedPair>
+{
+    public: size_t operator()(const RafLinkedPair& __x) const { return (size_t)(uint(__x.second) << 31) | (__x.first); }
+};
+HASH_NAMESPACE_END
 
 class AccountMgr : public MaNGOS::Singleton<AccountMgr, MaNGOS::ClassLevelLockable<AccountMgr, ACE_Thread_Mutex> >
 {
