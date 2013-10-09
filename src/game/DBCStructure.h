@@ -2626,9 +2626,9 @@ struct WMOAreaTableEntry
 
 struct WorldMapAreaEntry
 {
-    //uint32  ID;                                           // 0        m_ID
+    uint32  ID;                                             // 0        m_ID
     uint32  map_id;                                         // 1        m_mapID
-    uint32  area_id;                                        // 2        m_areaID index (continent 0 areas ignored)
+    uint32  zone_id;                                        // 2        m_areaID index (0 areas contains oveall continent definition)
     //char* internal_name                                   // 3        m_areaName
     float   y1;                                             // 4        m_locLeft
     float   y2;                                             // 5        m_locRight
