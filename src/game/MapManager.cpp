@@ -210,12 +210,7 @@ void MapManager::Update(uint32 diff)
     {
         int result = m_updater.queue_wait(sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME));
         if (result != 0)
-        {
-            if (int count = m_updater.getActiveThreadsCount())
-                sLog.outError("MapManager::Update update thread bucket returned error %i after invoke, please report (count of unstopped threads %u).", result, count);
-            else
-                DEBUG_LOG("MapManager::Update update thread bucket returned error %i after invoke.", result);
-        }
+            sLog.outError("MapManager::Update update thread bucket returned error %i after invoke.", result);
     }
 
     UpdateLoadBalancer(false);

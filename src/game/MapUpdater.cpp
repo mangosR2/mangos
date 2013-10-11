@@ -24,12 +24,16 @@
 #include "World.h"
 #include "Database/DatabaseEnv.h"
 
-void MapUpdater::FreezeDetect()
+int MapUpdater::update_hook()
+{
+    return 0;
+}
+
+int MapUpdater::freeze_hook()
 {
     if (sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME) == 0 ||  getActiveThreadsCount() == 0)
-        return;
+        return 0;
 
-    // FIXME - Need rewrite on base timed mutexes
     ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
     for (ThreadsMap::const_iterator itr = m_threadsMap.begin(); itr != m_threadsMap.end(); ++itr)
     {
@@ -41,29 +45,14 @@ void MapUpdater::FreezeDetect()
         {
             if (Map* map = rq->getObject())
             {
-                DEBUG_LOG("VMSS::MapUpdater::FreezeDetect thread "I64FMT" possible freezed (is update map %u instance %u).",itr->first, map->GetId(), map->GetInstanceId());
-
-                /*FIXME - currently no action here*/
-                /*
-                if (sWorld.getConfig(CONFIG_BOOL_VMSS_CONTINENTS_SKIP) && map->IsContinent())
-                    continue;
-                bool b_needKill = false;
-                if (map->IsBroken())
-                {
-                    if (WorldTimer::getMSTime() - rq->getStartTime() - sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZEDETECTTIME) > sWorld.getConfig(CONFIG_UINT32_VMSS_FORCEUNLOADDELAY))
-                        b_needKill = true;
-                }
-                else
-                    b_needKill = true;
-
-                if (b_needKill)
-                {
-                    kill_thread(itr->first, true);
-                }
-                */
+                ACE_thread_t threadId = itr->first;
+                sLog.outError("VMSS::MapUpdater::freeze_hook thread "I64FMT" possible freezed (is update map %u instance %u), killing his.", threadId, map->GetId(), map->GetInstanceId());
+                kill_thread(threadId, true);
+                return 1;
             }
         }
     }
+    return 0;
 }
 
 void MapUpdater::MapBrokenEvent(Map* map)
