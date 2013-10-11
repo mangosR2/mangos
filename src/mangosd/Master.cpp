@@ -81,7 +81,7 @@ public:
             ACE_Based::Thread::Sleep(sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD));
 
             if (sWorld.getConfig(CONFIG_BOOL_VMSS_ENABLE))
-                sMapMgr.GetMapUpdater()->FreezeDetect();
+                sMapMgr.GetMapUpdater()->update_hook();
 
             uint32 curtime = WorldTimer::getMSTime();
 
