@@ -2668,14 +2668,17 @@ bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 
 template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
     T* obj = new T;
     if(!obj->LoadFromDB(guid, this))
     {
         delete obj;
         return;
     }
-    grid.AddGridObject(obj);
+
+    {
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        grid.AddGridObject(obj);
+    }
     setUnitCell(obj);
 
     obj->SetMap(this);
