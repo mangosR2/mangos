@@ -56,7 +56,7 @@ typedef UNORDERED_MAP<RafLinkedPair, RafLinkedList > RafLinkedMap;
 HASH_NAMESPACE_START
 template<> class hash <RafLinkedPair>
 {
-    public: size_t operator()(const RafLinkedPair& __x) const { return (size_t)(uint(__x.second) << 31) | (__x.first); }
+    public: size_t operator()(const RafLinkedPair& __x) const { return (size_t)(uint32(__x.second) << 31) | (__x.first); }
 };
 HASH_NAMESPACE_END
 
