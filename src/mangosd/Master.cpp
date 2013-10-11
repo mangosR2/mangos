@@ -81,7 +81,7 @@ public:
             ACE_Based::Thread::Sleep(sWorld.getConfig(CONFIG_UINT32_VMSS_FREEZECHECKPERIOD));
 
             if (sWorld.getConfig(CONFIG_BOOL_VMSS_ENABLE))
-                sMapMgr.GetMapUpdater()->FreezeDetect();
+                sMapMgr.GetMapUpdater().update_hook();
 
             uint32 curtime = WorldTimer::getMSTime();
 
@@ -609,9 +609,9 @@ void Master::_OnSignal(int s)
                 sLog.outError("VMSS:: Signal %.2u received from thread "I64FMT".\r\n",s,threadId);
                 ACE_Stack_Trace _StackTrace;
                 std::string StackTrace = _StackTrace.c_str();
-                if (Map* map = sMapMgr.GetMapUpdater()->getObject(threadId))
+                if (Map* map = sMapMgr.GetMapUpdater().getObject(threadId))
                 {
-                    MapStatisticData const* pMBData = sMapMgr.GetMapUpdater()->GetMapStatisticData(map);
+                    MapStatisticData const* pMBData = sMapMgr.GetMapUpdater().GetMapStatisticData(map);
                     uint32 counter = pMBData ? pMBData->breaksCount : 0;
 
                     sLog.outError("VMSS:: crushed thread is update map %u, instance %u, counter %u",map->GetId(), map->GetInstanceId(), counter);
@@ -639,18 +639,18 @@ void Master::_OnSignal(int s)
                         if (!sWorld.getConfig(CONFIG_BOOL_VMSS_TRYSKIPFIRST) || counter > 0)
                             map->SetBroken(true);
 
-                        sMapMgr.GetMapUpdater()->MapBrokenEvent(map);
+                        sMapMgr.GetMapUpdater().MapBrokenEvent(map);
 
                         if (counter > sWorld.getConfig(CONFIG_UINT32_VMSS_MAXTHREADBREAKS))
                         {
                             sLog.outError("VMSS:: Limit of map restarting (map %u instance %u) exceeded. Stopping world!",map->GetId(), map->GetInstanceId());
                             signal(s, SIG_DFL);
-                            ACE_OS::kill(getpid(), s);
+                            sMapMgr.GetMapUpdater().kill_thread(threadId, true);
                         }
                         else
                         {
-                            sLog.outError("VMSS:: Restarting virtual map server (map %u instance %u). Count of restarts: %u",map->GetId(), map->GetInstanceId(), sMapMgr.GetMapUpdater()->GetMapStatisticData(map)->breaksCount);
-                            sMapMgr.GetMapUpdater()->kill_thread(threadId, false);
+                            sLog.outError("VMSS:: Restarting virtual map server (map %u instance %u). Count of restarts: %u",map->GetId(), map->GetInstanceId(), sMapMgr.GetMapUpdater().GetMapStatisticData(map)->breaksCount);
+                            sMapMgr.GetMapUpdater().kill_thread(threadId, false);
                             ACE_OS::thr_exit();
                         }
                     }

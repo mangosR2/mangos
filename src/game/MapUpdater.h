@@ -71,20 +71,31 @@ class MapUpdater : public ObjectUpdateTaskBase<class Map>
 {
     public:
 
-        MapUpdater() : ObjectUpdateTaskBase<class Map>()
-        {}
+        MapUpdater();
 
         virtual ~MapUpdater() {};
 
+        void ReactivateIfNeed();
+        void UpdateLoadBalancer(bool b_start);
+
         Map* GetMapByThreadId(ACE_thread_t const threadId);
-        void FreezeDetect();
         void MapBrokenEvent(Map* map);
 
         MapStatisticData const* GetMapStatisticData(Map* map);
         void MapStatisticDataRemove(Map* map);
 
+        virtual int update_hook() override;
+        virtual int freeze_hook() override;
+
     private:
         MapStatisticDataMap   m_mapStatData;
+
+        ShortIntervalTimer i_balanceTimer;
+        int32  m_threadsCountPreferred;
+        uint32 m_previewTimeStamp;
+        uint64 m_workTimeStorage;
+        uint64 m_sleepTimeStorage;
+        uint32 m_tickCount;
 };
 
 #endif //_MAP_UPDATER_H_INCLUDED

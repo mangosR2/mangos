@@ -1631,11 +1631,11 @@ void World::SetInitialWorldSettings()
     AIRegistry::Initialize();
 
     ///- Initialize MapManager
-    sLog.outString( "Starting Map System" );
+    sLog.outString("Starting Map System");
     sMapMgr.Initialize();
 
     ///- Initialize Battlegrounds
-    sLog.outString( "Starting BattleGround System" );
+    sLog.outString("Starting BattleGround System");
     sBattleGroundMgr.CreateInitialBattleGrounds();
     sBattleGroundMgr.InitAutomaticArenaPointDistribution();
 
