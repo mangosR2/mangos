@@ -77,12 +77,11 @@ class MapUpdater : public ObjectUpdateTaskBase<class Map>
         virtual ~MapUpdater() {};
 
         Map* GetMapByThreadId(ACE_thread_t const threadId);
+        void FreezeDetect();
         void MapBrokenEvent(Map* map);
 
         MapStatisticData const* GetMapStatisticData(Map* map);
         void MapStatisticDataRemove(Map* map);
-
-        virtual int update_hook() override;
 
     private:
         MapStatisticDataMap   m_mapStatData;
