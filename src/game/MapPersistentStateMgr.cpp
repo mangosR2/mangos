@@ -233,7 +233,7 @@ DungeonPersistentState::~DungeonPersistentState()
     }
 }
 
-void DungeonPersistentState::AddToUnbindList(ObjectGuid const& guid)
+void DungeonPersistentState::AddToBindList(ObjectGuid const& guid)
 {
     if (guid.IsPlayer())
         m_playerList.insert(guid);
@@ -241,7 +241,7 @@ void DungeonPersistentState::AddToUnbindList(ObjectGuid const& guid)
         m_groupList.insert(guid);
 }
 
-void DungeonPersistentState::RemoveFromUnbindList(ObjectGuid const& guid)
+void DungeonPersistentState::RemoveFromBindList(ObjectGuid const& guid)
 {
     if (guid.IsPlayer())
         m_playerList.erase(guid);
@@ -1260,16 +1260,29 @@ void MapPersistentStateManager::Update()
     // instance cleanups
     for (PersistentStateMap::iterator itr = m_instanceSaveByInstanceId.begin(); itr != m_instanceSaveByInstanceId.end(); ++itr)
     {
+        for (GuidSet::const_iterator itr1 = m_unloadQueue.begin(); itr1 != m_unloadQueue.end(); ++itr1)
+            itr->second->RemoveFromBindList(*itr1);
+
         if (itr->second && itr->second->IsRequiresRemove())
             removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
     }
     // map cleanups
     for (PersistentStateMap::iterator itr = m_instanceSaveByMapId.begin(); itr != m_instanceSaveByMapId.end(); ++itr)
     {
+        for (GuidSet::const_iterator itr1 = m_unloadQueue.begin(); itr1 != m_unloadQueue.end(); ++itr1)
+            itr->second->RemoveFromBindList(*itr1);
+
         if (itr->second && itr->second->IsRequiresRemove())
             removedSet.insert(MapID(itr->second->GetMapId(), itr->second->GetInstanceId()));
     }
 
+    m_unloadQueue.clear();
+
     for (MapIDSet::const_iterator itr = removedSet.begin(); itr != removedSet.end(); ++itr)
         RemovePersistentState(itr->GetId(), itr->GetInstanceId());
+}
+
+void MapPersistentStateManager::AddToUnbindQueue(ObjectGuid const& guid)
+{
+    m_unloadQueue.insert(guid);
 }

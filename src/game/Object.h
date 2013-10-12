@@ -473,6 +473,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void SetTransportInfo(TransportInfo* transportInfo) { m_transportInfo = transportInfo; }
 
         virtual bool IsTransport() const { return false; };
+        virtual bool IsMOTransport() const { return false; };
         TransportBase* GetTransportBase();
 
         void Relocate(WorldLocation const& location);
