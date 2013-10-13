@@ -42,7 +42,7 @@ Map::~Map()
 {
     UnloadAll(true);
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
 
     if(!m_scriptSchedule.empty())
         sScriptMgr.DecreaseScheduledScriptCount(m_scriptSchedule.size());
@@ -251,9 +251,6 @@ void Map::RemoveFromGrid(GameObject* obj, NGridType *grid, Cell const& cell)
 void Map::DeleteFromWorld(Player* pl)
 {
     sObjectAccessor.RemoveObject(pl);
-
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_AURAS));
-
     delete pl;
 }
 
@@ -270,7 +267,7 @@ Map::EnsureGridCreated(const GridPair &p)
     if (!getNGrid(p.x_coord, p.y_coord))
     {
         {
-            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
                 p.x_coord, p.y_coord);
         }
@@ -1018,7 +1015,7 @@ bool Map::UnloadGrid(NGridType& grid, bool pForce)
     // Finish remove and delete all creatures with delayed remove before unload
     RemoveAllObjectsInRemoveList();
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     unloader.UnloadN();
     setNGrid(NULL, grid.getX(), grid.getY());
 
@@ -1061,7 +1058,7 @@ void Map::UnloadAll(bool pForce)
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_loadingObjectQueue.push(obj);
 }
 
@@ -1070,7 +1067,7 @@ LoadingObjectQueueMember* Map::GetNextLoadingObject()
     LoadingObjectQueueMember* loadingObject = NULL;
     if (!IsLoadingObjectsQueueEmpty())
     {
-        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         loadingObject = i_loadingObjectQueue.top();
         i_loadingObjectQueue.pop();
     }
@@ -1354,7 +1351,7 @@ void Map::AddToActive(WorldObject* obj)
     if (!obj)
         return;
     {
-        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         m_activeObjects.insert(obj->GetObjectGuid());
     }
 
@@ -1413,7 +1410,7 @@ void Map::RemoveFromActive(WorldObject* obj)
 
     // Map::Update for active object in proccess
     {
-        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         m_activeObjects.erase(obj->GetObjectGuid());
     }
 
@@ -2017,8 +2014,7 @@ void Map::InsertObject(WorldObject* object)
 {
     if (!object)
         return;
-
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
     m_objectsStore.insert(MapStoredObjectTypesContainer::value_type(object->GetObjectGuid(), object));
 }
 
@@ -2035,7 +2031,7 @@ void Map::EraseObject(ObjectGuid const& guid)
     if (guid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_objectsStore.erase(guid);
 }
 
@@ -2044,7 +2040,7 @@ WorldObject* Map::FindObject(ObjectGuid const& guid)
     if (guid.IsEmpty())
         return NULL;
 
-    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     MapStoredObjectTypesContainer::iterator itr = m_objectsStore.find(guid);
     return (itr == m_objectsStore.end()) ? NULL : itr->second;
 }
@@ -2197,13 +2193,13 @@ WorldObject* Map::GetWorldObject(ObjectGuid const& guid)
 
 void Map::AddUpdateObject(ObjectGuid const& guid)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_objectsToClientUpdate.insert(guid);
 }
 
 void Map::RemoveUpdateObject(ObjectGuid const& guid)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_objectsToClientUpdate.erase(guid);
 }
 
@@ -2215,7 +2211,7 @@ void Map::SendObjectUpdates()
     {
         ObjectGuid guid;
         {
-            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             guid = *i_objectsToClientUpdate.begin();
             i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
         }
@@ -2226,7 +2222,7 @@ void Map::SendObjectUpdates()
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {
-            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             if (obj->IsMarkedForClientUpdate())
                 obj->BuildUpdateData(update_players);
             if (obj->GetObjectsUpdateQueue() && !obj->GetObjectsUpdateQueue()->empty())
@@ -2446,7 +2442,7 @@ void Map::AddAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attacke
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2464,7 +2460,7 @@ void Map::RemoveAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& atta
     if (targetGuid.IsEmpty() || attackerGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2477,7 +2473,7 @@ void Map::RemoveAllAttackersFor(ObjectGuid const& targetGuid)
     if (targetGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2487,13 +2483,13 @@ void Map::RemoveAllAttackersFor(ObjectGuid const& targetGuid)
 
 GuidSet& Map::GetAttackersFor(ObjectGuid const& targetGuid)
 {
-    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_DEFAULT));
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     return m_attackersMap[targetGuid];
 }
 
 bool Map::IsInCombat(ObjectGuid const& targetGuid) const
 {
-    ReadGuard Guard(const_cast<Map*>(this)->GetLock());
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     AttackersMap::const_iterator itr = m_attackersMap.find(targetGuid);
     if (itr == m_attackersMap.end())
         return false;
@@ -2519,7 +2515,7 @@ void Map::RemoveAttackersStorageFor(ObjectGuid const& targetGuid)
     if (targetGuid.IsEmpty())
         return;
 
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     AttackersMap::iterator itr = m_attackersMap.find(targetGuid);
     if (itr != m_attackersMap.end())
     {
@@ -2676,7 +2672,7 @@ template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, Battl
     }
 
     {
-        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         grid.AddGridObject(obj);
     }
     setUnitCell(obj);
@@ -2701,13 +2697,13 @@ WorldObjectEventProcessor* Map::GetEvents()
 
 void Map::KillAllEvents(bool force)
 {
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     GetEvents()->KillAllEvents(force);
 }
 
 void Map::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {
-    WriteGuard Guard(GetLock());
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     if (set_addtime)
         GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
     else
@@ -2717,7 +2713,7 @@ void Map::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 void Map::UpdateEvents(uint32 update_diff)
 {
     {
-        ReadGuard Guard(GetLock());
+        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         GetEvents()->RenewEvents();
     }
     GetEvents()->Update(update_diff);
@@ -2838,7 +2834,7 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
 void Map::MakeActiveObjectsSafeCopy()
 {
     m_activeObjectsSafeCopy.clear();
-    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_activeObjectsSafeCopy = m_activeObjects;
 }
 
