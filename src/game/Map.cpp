@@ -270,13 +270,13 @@ Map::EnsureGridCreated(const GridPair &p)
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
                 p.x_coord, p.y_coord);
+
+            // build a linkage between this map and NGridType
+            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
+
+            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
+            ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
         }
-
-        // build a linkage between this map and NGridType
-        buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
-
-        getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
-        ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
 
         //z coord
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
@@ -322,17 +322,20 @@ bool Map::EnsureGridLoaded(const Cell &cell)
     MANGOS_ASSERT(grid != NULL);
     if (!IsGridObjectDataLoaded(grid))
     {
-        //it's important to set it loaded before loading!
-        //otherwise there is a possibility of infinity chain (grid loading will be called many times for the same grid)
-        //possible scenario:
-        //active object A(loaded with loader.LoadN call and added to the  map)
-        //summons some active object B, while B added to map grid loading called again and so on..
-        SetGridObjectDataLoaded(true, *grid);
-        ObjectGridLoader loader(*grid, this, cell);
-        loader.LoadN();
+        {
+            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+            //it's important to set it loaded before loading!
+            //otherwise there is a possibility of infinity chain (grid loading will be called many times for the same grid)
+            //possible scenario:
+            //active object A(loaded with loader.LoadN call and added to the  map)
+            //summons some active object B, while B added to map grid loading called again and so on..
+            SetGridObjectDataLoaded(true, *grid);
+            ObjectGridLoader loader(*grid, this, cell);
+            loader.LoadN();
 
-        // Add resurrectable corpses to world object list in grid
-        sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
+            // Add resurrectable corpses to world object list in grid
+            sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
+        }
         m_dyn_tree.balance();
         return true;
     }
@@ -382,6 +385,7 @@ void Map::ActivateGrid(NGridType* nGrid)
 {
     if (nGrid)
     {
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         ResetGridExpiry(*nGrid, 0.2f);
         if (nGrid->GetGridState() != GRID_STATE_ACTIVE)
             nGrid->SetGridState(GRID_STATE_ACTIVE);
@@ -392,17 +396,20 @@ bool Map::Add(Player* player)
 {
     player->GetMapRef().link(this, player);
     player->SetMap(this);
-    CreateAttackersStorageFor(player->GetObjectGuid());
 
     // update player state for other player and visa-versa
     AddToActive(player);
-    player->AddToWorld();
-    SendInitSelf(player);
-    SendInitActiveObjects(player);
+    CreateAttackersStorageFor(player->GetObjectGuid());
 
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
     Cell cell(p);
+    EnsureGridLoadedAtEnter(cell, player);
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    MANGOS_ASSERT(grid != NULL);
+
+    player->AddToWorld();
+    SendInitSelf(player);
+    SendInitActiveObjects(player);
     player->GetViewPoint().Event_AddedToWorld(&(*grid)(cell.CellX(), cell.CellY()));
     UpdateObjectVisibility(player,cell,p);
 
@@ -415,7 +422,7 @@ bool Map::Add(Player* player)
 
 template<class T>
 void
-Map::Add(T *obj)
+Map::Add(T* obj)
 {
     MANGOS_ASSERT(obj);
 
@@ -1015,7 +1022,6 @@ bool Map::UnloadGrid(NGridType& grid, bool pForce)
     // Finish remove and delete all creatures with delayed remove before unload
     RemoveAllObjectsInRemoveList();
 
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     unloader.UnloadN();
     setNGrid(NULL, grid.getX(), grid.getY());
 
@@ -2769,6 +2775,9 @@ void Map::SendRemoveNotifyToStoredClients(WorldObject* object, bool destroy)
 
 bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
 {
+
+    ACE_GUARD_RETURN(ObjectLockType, Guard, GetLock(MAP_LOCK_TYPE_MAPOBJECTS), false);
+
     switch (grid.GetGridState())
     {
         case GRID_STATE_ACTIVE:
