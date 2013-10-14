@@ -407,10 +407,12 @@ add_subdirectory(dep) # TODO: add vmap extractor build support
 
 # Add definitions for all build types
 # Don't place this above 'dep' subdirectory! Because of defines build will crash.
-set(DEFINITIONS
-  DO_MYSQL
-  SYSCONFDIR="../etc/"
-)
+if (UNIX)
+    set(DEFINITIONS DO_MYSQL SYSCONFDIR="${CONF_DIR}/")
+else()
+    set(DEFINITIONS DO_MYSQL SYSCONFDIR="../etc/")
+endif()
+
 set(DEFINITIONS_RELEASE NDEBUG)
 set(DEFINITIONS_DEBUG _DEBUG MANGOS_DEBUG)
 if(WIN32)
