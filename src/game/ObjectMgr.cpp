@@ -161,6 +161,23 @@ ObjectMgr::~ObjectMgr()
     for( QuestMap::iterator i = mQuestTemplates.begin( ); i != mQuestTemplates.end( ); ++i )
         delete i->second;
 
+    mQuestLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mCreatureDataMap.clear();
+    mCreatureLocaleMap.clear();
+    mGameObjectDataMap.clear();
+    mGameObjectLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mPageTextLocaleMap.clear();
+    mMangosStringLocaleMap.clear();
+    mGossipMenuItemsLocaleMap.clear();
+    mPointOfInterestLocaleMap.clear();
+    m_DungeonEncounters.clear();
+    m_mCreatureModelRaceMap.clear();
+    m_GameTeleMap.clear();
+
     for(PetLevelInfoMap::iterator i = petInfo.begin( ); i != petInfo.end( ); ++i )
         delete[] i->second;
 
