@@ -351,7 +351,7 @@ void AuctionHouseMgr::LoadAuctions()
 
     BarGoLink bar(AuctionCount);
 
-    typedef std::map<uint32, std::wstring> PlayerNames;
+    typedef UNORDERED_MAP<uint32, std::wstring> PlayerNames;
     PlayerNames playerNames;                                // caching for load time
 
     do

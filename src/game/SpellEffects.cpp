@@ -3700,6 +3700,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
                     return;
                 }
+                case 62278:                                 // Lightning Orb Charger 
+                { 
+                    if (!unitTarget) 
+                        return; 
+                    unitTarget->CastSpell(m_caster, 62466, true); 
+                    unitTarget->CastSpell(unitTarget, 62279, true); 
+                    return; 
+                }
                 case 62301:                                 // Cosmic Smash (Ulduar - Algalon)
                 case 64598:
                 {
@@ -9957,6 +9965,11 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(m_caster, 50446, true);
                     return;
                 }
+                case 50630:                                 // Eject All Passengers
+                {
+                    m_caster->RemoveSpellsCausingAura(SPELL_AURA_CONTROL_VEHICLE);
+                    return;
+                }
                 case 50725:                                 // Vigilance - remove cooldown on Taunt
                 {
                     Unit* caster = GetAffectiveCaster();
@@ -10443,14 +10456,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                     return;
                 }
-                case 62428:                                 // Load into Catapult
-                {
-                    if (!unitTarget)
-                        return;
-
-                    unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
-                    m_caster->CastSpell(m_caster, 62340, true);
-                    return;
+                case 62042:                                 // Stormhammer 
+                { 
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER) 
+                        return; 
+ 
+                    unitTarget->CastSpell(unitTarget, 62470, true); 
+                    unitTarget->CastSpell(m_caster, 64909, true); 
+                    return; 
                 }
                 case 62381:                                 // Chill
                 {
@@ -10459,6 +10472,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     unitTarget->RemoveAurasDueToSpell(62373);
                     unitTarget->CastSpell(unitTarget, 62382, true);
+                    return;
+                }
+                case 62428:                                 // Load into Catapult
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    m_caster->CastSpell(m_caster, 62340, true);
                     return;
                 }
                 case 62488:                                 // Activate Construct
@@ -10880,6 +10902,21 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
 
                     unitTarget->CastSpell(unitTarget, 62381, true);
                     return;
+                }
+                case 64767:                                 // Stormhammer 
+                { 
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT) 
+                        return; 
+ 
+                    if (Creature* target = (Creature*)unitTarget) 
+                    { 
+                        target->AI()->EnterEvadeMode(); 
+                        target->CastSpell(target, 62470, true); 
+                        target->CastSpell(m_caster, 64909, true); 
+                        target->CastSpell(target, 64778, true); 
+                        target->ForcedDespawn(10000); 
+                    } 
+                    return; 
                 }
                 case 66477:                                 // Bountiful Feast
                 {

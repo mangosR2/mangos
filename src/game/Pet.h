@@ -171,7 +171,7 @@ class MANGOS_DLL_SPEC Pet : public Creature
         static void DeleteFromDB(uint32 guidlow, bool separate_transaction = true);
 
         void SetDeathState(DeathState s);                   // overwrite virtual Creature::SetDeathState and Unit::SetDeathState
-        void Update(uint32 update_diff, uint32 diff) override;  // overwrite virtual Creature::Update and Unit::Update
+        virtual void Update(uint32 update_diff, uint32 diff) override;  // overwrite virtual Creature::Update and Unit::Update
 
         uint8 GetPetAutoSpellSize() const { return m_autospells.size(); }
         uint32 GetPetAutoSpellOnPos(uint8 pos) const
@@ -373,6 +373,6 @@ struct AttackedByHelper
     Unit* attacker;
 };
 
-typedef std::map<uint32,std::string> KnownPetNames;
+typedef UNORDERED_MAP<uint32,std::string> KnownPetNames;
 
 #endif

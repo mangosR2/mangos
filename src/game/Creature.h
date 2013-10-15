@@ -254,7 +254,7 @@ struct CreatureSpellEntry
 #define MAX_CREATURE_SPELL_LISTS 8
 
 typedef std::map<uint8 /* index */,     CreatureSpellEntry> CreatureSpellsList;
-typedef std::map<uint32 /*creature_id*/,CreatureSpellsList> CreatureSpellStorage;
+typedef UNORDERED_MAP<uint32 /*creature_id*/,CreatureSpellsList> CreatureSpellStorage;
 
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
@@ -505,7 +505,7 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         char const* GetSubName() const { return m_creatureInfo->SubName; }
 
-        void Update(uint32 update_diff, uint32 time) override;  // overwrite Unit::Update
+        virtual void Update(uint32 update_diff, uint32 time) override;  // overwrite Unit::Update
 
         virtual void RegenerateAll(uint32 update_diff);
 

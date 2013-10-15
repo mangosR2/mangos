@@ -28,47 +28,6 @@
 
 class BattleGround;
 
-struct MANGOS_DLL_DECL MapID
-{
-    explicit MapID(uint32 id) : nMapId(id), nInstanceId(0) {}
-    MapID(uint32 id, uint32 instid) : nMapId(id), nInstanceId(instid) {}
-
-    bool operator<(const MapID& val) const
-    {
-        if (nMapId == val.nMapId)
-            return nInstanceId < val.nInstanceId;
-
-        if (IsContinent() && !val.IsContinent())
-            return true;
-        else if (!IsContinent() && val.IsContinent())
-            return false;
-
-        return nMapId < val.nMapId;
-    }
-
-    bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
-
-    bool IsContinent() const
-    {
-        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
-    };
-
-    uint32 const& GetId() const { return nMapId; };
-    uint32 const& GetInstanceId() const { return nInstanceId; };
-
-    uint32 nMapId;
-    uint32 nInstanceId;
-};
-
-HASH_NAMESPACE_START
-template<> class hash <MapID>
-{
-    public: size_t operator()(const MapID& __x) const { return (size_t)((__x.GetId() << 16) | (__x.GetInstanceId())); }
-};
-HASH_NAMESPACE_END
-
-typedef UNORDERED_SET<MapID> MapIDSet;
-
 class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::ClassLevelLockable<MapManager, ACE_Recursive_Thread_Mutex> >
 {
     friend class MaNGOS::OperatorNew<MapManager>;
@@ -78,11 +37,13 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
     typedef MaNGOS::ClassLevelLockable<MapManager, ACE_Recursive_Thread_Mutex>::Lock Guard;
 
     public:
-        typedef std::map<MapID, Map* > MapMapType;
+        typedef UNORDERED_MAP<MapID, MapPtr> MapMapType;
 
-        Map* CreateMap(uint32, const WorldObject* obj);
+        Map* CreateMap(uint32, WorldObject const* obj);
         Map* CreateBgMap(uint32 mapid, BattleGround* bg);
         Map* FindMap(uint32 mapid, uint32 instanceId = 0) const;
+        Map* FindFirstMap(uint32 mapid) const;
+        MapPtr GetMapPtr(uint32 mapid, uint32 instanceId = 0);
 
         // only const version for outer users
         void DeleteInstance(uint32 mapid, uint32 instanceId);
@@ -192,7 +153,7 @@ inline void MapManager::DoForAllMapsWithMapId(uint32 mapId, Do& _do)
     for(MapMapType::const_iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
     {
         if (itr->first.nMapId == mapId)
-            _do(itr->second);
+            _do(&*(itr->second));
     }
 }
 

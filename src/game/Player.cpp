@@ -592,7 +592,10 @@ Player::~Player ()
 
     // Clear chache need only if player true loaded, not in broken state
     if (m_uint32Values && !GetObjectGuid().IsEmpty())
+    {
         sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
+        sMapPersistentStateMgr.AddToUnbindQueue(GetObjectGuid());
+    }
 
     // Note: buy back item already deleted from DB when player was saved
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
@@ -626,13 +629,6 @@ Player::~Player ()
     for (size_t x = 0; x < ItemSetEff.size(); x++)
         if (ItemSetEff[x])
             delete ItemSetEff[x];
-
-    // clean up player-instance binds, may unload some instance saves
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
-    {
-        for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
-            itr->second.state->RemoveFromUnbindList(GetObjectGuid());
-    }
 
     delete m_declinedname;
     delete m_runes;
@@ -2143,6 +2139,20 @@ void Player::RemoveFromWorld(bool remove)
         GetCamera()->ResetView();
 
     Unit::RemoveFromWorld(remove);
+}
+
+void Player::SetMap(Map* map)
+{
+    WorldObject::SetMap(map);
+    // Lock map from unload while player on his
+    m_mapPtr = sMapMgr.GetMapPtr(map->GetId(), map->GetInstanceId());
+}
+
+void Player::ResetMap()
+{
+    WorldObject::ResetMap();
+    // Unlock map
+    m_mapPtr = MapPtr();
 }
 
 void Player::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)
@@ -17392,7 +17402,7 @@ void Player::UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficu
 
         sCalendarMgr.SendCalendarRaidLockoutRemove(GetObjectGuid(), itr->second.state);
 
-        itr->second.state->RemoveFromUnbindList(GetObjectGuid());  // state can become invalid
+        itr->second.state->RemoveFromBindList(GetObjectGuid());  // state can become invalid
         m_boundInstances[difficulty].erase(itr++);
     }
 }
@@ -17421,9 +17431,9 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState *state, bool p
         if (bind.state != state)
         {
             if (bind.state)
-                bind.state->RemoveFromUnbindList(GetObjectGuid());
+                bind.state->RemoveFromBindList(GetObjectGuid());
 
-            state->AddToUnbindList(GetObjectGuid());
+            state->AddToBindList(GetObjectGuid());
         }
 
         if (permanent)
@@ -18780,7 +18790,7 @@ void Player::ResetInstances(InstanceResetMethod method, bool isRaid)
         m_boundInstances[diff].erase(itr++);
 
         // the following should remove the instance save from the manager and delete it as well
-        state->RemoveFromUnbindList(GetObjectGuid());
+        state->RemoveFromBindList(GetObjectGuid());
     }
 }
 

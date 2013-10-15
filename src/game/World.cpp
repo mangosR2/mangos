@@ -1118,6 +1118,9 @@ void World::LoadConfigSettings(bool reload)
     // resistance calculation options
     setConfigMinMax(CONFIG_UINT32_RESIST_CALC_METHOD, "Resistance.CalculationMethod", 1, 0, 1);
     setConfig(CONFIG_BOOL_RESIST_ADD_BY_OVER_LEVEL, "Resistance.AddByOverLevel", false);
+
+    // Anounce reset of instance to whole party
+    setConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE,  "InstancesResetAnnounce", false);
 }
 
 extern void LoadGameObjectModelList();

@@ -2775,6 +2775,13 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         return;
                     case 69154:                             // Gaseous Blight (Festergut)
                         target->RemoveAurasDueToSpell(69152); // previous gas state
+                    case 70623:                             // Jaina's Call
+                        if (target->GetTypeId() == TYPEID_PLAYER)
+                            target->CastSpell(target, 70525, true, NULL, this);
+                        return;
+                    case 70638:                             // Call of Sylvanas
+                        if (target->GetTypeId() == TYPEID_PLAYER)
+                            target->CastSpell(target, 70639, true, NULL, this);
                         return;
                     case 71342:                             // Big Love Rocket
                         Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 71344, 71345, 71346, 71347, 0);
@@ -3483,20 +3490,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 70308:                                     // Mutated Transformation (Putricide)
             {
                 uint32 entry = 37672;
-
-                if (target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
-                    target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
-                {
-                    entry = 38285;
-                }
-
-                if (Creature *pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
+                if (Creature* pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
                 {
                     pAbomination->setFaction(target->getFaction());
                     target->CastSpell(pAbomination, 46598, true);
-                    pAbomination->CastSpell(pAbomination, 70405, true);
                 }
-
                 return;
             }
             case 70955:                                     // Unbound Plague Bounce Protection (Putricide)

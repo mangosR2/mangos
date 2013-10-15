@@ -64,6 +64,8 @@ Map::~Map()
     //release reference count
     if(m_TerrainData->Release())
         sTerrainMgr.UnloadTerrain(m_TerrainData->GetMapId());
+
+    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::~Map removing map %u instance %u complete", GetId(), GetInstanceId());
 }
 
 void Map::LoadMapAndVMap(int gx,int gy)
@@ -104,7 +106,11 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
     MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
     persistentState->SetUsedByMapState(this);
     SetBroken(false);
-    //sObjectMgr.LoadTransports(this);
+
+    //if (GetInstanceId() && !sMapMgr.IsTransportMap(GetId()))
+    //    sObjectMgr.LoadTransports(this);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::Map creating map %u instance %u complete", GetId(), GetInstanceId());
 }
 
 MapPersistentState* Map::GetPersistentState() const
@@ -1032,6 +1038,11 @@ void Map::UnloadAll(bool pForce)
         ++i;
         UnloadGrid(grid, pForce);       // deletes the grid and removes it from the GridRefManager
     }
+
+    //if (GetInstanceId() && !sMapMgr.IsTransportMap(GetId()))
+    //    sObjectMgr.UnLoadTransports(this);
+
+    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::UnloadAll unloading all objects from map %u instance %u complete", GetId(), GetInstanceId());
 }
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
@@ -1334,7 +1345,7 @@ void Map::AddToActive(WorldObject* obj)
     }
 
     Cell cell = Cell(MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY()));
-    EnsureGridLoadedAtEnter(cell);
+    EnsureGridLoadedAtEnter(cell, obj->GetTypeId() == TYPEID_PLAYER ? (Player*)obj : NULL);
 
     // also not allow unloading spawn grid to prevent creating creature clone at load
     if (obj->GetTypeId() == TYPEID_UNIT)
@@ -2643,14 +2654,17 @@ bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
 
 template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
     T* obj = new T;
     if(!obj->LoadFromDB(guid, this))
     {
         delete obj;
         return;
     }
-    grid.AddGridObject(obj);
+
+    {
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+        grid.AddGridObject(obj);
+    }
     setUnitCell(obj);
 
     obj->SetMap(this);

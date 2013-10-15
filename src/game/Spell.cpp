@@ -6791,7 +6791,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell && !m_spellInfo->AreaGroupId)
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && 
+                        (m_caster->GetMap() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed()) && 
+                        !m_IsTriggeredSpell && 
+                        !m_spellInfo->AreaGroupId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 if (m_caster->IsInDisallowedMountForm())
@@ -7480,7 +7483,7 @@ SpellCastResult Spell::CheckPower()
     // health as power used - need check health amount
     if (Powers(m_spellInfo->GetPowerType()) == POWER_HEALTH)
     {
-        if (m_caster->GetHealth() <= abs(m_powerCost))
+        if (m_caster->GetHealth() <= uint32(abs(m_powerCost)))
             return SPELL_FAILED_CASTER_AURASTATE;
         return SPELL_CAST_OK;
     }
@@ -9124,18 +9127,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList& targetUnitMap, uin
 
                 targetUnitMap.push_back((*iter));
             }
-            break;
-        }
-        case 70346: // Slime Puddle
-        case 72868:
-        case 72869:
-        {
-            radius = 5.0f;
-
-            if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(70347))
-                radius += holder->GetStackAmount() * 0.2f;
-
-            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             break;
         }
         case 70127: // Mystic Buffet (Sindragosa)
