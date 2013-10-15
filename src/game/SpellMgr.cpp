@@ -2297,6 +2297,10 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
             if (MatchedSpellIdPair(62169, 64417))
                 return false;
 
+            // Auto Grow and Healthy Spore Visual 
+            if (MatchedSpellIdPair(62559, 62538))
+                return false;
+
             break;
         }
         case SPELLFAMILY_WARLOCK:
