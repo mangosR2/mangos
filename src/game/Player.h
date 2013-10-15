@@ -1065,6 +1065,10 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         void AddToWorld();
         virtual void RemoveFromWorld(bool remove) override;
+        virtual void SetMap(Map* map) override;
+        virtual void ResetMap() override;
+        // Used for lock map from unloading. Use with caution!
+        MapPtr GetMapPtr() { return m_mapPtr; };
 
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0)
         {
@@ -1084,7 +1088,7 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool Create( uint32 guidlow, const std::string& name, uint8 race, uint8 class_, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId );
 
-        void Update(uint32 update_diff, uint32 time) override;
+        virtual void Update(uint32 update_diff, uint32 time) override;
 
         static bool BuildEnumData( QueryResult * result,  WorldPacket * p_data );
 
@@ -2740,6 +2744,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         GridReference<Player> m_gridRef;
         MapReference m_mapRef;
+
+        MapPtr m_mapPtr;
 
         // Playerbot mod:
         PlayerbotAI* m_playerbotAI;

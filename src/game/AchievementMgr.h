@@ -34,9 +34,9 @@ struct AchievementCriteriaEntry;
 typedef std::list<AchievementCriteriaEntry const*> AchievementCriteriaEntryList;
 typedef std::list<AchievementEntry const*>         AchievementEntryList;
 
-typedef std::map<uint32, AchievementCriteriaEntryList> AchievementCriteriaListByAchievement;
-typedef std::map<uint32, AchievementEntryList>         AchievementListByReferencedId;
-typedef std::map<uint32, time_t>                       AchievementCriteriaFailTimeMap;
+typedef UNORDERED_MAP<uint32, AchievementCriteriaEntryList> AchievementCriteriaListByAchievement;
+typedef UNORDERED_MAP<uint32, AchievementEntryList>         AchievementListByReferencedId;
+typedef UNORDERED_MAP<uint32, time_t>                       AchievementCriteriaFailTimeMap;
 
 struct CriteriaProgress
 {
@@ -215,7 +215,7 @@ struct AchievementCriteriaRequirementSet
         Storage storage;
 };
 
-typedef std::map<uint32, AchievementCriteriaRequirementSet> AchievementCriteriaRequirementMap;
+typedef UNORDERED_MAP<uint32, AchievementCriteriaRequirementSet> AchievementCriteriaRequirementMap;
 
 struct AchievementReward
 {
@@ -336,7 +336,7 @@ class AchievementGlobalMgr
         // store achievements by referenced achievement id to speed up lookup
         AchievementListByReferencedId m_AchievementListByReferencedId;
 
-        typedef std::map<uint32, time_t> AllCompletedAchievements;
+        typedef UNORDERED_MAP<uint32, time_t> AllCompletedAchievements;
         AllCompletedAchievements m_allCompletedAchievements;
 
         AchievementRewardsMap       m_achievementRewards;

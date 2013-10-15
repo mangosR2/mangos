@@ -47,6 +47,7 @@ class Group;
 class ArenaTeam;
 class Item;
 class SQLStorage;
+class MOTransport;
 
 struct GameTele
 {
@@ -862,11 +863,11 @@ class ObjectMgr
 
         void LoadTransports(Map* map);
         void LoadTransports();
-        typedef UNORDERED_SET<Transport*> TransportSet;
+        typedef UNORDERED_SET<MOTransport*> TransportSet;
         TransportSet const& GetTransports() { return m_Transports; };
 
-        Transport* GetTransportByGuid(ObjectGuid const& guid);
-        Transport const* GetTransportByGOMapId(uint32 mapid) const;
+        MOTransport* GetTransportByGuid(ObjectGuid const& guid);
+        MOTransport const* GetTransportByGOMapId(uint32 mapid) const;
 
         std::string GeneratePetName(uint32 entry);
         uint32 GetBaseXP(uint32 level) const;

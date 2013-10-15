@@ -109,18 +109,16 @@ Group::~Group()
         delete(r);
     }
 
-    // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
-    // will be unloaded first so we must be prepared for both cases
-    // this may unload some dungeon persistent state
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
-    {
-        for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
-            itr->second.state->RemoveFromUnbindList(GetObjectGuid());
-    }
-
-    // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
     if (GetObjectGuid())
+    {
+        // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
+        // will be unloaded first so we must be prepared for both cases
+        // this may unload some dungeon persistent state
+        sMapPersistentStateMgr.AddToUnbindQueue(GetObjectGuid());
+
+        // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
         sObjectMgr.RemoveGroup(this);
+    }
 
     // Sub group counters clean up
     if (m_subGroupsCounts)
@@ -679,6 +677,8 @@ void Group::Disband(bool hideDestroy)
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, false, NULL);
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, true, NULL);
     }
+    if (GetObjectGuid())
+        sObjectMgr.RemoveGroup(this);
 
     m_leaderGuid.Clear();
     m_leaderName = "";
@@ -1553,7 +1553,7 @@ void Group::_setLeader(ObjectGuid guid)
                 {
                     if (itr->second.perm)
                     {
-                        itr->second.state->RemoveFromUnbindList(GetObjectGuid());
+                        itr->second.state->RemoveFromBindList(GetObjectGuid());
                         m_boundInstances[i].erase(itr++);
                     }
                     else
@@ -2056,10 +2056,28 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
 
         if (SendMsgTo)
         {
-            if (isEmpty)
-                SendMsgTo->SendResetInstanceSuccess(state->GetMapId());
+            uint32 mapId = state->GetMapId();
+
+            if (!isEmpty)
+                SendMsgTo->SendResetInstanceFailed(0, mapId);
             else
-                SendMsgTo->SendResetInstanceFailed(0, state->GetMapId());
+            {
+                SendMsgTo->SendResetInstanceSuccess(mapId);
+
+                if (sWorld.getConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE))
+                {
+                    if (Group* group = SendMsgTo->GetGroup())
+                    {
+                        for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
+                        {
+                            Player* pMember = itr->getSource();
+                            if (pMember && pMember != SendMsgTo &&
+                                pMember->GetSession() && pMember->IsInWorld())
+                                pMember->SendResetInstanceSuccess(mapId);
+                        }
+                    }
+                }
+            }
         }
 
         // TODO - Adapt here when clear how difficulty changes must be handled
@@ -2080,7 +2098,7 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
             itr = m_boundInstances[diff].begin();
             // this unloads the instance save unless online players are bound to it
             // (eg. permanent binds or GM solo binds)
-            state->RemoveFromUnbindList(GetObjectGuid());
+            state->RemoveFromBindList(GetObjectGuid());
         }
         else
             ++itr;
@@ -2149,9 +2167,9 @@ InstanceGroupBind* Group::BindToInstance(DungeonPersistentState *state, bool per
         if (bind.state != state)
         {
             if (bind.state)
-                bind.state->RemoveFromUnbindList(GetObjectGuid());
+                bind.state->RemoveFromBindList(GetObjectGuid());
 
-            state->AddToUnbindList(GetObjectGuid());
+            state->AddToBindList(GetObjectGuid());
         }
 
         bind.state = state;
@@ -2181,7 +2199,7 @@ void Group::UnbindInstance(uint32 mapid, uint8 difficulty, bool unload)
                 .PExecute(GetLeaderGuid().GetCounter(), itr->second.state->GetInstanceId());
         }
 
-        itr->second.state->RemoveFromUnbindList(GetObjectGuid());  // state can become invalid
+        itr->second.state->RemoveFromBindList(GetObjectGuid());  // state can become invalid
         m_boundInstances[difficulty].erase(itr);
     }
 }
