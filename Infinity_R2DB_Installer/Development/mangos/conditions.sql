@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `conditions` (
   UNIQUE KEY `unique_conditions` (`type`,`value1`,`value2`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2118 DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Condition System';
 
--- Dumping data for table mangos.conditions: 2,015 rows
+-- Dumping data for table mangos.conditions: 2,016 rows
 DELETE FROM `conditions`;
 /*!40000 ALTER TABLE `conditions` DISABLE KEYS */;
 INSERT INTO `conditions` (`condition_entry`, `type`, `value1`, `value2`) VALUES
@@ -1621,6 +1621,7 @@ INSERT INTO `conditions` (`condition_entry`, `type`, `value1`, `value2`) VALUES
 	(1694, 8, 13446, 0),
 	(1695, 8, 13447, 0),
 	(1696, 8, 13449, 0),
+	(1700, 18, 33113, 0),
 	(1699, -2, 595, 1698),
 	(1698, 9, 13236, 0),
 	(1697, 9, 4136, 0),

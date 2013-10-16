@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -14,13 +14,13 @@
 DROP TABLE IF EXISTS `db_version_ytdb`;
 CREATE TABLE IF NOT EXISTS `db_version_ytdb` (
   `version` varchar(120) NOT NULL,
-  `641_FIX_12539` bit(1) default NULL
+  `642_FIX_12569` bit(1) default NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Used YTDB version notes';
 
--- Dumping data for table mangos.db_version_ytdb: 87 rows
+-- Dumping data for table mangos.db_version_ytdb: 88 rows
 DELETE FROM `db_version_ytdb`;
 /*!40000 ALTER TABLE `db_version_ytdb` DISABLE KEYS */;
-INSERT INTO `db_version_ytdb` (`version`, `641_FIX_12539`) VALUES
+INSERT INTO `db_version_ytdb` (`version`, `642_FIX_12569`) VALUES
 	('555_FIX_10150 (3.3.5a)', NULL),
 	('556_FIX_10188', NULL),
 	('557_FIX_10223', NULL),
@@ -107,7 +107,8 @@ INSERT INTO `db_version_ytdb` (`version`, `641_FIX_12539`) VALUES
 	('638_FIX_12513', NULL),
 	('639_FIX_12529', NULL),
 	('640_FIX_12529', NULL),
-	('641_FIX_12539', NULL);
+	('641_FIX_12539', NULL),
+	('642_FIX_12569', NULL);
 /*!40000 ALTER TABLE `db_version_ytdb` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

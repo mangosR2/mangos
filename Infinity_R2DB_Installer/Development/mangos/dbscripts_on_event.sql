@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `dbscripts_on_event` (
   `comments` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.dbscripts_on_event: 972 rows
+-- Dumping data for table mangos.dbscripts_on_event: 996 rows
 DELETE FROM `dbscripts_on_event`;
 /*!40000 ALTER TABLE `dbscripts_on_event` DISABLE KEYS */;
 INSERT INTO `dbscripts_on_event` (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES
@@ -1007,7 +1007,31 @@ INSERT INTO `dbscripts_on_event` (`id`, `delay`, `command`, `datalong`, `datalon
 	(15406, 10, 0, 0, 0, 23789, 50, 7, 2000001027, 0, 0, 0, 0, 0, 0, 0, 'force buddy to: say text'),
 	(15406, 15, 3, 0, 0, 23789, 50, 7, 0, 0, 0, 0, -4690.13, -3714.73, 48.8912, 0.714641, ''),
 	(15406, 23, 15, 42433, 0, 23789, 50, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'cast 42433 on buddy'),
-	(15406, 28, 22, 16, 49, 23789, 50, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'temp faction');
+	(15406, 28, 22, 16, 49, 23789, 50, 7, 0, 0, 0, 0, 0, 0, 0, 0, 'temp faction'),
+	(21257, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21260, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21245, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21283, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21277, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21279, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21298, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21278, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21287, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21276, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21275, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21274, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21282, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21272, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21280, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21273, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21281, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21291, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(21288, 0, 18, 0, 0, 33571, 50, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn Ulduar Gauntlet Generator on tower destroyed'),
+	(20896, 0, 15, 62148, 0, 30298, 45, 4, 0, 0, 0, 0, 0, 0, 0, 0, 'Invisible Stalker - Cast Flash Freeze visual'),
+	(21031, 0, 13, 0, 0, 194666, 100, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'use Thorim\'s Weather Generator'),
+	(21032, 0, 13, 0, 0, 194665, 100, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'use Hodir\'s Storm Generator'),
+	(21033, 0, 13, 0, 0, 194664, 100, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'use Mimiron\'s Storm Generator'),
+	(21030, 0, 13, 0, 0, 194663, 100, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'use Freya\'s Storm Generator');
 /*!40000 ALTER TABLE `dbscripts_on_event` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

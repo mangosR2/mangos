@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `scripted_event_id` (
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Script library scripted events';
 
--- Dumping data for table mangos.scripted_event_id: 39 rows
+-- Dumping data for table mangos.scripted_event_id: 49 rows
 DELETE FROM `scripted_event_id`;
 /*!40000 ALTER TABLE `scripted_event_id` DISABLE KEYS */;
 INSERT INTO `scripted_event_id` (`id`, `ScriptName`) VALUES
@@ -60,7 +60,17 @@ INSERT INTO `scripted_event_id` (`id`, `ScriptName`) VALUES
 	(12229, 'event_spell_call_captain'),
 	(18454, 'event_spell_call_captain'),
 	(18455, 'event_spell_call_captain'),
-	(2609, 'event_spell_unlocking');
+	(2609, 'event_spell_unlocking'),
+	(21620, 'event_ulduar'),
+	(20964, 'event_spell_harpoon_shot'),
+	(21030, 'event_go_ulduar_tower'),
+	(21031, 'event_go_ulduar_tower'),
+	(21032, 'event_go_ulduar_tower'),
+	(21033, 'event_go_ulduar_tower'),
+	(21605, 'event_ulduar'),
+	(21606, 'event_ulduar'),
+	(20907, 'event_boss_hodir'),
+	(21045, 'event_boss_hodir');
 /*!40000 ALTER TABLE `scripted_event_id` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

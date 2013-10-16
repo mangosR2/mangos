@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -12505,7 +12505,7 @@ INSERT INTO `creature_template_addon` (`entry`, `mount`, `bytes1`, `b2_0_sheath`
 	(29542, 0, 0, 1, 0, 0, 0, NULL),
 	(29621, 0, 0, 1, 0, 0, 0, NULL),
 	(29637, 0, 0, 1, 0, 0, 0, NULL),
-	(29664, 0, 0, 1, 0, 0, 0, NULL),
+	(29664, 0, 0, 1, 0, 0, 0, '54942'),
 	(29725, 0, 0, 1, 0, 0, 0, NULL),
 	(29728, 0, 0, 1, 0, 0, 0, NULL),
 	(29748, 0, 0, 1, 0, 0, 0, NULL),

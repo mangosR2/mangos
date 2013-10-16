@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `creature_addon` (
   PRIMARY KEY  (`guid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.creature_addon: 19,279 rows
+-- Dumping data for table mangos.creature_addon: 19,281 rows
 DELETE FROM `creature_addon`;
 /*!40000 ALTER TABLE `creature_addon` DISABLE KEYS */;
 INSERT INTO `creature_addon` (`guid`, `mount`, `bytes1`, `b2_0_sheath`, `b2_1_pvp_state`, `emote`, `moveflags`, `auras`) VALUES
@@ -18568,6 +18568,7 @@ INSERT INTO `creature_addon` (`guid`, `mount`, `bytes1`, `b2_0_sheath`, `b2_1_pv
 	(91466, 0, 0, 0, 0, 0, 0, '61574'),
 	(91467, 0, 0, 0, 0, 0, 0, '61574'),
 	(136371, 0, 0, 0, 0, 0, 0, '61574'),
+	(60883, 0, 0, 1, 0, 0, 0, '64502'),
 	(136373, 0, 0, 0, 0, 0, 0, '61574'),
 	(136374, 0, 0, 0, 0, 0, 0, '61574'),
 	(136375, 0, 0, 0, 0, 0, 0, '61574'),
@@ -19306,7 +19307,8 @@ INSERT INTO `creature_addon` (`guid`, `mount`, `bytes1`, `b2_0_sheath`, `b2_1_pv
 	(112606, 0, 0, 1, 0, 0, 0, '42049'),
 	(112604, 0, 0, 1, 0, 0, 0, '42051'),
 	(112607, 0, 0, 1, 0, 0, 0, '42048'),
-	(112605, 0, 0, 1, 0, 0, 0, '42050');
+	(112605, 0, 0, 1, 0, 0, 0, '42050'),
+	(60885, 0, 0, 1, 0, 0, 0, '64502');
 /*!40000 ALTER TABLE `creature_addon` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

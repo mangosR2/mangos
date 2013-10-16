@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `game_event_creature` (
   PRIMARY KEY  (`guid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.game_event_creature: 10,439 rows
+-- Dumping data for table mangos.game_event_creature: 10,437 rows
 DELETE FROM `game_event_creature`;
 /*!40000 ALTER TABLE `game_event_creature` DISABLE KEYS */;
 INSERT INTO `game_event_creature` (`guid`, `event`) VALUES
@@ -227,8 +227,6 @@ INSERT INTO `game_event_creature` (`guid`, `event`) VALUES
 	(84739, 26),
 	(84740, 26),
 	(121143, 12),
-	(121145, 12),
-	(121146, 12),
 	(121147, 12),
 	(121148, 12),
 	(121149, 12),

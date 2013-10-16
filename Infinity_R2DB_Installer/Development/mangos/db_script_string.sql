@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `db_script_string` (
   PRIMARY KEY  (`entry`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.db_script_string: 1,214 rows
+-- Dumping data for table mangos.db_script_string: 1,234 rows
 DELETE FROM `db_script_string`;
 /*!40000 ALTER TABLE `db_script_string` DISABLE KEYS */;
 INSERT INTO `db_script_string` (`entry`, `content_default`, `content_loc1`, `content_loc2`, `content_loc3`, `content_loc4`, `content_loc5`, `content_loc6`, `content_loc7`, `content_loc8`, `sound`, `type`, `language`, `emote`, `comment`) VALUES
@@ -773,15 +773,15 @@ INSERT INTO `db_script_string` (`entry`, `content_default`, `content_loc1`, `con
 	(2000000700, 'Lysta, summon in the captives.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 33, 0, NULL),
 	(2000000701, 'Not a challenge at all it seems. Let us see how hou handle your second test. Lysta, bring forth the minions of the Lich King.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 33, 0, NULL),
 	(2000000702, 'Lysta, summon in undead captives.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 33, 0, NULL),
-	(2000000698, 'I came out here to visit you, Jarl! And I find you living in an empty cabin in the middle of nowhere, babbling about frogs? You\'re hopeless!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я проделал весь этот путь, чтобы навестить тебя, Ярл! И что я вижу? Ты живешь в пустой хижине в глуши и болтаешь о каких-то лягушках! Да ты никогда не изменишься!', 0, 0, 0, 0, NULL),
+	(2000000698, 'I came out here to visit you, Jarl! And I find you living in an empty cabin in the middle of nowhere, babbling about frogs? You\'re hopeless!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я проделал весь этот путь, чтобы навестить тебя, Ярл! И что я вижу? Ты живешь в пустой хижине в глуши и болтаешь о каких-то лягушках! Да ты никогда не изменишься!', 0, 0, 0, 5, NULL),
 	(2000000697, 'Nothing. Wanna help me whip up some frog leg stew?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ничего. Хочешь помочь сварить похлебку из лягушачьих ножек?', 0, 0, 0, 0, NULL),
-	(2000000696, 'Jarl, you haven\'t been yourself ever since I arrived. What\'s going on?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ярл, с тех пор как я приехал, ты сам не свой. Что происходит?', 0, 0, 0, 0, NULL),
+	(2000000696, 'Jarl, you haven\'t been yourself ever since I arrived. What\'s going on?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ярл, с тех пор как я приехал, ты сам не свой. Что происходит?', 0, 0, 0, 1, NULL),
 	(2000000695, 'Unless it\'s something I can eat, I don\'t want it.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Если это не съедобно, то не надо.', 0, 0, 0, 0, NULL),
 	(2000000694, 'Jarl?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ярл?', 0, 0, 0, 0, NULL),
 	(2000000690, 'If this is right, we don\'t have long! Oh well.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
 	(2000000691, 'This is the last time that I buy second-hand equipment from ethereal', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
-	(2000000692, 'I brought you a housewarming gift, Jarl.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я принес тебе подарок на новоселье, Ярл.', 0, 0, 0, 0, NULL),
-	(2000000693, 'Go on, open it. I think you\'ll like it.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ну! Открой же. Думаю, тебе понравится.', 0, 0, 0, 0, NULL),
+	(2000000692, 'I brought you a housewarming gift, Jarl.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я принес тебе подарок на новоселье, Ярл.', 0, 0, 0, 1, NULL),
+	(2000000693, 'Go on, open it. I think you\'ll like it.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ну! Открой же. Думаю, тебе понравится.', 0, 0, 0, 25, NULL),
 	(2000000689, 'If I were smart, I\'d be selling this research for a seat on the rocket ship. I have a feeling we\'re going to need to get out of here soon!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
 	(2000000688, 'I hope those blood elves across the way don\'t think that I\'m spying on them!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
 	(2000000687, 'Alright you sorry sacks of bones. Let\'s see what you\'ve got. Strike your opponent, and don\'t stop till I say so.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ну ладно, жалкие мешки с костями. Посмотрим, что вы умеете. В бой, и пока я не скажу, не опускайте оружия.', 0, 0, 33, 0, NULL),
@@ -1128,16 +1128,15 @@ INSERT INTO `db_script_string` (`entry`, `content_default`, `content_loc1`, `con
 	(2000000119, 'Look out! More are coming!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Берегись! Еще на подходе!', 0, 0, 0, 0, NULL),
 	(2000000120, 'Look! Minions of Terokk are approaching!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Смотрите! Фавориты Терокка приближаются!', 0, 0, 0, 0, NULL),
 	(2000000121, 'An Avatar of Terokk! To arms!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Олицетворение Терокка! К оружию!', 0, 0, 0, 0, NULL),
-	(2000000025, 'Ok, let\'s go', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ладно, пойдем', 0, 0, 0, 0, NULL),
-	(2000000024, 'Thanks!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Спасибо!', 0, 0, 0, 0, NULL),
 	(2000000070, 'I need to consult Noram and Horatio.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я должен проконсультироваться с Норамом и Горацием.', 0, 0, 0, 0, NULL),
 	(2000000069, 'That\'s interesting...', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Это интересно...', 0, 0, 0, 0, NULL),
 	(2000000742, 'This... whole... operation... HAS BEEN COMPROMISED!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Все... наши... планы... ПОШЛИ НАСМАРКУ!', 0, 0, 0, 0, NULL),
-	(2000000044, 'You must protect me from monsters, who are living in this forest!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Вы должны защитить меня от монстров, что живут в этом лесу!', 0, 0, 0, 0, NULL),
-	(2000000045, 'This part of forest are very danger for us. We must be a careful!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Эта часть леса - очень опасна для нас. Мы должны быть осторожными!', 0, 0, 0, 0, NULL),
-	(2000000046, 'Kill two monsters, who stay near Bogbean plant and then I gather a bogbean.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Убейте двух монстров, что стоят возле заводи, а я тем временем соберу фасоль.', 0, 0, 0, 0, NULL),
-	(2000000047, 'I am gathering a bogbean. It takes some time.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я собираю фасоль. Это займет время.', 0, 0, 0, 0, NULL),
-	(2000000039, 'Thanks you for help.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Спасибо за помощь.', 0, 0, 0, 0, NULL),
+	(2000000045, 'Oi. So we\'ll have to contend with that thing after all then?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 5'),
+	(2000000046, 'What about the plated proto-drake and the fire giant that were spotted nearby? Think your mages can handle those?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 6'),
+	(2000000044, 'None at all. I suspect it has something to do with that giant mechanical construct that our scouts spotted in front of the gate.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say epilogue 4'),
+	(2000000039, 'Perhaps so, but it\'s only a matter of time until we break back into Ulduar. Any luck finding a way to teleport inside?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 3'),
+	(2000000024, 'What a battle! Did you see that, Rhydian?!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 1'),
+	(2000000025, 'Our friends fought well, Brann, but we\'re not done yet.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say epilogue 2'),
 	(2000000036, 'Take a stone from the table. Presently You will need it for your quest.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Возьми камень со стола, $N. Он понадобится тебе для задания.', 0, 0, 0, 0, NULL),
 	(2000000054, 'Approach, newbie!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Наступление, новичок!', 0, 0, 0, 0, NULL),
 	(2000000055, 'Hm...You are not too bad!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Гм... Вы не слишком плохи!', 0, 0, 0, 0, NULL),
@@ -1248,7 +1247,28 @@ INSERT INTO `db_script_string` (`entry`, `content_default`, `content_loc1`, `con
 	(2000000996, 'Hmm, it could be that meddler Shaw. I will see what I can discover. Be off with you. I\'ll contact you again soon.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 1, NULL),
 	(2000000997, 'Very well. I will return then.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
 	(2000000998, 'That\'s it! That\'s what you were waiting for! KILL THEM!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
-	(2000000098, 'No! Get away from me! Help!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL);
+	(2000000098, 'No! Get away from me! Help!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
+	(2000000047, 'The Kirin Tor can\'t possibly spare any additional resources to take on anything that size. We may not have to though.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say epilogue 7'),
+	(2000001029, 'We can sneak past them. As long as we can take down that construct in front of the gate, we should be able to get inside.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say epilogue 8'),
+	(2000001100, 'Sneak?! What do you think we are, marmots?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 9'),
+	(2000001101, 'We\'re hunting an old god, Brann.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say epilogue 10'),
+	(2000001102, 'Fine. If our allies are going to be the ones getting their hands dirty, we\'ll leave it to them to decide how to proceed.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say epilogue 11'),
+	(2000001103, 'What... What did you just do, $n?! Brann! Braaaaannn!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'High Explorer Dellorah - say towers active 1'),
+	(2000001104, 'Brann! $n just activated the orbital defense system! If we don\'t get out of here soon, we\'re going to be toast!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'High Explorer Dellorah - say towers active 2'),
+	(2000001105, 'Pentarus, you heard the man. Have your mages release the shield and let these brave souls through!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say event start 1'),
+	(2000001106, 'Of course, Brann: We will have the shield down momentarily.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say event start 2'),
+	(2000001107, 'Okay! Let\'s move out. Get into your machines; I\'ll speak to you from here via the radio.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 15807, 0, 0, 0, 'Bronzebeard Radio - say event start 3'),
+	(2000001108, 'Mages of the Kirin Tor, on Brann\'s Command, release the shield! Defend this platform and our allies with your lives! For Dalaran!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Archmage Rhydian - say event start 4'),
+	(2000001109, 'Our allies are ready. Bring down the shield and make way!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, 0, 0, 'Brann Bronzebeard - say event start 5'),
+	(2000001110, 'You\'ve defeated the Iron Council and unlocked the Archivum! Well done, lads!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 15827, 1, 0, 0, 'Brann archivum - say spawned'),
+	(2000001111, 'We did it, lads! We got here before Algalon\'s arrival. Maybe we can rig the systems to interfere with his analysis--', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 15824, 1, 0, 0, 'Brann algalon - say before Algalon'),
+	(2000001112, 'I\'ll head back to the Archivum and see if I can jam his signal. I might be able to buy us some time while you take care of him.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 15825, 1, 0, 0, 'Brann algalon - say after Algalon'),
+	(2000001113, 'The temperature is 122 degrees Kraklenheit.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer'),
+	(2000001114, 'The temperature is 9280 degrees Kraklenheit! That\'s HOT!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer'),
+	(2000001115, 'Wow, it\'s 3 degrees Kraklenheit.  Keep Looking.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer'),
+	(2000001116, 'DING! 428,000 degrees Kraklenheit, exactly! Well, approximately. Almost. Somewhere around there...', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer'),
+	(2000001117, 'It\'s 428,000 degrees Kraklenheit... What\'s happening, hot stuff?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer'),
+	(2000001118, 'Measuring by Kraklenheit, it is 428,000 dewgrees! That\'s Krakley!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Krakle\'s Thermometer');
 /*!40000 ALTER TABLE `db_script_string` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

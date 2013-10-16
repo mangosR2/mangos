@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `dbscripts_on_creature_death` (
   `comments` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.dbscripts_on_creature_death: 20 rows
+-- Dumping data for table mangos.dbscripts_on_creature_death: 32 rows
 DELETE FROM `dbscripts_on_creature_death`;
 /*!40000 ALTER TABLE `dbscripts_on_creature_death` DISABLE KEYS */;
 INSERT INTO `dbscripts_on_creature_death` (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES
@@ -55,7 +55,19 @@ INSERT INTO `dbscripts_on_creature_death` (`id`, `delay`, `command`, `datalong`,
 	(20427, 3, 0, 0, 0, 21332, 100, 32, 2000000966, 0, 0, 0, 0, 0, 0, 0, 'say veneratus epilogue 2'),
 	(20427, 5, 15, 36781, 0, 21332, 100, 32, 0, 0, 0, 0, 0, 0, 0, 0, 'cast Despawn Spirit Hunter'),
 	(20427, 6, 14, 36620, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 'remove Spirit Hunter aura'),
-	(20427, 6, 18, 0, 0, 21332, 100, 32, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn spirit hunter');
+	(20427, 6, 18, 0, 0, 21332, 100, 32, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn spirit hunter'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 162.208, -43.5786, 409.887, 6.254, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 166.747, -43.444, 409.887, 6.213, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 172.051, -43.6818, 410.154, 6.196, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 162.818, -28.7818, 409.887, 0.079, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 167.357, -28.6481, 409.887, 0.069, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34145, 0, 0, 0, 0, 0, 0, 0, 0, 172.661, -28.886, 409.887, 0.147, 'spawn Expedition Engineer'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 162.703, -49.8037, 409.887, 6.263, 'spawn Expedition Mercenary'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 166.494, -49.8494, 409.887, 6.268, 'spawn Expedition Mercenary'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 171.773, -50.0509, 409.887, 0, 'spawn Expedition Mercenary'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 163.422, -36.5537, 409.887, 0.174, 'spawn Expedition Mercenary'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 167.213, -36.5988, 409.887, 0.174, 'spawn Expedition Mercenary'),
+	(33113, 0, 10, 34144, 0, 0, 0, 0, 0, 0, 0, 0, 172.491, -36.8002, 409.887, 0.225, 'spawn Expedition Mercenary');
 /*!40000 ALTER TABLE `dbscripts_on_creature_death` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

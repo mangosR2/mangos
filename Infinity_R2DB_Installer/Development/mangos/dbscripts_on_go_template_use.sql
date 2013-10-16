@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `dbscripts_on_go_template_use` (
   `comments` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.dbscripts_on_go_template_use: 206 rows
+-- Dumping data for table mangos.dbscripts_on_go_template_use: 214 rows
 DELETE FROM `dbscripts_on_go_template_use`;
 /*!40000 ALTER TABLE `dbscripts_on_go_template_use` DISABLE KEYS */;
 INSERT INTO `dbscripts_on_go_template_use` (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES
@@ -90,8 +90,7 @@ INSERT INTO `dbscripts_on_go_template_use` (`id`, `delay`, `command`, `datalong`
 	(186569, 2, 15, 43094, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, ''),
 	(186570, 2, 15, 43094, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, ''),
 	(186572, 2, 15, 43094, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, ''),
-	(194752, 0, 11, 73328, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
-	(194628, 0, 11, 73328, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
+	(194628, 0, 10, 34064, 0, 0, 0, 0, 0, 0, 0, 0, 1677.27, -162.437, 427.333, 3.23, 'spawn Brann Bronzebeard at the celestial access'),
 	(97701, 0, 11, 19236, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
 	(104589, 0, 11, 9193, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
 	(101833, 0, 11, 21621, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
@@ -241,7 +240,16 @@ INSERT INTO `dbscripts_on_go_template_use` (`id`, `delay`, `command`, `datalong`
 	(185553, 1, 10, 22993, 60000, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 'summon Guardian of the Eagle'),
 	(185547, 1, 10, 22994, 60000, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 'summon Guardian of the Falcon'),
 	(185156, 1, 8, 22112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'quest 10866: at least make completable'),
-	(128403, 0, 15, 10247, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'cast Summon Zul\'Farrak Zombies');
+	(128403, 0, 15, 10247, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'cast Summon Zul\'Farrak Zombies'),
+	(194628, 1, 20, 2, 0, 34064, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'change Brann Bronzebeard movement to waypoint'),
+	(194628, 1, 13, 0, 0, 194767, 60, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'use Celestial door 1'),
+	(194628, 1, 13, 0, 0, 194911, 60, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'use Celestial door 2'),
+	(194752, 0, 10, 34064, 0, 0, 0, 0, 0, 0, 0, 0, 1677.27, -162.437, 427.333, 3.23, 'spawn Brann Bronzebeard at the celestial access'),
+	(194752, 1, 20, 2, 0, 34064, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'change Brann Bronzebeard movement to waypoint'),
+	(194752, 1, 13, 0, 0, 194767, 60, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'use Celestial door 1'),
+	(194752, 1, 13, 0, 0, 194911, 60, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'use Celestial door 2'),
+	(194264, 0, 13, 0, 0, 194560, 10, 1, 0, 0, 0, 0, 0, 0, 0, 0, 'use Dark Iron Portcullis'),
+	(194264, 7, 27, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'set GO flag no Interact');
 /*!40000 ALTER TABLE `dbscripts_on_go_template_use` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

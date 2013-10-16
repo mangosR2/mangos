@@ -1037,7 +1037,11 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1000959,'This part of forest are very danger for us. We must be a careful!',0,0,0,0,'stinky ignatz SAY_STINKY_FIRST_STOP'),
 (-1000960,'Kill two monsters, who stay near Bogbean plant and then I gather a bogbean.',0,0,0,0,'stinky ignatz SAY_STINKY_2_MONSTERS'),
 (-1000961,'I am gathering a bogbean. It takes some time.',0,0,0,69,'stinky ignatz SAY_STINKY_GATHERING'),
-(-1000962,'Thanks you for help.',0,0,0,0,'stinky ignatz SAY_STINKY_END');
+(-1000962,'Thanks you for help.',0,0,0,0,'stinky ignatz SAY_STINKY_END'),
+
+(-1000963,'%s looks at you for a moment, then motions for you to follow.',0,2,0,0,'cenarion sparrowhawk EMOTE_FOLLOW'),
+(-1000964,'%s surveys the ground for the buried raven stones.',0,2,0,0,'cenarion sparrowhawk EMOTE_SURVEY'),
+(-1000965,'%s locates a buried raven stone.',0,2,0,0,'cenarion sparrowhawk EMOTE_LOCATE');
 
 -- -1 033 000 SHADOWFANG KEEP
 INSERT INTO script_texts (entry,content_default,sound,type,language,emote,comment) VALUES
@@ -3364,7 +3368,7 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1603009,'Eonar, your servant calls for your blessing!',15535,1,0,0,'freya SAY_HELP_YOGG'),
 
 (-1603010,'Allies of Nature have appeared!',0,3,0,0,'freya EMOTE_ALLIES_NATURE'),
-(-1603011,'A Lifebinder\'s Gift begins to grow!',0,3,0,0,'freya EMOTE_LIFEBINDER'),
+(-1603011,'The %s withers into the earth and begins to regenerate.',0,2,0,0,'freya EMOTE_REGEN_ALLIES'),
 (-1603012,'Freya begins to cast Ground Tremor!',0,3,0,0,'freya EMOTE_TREMOR'),
 (-1603013,'Freya casts Strenghtened Iron Roots!',0,3,0,0,'freya EMOTE_IRON_ROOTS'),
 
@@ -3642,7 +3646,9 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1603244,'%s activates Mimiron\'s Inferno.',0,3,0,0,'leviathan EMOTE_MIMIRON_INFERNO'),
 (-1603245,'%s activates Thorim\'s Hammer.',0,3,0,0,'leviathan EMOTE_THORIM_HAMMER'),
 
-(-1603246,'I know just the place. Will you be all right?',15823,1,0,0,'brann SAY_BRANN_OUTRO');
+(-1603246,'I know just the place. Will you be all right?',15823,1,0,0,'brann SAY_BRANN_OUTRO'),
+
+(-1603247,'%s surrounds itself with a crackling Runic Barrier!',0,3,0,0,'thorim EMOTE_RUNIC_BARRIER');
 
 -- -1 604 000 GUNDRAK
 INSERT INTO script_texts (entry,content_default,sound,type,language,emote,comment) VALUES

@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `creature_ai_texts` (
   PRIMARY KEY  (`entry`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Script Texts';
 
--- Dumping data for table mangos.creature_ai_texts: 1,342 rows
+-- Dumping data for table mangos.creature_ai_texts: 1,339 rows
 DELETE FROM `creature_ai_texts`;
 /*!40000 ALTER TABLE `creature_ai_texts` DISABLE KEYS */;
 INSERT INTO `creature_ai_texts` (`entry`, `content_default`, `content_loc1`, `content_loc2`, `content_loc3`, `content_loc4`, `content_loc5`, `content_loc6`, `content_loc7`, `content_loc8`, `sound`, `type`, `language`, `emote`, `comment`) VALUES
@@ -238,7 +238,6 @@ INSERT INTO `creature_ai_texts` (`entry`, `content_default`, `content_loc1`, `co
 	(-209, 'I have a special message for $n. And it says you must die!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'У меня есть специальное сообщение для $N. И в нем сказано, что Вы должны умереть!', 0, 0, 0, 0, 'Defias Messenger'),
 	(-210, 'I\'ll deliver you, weak $c, to the afterlife!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я доставлю тебя, слабый $C, в мир иной!', 0, 0, 0, 0, 'Defias Messenger'),
 	(-211, 'Die in the name of Edwin van Cleef!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Умри во имя Эдвина Ван Клифа', 0, 0, 0, 0, 'Defias Messenger'),
-	(-212, 'Aaaahhhhhh!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Умри!', 5873, 1, 0, 0, '7271'),
 	(-213, 'Crush!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Круши!', 0, 0, 0, 0, 'Trogg Common Text'),
 	(-214, 'Kill!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Убивать!', 0, 0, 0, 0, 'Trogg Common Text'),
 	(-215, 'Destroy!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Разрушать!', 0, 0, 0, 0, 'Trogg Common Text'),
@@ -268,8 +267,8 @@ INSERT INTO `creature_ai_texts` (`entry`, `content_default`, `content_loc1`, `co
 	(-239, 'The time of the Raven is night, but yours will end here!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Время Ворона ночь, но ты закончишь здесь!', 0, 0, 0, 0, '22992'),
 	(-240, 'You dare to disturb the loyal followers of the Raven?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ты осмелился побеспокоить преданных последователей Ворона?', 0, 0, 0, 0, '22993'),
 	(-241, 'You will die for your hubris, druid!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'За свое высокомерие ты умрешь, друид!', 0, 0, 0, 0, '22993'),
-	(-242, 'You dare to disturb the loyal followers of the Raven?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ты осмелился побеспокоить преданных последователей Ворона?', 0, 0, 0, 0, '22994'),
-	(-243, 'You will die for your hubris, druid!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'За свое высокомерие ты умрешь, друид!', 0, 0, 0, 0, '22994'),
+	(-242, 'The falcon is vaniquished, doomed never to rise again! Your quest is futile!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, '22994'),
+	(-243, 'The raven will return to us as foretold in the prophecy and you are powerless to stop it!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, '22994'),
 	(-244, 'Someone come read this wanted poster to Grek. Grek can\'t read.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Кто-нибудь из прибывших прочтите этот плакат о розыске Грека. Грек не умеет читать.', 0, 0, 0, 0, '19606'),
 	(-245, 'Grek try!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Грек пытается!', 0, 0, 0, 0, '19606'),
 	(-246, 'This oil no good for Grek! What Grek look like to you, some weakling in robes?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Это масло не достойно Грека! Что Грек нашел такого в тебе? Быть может у него слабость к мантиям? ', 0, 0, 0, 0, '19606'),
@@ -347,7 +346,6 @@ INSERT INTO `creature_ai_texts` (`entry`, `content_default`, `content_loc1`, `co
 	(-24, 'The master will know of this incursion. You will be hunted for all eternity!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, '20427'),
 	(-318, 'Last time someone went out to try and collect the bounty on Netherlock, all we got back was a compressed layer of foolhardy adventurer!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Недавно кто-то пробовал выходить на сбор даров Нетерлока, все кто вернулся были спрессованным пластом смелых авантюристов!', 0, 0, 0, 0, '19541'),
 	(-319, 'Maybe I should gather up some other agents and head out there after this shift?', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Возможно я должен подобрать несколько других агентов и главу среди них после этих перемен?', 0, 0, 0, 0, '19541'),
-	(-320, 'Sands consume you!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Пески поглотят вас!', 5872, 1, 14, 0, '7271'),
 	(-321, 'Iman m t\'ief fu Fus\'obeah italaf', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Я занимаюсь ворами марихуаны у первого колдуна в этом крыле', 0, 0, 0, 0, 'Common Frostmane Troll Text'),
 	(-322, 'Dim wha Siame cyaa fi so yudo', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Листья плохие, так что не обрабатывай их', 0, 0, 0, 0, 'Common Frostmane Troll Text'),
 	(-323, 'So ju weh siame is fus nehjo skam worl Uptfeel', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Всего листик ганжы изменит восприятие мира', 0, 0, 0, 0, '1260'),
@@ -1035,7 +1033,6 @@ INSERT INTO `creature_ai_texts` (`entry`, `content_default`, `content_loc1`, `co
 	(-1044, 'Fresh meat!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, '1716'),
 	(-1045, 'More of the Warden\'s errand boys!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, '1716'),
 	(-1046, 'Tartek and nasty dragon going to kill you! You so dumb.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Тартек и гадкий дракон собираются тебя убить, тупица!', 0, 0, 0, 0, '28105'),
-	(-1047, 'How dare you enter my sanctum!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Как вы смеете входить в мой храм!', 0, 0, 0, 0, '7271'),
 	(-1048, 'You are in the presence of a god!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 2, 0, 0, '15963'),
 	(-1049, 'No Touch Spores!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'Common Bloodspore Text'),
 	(-1050, 'Who disturbs my meditation?!', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Кто прервал мою медитацию?!', 0, 1, 0, 0, '26073'),

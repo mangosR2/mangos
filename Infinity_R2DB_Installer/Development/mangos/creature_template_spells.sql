@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `creature_template_spells` (
   PRIMARY KEY  (`entry`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Creature System (Spells used by creature)';
 
--- Dumping data for table mangos.creature_template_spells: 9,791 rows
+-- Dumping data for table mangos.creature_template_spells: 9,793 rows
 DELETE FROM `creature_template_spells`;
 /*!40000 ALTER TABLE `creature_template_spells` DISABLE KEYS */;
 INSERT INTO `creature_template_spells` (`entry`, `spell1`, `spell2`, `spell3`, `spell4`, `spell5`, `spell6`, `spell7`, `spell8`) VALUES
@@ -2362,6 +2362,7 @@ INSERT INTO `creature_template_spells` (`entry`, `spell1`, `spell2`, `spell3`, `
 	(9524, 6268, 8014, 11976, 14292, 0, 0, 0, 0),
 	(9537, 9573, 14872, 16856, 26211, 0, 0, 0, 0),
 	(9541, 15581, 15583, 26141, 0, 0, 0, 0, 0),
+	(33067, 62358, 62359, 64677, 0, 0, 0, 0, 0),
 	(9545, 15610, 0, 0, 0, 0, 0, 0, 0),
 	(9547, 14868, 20825, 15793, 0, 0, 0, 0, 0),
 	(9554, 6253, 26141, 0, 0, 0, 0, 0, 0),
@@ -2411,6 +2412,7 @@ INSERT INTO `creature_template_spells` (`entry`, `spell1`, `spell2`, `spell3`, `
 	(9956, 6660, 0, 0, 0, 0, 0, 0, 0),
 	(10040, 8137, 14120, 0, 0, 0, 0, 0, 0),
 	(10041, 8137, 0, 0, 0, 0, 0, 0, 0),
+	(33060, 62345, 62522, 62346, 0, 0, 0, 0, 0),
 	(10078, 11968, 9053, 15711, 15710, 0, 0, 0, 0),
 	(10082, 6533, 12551, 15547, 27555, 0, 0, 0, 0),
 	(10083, 12470, 15285, 16102, 0, 0, 0, 0, 0),
@@ -8610,7 +8612,7 @@ INSERT INTO `creature_template_spells` (`entry`, `spell1`, `spell2`, `spell3`, `
 	(32957, 62334, 62442, 62335, 62443, 0, 0, 0, 0),
 	(33062, 62974, 62286, 62299, 64660, 0, 0, 0, 0),
 	(33088, 63598, 0, 0, 0, 0, 0, 0, 0),
-	(33109, 62306, 62490, 62324, 50652, 0, 0, 0, 0),
+	(33109, 62306, 62490, 62308, 0, 0, 62324, 0, 0),
 	(33110, 62334, 62442, 62335, 62443, 0, 0, 0, 0),
 	(33125, 42724, 48639, 62332, 62420, 0, 0, 0, 0),
 	(33134, 63802, 63891, 63830, 63795, 0, 0, 0, 0),

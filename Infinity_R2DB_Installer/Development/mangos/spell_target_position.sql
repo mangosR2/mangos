@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `spell_target_position` (
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Spell System';
 
--- Dumping data for table mangos.spell_target_position: 610 rows
+-- Dumping data for table mangos.spell_target_position: 612 rows
 DELETE FROM `spell_target_position`;
 /*!40000 ALTER TABLE `spell_target_position` DISABLE KEYS */;
 INSERT INTO `spell_target_position` (`id`, `target_map`, `target_position_x`, `target_position_y`, `target_position_z`, `target_orientation`) VALUES
@@ -635,7 +635,9 @@ INSERT INTO `spell_target_position` (`id`, `target_map`, `target_position_x`, `t
 	(63992, 603, 1970.61, -25.5988, 324.55, 3.10346),
 	(72613, 533, 3005.74, -3434.27, 304.196, 0),
 	(72617, 533, 3498.22, -5349.36, 144.969, 1.32679),
-	(25004, 1, 7730.53, -2318.86, 451.34, 0);
+	(25004, 1, 7730.53, -2318.86, 451.34, 0),
+	(62501, 603, 2036.17, -201.843, 432.687, 3.14159),
+	(24831, 530, 1920.07, 5582.04, 269.222, 5.1846);
 /*!40000 ALTER TABLE `spell_target_position` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

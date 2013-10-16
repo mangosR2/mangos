@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -114,7 +114,7 @@ INSERT INTO `command` (`name`, `security`, `help`) VALUES
 	('save', 0, 'Syntax: .save\r\n\r\nSaves your character.'),
 	('saveall', 1, 'Syntax: .saveall\r\n\r\nSave all characters in game.'),
 	('account', 0, 'Syntax: .account\r\n\r\nDisplay the access level of your account.'),
-	('account create', 4, 'Syntax: .account create $account $password\r\n\r\nCreate account and set password to it.'),
+	('account create', 4, 'Syntax: .account create $account $password [$expansion]\r\n\r\nCreate account and set password to it. Optionally, you may also set another expansion for this account than the defined default value.'),
 	('modify arena', 1, 'Syntax: .modify arena #value\r\nAdd $amount arena points to the selected player.'),
 	('go grid', 1, 'Syntax: .go grid #gridX #gridY [#mapId]\r\n\r\nTeleport the gm to center of grid with provided indexes at map #mapId (or current map if it not provided).'),
 	('showarea', 3, 'Syntax: .showarea #areaid\r\n\r\nReveal the area of #areaid to the selected character. If no character is selected, reveal this area to you.'),

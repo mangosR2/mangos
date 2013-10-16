@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `dbscripts_on_spell` (
   `comments` varchar(255) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
--- Dumping data for table mangos.dbscripts_on_spell: 312 rows
+-- Dumping data for table mangos.dbscripts_on_spell: 317 rows
 DELETE FROM `dbscripts_on_spell`;
 /*!40000 ALTER TABLE `dbscripts_on_spell` DISABLE KEYS */;
 INSERT INTO `dbscripts_on_spell` (`id`, `delay`, `command`, `datalong`, `datalong2`, `buddy_entry`, `search_radius`, `data_flags`, `dataint`, `dataint2`, `dataint3`, `dataint4`, `x`, `y`, `z`, `o`, `comments`) VALUES
@@ -211,7 +211,7 @@ INSERT INTO `dbscripts_on_spell` (`id`, `delay`, `command`, `datalong`, `datalon
 	(62138, 0, 15, 62139, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 'Teleport inside Violet Hold'),
 	(59226, 0, 15, 3240, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 'Bloody Explosion'),
 	(47129, 5, 10, 25324, 60000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''),
-	(16378, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'create from quest_template'),
+	(16378, 0, 0, 0, 0, 10541, 102069, 16, 2000001116, 2000001117, 2000001118, 0, 0, 0, 0, 0, 'create say'),
 	(17166, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'create from quest_template'),
 	(43057, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'create from quest_template'),
 	(42564, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'create from quest_template'),
@@ -347,7 +347,12 @@ INSERT INTO `dbscripts_on_spell` (`id`, `delay`, `command`, `datalong`, `datalon
 	(53145, 0, 15, 46419, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'cast Cosmetic - Explosion'),
 	(53145, 2, 15, 53162, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 'cast Summon Stormwatcher\'s Head'),
 	(37366, 0, 18, 30000, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn self'),
-	(39398, 0, 18, 30000, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn self');
+	(39398, 0, 18, 30000, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 'despawn self'),
+	(16378, 0, 8, 0, 0, 10541, 102069, 17, 0, 0, 0, 0, 0, 0, 0, 0, 'create from quest_template'),
+	(16378, 0, 0, 0, 0, 10541, 102068, 16, 2000001113, 2000001114, 2000001115, 0, 0, 0, 0, 0, 'create say'),
+	(16378, 0, 0, 0, 0, 10541, 102070, 16, 2000001113, 2000001114, 2000001115, 0, 0, 0, 0, 0, 'create say'),
+	(16378, 0, 0, 0, 0, 10541, 102071, 16, 2000001113, 2000001114, 2000001115, 0, 0, 0, 0, 0, 'create say'),
+	(16378, 0, 0, 0, 0, 10541, 102072, 16, 2000001113, 2000001114, 2000001115, 0, 0, 0, 0, 0, 'create say');
 /*!40000 ALTER TABLE `dbscripts_on_spell` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `reference_loot_template` (
   PRIMARY KEY  (`entry`,`item`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Loot System';
 
--- Dumping data for table mangos.reference_loot_template: 6,665 rows
+-- Dumping data for table mangos.reference_loot_template: 6,695 rows
 DELETE FROM `reference_loot_template`;
 /*!40000 ALTER TABLE `reference_loot_template` DISABLE KEYS */;
 INSERT INTO `reference_loot_template` (`entry`, `item`, `ChanceOrQuestChance`, `groupid`, `mincountOrRef`, `maxcount`, `condition_id`) VALUES
@@ -6691,7 +6691,37 @@ INSERT INTO `reference_loot_template` (`entry`, `item`, `ChanceOrQuestChance`, `
 	(18475, 18538, 0, 4, 1, 1, 0),
 	(20406, 20406, 0, 1, 1, 1, 0),
 	(20406, 20407, 0, 1, 1, 1, 0),
-	(20406, 20408, 0, 1, 1, 1, 0);
+	(20406, 20408, 0, 1, 1, 1, 0),
+	(414, 414, 0, 1, 2, 4, 0),
+	(414, 422, 0, 1, 2, 4, 0),
+	(414, 787, 0, 1, 2, 4, 0),
+	(414, 1707, 0, 1, 2, 4, 0),
+	(414, 2070, 0, 1, 2, 4, 0),
+	(414, 2287, 0, 1, 2, 4, 0),
+	(414, 3770, 0, 1, 2, 4, 0),
+	(414, 3771, 0, 1, 2, 4, 0),
+	(414, 3927, 0, 1, 2, 4, 0),
+	(414, 4536, 0, 1, 2, 4, 0),
+	(414, 4537, 0, 1, 2, 4, 0),
+	(414, 4538, 0, 1, 2, 4, 0),
+	(414, 4539, 0, 1, 2, 4, 0),
+	(414, 4540, 0, 1, 2, 4, 0),
+	(414, 4541, 0, 1, 2, 4, 0),
+	(414, 4542, 0, 1, 2, 4, 0),
+	(414, 4544, 0, 1, 2, 4, 0),
+	(414, 4592, 0, 1, 2, 4, 0),
+	(414, 4593, 0, 1, 2, 4, 0),
+	(414, 4599, 0, 1, 2, 4, 0),
+	(414, 4601, 0, 1, 2, 4, 0),
+	(414, 4602, 0, 1, 2, 4, 0),
+	(414, 4604, 0, 1, 2, 4, 0),
+	(414, 6887, 0, 1, 2, 4, 0),
+	(414, 8364, 0, 1, 2, 4, 0),
+	(414, 8932, 0, 1, 2, 4, 0),
+	(414, 8950, 0, 1, 2, 4, 0),
+	(414, 8952, 0, 1, 2, 4, 0),
+	(414, 8953, 0, 1, 2, 4, 0),
+	(414, 8957, 0, 1, 2, 4, 0);
 /*!40000 ALTER TABLE `reference_loot_template` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

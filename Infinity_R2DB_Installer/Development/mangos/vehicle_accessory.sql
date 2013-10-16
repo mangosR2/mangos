@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
+-- Server version:               5.0.88-community - MySQL Community Edition (GPL)
 -- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
+-- HeidiSQL Version:             8.1.0.4545
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `vehicle_accessory` (
   PRIMARY KEY  (`vehicle_entry`,`seat`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=FIXED COMMENT='Vehicle Accessory';
 
--- Dumping data for table mangos.vehicle_accessory: 126 rows
+-- Dumping data for table mangos.vehicle_accessory: 146 rows
 DELETE FROM `vehicle_accessory`;
 /*!40000 ALTER TABLE `vehicle_accessory` DISABLE KEYS */;
 INSERT INTO `vehicle_accessory` (`vehicle_entry`, `seat`, `accessory_entry`, `comment`) VALUES
@@ -42,8 +42,8 @@ INSERT INTO `vehicle_accessory` (`vehicle_entry`, `seat`, `accessory_entry`, `co
 	(32633, 2, 32639, 'Traveler Mammoth (A) - Vendor & Repairer'),
 	(32640, 1, 32642, 'Traveler Mammoth (H) - Vendor'),
 	(32640, 2, 32641, 'Traveler Mammoth (H) - Vendor & Repairer'),
-	(32930, 0, 32933, 'Kologarn'),
-	(32930, 1, 32934, 'Kologarn'),
+	(34146, 2, 34137, 'Winter Jormungar'),
+	(34146, 1, 34137, 'Winter Jormungar'),
 	(33060, 7, 33067, 'Salvaged Siege Engine'),
 	(33109, 1, 33167, 'Salvaged Demolisher'),
 	(33109, 2, 33620, 'Salvaged Demolisher'),
@@ -135,7 +135,7 @@ INSERT INTO `vehicle_accessory` (`vehicle_entry`, `seat`, `accessory_entry`, `co
 	(32344, 0, 32274, 'Alliance Bomber Pilot rides Alliance Rescue Craft'),
 	(32344, 2, 32531, 'Banner Bunny, Side, Alliance, Small rides Alliance Rescue Craft'),
 	(32490, 0, 32486, 'Scourge Death Knight rides Scourge Deathcharger'),
-	(33293, 0, 33329, 'XT-002 Deconstructor - Heart'),
+	(33364, 1, 33365, 'Thorim\'s Hammer Targetting Reticle'),
 	(36896, 1, 28717, 'Overlord Drakuru on Stonespine Gargoyle'),
 	(40081, 0, 40083, 'Orb Carrier'),
 	(40081, 1, 40100, 'Orb Carrier'),
@@ -149,7 +149,27 @@ INSERT INTO `vehicle_accessory` (`vehicle_entry`, `seat`, `accessory_entry`, `co
 	(40472, 1, 40100, 'Orb Carrier'),
 	(40472, 2, 40468, 'Orb Carrier'),
 	(40472, 3, 40469, 'Orb Carrier'),
-	(36794, 0, 36658, 'Scourgelord Tyrannus - intro');
+	(36794, 0, 36658, 'Scourgelord Tyrannus - intro'),
+	(33369, 1, 33370, 'Mimiron\'s Inferno Targetting Reticle'),
+	(33108, 1, 33212, 'Hodir\'s Fury Targetting Reticle'),
+	(33366, 1, 33367, 'Freya\'s Ward Targetting Reticle'),
+	(34161, 1, 33216, 'Mechanostriker 54-A'),
+	(34146, 3, 34137, 'Winter Jormungar'),
+	(34146, 4, 34137, 'Winter Jormungar'),
+	(34150, 1, 34137, 'Winter Jormungar'),
+	(34150, 2, 34137, 'Winter Jormungar'),
+	(34150, 3, 34137, 'Winter Jormungar'),
+	(34150, 4, 34137, 'Winter Jormungar'),
+	(34150, 5, 34137, 'Winter Jormungar'),
+	(34150, 6, 34137, 'Winter Jormungar'),
+	(34151, 1, 34137, 'Winter Jormungar'),
+	(34151, 2, 34137, 'Winter Jormungar'),
+	(34151, 3, 34137, 'Winter Jormungar'),
+	(34151, 4, 34137, 'Winter Jormungar'),
+	(34151, 5, 34137, 'Winter Jormungar'),
+	(34151, 6, 34137, 'Winter Jormungar'),
+	(34151, 7, 34137, 'Winter Jormungar'),
+	(34151, 0, 34137, 'Winter Jormungar');
 /*!40000 ALTER TABLE `vehicle_accessory` ENABLE KEYS */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

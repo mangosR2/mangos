@@ -1215,6 +1215,7 @@ UPDATE gameobject_template SET ScriptName='go_mana_bomb' WHERE entry=184725;
 UPDATE creature_template SET ScriptName='npc_captive_child' WHERE entry=22314;
 UPDATE creature_template SET ScriptName='npc_isla_starmane' WHERE entry=18760;
 UPDATE creature_template SET ScriptName="npc_skywing" WHERE entry=22424;
+UPDATE creature_template SET ScriptName="npc_cenarion_sparrowhawk" WHERE entry=22972;
 
 /* THOUSAND NEEDLES */
 UPDATE creature_template SET ScriptName='npc_kanati' WHERE entry=10638;
@@ -1302,6 +1303,19 @@ UPDATE gameobject_template SET ScriptName='go_celestial_access' WHERE entry IN (
 UPDATE creature_template SET ScriptName='boss_hodir' WHERE entry=32845;
 UPDATE creature_template SET ScriptName='npc_flash_freeze' WHERE entry IN (32926,32938);
 UPDATE creature_template SET ScriptName='npc_icicle_target' WHERE entry=33174;
+UPDATE creature_template SET ScriptName='boss_thorim' WHERE entry=32865;
+UPDATE creature_template SET ScriptName='boss_sif' WHERE entry=33196;
+UPDATE creature_template SET ScriptName='npc_thunder_orb' WHERE entry=33378;
+UPDATE creature_template SET ScriptName='npc_runic_colossus' WHERE entry=32872;
+UPDATE creature_template SET ScriptName='boss_freya' WHERE entry=32906;
+UPDATE creature_template SET ScriptName='npc_eonars_gift' WHERE entry=33228;
+UPDATE creature_template SET ScriptName='npc_nature_bomb' WHERE entry=34129;
+UPDATE creature_template SET ScriptName='npc_iron_roots' WHERE entry IN (33088,33168);
+UPDATE creature_template SET ScriptName='npc_healthy_spore' WHERE entry=33215;
+UPDATE creature_template SET ScriptName='npc_water_spirit' WHERE entry=33202;
+UPDATE creature_template SET ScriptName='npc_snaplasher' WHERE entry=32916;
+UPDATE creature_template SET ScriptName='npc_storm_lasher' WHERE entry=32919;
+UPDATE creature_template SET ScriptName='boss_leviathan_mk2' WHERE entry=33432;
 DELETE FROM scripted_event_id WHERE id IN (9735,20907,20964,21030,21031,21032,21033,21045,21605,21606,21620);
 INSERT INTO scripted_event_id VALUES
 (9735, 'event_spell_saronite_barrier'), -- Vezax saronite barrier event
