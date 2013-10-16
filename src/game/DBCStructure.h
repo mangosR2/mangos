@@ -2484,7 +2484,7 @@ struct TransportAnimationEntry
     float     x;                                            // 3       transport offset X
     float     y;                                            // 4       transport offset Y
     float     z;                                            // 5       transport offset Z
-    //uint32    animId;                                     // 6       animation ID
+    uint32    animId;                                       // 6       animation ID
 };
 
 struct TransportRotationEntry
@@ -2763,6 +2763,9 @@ struct TaxiPathNodePtr
 
 typedef Path<TaxiPathNodePtr,TaxiPathNodeEntry const> TaxiPathNodeList;
 typedef std::vector<TaxiPathNodeList> TaxiPathNodesByPath;
+
+typedef UNORDERED_MAP<uint32 /*frame*/, TransportAnimationEntry const*> TransportAnimationEntryMap;
+typedef UNORDERED_MAP<uint32, TransportAnimationEntryMap> TransportAnimationsByEntry;
 
 #define TaxiMaskSize 14
 typedef uint32 TaxiMask[TaxiMaskSize];

@@ -66,10 +66,11 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
     public:
 
         ObjectUpdateTaskBase()
-            : m_mutex(), m_condition(m_mutex), m_rwmutex(),  m_pendingRequests(0)
+            : m_mutex(), m_condition(m_mutex), m_rwmutex(),  m_currentThreadsCount(0), m_round(false)
         {
             if (activated())
                 deactivate();
+            m_lastError.clear();
         }
 
         virtual ~ObjectUpdateTaskBase()
@@ -88,7 +89,7 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
         {
             while (true)
             {
-                if (m_queue.is_empty())
+                if (m_round)
                     m_condition.broadcast();
                 if (ACE_Method_Request* rq = m_queue.dequeue())
                 {
@@ -103,17 +104,17 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
                     }
                     if (rq)
                         delete rq;
-                    decreasePendingRequestsCount();
-                    m_condition.broadcast();
+
+                    if (!m_round)
+                        m_condition.broadcast();
                 }
                 else
                 {
-                    ACE_DEBUG((LM_ERROR, ACE_TEXT("(%t) \n"), ACE_TEXT("Failed to get sheduled object from queue")));
+                    outError("ObjectUpdateTaskBase::svc failed to get sheduled object from queue!");
                     break;
                 }
-                if (m_queue.is_empty())
-                    m_condition.broadcast();
             }
+            --m_currentThreadsCount;
             m_condition.broadcast();
             return 0;
         }
@@ -126,9 +127,15 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
 
         virtual int schedule_update(T& obj, uint32 diff)
         {
+            if (m_round)
+            {
+                outError("ObjectUpdateTaskBase::shedule_update called while update round started!");
+                return -1;
+            }
+
             if (execute(new ObjectUpdateRequest<T>(obj, diff)) == -1)
             {
-                ACE_DEBUG((LM_ERROR, ACE_TEXT("(%t) \n"), ACE_TEXT("Failed to schedule Object Update")));
+                outError("ObjectUpdateTaskBase::schedule_update failed to schedule Object Update");
                 return -1;
             }
             return 0;
@@ -142,40 +149,43 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
             while (m_queue.is_full())
                 m_condition.wait();
 
-            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex);
-
             if (m_queue.enqueue((ACE_Method_Request*)new_req, (ACE_Time_Value*)&ACE_Time_Value::zero) == -1)
             {
                 delete new_req;
-                ACE_ERROR_RETURN((LM_ERROR, ACE_TEXT("(%t) %p\n"), ACE_TEXT("ObjectUpdateTaskBase::execute enqueue failed!")), -1);
+                outError("ObjectUpdateTaskBase::execute enqueue failed!");
+                return -1;
             }
-            ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
-            ++m_pendingRequests;
             return 0;
         }
 
         int queue_wait(uint32 maxDelay = 0 /*msec*/)
         {
-            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex);
+            if (m_round)
+            {
+                outError("ObjectUpdateTaskBase::queue_wait try start with already beginned round!");
+                return -1;
+            }
+
+            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex, true);
+            m_round = true;
             statistic_hook_round_barrier();
             ACE_Time_Value absTime = ACE_OS::gettimeofday() + ACE_Time_Value(0, maxDelay * 1000);
             int result = 0;
 
-            while (m_currentThreadsCount > 0 && getPendingRequestsCount() > 0)
+            while (m_currentThreadsCount > 0 && (!m_queue.is_empty() || getActiveThreadsCount() > 0))
             {
-                int res = m_condition.wait((maxDelay == 0) ? 0 : &absTime);
+                int res = m_condition.wait((maxDelay == 0) ? NULL : &absTime);
                 if (res == -1)
                 {
-                    if (freeze_hook() == 1 ||
-                        (getActiveThreadsCount() == 0 && m_queue.is_empty()))
+                    if (freeze_hook() == 1 || (m_queue.is_empty() && getActiveThreadsCount() == 0))
                     {
-                        result = getPendingRequestsCount();
+                        result = getActiveThreadsCount();
                         break;
                     }
                 }
             }
             statistic_hook_round_end();
-            setPendingRequestsCount(0);
+            m_round = false;
             return result;
         }
 
@@ -184,7 +194,7 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
             if (activated() || num_threads < 1)
                 return -1;
 
-            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex);
+            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex, true);
             m_queue.queue()->activate();
             if (ACE_Task_Base::activate(THR_NEW_LWP | THR_JOINABLE | THR_INHERIT_SCHED, num_threads) == -1)
             {
@@ -210,20 +220,29 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
             if (!activated())
                 return -1;
 
-            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex);
-            m_queue.queue()->deactivate();
+            if (getCurrentThreadsCount() > 0)
+            {
+                ACE_thread_t threads[MAX_PARENT_THREADS];
+                size_t num_threads = thr_mgr() ? thr_mgr()->thread_list(this, threads, MAX_PARENT_THREADS) : 0;
+                if (num_threads > 0)
+                {
+                    for (size_t i = 0; i < num_threads; ++i)
+                        kill_thread(threads[i], true);
+                }
+            }
 
+            ACE_Guard<ACE_Thread_Mutex> guard(m_mutex, true);
+            m_queue.queue()->deactivate();
             wait();
             m_threadsMap.clear();
             m_currentThreadsCount = 0;
-            setPendingRequestsCount(0);
+            m_currentActiveThreadsCount = 0;
             return 0;
         }
 
         void reactivate(uint32 threads)
         {
             statistic_hook_round_begin();
-            setPendingRequestsCount(0);
             if (m_currentThreadsCount == threads && activated())
                 return;
 
@@ -240,56 +259,63 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
         {
             if (needKill)
             {
-                ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
                 //thr_mgr()->kill(threadId, SIGABRT);
                 thr_mgr()->cancel(threadId, 0);
-                m_threadsMap.erase(threadId);
-                --m_currentActiveThreadsCount;
+                setThreadInfo(threadId, NULL);
+                --m_currentThreadsCount;
             }
-            decreasePendingRequestsCount();
-            m_condition.broadcast();
-        }
-
-        void setPendingRequestsCount(size_t num)
-        {
-            ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
-            m_pendingRequests = (num >=0) ? num : 0;
-        }
-
-        size_t decreasePendingRequestsCount()
-        {
-            ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
-            return m_pendingRequests == 0 ? 0 : --m_pendingRequests;
-        }
-
-        size_t getPendingRequestsCount()
-        {
-            ACE_Read_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
-            return m_pendingRequests;
         }
 
         // thread information block
         void setThreadInfo(ACE_thread_t threadId, ObjectUpdateRequest<T>* rq)
         {
-            ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
-            m_threadsMap[ACE_OS::thr_self()] = rq;
-            if (rq)
+            ObjectUpdateRequest<T>* oldrq = getThreadInfo(threadId);
+            ACE_Write_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex, true);
+            if (rq && !oldrq)
                 ++m_currentActiveThreadsCount;
-            else
+            else if (!rq && oldrq)
                 --m_currentActiveThreadsCount;
+
+            m_threadsMap[ACE_OS::thr_self()] = rq;
         }
 
         size_t getActiveThreadsCount()
         {
-            ACE_Read_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
+            ACE_Read_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex, true);
             return m_currentActiveThreadsCount;
         }
 
         ObjectUpdateRequest<T>* getThreadInfo(ACE_thread_t threadId)
         {
-            ACE_Read_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex);
+            ACE_Read_Guard<ACE_RW_Thread_Mutex> guardRW(m_rwmutex, true);
             typename ThreadsMap::iterator itr = m_threadsMap.find(threadId);
             return itr == m_threadsMap.end() ? NULL : itr->second;
+        }
+
+        void outError(char const* str, ...)
+        {
+            if (!str)
+                return;
+
+            va_list ap;
+            va_start(ap, str);
+            char buffer[255];
+            sprintf(buffer, str, &ap);
+            va_end(ap);
+            m_lastError.clear();
+            m_lastError.append(buffer);
+        }
+
+        std::string getLastError()
+        {
+            std::string temp = m_lastError;
+            m_lastError.clear();
+            return temp;
+        }
+
+        size_t getCurrentThreadsCount() const
+        {
+            return m_currentThreadsCount;
         }
 
         // Freeze reaction hook
@@ -303,15 +329,19 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
         virtual void statistic_hook_round_barrier() {}
         virtual void statistic_hook_round_end()     {}
 
+        // External periodical update hook (for statistic mostly)
+        virtual int update_hook()                   { return 0; }
+
     protected:
         ACE_Thread_Mutex           m_mutex;
         ACE_Condition_Thread_Mutex m_condition;
         ACE_RW_Thread_Mutex        m_rwmutex;
         ACE_Activation_Queue       m_queue;
         ThreadsMap                 m_threadsMap;
-        size_t                     m_pendingRequests;
         size_t                     m_currentThreadsCount;
         size_t                     m_currentActiveThreadsCount;
+        bool                       m_round;
+        std::string                m_lastError;
 };
 
 #endif //_OBJECT_UPDATE_TASK_BASE_H_INCLUDED

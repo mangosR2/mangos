@@ -116,6 +116,7 @@ const char TaxiPathEntryfmt[] = "niii";
 const char TaxiPathNodeEntryfmt[] = "diiifffiiii";
 const char TeamContributionPointsfmt[] = "df";
 const char TotemCategoryEntryfmt[] = "nxxxxxxxxxxxxxxxxxii";
+const char TransportAnimationEntryfmt[] = "diifffi";
 const char VehicleEntryfmt[] = "niffffiiiiiiiifffffffffffffffssssfifiixx";
 const char VehicleSeatEntryfmt[] = "niiffffffffffiiiiiifffffffiiifffiiiiiiiffiiiiixxxxxxxxxxxx";
 const char WMOAreaTableEntryfmt[] = "niiixxxxxiixxxxxxxxxxxxxxxxx";
