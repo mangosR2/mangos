@@ -161,6 +161,23 @@ ObjectMgr::~ObjectMgr()
     for( QuestMap::iterator i = mQuestTemplates.begin( ); i != mQuestTemplates.end( ); ++i )
         delete i->second;
 
+    mQuestLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mCreatureDataMap.clear();
+    mCreatureLocaleMap.clear();
+    mGameObjectDataMap.clear();
+    mGameObjectLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mPageTextLocaleMap.clear();
+    mMangosStringLocaleMap.clear();
+    mGossipMenuItemsLocaleMap.clear();
+    mPointOfInterestLocaleMap.clear();
+    m_DungeonEncounters.clear();
+    m_mCreatureModelRaceMap.clear();
+    m_GameTeleMap.clear();
+
     for(PetLevelInfoMap::iterator i = petInfo.begin( ); i != petInfo.end( ); ++i )
         delete[] i->second;
 
@@ -3845,12 +3862,15 @@ void ObjectMgr::LoadGroups()
     // TODO: maybe delete from the DB before loading in this case
     for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end(); ++itr)
     {
-        if (itr->second->GetMembersCount() < 2)
+        if (Group* group = itr->second)
         {
-            itr->second->Disband();
-            delete itr->second;
-            mGroupMap.erase(itr);
-            itr = mGroupMap.begin();
+            if (group->GetMembersCount() < 2)
+            {
+                itr = mGroupMap.begin();
+                // group deleted from mGroupMap in Disband() method!
+                group->Disband();
+                delete group;
+            }
         }
     }
 
