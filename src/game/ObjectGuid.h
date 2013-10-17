@@ -21,6 +21,7 @@
 
 #include "Common.h"
 #include "ByteBuffer.h"
+#include "LockedVector.h"
 
 #include <functional>
 
@@ -266,8 +267,8 @@ class MANGOS_DLL_SPEC ObjectGuid
 
 // Some Shared defines
 typedef UNORDERED_SET<ObjectGuid> GuidSet;
-typedef std::list<ObjectGuid> GuidList;
-typedef std::vector<ObjectGuid> GuidVector;
+typedef ACE_Based::LockedVector<ObjectGuid> GuidList;
+typedef ACE_Based::LockedVector<ObjectGuid> GuidVector;
 
 //minimum buffer size for packed guid is 9 bytes
 #define PACKED_GUID_MIN_BUFFER_SIZE 9
