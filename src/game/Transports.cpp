@@ -567,8 +567,9 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
             }
 
             oldMap->Remove((GameObject*)this, false);
-            SetMap(newMap);
+            SkipUpdate(true);
 
+            SetMap(newMap);
             newMap->Relocation((GameObject*)this, loc);
             newMap->Add((GameObject*)this);
 

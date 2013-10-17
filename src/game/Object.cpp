@@ -105,17 +105,16 @@ bool UpdateFieldData::IsUpdateFieldVisible(uint16 fieldIndex) const
     return false;
 }
 
-Object::Object()
+Object::Object() :
+    m_objectTypeId(TYPEID_OBJECT),
+    m_objectType(TYPEMASK_OBJECT),
+    m_uint32Values(NULL),
+    m_valuesCount(0),
+    m_fieldNotifyFlags(UF_FLAG_DYNAMIC),
+    m_inWorld(false),
+    m_objectUpdated(false),
+    m_skipUpdate(false)
 {
-    m_objectTypeId        = TYPEID_OBJECT;
-    m_objectType          = TYPEMASK_OBJECT;
-
-    m_uint32Values        = NULL;
-    m_valuesCount         = 0;
-    m_fieldNotifyFlags    = UF_FLAG_DYNAMIC;
-
-    m_inWorld             = false;
-    m_objectUpdated       = false;
 }
 
 Object::~Object()

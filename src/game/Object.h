@@ -410,6 +410,7 @@ class MANGOS_DLL_SPEC Object
         uint16 m_fieldNotifyFlags;
 
         bool m_objectUpdated;
+        bool m_skipUpdate;
 
     private:
         bool m_inWorld;
@@ -423,6 +424,12 @@ class MANGOS_DLL_SPEC Object
         // for output helpfull error messages from ASSERTs
         bool PrintIndexError(uint32 index, bool set) const;
         bool PrintEntryError(char const* descr) const;
+
+    public:
+        // SkipUpdate mechanic used if object (Player, MOTransport, etc) moved from one map to another,
+        // for skipping double-update in one world update tick
+        bool SkipUpdate() const { return m_skipUpdate; };
+        void SkipUpdate(bool value) { m_skipUpdate = value; };
 };
 
 struct WorldObjectChangeAccumulator;
@@ -444,11 +451,16 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         {
             public:
                 explicit UpdateHelper(WorldObject * obj) : m_obj(obj) {}
-                ~UpdateHelper() { }
+                ~UpdateHelper() {}
 
-                void Update( uint32 time_diff )
+                void Update(uint32 time_diff)
                 {
-                    m_obj->Update( m_obj->m_updateTracker.timeElapsed(), time_diff);
+                    if (m_obj->SkipUpdate())
+                    {
+                        m_obj->SkipUpdate(false);
+                        return;
+                    }
+                    m_obj->Update(m_obj->m_updateTracker.timeElapsed(), time_diff);
                     m_obj->m_updateTracker.Reset();
                 }
 
