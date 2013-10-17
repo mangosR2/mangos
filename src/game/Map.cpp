@@ -268,14 +268,13 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
-                p.x_coord, p.y_coord);
+            NGridType* grid = new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD));
+            setNGrid(grid, p.x_coord, p.y_coord);
 
             // build a linkage between this map and NGridType
-            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
-
-            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
-            ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
+            buildNGridLinkage(grid);
+            grid->SetGridState(GRID_STATE_IDLE);
+            ResetGridExpiry(*grid, 0.2f);
         }
 
         //z coord
@@ -1064,7 +1063,6 @@ void Map::UnloadAll(bool pForce)
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_loadingObjectQueue.push(obj);
 }
 
@@ -2815,8 +2813,10 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
             info.UpdateTimeTracker(t_diff);
             if (info.getTimeTracker().Passed())
             {
+                Guard.release();
                 if (grid.ActiveObjectsInGrid() == 0 && !ActiveObjectsNearGrid(grid.getX(), grid.getY()))
                 {
+                    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
                     ObjectGridStoper stoper(grid);
                     stoper.StopN();
                     grid.SetGridState(GRID_STATE_IDLE);
