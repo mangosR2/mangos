@@ -139,6 +139,21 @@ HASH_NAMESPACE_END
 
 typedef UNORDERED_SET<MapID> MapIDSet;
 
+struct MANGOS_DLL_DECL ZoneID : public MapID
+{
+    explicit ZoneID(uint32 mapId, uint32 zoneId) : MapID(mapId), nZoneId(zoneId) {}
+    ZoneID(uint32 mapId, uint32 instid, uint32 zoneId) : MapID(mapId, instid), nZoneId(zoneId) {}
+    bool operator == (const ZoneID& val) const { return GetId() == val.GetId() && GetInstanceId() == val.GetInstanceId() && GetZoneId() == val.GetZoneId(); }
+    uint32 const& GetZoneId() const { return nZoneId; };
+    uint32 nZoneId;
+};
+
+HASH_NAMESPACE_START
+template<> class hash <ZoneID>
+{
+    public: size_t operator()(const ZoneID& __x) const { return (size_t)((__x.GetId() << 24) | (__x.GetInstanceId() << 16) | (__x.GetZoneId())) ; }
+};
+HASH_NAMESPACE_END
 
 typedef UNORDERED_MAP<ObjectGuid,GuidSet>  AttackersMap;
 
@@ -435,7 +450,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         {
             MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
             MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
-            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             return i_grids[x][y];
         }
 

@@ -17939,15 +17939,15 @@ void Player::_SaveAuras()
 
     MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
 
-    SqlStatement stmt = CharacterDatabase.CreateStatement(deleteAuras, "DELETE FROM character_aura WHERE guid = ?");
-    stmt.PExecute(GetGUIDLow());
+    SqlStatement stmt0 = CharacterDatabase.CreateStatement(deleteAuras, "DELETE FROM character_aura WHERE guid = ?");
+    stmt0.PExecute(GetGUIDLow());
 
     SpellAuraHolderMap const& auraHolders = GetSpellAuraHolderMap();
 
     if (auraHolders.empty())
         return;
 
-    stmt = CharacterDatabase.CreateStatement(insertAuras, "INSERT INTO character_aura (guid, caster_guid, item_guid, spell, stackcount, remaincharges, "
+    SqlStatement stmt = CharacterDatabase.CreateStatement(insertAuras, "INSERT INTO character_aura (guid, caster_guid, item_guid, spell, stackcount, remaincharges, "
         "basepoints0, basepoints1, basepoints2, periodictime0, periodictime1, periodictime2, maxduration, remaintime, effIndexMask) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
