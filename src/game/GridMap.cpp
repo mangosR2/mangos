@@ -965,6 +965,17 @@ void TerrainInfo::GetZoneAndAreaId(uint32& zoneid, uint32& areaid, float x, floa
     TerrainManager::GetZoneAndAreaIdByAreaFlag(zoneid, areaid, GetAreaFlag(x, y, z), m_mapId);
 }
 
+uint32 TerrainInfo::GetZoneId(Cell const& cell) const
+{
+    return GetZoneId(cell.gridPair());
+}
+
+uint32 TerrainInfo::GetZoneId(GridPair const& gridPair) const
+{
+    float x = ((float)gridPair.x_coord - CENTER_GRID_ID - 0.5) * SIZE_OF_GRIDS + CENTER_GRID_OFFSET;
+    float y = ((float)gridPair.y_coord - CENTER_GRID_ID - 0.5) * SIZE_OF_GRIDS + CENTER_GRID_OFFSET;
+    return GetZoneId(x, y, 0.0f);
+}
 
 GridMapLiquidStatus TerrainInfo::getLiquidStatus(float x, float y, float z, uint8 ReqLiquidType, GridMapLiquidData* data) const
 {

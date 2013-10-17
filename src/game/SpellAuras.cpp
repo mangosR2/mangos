@@ -11538,6 +11538,12 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                     spellId1 = 69700;
                     break;
                 }
+                case 72868:                                 // Slime Puddle (ICC - Professor Putricide) Heroic
+                case 72869:
+                {
+                    m_target->_AddAura(GetId() == 72868 ? 70346 : 72456, 2000);
+                    break;
+                }
                 case 70867:                                 // Soul of Blood Qween
                 case 71473:
                 case 71532:

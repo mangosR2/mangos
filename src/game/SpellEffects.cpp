@@ -12402,12 +12402,10 @@ void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
     {
         uint32 enchant_id = m_spellInfo->EffectMiscValue[eff_idx];
         int32 duration = m_duration;                        // Try duration index first...
-        if(!duration)
-            duration = m_currentBasePoints[eff_idx];        // Base points after...
         if (!duration)
-            duration = 10;                                  // 10 seconds for enchants which don't have listed duration
+            duration = 10 * IN_MILLISECONDS;                // 10 seconds for enchants which don't have listed duration
 
-        SpellItemEnchantmentEntry const *pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
+        SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
 
         if (!pEnchant)
             return;
@@ -12420,7 +12418,7 @@ void Spell::EffectEnchantHeldItem(SpellEffectIndex eff_idx)
             return;
 
         // Apply the temporary enchantment
-        item->SetEnchantment(slot, enchant_id, duration*IN_MILLISECONDS, 0);
+        item->SetEnchantment(slot, enchant_id, duration, 0);
         item_owner->ApplyEnchantment(item, slot, true);
     }
 }
