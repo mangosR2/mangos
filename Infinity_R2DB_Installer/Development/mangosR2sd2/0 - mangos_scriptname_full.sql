@@ -904,6 +904,10 @@ UPDATE creature_template SET ScriptName='npc_crystal_spike_trigger' WHERE entry 
 UPDATE creature_template SET ScriptName='boss_telestra' WHERE entry=26731;
 UPDATE gameobject_template SET ScriptName='go_containment_sphere' WHERE entry IN (188526, 188527, 188528);
 UPDATE instance_template SET ScriptName='instance_nexus' WHERE map=576;
+UPDATE creature_template SET ScriptName ='mob_crystal_spike' WHERE entry =27099;
+UPDATE creature_template SET ScriptName ='mob_crystalline_tangler' WHERE entry=32665;
+UPDATE creature_template SET ScriptName ='boss_commander_kolurg' WHERE entry=26798;
+UPDATE creature_template SET ScriptName ='boss_commander_stoutbeard' WHERE entry=26796;
 
 /* OCULUS */
 UPDATE instance_template SET ScriptName='instance_oculus' WHERE map=578;
@@ -1372,14 +1376,23 @@ INSERT INTO scripted_event_id VALUES
 
 /* VIOLET HOLD */
 UPDATE instance_template SET ScriptName='instance_violet_hold' WHERE map=608;
-UPDATE gameobject_template SET ScriptName='go_activation_crystal' WHERE entry=193611;
 UPDATE creature_template SET ScriptName='npc_door_seal' WHERE entry=30896;
 UPDATE creature_template SET ScriptName='npc_sinclari' WHERE entry=30658;
-UPDATE creature_template SET ScriptName='npc_prison_event_controller' WHERE entry=30883;
 UPDATE creature_template SET ScriptName='npc_teleportation_portal' WHERE entry IN (31011,30679,32174);
 UPDATE creature_template SET ScriptName='boss_ichoron' WHERE entry IN (29313,32234);
 UPDATE creature_template SET ScriptName='boss_erekem' WHERE entry IN (29315,32226);
 UPDATE creature_template SET ScriptName='npc_erekem_guard' WHERE entry IN (29395,32228);
+UPDATE creature_template SET ScriptName`='boss_moragg' WHERE entry=29316;
+UPDATE creature_template SET ScriptName`='mob_ichor_globule' WHERE entry=29321;
+UPDATE creature_template SET ScriptName`='boss_xevozz' WHERE entry=29266;
+UPDATE creature_template SET ScriptName`='mob_ethereal_sphere' WHERE entry=29271;
+UPDATE creature_template SET ScriptName`='boss_lavanthor' WHERE entry=29312;
+UPDATE creature_template SET ScriptName`='boss_zuramat'WHERE entry=29314;
+UPDATE creature_template SET ScriptName`='mob_zuramat_sentry' WHERE entry=29364;
+UPDATE creature_template SET ScriptName`='boss_cyanigosa' WHERE entry=31134;
+UPDATE creature_template SET ScriptName`='npc_azure_saboteur' WHERE entry=31079;
+UPDATE creature_template SET ScriptName`='mob_vh_dragons', AIName='' WHERE entry IN (30666,30668,30667,32191,30660,30695,30663,30661,30664,30662);
+
 
 /* WAILING CAVERNS */
 UPDATE instance_template SET ScriptName='instance_wailing_caverns' WHERE map=43;
