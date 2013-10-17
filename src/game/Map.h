@@ -450,6 +450,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         {
             MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
             MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
+            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             return i_grids[x][y];
         }
 
