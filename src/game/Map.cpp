@@ -270,13 +270,12 @@ Map::EnsureGridCreated(const GridPair &p)
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
                 p.x_coord, p.y_coord);
-
-            // build a linkage between this map and NGridType
-            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
-
-            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
-            ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
         }
+
+        // build a linkage between this map and NGridType
+        buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
+        getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
+        ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
 
         //z coord
         int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
@@ -1064,7 +1063,6 @@ void Map::UnloadAll(bool pForce)
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_loadingObjectQueue.push(obj);
 }
 
