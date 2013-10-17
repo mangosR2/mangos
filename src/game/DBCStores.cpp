@@ -205,6 +205,10 @@ static DBCStorage <TaxiPathNodeEntry> sTaxiPathNodeStore(TaxiPathNodeEntryfmt);
 
 DBCStorage <TeamContributionPoints> sTeamContributionPoints(TeamContributionPointsfmt);
 DBCStorage <TotemCategoryEntry> sTotemCategoryStore(TotemCategoryEntryfmt);
+
+TransportAnimationsByEntry sTransportAnimationsByEntry;
+DBCStorage <TransportAnimationEntry> sTransportAnimationStore(TransportAnimationEntryfmt);
+
 DBCStorage <VehicleEntry> sVehicleStore(VehicleEntryfmt);
 DBCStorage <VehicleSeatEntry> sVehicleSeatStore(VehicleSeatEntryfmt);
 DBCStorage <WMOAreaTableEntry>  sWMOAreaTableStore(WMOAreaTableEntryfmt);
@@ -707,6 +711,11 @@ void LoadDBCStores(const std::string& dataPath)
 
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTeamContributionPoints,   dbcPath, "TeamContributionPoints.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sTotemCategoryStore,       dbcPath, "TotemCategory.dbc");
+    LoadDBC(availableDbcLocales,bar,bad_dbc_files,sTransportAnimationStore,     dbcPath,"TransportAnimation.dbc");
+    for (uint32 i = 0; i < sTransportAnimationStore.GetNumRows(); ++i)
+        if (TransportAnimationEntry const* entry = sTransportAnimationStore.LookupEntry(i))
+            sTransportAnimationsByEntry[entry->transportEntry][entry->timeFrame] = entry;
+
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sVehicleStore,             dbcPath, "Vehicle.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sVehicleSeatStore,         dbcPath, "VehicleSeat.dbc");
     LoadDBC(availableDbcLocales, bar, bad_dbc_files, sWorldMapAreaStore,        dbcPath, "WorldMapArea.dbc");
@@ -923,17 +932,39 @@ WorldMapAreaEntry const* GetWorldMapAreaByMapID(uint32 map_id)
     return NULL;
 }
 
-std::set<uint32> GetWorldMapAreaSetByMapID(uint32 map_id)
+std::vector<uint32> GetWorldMapAreaSetByMapID(uint32 map_id)
 {
-    std::set<uint32> maps;
+    std::vector<uint32> maps;
     for (uint32 i = 0; i < sWorldMapAreaStore.GetNumRows(); ++i)
     {
         if (WorldMapAreaEntry const* entry = sWorldMapAreaStore.LookupEntry(i))
         {
             if (entry->map_id == map_id && !(entry->zone_id == 0)) // scip continents main area
-                maps.insert(entry->zone_id);
+                maps.push_back(entry->zone_id);
         }
     }
+
+    for (uint32 i = 0; i < sAreaStore.GetNumRows(); ++i)
+    {
+        if (AreaTableEntry const* area = sAreaStore.LookupEntry(i))
+        {
+            if (area->mapid == map_id  && area->zone == 0)
+                maps.push_back(area->ID);
+        }
+    }
+
+    if (maps.size() > 1)
+    {
+        std::sort(maps.begin(), maps.end());
+        std::vector<uint32>::iterator itr = std::unique(maps.begin(), maps.end());
+        maps.resize(std::distance(maps.begin(),itr));
+        // for multizoned maps push special 0 zone - for "non-zoned" objects.
+        maps.push_back(0);
+    }
+    else if (maps.empty())
+        // If no zones in map (arenas, transport, etc) push special 0 zone - for all map.
+        maps.push_back(0);
+
     return maps;
 }
 

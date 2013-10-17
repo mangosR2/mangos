@@ -2175,13 +2175,13 @@ LFG.DisableDungeonMapIds= ""
 #        Default: 0
 #
 #    VMSS.FreezeCheckPeriod
-#        Time period (in milliseconds) for activate FreezeDetect thread
+#        Time period (in milliseconds) for activate FreezeDetect thread (also used for MT statistic collect)
 #        Default: 1000 (1 sec) - default mangos freeze detect period.
 #
 #    VMSS.MapFreezeDetectTime
 #        Time period (in milliseconds) for detect freeze in map thread
 #        Default: 1000 (1 sec)
-#        if setted to 0 - don't check!
+#        0                     - Freeze in-map detection (and reaction) DISABLED, works only MaxCoreStuckTime option.
 #
 #    VMSS.TrySkipFirstThreadBreak
 #        Try skip first thread break (crush), and restore his update cycle fully -

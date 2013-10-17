@@ -21,6 +21,7 @@
 
 #include "Platform/Define.h"
 #include "Policies/Singleton.h"
+#include "Cell.h"
 #include "DBCStructure.h"
 #include "GridDefines.h"
 #include "Object.h"
@@ -228,6 +229,8 @@ public:
     uint32 GetAreaId(float x, float y, float z) const;
     uint32 GetZoneId(float x, float y, float z) const;
     void GetZoneAndAreaId(uint32& zoneid, uint32& areaid, float x, float y, float z) const;
+    uint32 GetZoneId(Cell const& cell) const;
+    uint32 GetZoneId(GridPair const& gridPair) const;
 
     bool GetAreaInfo(float x, float y, float z, uint32 &mogpflags, int32 &adtId, int32 &rootId, int32 &groupId) const;
     bool IsOutdoors(float x, float y, float z) const;

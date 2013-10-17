@@ -58,6 +58,9 @@ Pet::~Pet()
 {
     m_spells.clear();
 
+    while (!m_scalingQueue.empty())
+        m_scalingQueue.pop();
+
     delete m_declinedname;
 
     if (m_PetScalingData)

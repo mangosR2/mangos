@@ -3455,6 +3455,20 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 return;
             }
+            case 62483:                                     // Stonebark's Essence Channel
+            case 62484:                                     // Ironbranch's Essence Channel
+            case 62485:                                     // Brightleaf's Essence Channel
+            case 65587:                                     // Brightleaf's Essence Channel (h)
+            case 65588:                                     // Ironbranch's Essence Channel (h)
+            case 65589:                                     // Stonebark's Essence Channel (h)
+            {
+                if (Unit* caster = GetCaster())
+                {
+                    if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                        caster->CastSpell(caster, 62467, true);
+                }
+                return;
+            }
             case 64398:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Scrap Bots
             case 64426:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Assault Bots
             case 64621:                                     // Summon Fire Bot (Ulduar, Mimiron)
@@ -11522,6 +11536,12 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 case 70157:                                 // Ice Tomb (Sindragosa)
                 {
                     spellId1 = 69700;
+                    break;
+                }
+                case 72868:                                 // Slime Puddle (ICC - Professor Putricide) Heroic
+                case 72869:
+                {
+                    m_target->_AddAura(GetId() == 72868 ? 70346 : 72456, 2000);
                     break;
                 }
                 case 70867:                                 // Soul of Blood Qween

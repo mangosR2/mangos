@@ -39,7 +39,6 @@ int PetAI::Permissible(const Creature *creature)
 
 PetAI::PetAI(Creature* c) : CreatureAI(c), inCombat(false)
 {
-    m_AllySet.clear();
     Reset();
 }
 
