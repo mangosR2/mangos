@@ -581,6 +581,7 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
             }
 
             DEBUG_FILTER_LOG(LOG_FILTER_TRANSPORT_MOVES, "Transport::SetPosition %s teleported to (%f, %f, %f, %f)", GetObjectGuid().GetString().c_str(), loc.x, loc.y, loc.z, loc.orientation);
+            return true;
         }
         else if (!(GetPosition() == loc))
             GetMap()->Relocation((GameObject*)this, loc);
