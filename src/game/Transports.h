@@ -96,6 +96,7 @@ class MANGOS_DLL_SPEC MOTransport : public Transport
             bool teleport;
             uint32 arrivalEventID;
             uint32 departureEventID;
+            uint32 delay;
         };
 
     public:

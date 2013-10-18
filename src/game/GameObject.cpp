@@ -435,13 +435,16 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 case GAMEOBJECT_TYPE_TRANSPORT:
                 case GAMEOBJECT_TYPE_MO_TRANSPORT:
                 {
-                    if (IsMOTransport() && ((Transport*)this)->GetTransportKit())
+                    if (IsTransport() && ((Transport*)this)->GetTransportKit())
                     {
-                        if (!((Transport*)this)->GetTransportKit()->IsInitialized())
-                            ((Transport*)this)->GetTransportKit()->Initialize();
-                        else
+                        if (TransportKit* tKit = ((Transport*)this)->GetTransportKit())
+                        {
+                            if (!tKit->IsInitialized())
+                                tKit->Initialize();
+                            else
                             // Update passenger positions
-                            ((Transport*)this)->GetTransportKit()->Update(p_time);
+                                tKit->Update(p_time);
+                        }
                     }
                     return;
                 }

@@ -99,6 +99,9 @@ void TransportBase::UpdateGlobalPositionOf(ObjectGuid const& passengerGuid, Posi
     WorldLocation globalPos = GetOwner()->GetPosition();
     globalPos.SetTransportPosition(pos);
 
+    if (globalPos == passenger->GetPosition())
+        return;
+
     switch(passenger->GetTypeId())
     {
         case TYPEID_GAMEOBJECT:
