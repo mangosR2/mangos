@@ -89,7 +89,7 @@ class MANGOS_DLL_SPEC MOTransport : public Transport
             WayPoint() : loc(WorldLocation()), teleport(false) {}
             WayPoint(uint32 _mapid, float _x, float _y, float _z, bool _teleport, uint32 _arrivalEventID = 0, uint32 _departureEventID = 0)
                 : loc(_mapid, _x, _y, _z, 0.0f), teleport(_teleport),
-                arrivalEventID(_arrivalEventID), departureEventID(_departureEventID)
+                arrivalEventID(_arrivalEventID), departureEventID(_departureEventID), delay(0)
             {
             }
             WorldLocation loc;
