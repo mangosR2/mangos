@@ -2,6 +2,17 @@
 -- VIOLET HOLD  -
 -- --------------
 
+UPDATE `creature_template` SET `ScriptName`='boss_moragg' WHERE entry=29316;
+UPDATE `creature_template` SET `ScriptName`='mob_ichor_globule' WHERE entry=29321;
+UPDATE `creature_template` SET `ScriptName`='boss_xevozz' WHERE entry=29266;
+UPDATE `creature_template` SET `ScriptName`='mob_ethereal_sphere' WHERE entry=29271;
+UPDATE `creature_template` SET `ScriptName`='boss_lavanthor' WHERE entry=29312;
+UPDATE `creature_template` SET `ScriptName`='boss_zuramat'WHERE entry=29314;
+UPDATE `creature_template` SET `ScriptName`='mob_zuramat_sentry' WHERE entry=29364;
+UPDATE `creature_template` SET `ScriptName`='boss_cyanigosa' WHERE entry=31134;
+UPDATE `creature_template` SET `ScriptName`='npc_azure_saboteur' WHERE entry=31079;
+UPDATE `creature_template` SET `ScriptName`='mob_vh_dragons', AIName='' WHERE entry IN (30666,30668,30667,32191,30660,30695,30663,30661,30664,30662);
+
 -- Lieuntenant Sinclari (30658)
 UPDATE `creature` SET `Spawntimesecs`=180 WHERE id=30658;
 
