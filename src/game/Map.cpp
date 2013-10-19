@@ -268,14 +268,13 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
-                p.x_coord, p.y_coord);
+            NGridType* grid = new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD));
+            setNGrid(grid, p.x_coord, p.y_coord);
 
             // build a linkage between this map and NGridType
-            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
-
-            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
-            ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
+            buildNGridLinkage(grid);
+            grid->SetGridState(GRID_STATE_IDLE);
+            ResetGridExpiry(*grid, 0.2f);
         }
 
         //z coord
@@ -336,7 +335,7 @@ bool Map::EnsureGridLoaded(const Cell &cell)
             // Add resurrectable corpses to world object list in grid
             sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
         }
-        m_dyn_tree.balance();
+        DynamicMapTreeBalance();
         return true;
     }
 
@@ -556,7 +555,7 @@ bool Map::loaded(GridPair const& p) const
 
 void Map::Update(const uint32 &t_diff)
 {
-    m_dyn_tree.update(t_diff);
+    DynamicMapTreeUpdate(t_diff);
 
     // Load all objects in begin of update diff (loading objects count limited by time)
     uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
@@ -1050,7 +1049,6 @@ void Map::UnloadAll(bool pForce)
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_loadingObjectQueue.push(obj);
 }
 
@@ -2598,7 +2596,7 @@ float Map::GetVisibilityDistance(WorldObject const* obj) const
 bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
 {
     return VMAP::VMapFactory::createOrGetVMapManager()->isInLineOfSight(GetId(), srcX, srcY, srcZ, destX, destY, destZ)
-        && m_dyn_tree.isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+        && IsInLineOfSightByDynamicMapTree(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
 }
 
 /**
@@ -2619,7 +2617,8 @@ bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float
         destZ = tempZ;
     }
     // at second all dynamic objects, if static check has an hit, then we can calculate only to this point and NOT to end, because we need closely hit point
-    bool result1 = m_dyn_tree.getObjectHitPos(phasemask, srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    bool result1 = GetDynamicMapTree().getObjectHitPos(phasemask, srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
     if (result1)
     {
         DEBUG_LOG("Map::GetHitPosition vmaps corrects gained with dynamic objects! new dest coords are X:%f Y:%f Z:%f",destX, destY, destZ);
@@ -2636,22 +2635,50 @@ float Map::GetHeight(uint32 phasemask, float x, float y, float z) const
 
     // Get Dynamic Height around static Height (if valid)
     float dynSearchHeight = 2.0f + (z < staticHeight ? staticHeight : z);
-    return std::max<float>(staticHeight, m_dyn_tree.getHeight(x, y, dynSearchHeight, dynSearchHeight - staticHeight, phasemask));
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return std::max<float>(staticHeight, GetDynamicMapTree().getHeight(x, y, dynSearchHeight, dynSearchHeight - staticHeight, phasemask));
 }
 
-void Map::InsertGameObjectModel(const GameObjectModel& mdl)
+void Map::InsertGameObjectModel(GameObjectModel const& mdl)
 {
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_dyn_tree.insert(mdl);
 }
 
-void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
+void Map::RemoveGameObjectModel(GameObjectModel const& mdl)
 {
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_dyn_tree.remove(mdl);
 }
 
-bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
+bool Map::ContainsGameObjectModel(GameObjectModel const& mdl) const
 {
-    return m_dyn_tree.contains(mdl);
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return GetDynamicMapTree().contains(mdl);
+}
+
+void Map::DynamicMapTreeBalance()
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    m_dyn_tree.balance();
+}
+
+void Map::DynamicMapTreeUpdate(uint32 const& t_diff)
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    m_dyn_tree.update(t_diff);
+}
+
+bool Map::IsInLineOfSightByDynamicMapTree(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
+{
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return GetDynamicMapTree().isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+}
+
+DynamicMapTree const& Map::GetDynamicMapTree() const
+{
+   // Don't need lock here! use locks around this usage.
+   return m_dyn_tree;
 }
 
 template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
@@ -2772,8 +2799,10 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
             info.UpdateTimeTracker(t_diff);
             if (info.getTimeTracker().Passed())
             {
+                Guard.release();
                 if (grid.ActiveObjectsInGrid() == 0 && !ActiveObjectsNearGrid(grid.getX(), grid.getY()))
                 {
+                    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
                     ObjectGridStoper stoper(grid);
                     stoper.StopN();
                     grid.SetGridState(GRID_STATE_IDLE);
