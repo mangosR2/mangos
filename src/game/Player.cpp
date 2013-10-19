@@ -596,7 +596,10 @@ Player::~Player ()
 
     // Clear chache need only if player true loaded, not in broken state
     if (m_uint32Values && !GetObjectGuid().IsEmpty())
+    {
         sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
+        sMapPersistentStateMgr.AddToUnbindQueue(GetObjectGuid());
+    }
 
     // Note: buy back item already deleted from DB when player was saved
     for (int i = 0; i < PLAYER_SLOTS_COUNT; ++i)
@@ -630,13 +633,6 @@ Player::~Player ()
     for (size_t x = 0; x < ItemSetEff.size(); x++)
         if (ItemSetEff[x])
             delete ItemSetEff[x];
-
-    // clean up player-instance binds, may unload some instance saves
-    for (uint8 i = 0; i < MAX_DIFFICULTY; ++i)
-    {
-        for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end(); ++itr)
-            itr->second.state->RemoveFromUnbindList(GetObjectGuid());
-    }
 
     delete m_declinedname;
     delete m_runes;
@@ -1988,6 +1984,8 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             if (oldmap)
                 oldmap->Remove(this, false);
 
+            SkipUpdate(true);
+
             // new final coordinates
             WorldLocation final = loc;
             if (IsOnTransport())
@@ -2135,6 +2133,20 @@ void Player::RemoveFromWorld(bool remove)
         GetCamera()->ResetView();
 
     Unit::RemoveFromWorld(remove);
+}
+
+void Player::SetMap(Map* map)
+{
+    WorldObject::SetMap(map);
+    // Lock map from unload while player on his
+    m_mapPtr = sMapMgr.GetMapPtr(map->GetId(), map->GetInstanceId());
+}
+
+void Player::ResetMap()
+{
+    WorldObject::ResetMap();
+    // Unlock map
+    m_mapPtr = MapPtr();
 }
 
 void Player::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)
@@ -17276,12 +17288,13 @@ void Player::_LoadGroup(QueryResult *result)
     if (result)
     {
         uint32 groupId = (*result)[0].GetUInt32();
+        ObjectGuid groupGuid = ObjectGuid(HIGHGUID_GROUP, groupId);
         delete result;
-        Group* group = sObjectMgr.GetGroupById(groupId);
+        Group* group = sObjectMgr.GetGroup(groupGuid);
         if (group)
         {
             uint8 subgroup = group->GetMemberGroup(GetObjectGuid());
-            SetGroup(group, subgroup);
+            SetGroup(groupGuid, subgroup);
             if (getLevel() >= LEVELREQUIREMENT_HEROIC)
             {
                 // the group leader may change the instance difficulty while the player is offline
@@ -17391,7 +17404,7 @@ void Player::UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficu
 
         sCalendarMgr.SendCalendarRaidLockoutRemove(GetObjectGuid(), itr->second.state);
 
-        itr->second.state->RemoveFromUnbindList(GetObjectGuid());  // state can become invalid
+        itr->second.state->RemoveFromBindList(GetObjectGuid());  // state can become invalid
         m_boundInstances[difficulty].erase(itr++);
     }
 }
@@ -17420,9 +17433,9 @@ InstancePlayerBind* Player::BindToInstance(DungeonPersistentState *state, bool p
         if (bind.state != state)
         {
             if (bind.state)
-                bind.state->RemoveFromUnbindList(GetObjectGuid());
+                bind.state->RemoveFromBindList(GetObjectGuid());
 
-            state->AddToUnbindList(GetObjectGuid());
+            state->AddToBindList(GetObjectGuid());
         }
 
         if (permanent)
@@ -17952,15 +17965,15 @@ void Player::_SaveAuras()
 
     MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
 
-    SqlStatement stmt = CharacterDatabase.CreateStatement(deleteAuras, "DELETE FROM character_aura WHERE guid = ?");
-    stmt.PExecute(GetGUIDLow());
+    SqlStatement stmt0 = CharacterDatabase.CreateStatement(deleteAuras, "DELETE FROM character_aura WHERE guid = ?");
+    stmt0.PExecute(GetGUIDLow());
 
     SpellAuraHolderMap const& auraHolders = GetSpellAuraHolderMap();
 
     if (auraHolders.empty())
         return;
 
-    stmt = CharacterDatabase.CreateStatement(insertAuras, "INSERT INTO character_aura (guid, caster_guid, item_guid, spell, stackcount, remaincharges, "
+    SqlStatement stmt = CharacterDatabase.CreateStatement(insertAuras, "INSERT INTO character_aura (guid, caster_guid, item_guid, spell, stackcount, remaincharges, "
         "basepoints0, basepoints1, basepoints2, periodictime0, periodictime1, periodictime2, maxduration, remaintime, effIndexMask) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
@@ -18803,7 +18816,7 @@ void Player::ResetInstances(InstanceResetMethod method, bool isRaid)
         m_boundInstances[diff].erase(itr++);
 
         // the following should remove the instance save from the manager and delete it as well
-        state->RemoveFromUnbindList(GetObjectGuid());
+        state->RemoveFromBindList(GetObjectGuid());
     }
 }
 
@@ -20629,18 +20642,44 @@ void Player::SendPetComboPoints(Unit* pet, ObjectGuid targetGuid, uint8 combopoi
     }
 }
 
-void Player::SetGroup(Group *group, int8 subgroup)
+void Player::SetGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (group == NULL)
-        m_group.unlink();
-    else
+    if (guid.IsEmpty())
     {
-        // never use SetGroup without a subgroup unless you specify NULL for group
-        MANGOS_ASSERT(subgroup >= 0);
-        m_group.link(group, this);
-        m_group.setSubGroup((uint8)subgroup);
+        m_groupGuid.Clear();
+        m_group.unlink();
+        return;
     }
+
+    Group* group = sObjectMgr.GetGroup(guid);
+
+    if (!group)
+        return;
+
+    m_groupGuid = guid;
+
+    // never use SetGroup without a subgroup unless you specify NULL for group
+    MANGOS_ASSERT(subgroup >= 0);
+    m_group.unlink();
+    m_group.link(group, this);
+    m_group.setSubGroup((uint8)subgroup);
 }
+
+Group* Player::GetGroup()
+{
+    return sObjectMgr.GetGroup(GetGroupGuid());
+}
+
+Group const* Player::GetGroup() const
+{
+    return (Group const*)sObjectMgr.GetGroup(GetGroupGuid());
+}
+
+Group* Player::GetOriginalGroup()
+{
+    return sObjectMgr.GetGroup(GetOriginalGroupGuid());
+}
+
 
 void Player::SendInitialPacketsBeforeAddToMap()
 {
@@ -21883,7 +21922,7 @@ Player* Player::GetNextRandomRaidMember(float radius, bool onlyAlive)
 
 PartyResult Player::CanUninviteFromGroup() const
 {
-    const Group* grp = GetGroup();
+    Group const* grp = GetGroup();
     if (!grp)
         return ERR_NOT_IN_GROUP;
 
@@ -21896,39 +21935,44 @@ PartyResult Player::CanUninviteFromGroup() const
     return ERR_PARTY_RESULT_OK;
 }
 
-void Player::SetBattleGroundRaid(Group* group, int8 subgroup)
+void Player::SetBattleGroundRaid(ObjectGuid const& guid, int8 subgroup)
 {
-    //we must move references from m_group to m_originalGroup
-    SetOriginalGroup(GetGroup(), GetSubGroup());
+    if (!guid || !guid.IsGroup())
+        return;
 
-    m_group.unlink();
-    m_group.link(group, this);
-    m_group.setSubGroup((uint8)subgroup);
+    //we must move references from m_group to m_originalGroup
+    SetOriginalGroup(GetGroupGuid(), GetSubGroup());
+    SetGroup(guid, subgroup);
 }
 
 void Player::RemoveFromBattleGroundRaid()
 {
     //remove existing reference
-    m_group.unlink();
-    if (Group* group = GetOriginalGroup())
-    {
-        m_group.link(group, this);
-        m_group.setSubGroup(GetOriginalSubGroup());
-    }
-    SetOriginalGroup(NULL);
+    SetGroup(GetOriginalGroupGuid(), GetOriginalSubGroup());
+    SetOriginalGroup(ObjectGuid());
 }
 
-void Player::SetOriginalGroup(Group *group, int8 subgroup)
+void Player::SetOriginalGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (group == NULL)
-        m_originalGroup.unlink();
-    else
+    if (guid.IsEmpty())
     {
-        // never use SetOriginalGroup without a subgroup unless you specify NULL for group
-        MANGOS_ASSERT(subgroup >= 0);
-        m_originalGroup.link(group, this);
-        m_originalGroup.setSubGroup((uint8)subgroup);
+        m_originalGroupGuid.Clear();
+        m_originalGroup.unlink();
+        return;
     }
+
+    Group* group = sObjectMgr.GetGroup(guid);
+
+    if (!group)
+        return;
+
+    m_originalGroupGuid = guid;
+
+    // never use SetOriginalGroup without a subgroup unless you specify NULL for group
+    MANGOS_ASSERT(subgroup >= 0);
+    m_originalGroup.unlink();
+    m_originalGroup.link(group, this);
+    m_originalGroup.setSubGroup((uint8)subgroup);
 }
 
 void Player::UpdateUnderwaterState(Map* m, float x, float y, float z)

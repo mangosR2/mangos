@@ -36,7 +36,7 @@ class Totem : public Creature
         explicit Totem();
         virtual ~Totem(){};
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, Unit* owner);
-        void Update(uint32 update_diff, uint32 time) override;
+        virtual void Update(uint32 update_diff, uint32 time) override;
         void Summon(Unit* owner);
         void UnSummon();
         uint32 GetSpell(uint32 idx = 0) const { return ((Creature*)this)->GetSpell(idx); }

@@ -1992,8 +1992,9 @@ void Aura::TriggerSpell()
 //                    // Shield Level 3
 //                    case 63132: break;
 //                    // Food
-//                    case 64345: break;
-//                    // Remove Player from Phase
+                    case 64345:                             // Remove Player from Phase
+                        target->RemoveSpellsCausingAura(SPELL_AURA_PHASE);
+                        return;
 //                    case 64445: break;
 //                    // Food
 //                    case 65418: break;
@@ -2774,6 +2775,13 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         return;
                     case 69154:                             // Gaseous Blight (Festergut)
                         target->RemoveAurasDueToSpell(69152); // previous gas state
+                    case 70623:                             // Jaina's Call
+                        if (target->GetTypeId() == TYPEID_PLAYER)
+                            target->CastSpell(target, 70525, true, NULL, this);
+                        return;
+                    case 70638:                             // Call of Sylvanas
+                        if (target->GetTypeId() == TYPEID_PLAYER)
+                            target->CastSpell(target, 70639, true, NULL, this);
                         return;
                     case 71342:                             // Big Love Rocket
                         Spell::SelectMountByAreaAndSkill(target, GetSpellProto(), 71344, 71345, 71346, 71347, 0);
@@ -3447,6 +3455,20 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
 
                 return;
             }
+            case 62483:                                     // Stonebark's Essence Channel
+            case 62484:                                     // Ironbranch's Essence Channel
+            case 62485:                                     // Brightleaf's Essence Channel
+            case 65587:                                     // Brightleaf's Essence Channel (h)
+            case 65588:                                     // Ironbranch's Essence Channel (h)
+            case 65589:                                     // Stonebark's Essence Channel (h)
+            {
+                if (Unit* caster = GetCaster())
+                {
+                    if (m_removeMode == AURA_REMOVE_BY_EXPIRE)
+                        caster->CastSpell(caster, 62467, true);
+                }
+                return;
+            }
             case 64398:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Scrap Bots
             case 64426:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Assault Bots
             case 64621:                                     // Summon Fire Bot (Ulduar, Mimiron)
@@ -3482,20 +3504,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
             case 70308:                                     // Mutated Transformation (Putricide)
             {
                 uint32 entry = 37672;
-
-                if (target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL ||
-                    target->GetMap()->GetDifficulty() == RAID_DIFFICULTY_25MAN_HEROIC)
-                {
-                    entry = 38285;
-                }
-
-                if (Creature *pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
+                if (Creature* pAbomination = target->SummonCreature(entry, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_DEAD_DESPAWN, 0))
                 {
                     pAbomination->setFaction(target->getFaction());
                     target->CastSpell(pAbomination, 46598, true);
-                    pAbomination->CastSpell(pAbomination, 70405, true);
                 }
-
                 return;
             }
             case 70955:                                     // Unbound Plague Bounce Protection (Putricide)
@@ -9694,14 +9707,6 @@ void Aura::PeriodicDummyTick()
                     target->CastSpell(target, 53521, true, NULL, this);
                     target->CastSpell(target, 53521, true, NULL, this);
                     return;
-                case 55592:                                 // Clean
-                    switch(urand(0,2))
-                    {
-                        case 0: target->CastSpell(target, 55731, true); break;
-                        case 1: target->CastSpell(target, 55738, true); break;
-                        case 2: target->CastSpell(target, 55739, true); break;
-                    }
-                    return;
                 case 54798: // FLAMING Arrow Triggered Effect
                 {
                     Unit * caster = GetCaster();
@@ -9741,50 +9746,50 @@ void Aura::PeriodicDummyTick()
 
                     break;
                 }
+                case 55592:                                 // Clean
+                {
+                    switch(urand(0,2))
+                    {
+                        case 0: target->CastSpell(target, 55731, true); break;
+                        case 1: target->CastSpell(target, 55738, true); break;
+                        case 2: target->CastSpell(target, 55739, true); break;
+                    }
+                    return;
+                }
+                case 61968:                                 // Flash Freeze 
+                { 
+                    if (GetAuraTicks() == 1 && !target->HasAura(62464))
+                        target->CastSpell(target, 61970, true, NULL, this);
+                    return;
+                }
+                case 62018:                                 // Collapse
+                {
+                    // lose 1% of health every second
+                    target->DealDamage(target, target->GetMaxHealth() * .01, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NONE, NULL, false);
+                    return;
+                }
                 case 62019:                                 // Rune of Summoning
                 {
                     target->CastSpell(target, 62020, true, NULL, this);
                     return;
                 }
-                case 62038: // Biting Cold (Ulduar: Hodir)
-                {
+                case 62038:                                 // Biting Cold 
+                { 
                     if (target->GetTypeId() != TYPEID_PLAYER)
-                        return;
+                        return; 
 
-                    Unit * caster = GetCaster();
-                    if (!caster)
-                        return;
-
-                    if (!target->HasAura(62821))     // Toasty Fire
-                    {
-                        // dmg dealing every second
-                        target->CastSpell(target, 62188, true, 0, 0, caster->GetObjectGuid());
-                    }
-
-                    // aura stack increase every 3 (data in m_miscvalue) seconds and decrease every 1s
-                    // Reset reapply counter at move and decrease stack amount by 1
-                    if (((Player*)target)->isMoving() || target->HasAura(62821))
-                    {
-                        if (SpellAuraHolderPtr holder = target->GetSpellAuraHolder(62039))
-                        {
-                            if (holder->ModStackAmount(-1))
-                                target->RemoveSpellAuraHolder(holder);
-                        }
-                        m_modifier.m_miscvalue = 3;
-                        return;
-                    }
-                    // We are standing at the moment, countdown
-                    if (m_modifier.m_miscvalue > 0)
-                    {
-                        --m_modifier.m_miscvalue;
-                        return;
-                    }
-
-                    target->CastSpell(target, 62039, true);
-
-                    // recast every ~3 seconds
-                    m_modifier.m_miscvalue = 3;
+                    // if player is moving remove one aura stack
+                    if (((Player*)target)->isMoving())
+                        target->RemoveAuraHolderFromStack(62039);
+                    // otherwise add one aura stack each 3 seconds
+                    else if (GetAuraTicks() % 3 && !target->HasAura(62821))
+                        target->CastSpell(target, 62039, true, NULL, this);
                     return;
+                }
+                case 62039:                                 // Biting Cold 
+                { 
+                    target->CastSpell(target, 62188, true); 
+                    return; 
                 }
                 case 62566:                                 // Healthy Spore Summon Periodic
                 {
@@ -9801,14 +9806,6 @@ void Aura::PeriodicDummyTick()
                     // cast Slag Imbued if the target survives up to the last tick
                     if (GetAuraTicks() == 10)
                         target->CastSpell(target, 63536, true, NULL, this);
-                    return;
-                }
-                case 64217:                                 // Overcharged
-                {
-                    Unit *caster = GetCaster();
-
-                    if (caster && target)
-                        caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
                     return;
                 }
                 case 63276:                                   // Mark of the Faceless (General Vezax - Ulduar)
@@ -9829,12 +9826,46 @@ void Aura::PeriodicDummyTick()
                         target->CastSpell(target, 62836, true, NULL, this);
                     return;
                 }
-                case 69008:                                 // Soulstorm (OOC aura)
-                case 68870:                                 // Soulstorm
+                case 64217:                                 // Overcharged
                 {
-                    uint32 triggerSpells[8] = {68898, 68904, 68886, 68905, 68896, 68906, 68897, 68907};
-                    target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
+                    Unit *caster = GetCaster();
+
+                    if (caster && target)
+                        caster->CastSpell(target, (spell->Id == 62717) ? 65722 : 65723, true, 0, this, this->GetCasterGuid(), this->GetSpellProto());
                     return;
+                }
+                case 64412:                                 // Phase Punch
+                {
+                    if (SpellAuraHolderPtr phaseAura = target->GetSpellAuraHolder(64412))
+                    {
+                        uint32 uiAuraId = 0;
+                        switch (phaseAura->GetStackAmount())
+                        {
+                            case 1: uiAuraId = 64435; break;
+                            case 2: uiAuraId = 64434; break;
+                            case 3: uiAuraId = 64428; break;
+                            case 4: uiAuraId = 64421; break;
+                            case 5: uiAuraId = 64417; break;
+                        }
+
+                        if (uiAuraId && !target->HasAura(uiAuraId))
+                        {
+                            target->CastSpell(target, uiAuraId, true, NULL, this);
+
+                            // remove original aura if phased
+                            if (uiAuraId == 64417)
+                            {
+                                target->RemoveAurasDueToSpell(64412);
+                                target->CastSpell(target, 62169, true, NULL, this);
+                            }
+                        }
+                    }
+                    return;
+                }
+                case 65272:                                 // Shatter Chest 
+                { 
+                    target->CastSpell(target, 62501, true, NULL, this); 
+                    return; 
                 }
                 case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
                 {
@@ -9870,6 +9901,13 @@ void Aura::PeriodicDummyTick()
                     target->CastCustomSpell(target, 66240, &damage, NULL, NULL, true, NULL, this);
                     if (Unit* caster = GetCaster())
                         target->CastCustomSpell(caster, 66125, &heal, NULL, NULL, true, NULL, this);
+                    return;
+                }
+                case 68870:                                 // Soulstorm
+                case 69008:                                 // Soulstorm (OOC aura)
+                {
+                    uint32 triggerSpells[8] = {68898, 68904, 68886, 68905, 68896, 68906, 68897, 68907};
+                    target->CastSpell(target, triggerSpells[GetAuraTicks() % 8], true);
                     return;
                 }
                 case 68875:                                 // Wailing Souls
@@ -11498,6 +11536,12 @@ void SpellAuraHolder::HandleSpellSpecificBoosts(bool apply)
                 case 70157:                                 // Ice Tomb (Sindragosa)
                 {
                     spellId1 = 69700;
+                    break;
+                }
+                case 72868:                                 // Slime Puddle (ICC - Professor Putricide) Heroic
+                case 72869:
+                {
+                    m_target->_AddAura(GetId() == 72868 ? 70346 : 72456, 2000);
                     break;
                 }
                 case 70867:                                 // Soul of Blood Qween

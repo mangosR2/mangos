@@ -24,39 +24,9 @@
 #include "Policies/Singleton.h"
 #include "ace/Recursive_Thread_Mutex.h"
 #include "Map.h"
-#include "GridStates.h"
 #include "MapUpdater.h"
 
 class BattleGround;
-
-struct MANGOS_DLL_DECL MapID
-{
-    explicit MapID(uint32 id) : nMapId(id), nInstanceId(0) {}
-    MapID(uint32 id, uint32 instid) : nMapId(id), nInstanceId(instid) {}
-
-    bool operator<(const MapID& val) const
-    {
-        if (nMapId == val.nMapId)
-            return nInstanceId < val.nInstanceId;
-
-        if (IsContinent() && !val.IsContinent())
-            return true;
-        else if (!IsContinent() && val.IsContinent())
-            return false;
-
-        return nMapId < val.nMapId;
-    }
-
-    bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
-
-    bool IsContinent() const
-    {
-        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
-    };
-
-    uint32 nMapId;
-    uint32 nInstanceId;
-};
 
 class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::ClassLevelLockable<MapManager, ACE_Recursive_Thread_Mutex> >
 {
@@ -67,27 +37,19 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
     typedef MaNGOS::ClassLevelLockable<MapManager, ACE_Recursive_Thread_Mutex>::Lock Guard;
 
     public:
-        typedef std::map<MapID, Map* > MapMapType;
+        typedef UNORDERED_MAP<MapID, MapPtr> MapMapType;
 
-        Map* CreateMap(uint32, const WorldObject* obj);
+        Map* CreateMap(uint32, WorldObject const* obj);
         Map* CreateBgMap(uint32 mapid, BattleGround* bg);
         Map* FindMap(uint32 mapid, uint32 instanceId = 0) const;
-
-        void UpdateGridState(grid_state_t state, Map& map, NGridType& ngrid, GridInfo& ginfo, const uint32 &x, const uint32 &y, const uint32 &t_diff);
+        Map* FindFirstMap(uint32 mapid) const;
+        MapPtr GetMapPtr(uint32 mapid, uint32 instanceId = 0);
 
         // only const version for outer users
         void DeleteInstance(uint32 mapid, uint32 instanceId);
 
         void Initialize(void);
         void Update(uint32);
-
-        void SetGridCleanUpDelay(uint32 t)
-        {
-            if( t < MIN_GRID_DELAY )
-                i_gridCleanUpDelay = MIN_GRID_DELAY;
-            else
-                i_gridCleanUpDelay = t;
-        }
 
         void SetMapUpdateInterval(uint32 t)
         {
@@ -155,15 +117,9 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         template<typename Do>
         void DoForAllMapsWithMapId(uint32 mapId, Do& _do);
 
-        MapUpdater* GetMapUpdater() { return &m_updater; };
+        MapUpdater& GetMapUpdater() { return m_updater; };
 
         void UpdateLoadBalancer(bool b_start);
-
-    private:
-
-        // debugging code, should be deleted some day
-        GridState* si_GridStates[MAX_GRID_STATE];
-        int i_GridStateErrorCount;
 
     private:
 
@@ -173,24 +129,13 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         MapManager(const MapManager &);
         MapManager& operator=(const MapManager &);
 
-        void InitStateMachine();
-        void DeleteStateMachine();
-
         Map* CreateInstance(uint32 id, Player * player);
         DungeonMap* CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save = NULL);
         BattleGroundMap* CreateBattleGroundMap(uint32 id, uint32 InstanceId, BattleGround* bg);
 
-        uint32 i_gridCleanUpDelay;
         MapMapType i_maps;
 
         MapUpdater m_updater;
-        ShortIntervalTimer i_balanceTimer;
-        int32  m_threadsCount;
-        int32  m_threadsCountPreferred;
-        uint32 m_previewTimeStamp;
-        uint64 m_workTimeStorage;
-        uint64 m_sleepTimeStorage;
-        uint32 m_tickCount;
 
         IntervalTimer i_timer;
 };
@@ -201,7 +146,7 @@ inline void MapManager::DoForAllMapsWithMapId(uint32 mapId, Do& _do)
     for(MapMapType::const_iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
     {
         if (itr->first.nMapId == mapId)
-            _do(itr->second);
+            _do(&*(itr->second));
     }
 }
 

@@ -30,6 +30,7 @@
 #include "SpellMgr.h"
 #include "Player.h"
 #include "Pet.h"
+#include "TemporarySummon.h"
 #include "Unit.h"
 #include "DynamicObject.h"
 #include "Group.h"
@@ -253,8 +254,16 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
     if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
     {
         m_src = caster->GetPosition();
-        data >> m_srcTransportGUID.ReadAsPacked();
-        data >> m_src.x >> m_src.y >> m_src.z;
+        ObjectGuid transGuid;
+        data >> transGuid.ReadAsPacked();
+        if (transGuid)
+        {
+            m_src.SetTransportGuid(transGuid);
+            data >> m_src.GetTransportPosition().x >> m_src.GetTransportPosition().y >> m_src.GetTransportPosition().z;
+        }
+        else
+            data >> m_src.x >> m_src.y >> m_src.z;
+
         if(!MaNGOS::IsValidMapCoord(getSource().getX(), getSource().getY(), getSource().getZ()))
             throw ByteBufferException(false, data.rpos(), 0, data.size());
     }
@@ -262,8 +271,16 @@ void SpellCastTargets::read(ByteBuffer& data, Unit* caster)
     if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
         m_dest = caster->GetPosition();
-        data >> m_destTransportGUID.ReadAsPacked();
-        data >> m_dest.x >> m_dest.y >> m_dest.z;
+        ObjectGuid transGuid;
+        data >> transGuid.ReadAsPacked();
+        if (transGuid)
+        {
+            m_dest.SetTransportGuid(transGuid);
+            data >> m_dest.GetTransportPosition().x >> m_dest.GetTransportPosition().y >> m_dest.GetTransportPosition().z;
+        }
+        else
+            data >> m_dest.x >> m_dest.y >> m_dest.z;
+
         if(!MaNGOS::IsValidMapCoord(getDestination().getX(), getDestination().getY(), getDestination().getZ()))
             throw ByteBufferException(false, data.rpos(), 0, data.size());
     }
@@ -311,14 +328,22 @@ void SpellCastTargets::write( ByteBuffer& data ) const
 
     if (m_targetMask & TARGET_FLAG_SOURCE_LOCATION)
     {
-        data << m_srcTransportGUID.WriteAsPacked();
-        data << m_src.x << m_src.y << m_src.z;
+        ObjectGuid transGuid = m_src.GetTransportGuid();
+        data << transGuid.WriteAsPacked();
+        if (transGuid)
+            data << m_src.GetTransportPos().getX() << m_src.GetTransportPos().getY() << m_src.GetTransportPos().getZ();
+        else
+            data << m_src.getX() << m_src.getY() << m_src.getZ();
     }
 
     if (m_targetMask & TARGET_FLAG_DEST_LOCATION)
     {
-        data << m_destTransportGUID.WriteAsPacked();
-        data << m_dest.x << m_dest.y << m_dest.z;
+        ObjectGuid transGuid = m_dest.GetTransportGuid();
+        data << transGuid.WriteAsPacked();
+        if (transGuid)
+            data << m_dest.GetTransportPos().getX() << m_dest.GetTransportPos().getY() << m_dest.GetTransportPos().getZ();
+        else
+            data << m_dest.x << m_dest.y << m_dest.z;
     }
 
     if ( m_targetMask & TARGET_FLAG_STRING )
@@ -2664,9 +2689,21 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     targetUnitMap.push_back(target);
             break;
         case TARGET_UNIT_CREATOR:
-            if (Unit* target = m_caster->GetCreator())
+        {
+            WorldObject* caster = GetAffectiveCasterObject(); 
+            if (!caster) 
+                return; 
+
+            if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTemporarySummon()) 
+                targetUnitMap.push_back(((TemporarySummon*)(Creature*)caster)->GetSummoner()); 
+            else if (caster->GetTypeId() == TYPEID_GAMEOBJECT && !((GameObject*)caster)->HasStaticDBSpawnData()) 
+                targetUnitMap.push_back(((GameObject*)caster)->GetOwner()); 
+            else if (Unit* target = m_caster->GetCreator())
                 targetUnitMap.push_back(target);
+             else 
+                sLog.outError("Spell::SetTargetMap: Spell ID %u with target ID %u was used by unhandled object %s.", m_spellInfo->Id, targetMode, caster->GetGuidStr().c_str()); 
             break;
+        }
         case TARGET_OWNED_VEHICLE:
             if (VehicleKitPtr vehicle = m_caster->GetVehicle())
                 if (Unit* target = vehicle->GetBase())
@@ -6783,7 +6820,10 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed() && !m_IsTriggeredSpell && !m_spellInfo->AreaGroupId)
+                if (m_caster->GetTypeId() == TYPEID_PLAYER && 
+                        (m_caster->GetMap() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed()) && 
+                        !m_IsTriggeredSpell && 
+                        !m_spellInfo->AreaGroupId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
                 if (m_caster->IsInDisallowedMountForm())
@@ -7472,7 +7512,7 @@ SpellCastResult Spell::CheckPower()
     // health as power used - need check health amount
     if (Powers(m_spellInfo->GetPowerType()) == POWER_HEALTH)
     {
-        if (m_caster->GetHealth() <= abs(m_powerCost))
+        if (m_caster->GetHealth() <= uint32(abs(m_powerCost)))
             return SPELL_FAILED_CASTER_AURASTATE;
         return SPELL_CAST_OK;
     }
@@ -9116,18 +9156,6 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList& targetUnitMap, uin
 
                 targetUnitMap.push_back((*iter));
             }
-            break;
-        }
-        case 70346: // Slime Puddle
-        case 72868:
-        case 72869:
-        {
-            radius = 5.0f;
-
-            if (SpellAuraHolderPtr holder = m_caster->GetSpellAuraHolder(70347))
-                radius += holder->GetStackAmount() * 0.2f;
-
-            FillAreaTargets(targetUnitMap, radius, PUSH_SELF_CENTER, SPELL_TARGETS_AOE_DAMAGE);
             break;
         }
         case 70127: // Mystic Buffet (Sindragosa)

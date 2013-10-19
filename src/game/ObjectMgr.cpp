@@ -161,6 +161,23 @@ ObjectMgr::~ObjectMgr()
     for( QuestMap::iterator i = mQuestTemplates.begin( ); i != mQuestTemplates.end( ); ++i )
         delete i->second;
 
+    mQuestLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mCreatureDataMap.clear();
+    mCreatureLocaleMap.clear();
+    mGameObjectDataMap.clear();
+    mGameObjectLocaleMap.clear();
+    mItemLocaleMap.clear();
+    mNpcTextLocaleMap.clear();
+    mPageTextLocaleMap.clear();
+    mMangosStringLocaleMap.clear();
+    mGossipMenuItemsLocaleMap.clear();
+    mPointOfInterestLocaleMap.clear();
+    m_DungeonEncounters.clear();
+    m_mCreatureModelRaceMap.clear();
+    m_GameTeleMap.clear();
+
     for(PetLevelInfoMap::iterator i = petInfo.begin( ); i != petInfo.end( ); ++i )
         delete[] i->second;
 
@@ -3945,12 +3962,15 @@ void ObjectMgr::LoadGroups()
     // TODO: maybe delete from the DB before loading in this case
     for (GroupMap::iterator itr = mGroupMap.begin(); itr != mGroupMap.end(); ++itr)
     {
-        if (itr->second->GetMembersCount() < 2)
+        if (Group* group = itr->second)
         {
-            itr->second->Disband();
-            delete itr->second;
-            mGroupMap.erase(itr);
-            itr = mGroupMap.begin();
+            if (group->GetMembersCount() < 2)
+            {
+                itr = mGroupMap.begin();
+                // group deleted from mGroupMap in Disband() method!
+                group->Disband();
+                delete group;
+            }
         }
     }
 
@@ -10201,15 +10221,15 @@ void ObjectMgr::LoadTransports()
     {
         bar.step();
 
-        Transport* t = new Transport;
+        MOTransport* t = new MOTransport;
 
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
 
         uint32 entry = fields[0].GetUInt32();
         std::string name = fields[1].GetCppString();
-        t->m_period = fields[2].GetUInt32();
+        t->SetDBPeriod(fields[2].GetUInt32());
 
-        const GameObjectInfo *goinfo = ObjectMgr::GetGameObjectInfo(entry);
+        GameObjectInfo const* goinfo = ObjectMgr::GetGameObjectInfo(entry);
 
         if(!goinfo)
         {
@@ -10237,10 +10257,10 @@ void ObjectMgr::LoadTransports()
             continue;
         }
 
-        WorldLocation loc = t->m_WayPoints[0].loc;
+        WorldLocation loc = t->GetWayPoint(0).loc;
 
         //current code does not support transports in dungeon!
-        const MapEntry* pMapInfo = sMapStore.LookupEntry(loc.GetMapId());
+        MapEntry const* pMapInfo = sMapStore.LookupEntry(loc.GetMapId());
         if(!pMapInfo || pMapInfo->Instanceable())
         {
             delete t;
@@ -10289,11 +10309,11 @@ void ObjectMgr::LoadTransports()
     }
 }
 
-Transport const* ObjectMgr::GetTransportByGOMapId(uint32 mapid) const
+MOTransport const* ObjectMgr::GetTransportByGOMapId(uint32 mapid) const
 {
     for (TransportSet::const_iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
     {
-        Transport const* transport = *iter;
+        MOTransport const* transport = *iter;
 
         if (!transport)
             continue;
@@ -10304,11 +10324,11 @@ Transport const* ObjectMgr::GetTransportByGOMapId(uint32 mapid) const
     return NULL;
 }
 
-Transport* ObjectMgr::GetTransportByGuid(ObjectGuid const& guid)
+MOTransport* ObjectMgr::GetTransportByGuid(ObjectGuid const& guid)
 {
     for (TransportSet::iterator iter = m_Transports.begin(); iter != m_Transports.end(); ++iter)
     {
-        Transport* transport = *iter;
+        MOTransport* transport = *iter;
 
         if (!transport)
             continue;
@@ -10332,12 +10352,12 @@ void ObjectMgr::LoadTransports(Map* map)
     uint32 count = 0;
     do
     {
-        Field *fields = result->Fetch();
+        Field* fields = result->Fetch();
         uint32 entry        = fields[0].GetUInt32();
         std::string name    = fields[1].GetCppString();
         uint32 period       = fields[2].GetUInt32();
 
-        if (Transport::GetPossibleMapByEntry(entry, true) != map->GetId() || !Transport::IsSpawnedAtDifficulty(entry, map->GetDifficulty()))
+        if (MOTransport::GetPossibleMapByEntry(entry, true) != map->GetId() || !MOTransport::IsSpawnedAtDifficulty(entry, map->GetDifficulty()))
             continue;
 
         ++count;
@@ -10359,7 +10379,7 @@ void ObjectMgr::LoadTransports(Map* map)
                 transport->GetPositionZ());
         }
 */
-    } while(result->NextRow());
+    } while (result->NextRow());
 
     delete result;
 

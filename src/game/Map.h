@@ -38,6 +38,7 @@
 #include "Weather.h"
 #include "CreatureLinkingMgr.h"
 #include "ObjectLock.h"
+#include "ObjectHandler.h"
 #include "vmap/DynamicTree.h"
 #include "WorldObjectEvents.h"
 
@@ -98,7 +99,64 @@ enum LevelRequirementVsMode
 
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
 
-typedef std::map<ObjectGuid,GuidSet>  AttackersMap;
+struct MANGOS_DLL_DECL MapID
+{
+    explicit MapID(uint32 id) : nMapId(id), nInstanceId(0) {}
+    MapID(uint32 id, uint32 instid) : nMapId(id), nInstanceId(instid) {}
+
+    bool operator<(const MapID& val) const
+    {
+        if (nMapId == val.nMapId)
+            return nInstanceId < val.nInstanceId;
+
+        if (IsContinent() && !val.IsContinent())
+            return true;
+        else if (!IsContinent() && val.IsContinent())
+            return false;
+
+        return nMapId < val.nMapId;
+    }
+
+    bool operator==(const MapID& val) const { return nMapId == val.nMapId && nInstanceId == val.nInstanceId; }
+
+    bool IsContinent() const
+    {
+        return nMapId == 0 || nMapId == 1 || nMapId == 530 || nMapId == 571;
+    };
+
+    uint32 const& GetId() const { return nMapId; };
+    uint32 const& GetInstanceId() const { return nInstanceId; };
+
+    uint32 nMapId;
+    uint32 nInstanceId;
+};
+
+HASH_NAMESPACE_START
+template<> class hash <MapID>
+{
+    public: size_t operator()(const MapID& __x) const { return (size_t)((__x.GetId() << 16) | (__x.GetInstanceId())); }
+};
+HASH_NAMESPACE_END
+
+typedef UNORDERED_SET<MapID> MapIDSet;
+
+struct MANGOS_DLL_DECL ZoneID : public MapID
+{
+    explicit ZoneID(uint32 mapId, uint32 zoneId) : MapID(mapId), nZoneId(zoneId) {}
+    ZoneID(uint32 mapId, uint32 instid, uint32 zoneId) : MapID(mapId, instid), nZoneId(zoneId) {}
+    bool operator == (const ZoneID& val) const { return GetId() == val.GetId() && GetInstanceId() == val.GetInstanceId() && GetZoneId() == val.GetZoneId(); }
+    uint32 const& GetZoneId() const { return nZoneId; };
+    uint32 nZoneId;
+};
+
+HASH_NAMESPACE_START
+template<> class hash <ZoneID>
+{
+    public: size_t operator()(const ZoneID& __x) const { return (size_t)((__x.GetId() << 24) | (__x.GetInstanceId() << 16) | (__x.GetZoneId())) ; }
+};
+HASH_NAMESPACE_END
+
+typedef UNORDERED_MAP<ObjectGuid,GuidSet>  AttackersMap;
 
 struct LoadingObjectQueueMember
 {
@@ -193,15 +251,17 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool GetUnloadLock(const GridPair &p) const { return getNGrid(p.x_coord, p.y_coord)->getUnloadLock(); }
         void SetUnloadLock(const GridPair &p, bool on) { getNGrid(p.x_coord, p.y_coord)->setUnloadExplicitLock(on); }
         void LoadGrid(const Cell& cell, bool no_unload = false);
-        bool UnloadGrid(const uint32 &x, const uint32 &y, bool pForce);
+        bool UnloadGrid(NGridType& grid, bool pForce);
+        bool UpdateGridState(NGridType& grid, GridInfo& gridInfo, uint32 const& t_diff);
+
         virtual void UnloadAll(bool pForce);
 
-        void ResetGridExpiry(NGridType &grid, float factor = 1) const
+        void ResetGridExpiry(NGridType& grid, float factor = 1.0f) const
         {
-            grid.ResetTimeTracker((time_t)((float)i_gridExpiry*factor));
+            grid.ResetTimeTracker((time_t)((float)GetGridExpiry() * factor));
         }
 
-        time_t GetGridExpiry(void) const { return i_gridExpiry; }
+        time_t GetGridExpiry() const;
         uint32 GetId(void) const { return i_id; }
 
         // some calls like isInWater should not use vmaps due to processor power
@@ -271,12 +331,12 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         bool ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams = SCRIPT_EXEC_PARAM_NONE);
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
 
-        typedef UNORDERED_SET<WorldObject*> ActiveNonPlayers;
         // must called with AddToWorld
         void AddToActive(WorldObject* obj);
         // must called with RemoveFromWorld
         void RemoveFromActive(WorldObject* obj);
-        ActiveNonPlayers const& GetActiveObjects() { return m_activeNonPlayers; };
+        GuidSet const& GetActiveObjects() const { return m_activeObjectsSafeCopy; };
+        void MakeActiveObjectsSafeCopy();
 
 
         Player* GetPlayer(ObjectGuid const& guid, bool globalSearch = false);
@@ -368,8 +428,6 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
     private:
         void LoadMapAndVMap(int gx, int gy);
 
-        void SetTimer(uint32 t) { i_gridExpiry = t < MIN_GRID_DELAY ? MIN_GRID_DELAY : t; }
-
         void SendInitSelf( Player * player );
 
         void SendInitActiveObjects(Player* player);
@@ -393,7 +451,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         {
             MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
             MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
-            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+            ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             return i_grids[x][y];
         }
 
@@ -402,7 +460,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void setUnitCell(Creature* obj);
 
         bool IsGridObjectDataLoaded(NGridType const* grid) const;
-        void SetGridObjectDataLoaded(bool pLoaded, NGridType* grid);
+        void SetGridObjectDataLoaded(bool pLoaded, NGridType& grid);
 
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
         void ScriptsProcess();
@@ -424,12 +482,11 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         MapRefManager m_mapRefManager;
         MapRefManager::iterator m_mapRefIter;
 
-        ActiveNonPlayers m_activeNonPlayers;
-        ActiveNonPlayers::iterator m_activeNonPlayersIter;
+        GuidSet m_activeObjects;
+        GuidSet m_activeObjectsSafeCopy;
         MapStoredObjectTypesContainer m_objectsStore;
 
     private:
-        time_t i_gridExpiry;
 
         NGridType* i_grids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 

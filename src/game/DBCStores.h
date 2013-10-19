@@ -63,11 +63,20 @@ bool IsTotemCategoryCompatiableWith(uint32 itemTotemCategoryId, uint32 requiredT
 bool Zone2MapCoordinates(float& x, float& y, uint32 zone);
 bool Map2ZoneCoordinates(float& x, float& y, uint32 zone);
 
-typedef std::map<uint32/* pair32(dungeonId,expansion) */,LFGDungeonExpansionEntry const*> LFGDungeonExpansionMap;
+typedef UNORDERED_MAP<uint32/* pair32(dungeonId,expansion) */,LFGDungeonExpansionEntry const*> LFGDungeonExpansionMap;
 LFGDungeonExpansionEntry const* GetLFGExpansionEntry(uint32 dungeonId, uint32 expansion);
 
-typedef std::map<uint32/*pair32(map,diff)*/,MapDifficultyEntry const*> MapDifficultyMap;
+typedef UNORDERED_MAP<uint32/*pair32(map,diff)*/,MapDifficultyEntry const*> MapDifficultyMap;
 MapDifficultyEntry const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty);
+
+typedef UNORDERED_MAP<uint32 /*zone_id*/, WorldMapAreaEntry const*> WorldMapAreaMap;
+WorldMapAreaEntry const* GetWorldMapAreaByAreaId(uint32 area_id);
+
+// returns main WorldMapArea for all maps, overall WorldMapArea (zone_id = 0) for continents
+WorldMapAreaEntry const* GetWorldMapAreaByMapID(uint32 map_id);
+
+// returns set of all zones in given map (1 zone mostly)
+std::vector<uint32> GetWorldMapAreaSetByMapID(uint32 map_id);
 
 // natural order for difficulties up-down iteration
 // difficulties for dungeons/battleground ordered in normal way
@@ -203,10 +212,12 @@ extern TaxiPathSetBySource                       sTaxiPathSetBySource;
 extern TaxiPathNodesByPath                       sTaxiPathNodesByPath;
 extern DBCStorage <TeamContributionPoints>       sTeamContributionPoints;
 extern DBCStorage <TotemCategoryEntry>           sTotemCategoryStore;
+extern TransportAnimationsByEntry                sTransportAnimationsByEntry;
+extern DBCStorage <TransportAnimationEntry>      sTransportAnimationStore;
 extern DBCStorage <VehicleEntry>                 sVehicleStore;
 extern DBCStorage <VehicleSeatEntry>             sVehicleSeatStore;
 extern DBCStorage <WMOAreaTableEntry>            sWMOAreaTableStore;
-// extern DBCStorage <WorldMapAreaEntry>           sWorldMapAreaStore; -- use Zone2MapCoordinates and Map2ZoneCoordinates
+extern DBCStorage <WorldMapAreaEntry>            sWorldMapAreaStore;
 extern DBCStorage <WorldMapOverlayEntry>         sWorldMapOverlayStore;
 extern DBCStorage <WorldSafeLocsEntry>           sWorldSafeLocsStore;
 extern DBCStorage <WorldStateEntry>              sWorldStateStore;

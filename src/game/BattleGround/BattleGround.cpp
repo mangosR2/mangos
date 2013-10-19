@@ -1257,6 +1257,7 @@ void BattleGround::RemovePlayerAtLeave(ObjectGuid guid, bool Transport, bool Sen
             if (!group->RemoveMember(guid, 0))              // group was disbanded
             {
                 SetBgRaid(team, NULL);
+                group->SetBattlegroundGroup(NULL);
                 delete group;
             }
         }
@@ -1462,7 +1463,7 @@ void BattleGround::AddOrSetPlayerToCorrectBgGroup(Player* plr, ObjectGuid plr_gu
         if (group->IsMember(plr_guid))
         {
             uint8 subgroup = group->GetMemberGroup(plr_guid);
-            plr->SetBattleGroundRaid(group, subgroup);
+            plr->SetBattleGroundRaid(group->GetObjectGuid(), subgroup);
         }
         else
         {

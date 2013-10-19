@@ -33,11 +33,12 @@
 
 #include <cmath>
 
-#define CLASS_LOCK MaNGOS::ClassLevelLockable<ObjectAccessor, ACE_Thread_Mutex>
-INSTANTIATE_SINGLETON_2(ObjectAccessor, CLASS_LOCK);
-INSTANTIATE_CLASS_MUTEX(ObjectAccessor, ACE_Thread_Mutex);
+INSTANTIATE_SINGLETON_1(ObjectAccessor);
 
-ObjectAccessor::ObjectAccessor() {}
+ObjectAccessor::ObjectAccessor() 
+{
+}
+
 ObjectAccessor::~ObjectAccessor()
 {
     for(Player2CorpsesMapType::const_iterator itr = i_player2corpse.begin(); itr != i_player2corpse.end(); ++itr)
@@ -47,8 +48,7 @@ ObjectAccessor::~ObjectAccessor()
     }
 }
 
-Unit*
-ObjectAccessor::GetUnit(WorldObject const &u, ObjectGuid guid)
+Unit* ObjectAccessor::GetUnit(WorldObject const &u, ObjectGuid guid)
 {
     if (!guid)
         return NULL;
@@ -64,7 +64,7 @@ ObjectAccessor::GetUnit(WorldObject const &u, ObjectGuid guid)
 
 Corpse* ObjectAccessor::GetCorpseInMap(ObjectGuid guid, uint32 mapid)
 {
-    Corpse * ret = HashMapHolder<Corpse>::Find(guid);
+    Corpse* ret = HashMapHolder<Corpse>::Find(guid);
     if (!ret)
         return NULL;
     if (ret->GetMapId() != mapid)

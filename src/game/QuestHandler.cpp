@@ -626,7 +626,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
         if (guid.IsAnyTypeCreature())
         {
             // need also pet quests case support
-            Creature* questgiver = GetPlayer()->GetMap()->GetAnyTypeCreature(guid);
+            Creature* questgiver = GetPlayer()->GetMap() ? GetPlayer()->GetMap()->GetAnyTypeCreature(guid) : NULL;
 
             if (!questgiver || questgiver->IsHostileTo(_player))
                 continue;
@@ -645,7 +645,7 @@ void WorldSession::HandleQuestgiverStatusMultipleQuery(WorldPacket& /*recvPacket
         }
         else if (guid.IsGameObject())
         {
-            GameObject* questgiver = GetPlayer()->GetMap()->GetGameObject(guid);
+            GameObject* questgiver = GetPlayer()->GetMap() ? GetPlayer()->GetMap()->GetGameObject(guid) : NULL;
 
             if (!questgiver)
                 continue;

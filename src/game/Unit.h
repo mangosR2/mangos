@@ -740,8 +740,8 @@ class MovementInfo
             t_time(0), t_seat(-1), t_seatInfo(NULL), t_time2(0), s_pitch(0.0f), fallTime(0), splineElevation(0.0f) {}
 
         // Read/Write methods
-        void Read(ByteBuffer &data);
-        void Write(ByteBuffer &data) const;
+        void Read(ByteBuffer& data);
+        void Write(ByteBuffer& data) const;
 
         // Movement flags manipulations
         void AddMovementFlag(MovementFlags f) { moveFlags |= f; }
@@ -764,6 +764,7 @@ class MovementInfo
         }
         void ClearTransportData()
         {
+            moveFlags2 = MOVEFLAG2_NONE;
             t_guid = ObjectGuid();
             t_pos.x = 0.0f;
             t_pos.y = 0.0f;
@@ -772,15 +773,18 @@ class MovementInfo
             t_time = 0;
             t_seat = -1;
             t_seatInfo = NULL;
-            moveFlags2 = MOVEFLAG2_NONE;
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
         Position const* GetTransportPos() const { return &t_pos; }
         int8 GetTransportSeat() const { return t_seat; }
+
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
         uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
+
+        uint32 GetTime() const { return time; }
         uint32 GetTransportTime() const { return t_time; }
         uint32 GetFallTime() const { return fallTime; }
+
         void ChangeOrientation(float o) { pos.o = o; }
         void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
         void ChangeTransportPosition(float x, float y, float z, float o) { t_pos.x = x; t_pos.y = y; t_pos.z = z; t_pos.o = o; }
@@ -795,19 +799,19 @@ class MovementInfo
         struct JumpInfo
         {
             JumpInfo() : velocity(0.f), sinAngle(0.f), cosAngle(0.f), xyspeed(0.f) {}
-            float   velocity, sinAngle, cosAngle, xyspeed;
+            float velocity, sinAngle, cosAngle, xyspeed;
         };
 
         JumpInfo const& GetJumpInfo() const { return jump; }
 
-        MovementInfo& operator=(const MovementInfo &targetInfo)
+        MovementInfo& operator = (const MovementInfo& targetInfo)
         {
             uint32 moveFlagsTmp = targetInfo.moveFlags;
             if (moveFlags & MOVEFLAG_ONTRANSPORT)
                 moveFlagsTmp |= MOVEFLAG_ONTRANSPORT;
 
             moveFlags  = moveFlagsTmp;
-            splineElevation     = targetInfo.splineElevation;
+            splineElevation = targetInfo.splineElevation;
             time       = targetInfo.time;
             pos        = targetInfo.pos;
             s_pitch    = targetInfo.s_pitch;
@@ -1322,7 +1326,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         void ApplyDiminishingAura(DiminishingGroup  group, bool apply);
         void ClearDiminishings() { m_Diminishing.clear(); }
 
-        void Update(uint32 update_diff, uint32 time) override;
+        virtual void Update(uint32 update_diff, uint32 time) override;
 
         void setAttackTimer(WeaponAttackType type, uint32 time) { m_attackTimer[type] = time; }
         void resetAttackTimer(WeaponAttackType type = BASE_ATTACK);

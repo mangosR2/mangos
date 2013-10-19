@@ -17,8 +17,6 @@
 #
 
 project(MaNGOS)
-set(MANGOS_VERSION 0.17)
-set(CLIENT_VERSION 12340)
 
 # CMake policies
 cmake_minimum_required(VERSION 2.8)
@@ -409,12 +407,12 @@ add_subdirectory(dep) # TODO: add vmap extractor build support
 
 # Add definitions for all build types
 # Don't place this above 'dep' subdirectory! Because of defines build will crash.
-set(DEFINITIONS
-  DO_MYSQL
-  HAVE_CONFIG_H
-  VERSION="${MANGOS_VERSION}"
-  SYSCONFDIR="${CONF_DIR}/"
-)
+if (UNIX)
+    set(DEFINITIONS DO_MYSQL SYSCONFDIR="${CONF_DIR}/")
+else()
+    set(DEFINITIONS DO_MYSQL SYSCONFDIR="../etc/")
+endif()
+
 set(DEFINITIONS_RELEASE NDEBUG)
 set(DEFINITIONS_DEBUG _DEBUG MANGOS_DEBUG)
 if(WIN32)

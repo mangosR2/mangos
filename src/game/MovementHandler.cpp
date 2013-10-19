@@ -303,8 +303,15 @@ void WorldSession::HandleMovementOpcodes( WorldPacket & recv_data )
     if (plMover)
         plMover->UpdateFallInformationIfNeed(movementInfo, opcode);
 
+    // some movement packet fixes, taking into account client/server connection lag.
+    if (!m_clientTimeDelay)
+        m_clientTimeDelay = WorldTimer::getMSTime() - movementInfo.GetTime();
+
+    if (m_clientTimeDelay)
+        movementInfo.UpdateTime(movementInfo.GetTime() + m_clientTimeDelay);
+
     WorldPacket data(opcode, recv_data.size());
-    data << mover->GetPackGUID();             // write guid
+    data << mover->GetPackGUID();                           // write guid
     movementInfo.Write(data);                               // write data
     mover->SendMessageToSetExcept(&data, _player);
 }
@@ -534,13 +541,13 @@ bool WorldSession::VerifyMovementInfo(MovementInfo const& movementInfo, ObjectGu
     if (guid != _player->GetMover()->GetObjectGuid())
         return false;
 
-    if (!MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x, movementInfo.GetPos()->y, movementInfo.GetPos()->z, movementInfo.GetPos()->o))
+    if (!MaNGOS::IsValidMapCoord(movementInfo.GetPosition().getX(), movementInfo.GetPosition().getY(), movementInfo.GetPosition().getZ(), movementInfo.GetPosition().getO()))
         return false;
 
     if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
     {
-        if( !MaNGOS::IsValidMapCoord(movementInfo.GetPos()->x + movementInfo.GetTransportPos()->x, movementInfo.GetPos()->y + movementInfo.GetTransportPos()->y,
-            movementInfo.GetPos()->z + movementInfo.GetTransportPos()->z, movementInfo.GetPos()->o + movementInfo.GetTransportPos()->o) )
+        if( !MaNGOS::IsValidMapCoord(movementInfo.GetPosition().getX() + movementInfo.GetTransportPosition().getX(), movementInfo.GetPosition().getY() + movementInfo.GetTransportPosition().getY(),
+            movementInfo.GetPosition().getZ() + movementInfo.GetTransportPosition().getZ(), movementInfo.GetPosition().getO() + movementInfo.GetTransportPosition().getO()) )
         {
             return false;
         }
@@ -559,14 +566,14 @@ void WorldSession::HandleMoverRelocation(MovementInfo& movementInfo)
     {
         if (movementInfo.HasMovementFlag(MOVEFLAG_ONTRANSPORT))
         {
-            if (!plMover->IsOnTransport())
+            if (!plMover->IsOnTransport() && plMover->GetMap())
             {
                 /* process anticheat check */
-                GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_TRANSPORT,movementInfo);
+                GetPlayer()->GetAntiCheat()->DoAntiCheatCheck(CHECK_TRANSPORT, movementInfo);
 
                 // elevators also cause the client to send MOVEFLAG_ONTRANSPORT - just unmount if the guid can be found in the transport list
-                if (Transport* transport = sObjectMgr.GetTransportByGuid(movementInfo.GetTransportGuid()))
-                    transport->AddPassenger(plMover, Position());
+                if (Transport* transport = plMover->GetMap()->GetTransport(movementInfo.GetTransportGuid()))
+                    transport->AddPassenger(plMover, movementInfo.GetTransportPosition());
             }
         }
         else if (plMover->IsOnTransport())               // if we were on a transport, leave

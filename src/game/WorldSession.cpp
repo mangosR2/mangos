@@ -91,7 +91,7 @@ WorldSession::WorldSession(uint32 id, WorldSocket *sock, AccountTypes sec, uint8
 m_muteTime(mute_time), _player(NULL), m_Socket(sock),_security(sec), _accountId(id), m_expansion(expansion), _logoutTime(0),
 m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerRecentlyLogout(false), m_playerSave(false),
 m_sessionDbcLocale(sWorld.GetAvailableDbcLocale(locale)), m_sessionDbLocaleIndex(sObjectMgr.GetIndexForLocale(locale)),
-m_latency(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_Warden(NULL)
+m_latency(0), m_clientTimeDelay(0), m_tutorialState(TUTORIALDATA_UNCHANGED), m_Warden(NULL)
 {
     if (sock)
     {
@@ -404,6 +404,10 @@ void WorldSession::LogoutPlayer(bool Save)
 
     if (_player)
     {
+        // Getting map smartpointer - lock map from deleting while logout
+        // smartpointer may be NULL, if player not in any map
+        MapPtr mapPtr = GetPlayer()->GetMapPtr();
+
         // Playerbot mod: log out all player bots owned by this toon
         if (GetPlayer()->GetPlayerbotMgr())
             GetPlayer()->GetPlayerbotMgr()->LogoutAllBots();
@@ -427,7 +431,7 @@ void WorldSession::LogoutPlayer(bool Save)
             GetPlayer()->BuildPlayerRepop();
             GetPlayer()->RepopAtGraveyard();
         }
-        else if (GetPlayer()->GetMap() && GetPlayer()->IsInCombat())
+        else if (mapPtr && GetPlayer()->IsInCombat())
         {
             GetPlayer()->CombatStop();
             GetPlayer()->getHostileRefManager().setOnlineOfflineState(false);
@@ -435,11 +439,11 @@ void WorldSession::LogoutPlayer(bool Save)
 
             // build set of player who attack _player or who have pet attacking of _player
             std::set<Player*> aset;
-            GuidSet& attackers = GetPlayer()->GetMap()->GetAttackersFor(GetPlayer()->GetObjectGuid());
+            GuidSet& attackers = mapPtr->GetAttackersFor(GetPlayer()->GetObjectGuid());
 
             for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
             {
-                Unit* attacker = GetPlayer()->GetMap()->GetUnit(*itr++);
+                Unit* attacker = mapPtr->GetUnit(*itr++);
                 if (!attacker)
                     continue;
 
@@ -525,15 +529,9 @@ void WorldSession::LogoutPlayer(bool Save)
         }
 
         ///- If the player is in a guild, update the guild roster and broadcast a logout message to other guild members
-        Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
-        if (guild)
+        if (Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId()))
         {
-            if (MemberSlot* slot = guild->GetMemberSlot(GetPlayer()->GetObjectGuid()))
-            {
-                slot->SetMemberStats(GetPlayer());
-                slot->UpdateLogoutTime();
-            }
-
+            guild->OnMemberLogout(GetPlayer());
             guild->BroadcastEvent(GE_SIGNED_OFF, GetPlayer()->GetObjectGuid(), GetPlayer()->GetName());
         }
 
@@ -560,14 +558,12 @@ void WorldSession::LogoutPlayer(bool Save)
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
         //_player->UninviteFromGroup();
 
-        // remove player from the group if he is:
-        // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
-        //if(_player->GetGroup() && !_player->GetGroup()->isRaidGroup() && m_Socket)
-        //    _player->RemoveFromGroup();
-
-        ///- Send update to group
-        if(GetPlayer()->GetGroup())
+        ///- Inform the group about leaving and send update to other members
+        if (GetPlayer()->GetGroup())
+        {
+            GetPlayer()->GetGroup()->CheckLeader(GetPlayer()->GetObjectGuid(), true); // logout check leader
             GetPlayer()->GetGroup()->SendUpdate();
+        }
 
         ///- Broadcast a logout message to the player's friends
         sSocialMgr.SendFriendStatus(GetPlayer(), FRIEND_OFFLINE, GetPlayer()->GetObjectGuid(), true);
@@ -580,16 +576,15 @@ void WorldSession::LogoutPlayer(bool Save)
         // the player may not be in the world when logging out
         // e.g if he got disconnected during a transfer to another map
         // calls to GetMap in this case may cause crashes
-        if (GetPlayer()->IsInWorld())
+        if (GetPlayer()->IsInWorld() && mapPtr)
         {
-            Map* _map = GetPlayer()->GetMap();
-            _map->Remove(GetPlayer(), true);
+            mapPtr->Remove(GetPlayer(), true);
         }
         else
         {
             GetPlayer()->CleanupsBeforeDelete();
-            if (GetPlayer()->GetMap())
-                GetPlayer()->GetMap()->DeleteFromWorld(GetPlayer());
+            if (mapPtr)
+                mapPtr->DeleteFromWorld(GetPlayer());
             else
             {
                 sObjectAccessor.RemoveObject(GetPlayer());
@@ -600,8 +595,8 @@ void WorldSession::LogoutPlayer(bool Save)
         SetPlayer(NULL);                                    // deleted in Remove/DeleteFromWorld call
 
         ///- Send the 'logout complete' packet to the client
-        WorldPacket data( SMSG_LOGOUT_COMPLETE, 0 );
-        SendPacket( &data );
+        WorldPacket data(SMSG_LOGOUT_COMPLETE, 0);
+        SendPacket(&data);
 
 		static SqlStatementID updChars;
         SqlStatement stmt = CharacterDatabase.CreateStatement(updChars, "UPDATE characters SET online = 0 WHERE guid = ?");

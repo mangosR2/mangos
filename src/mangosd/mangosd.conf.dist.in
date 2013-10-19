@@ -799,6 +799,10 @@ LexicsCutterNoActionOnGM = 1
 #        Enable or disable instant logout for security level (0..4) or high (NOT in combat/while dueling/while falling)
 #        Default: 1 (Mods/GMs/Admins)
 #
+#    GroupLeaderReconnectPeriod
+#        The time in sec. the leader of a group has to reconnect before the lead goes to another player (also applies for a server crash)
+#        Default: 180 (3 min.)
+#
 #    AllFlightPaths
 #        Players will start with all flight paths (Note: ALL flight paths, not only player's team)
 #        Default: 0 (false)
@@ -852,6 +856,11 @@ LexicsCutterNoActionOnGM = 1
 #        Unload the instance map from memory after some time if no players are inside.
 #        Default: 1800000 (miliseconds 30 minutes)
 #                 0 (instance maps are kept in memory until they are reset)
+#
+#    InstancesResetAnnounce
+#        Announce the reset of one instance to whole party.
+#        Default: 0 (disabled, don't show, blizzlike)
+#                 1 (enabled, show)
 #
 #    Quests.LowLevelHideDiff
 #        Quest level difference to hide for player low level quests:
@@ -1094,6 +1103,7 @@ AllowHonorKillsTitles = 0
 MaxArenaPoints = 5000
 StartArenaPoints = 0
 InstantLogout = 1
+GroupLeaderReconnectPeriod = 180
 DisableWaterBreath = 4
 AllFlightPaths = 0
 AlwaysMaxSkillForLevel = 0
@@ -1106,6 +1116,7 @@ Instance.IgnoreLevel = 0
 Instance.IgnoreRaid = 0
 Instance.ResetTimeHour = 4
 Instance.UnloadDelay = 1800000
+InstancesResetAnnounce = 0
 Quests.LowLevelHideDiff = 4
 Quests.HighLevelHideDiff = 7
 Quests.Daily.ResetHour = 6
@@ -2164,15 +2175,16 @@ LFG.DisableDungeonMapIds= ""
 #        Default: 0
 #
 #    VMSS.FreezeCheckPeriod
-#        Time period (in milliseconds) for activate FreezeDetect thread
+#        Time period (in milliseconds) for activate FreezeDetect thread (also used for MT statistic collect)
 #        Default: 1000 (1 sec) - default mangos freeze detect period.
 #
 #    VMSS.MapFreezeDetectTime
 #        Time period (in milliseconds) for detect freeze in map thread
 #        Default: 1000 (1 sec)
+#        0                     - Freeze in-map detection (and reaction) DISABLED, works only MaxCoreStuckTime option.
 #
 #    VMSS.TrySkipFirstThreadBreak
-#        Try skip first thread break (crush), and restore his update cycle fully - 
+#        Try skip first thread break (crush), and restore his update cycle fully -
 #             possible this crush not code problem, but cheat/memory corruption
 #        Default: 1 (on)
 #
@@ -2192,7 +2204,7 @@ VMSS.MaxThreadBreaks = 3
 VMSS.ThreadBreakRememberTime = 600
 VMSS.MapFreeMethod = 1
 VMSS.FreezeCheckPeriod = 1000
-VMSS.MapFreezeDetectTime = 2000
+VMSS.MapFreezeDetectTime = 1000
 VMSS.TrySkipFirstThreadBreak = 1
 VMSS.ForceUnloadDelay = 3000
 VMSS.ContinentsSkip = 1

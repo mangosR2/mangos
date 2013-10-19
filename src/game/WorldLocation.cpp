@@ -19,23 +19,24 @@
 #include "GridMap.h"
 #include "MapManager.h"
 #include "Object.h"
+#include "Unit.h"
 #include "World.h"
 #include "WorldLocation.h"
 
 Location& Location::operator = (Location const& loc)
 {
-    x = loc.x;
-    y = loc.y;
-    z = loc.z;
-    orientation = loc.orientation;
+    x = loc.getX();
+    y = loc.getY();
+    z = loc.getZ();
+    orientation = loc.getO();
     return *this;
 }
 
 bool Location::operator == (Location const& loc) const
 {
-    return ((fabs(x - loc.x) < M_NULL_F)
-        && (fabs(y - loc.y) < M_NULL_F)
-        && (fabs(z - loc.z) < M_NULL_F));
+    return ((fabs(getX() - loc.getX()) < M_NULL_F)
+        && (fabs(getY() - loc.getY()) < M_NULL_F)
+        && (fabs(getZ() - loc.getZ()) < M_NULL_F));
 };
 
 float Location::GetDistance(Location const& loc) const
@@ -45,15 +46,15 @@ float Location::GetDistance(Location const& loc) const
 
 bool Location::IsEmpty() const
 {
-    return fabs(x) < M_NULL_F && fabs(y) < M_NULL_F && fabs(z) < M_NULL_F;
+    return fabs(getX()) < M_NULL_F && fabs(getY()) < M_NULL_F && fabs(getZ()) < M_NULL_F;
 }
 
 Position& Position::operator = (Position const& pos)
 {
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
+    x           = pos.getX();
+    y           = pos.getY();
+    z           = pos.getZ();
+    orientation = pos.getO();
     m_phaseMask = pos.GetPhaseMask();
 
     return *this;
@@ -74,7 +75,7 @@ float Position::GetDistance(Position const& pos) const
 WorldLocation const WorldLocation::Null = WorldLocation();
 
 WorldLocation::WorldLocation(uint32 _mapid, float _x, float _y, float _z, float _o, uint32 phaseMask, uint32 _instance, uint32 _realmid)
-    : Position(_x, _y, _z, _o, phaseMask), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position())
+    : Position(_x, _y, _z, _o, phaseMask), mapid(_mapid), instance(_instance), realmid(_realmid), m_Tpos(Position()), m_Tguid(ObjectGuid())
 {
     if (realmid == 0)
         SetRealmId(sWorld.getConfig(CONFIG_UINT32_REALMID));
@@ -94,7 +95,8 @@ bool WorldLocation::operator == (WorldLocation const& loc) const
             (realmid == 0 || realmid == loc.realmid)
         && (!HasMap() || GetMapId()  == loc.GetMapId())
         && (GetInstanceId() == 0 || GetInstanceId() == loc.GetInstanceId())
-        && ((Position)*this) == ((Position)loc));
+        && ((Position)*this) == ((Position)loc)
+        && GetTransportPos() == loc.GetTransportPos());
 }
 
 void WorldLocation::SetMapId(uint32 value)
@@ -106,7 +108,7 @@ void WorldLocation::SetMapId(uint32 value)
 
 void WorldLocation::SetOrientation(float value)
 {
-    if (fabs(orientation) > 2.0f * M_PI_F)
+    if (fabs(value) > 2.0f * M_PI_F)
         orientation = MapManager::NormalizeOrientation(value);
     else
         orientation = value;
@@ -117,27 +119,83 @@ WorldLocation& WorldLocation::operator = (WorldLocation const& loc)
     //if (!IsValidMapCoord(loc))
     //    sLog.outError("WorldLocation::operator = try set invalid location!");
 
-    mapid       = loc.mapid;
-    instance    = loc.instance;
-    m_Tpos      = loc.m_Tpos;
-    x           = loc.x;
-    y           = loc.y;
-    z           = loc.z;
-    orientation = loc.orientation;
+    if (loc.HasMap())
+    {
+        mapid       = loc.GetMapId();
+        instance    = loc.GetInstanceId();
+    }
+    m_Tpos      = loc.GetTransportPos();
+    x           = loc.getX();
+    y           = loc.getY();
+    z           = loc.getZ();
+    orientation = loc.getO();
     m_phaseMask = loc.GetPhaseMask();
+    m_Tguid     = loc.GetTransportGuid();
     return *this;
 }
 
 WorldLocation& WorldLocation::operator = (Position const& pos)
 {
-    x           = pos.x;
-    y           = pos.y;
-    z           = pos.z;
-    orientation = pos.orientation;
+    x           = pos.getX();
+    y           = pos.getY();
+    z           = pos.getZ();
+    orientation = pos.getO();
     m_phaseMask = pos.GetPhaseMask();
     return *this;
 }
 
+void WorldLocation::SetPosition(Position const& pos)
+{
+    if (GetTransportGuid().IsEmpty())
+    {
+        x           = pos.getX();
+        y           = pos.getY();
+        z           = pos.getZ();
+        orientation = pos.getO();
+        //m_phaseMask = pos.GetPhaseMask();
+    }
+    else
+        SetTransportPosition(pos);
+}
+
+void WorldLocation::SetPosition(WorldLocation const& loc)
+{
+    // This method not set transport position!
+    if (loc.HasMap())
+    {
+        mapid       = loc.GetMapId();
+        instance    = loc.GetInstanceId();
+    }
+    x           = loc.getX();
+    y           = loc.getY();
+    z           = loc.getZ();
+    orientation = loc.getO();
+    //m_phaseMask = loc.GetPhaseMask();
+}
+
+/*void WorldLocation::SetPosition(MovementInfo const& mi)
+{
+    // This method not set transport position!
+    if (mi.GetPosition().HasMap())
+    {
+        mapid       = mi.GetPosition().mapid;
+        instance    = mi.GetPosition().instance;
+    }
+    x           = mi.GetPosition().getX();
+    y           = mi.GetPosition().getY();
+    z           = mi.GetPosition().getZ();
+    orientation = mi.GetPosition().getO();
+    //m_phaseMask = loc.GetPhaseMask();
+
+    if (mi.GetTransportGuid())
+    {
+        SetTransportGuid(mi.GetTransportGuid());
+        SetTransportPosition(mi.GetTransportPosition());
+    }
+    else
+        ClearTransportData();
+}
+*/
 uint32 WorldLocation::GetAreaId() const
 {
     if (!HasMap())
@@ -156,14 +214,20 @@ uint32 WorldLocation::GetZoneId() const
 
 float WorldLocation::GetDistance(WorldLocation const& loc) const
 {
-    return (!HasMap() || !loc.HasMap() || ((GetMapId() == loc.GetMapId()) && (GetInstanceId() == loc.GetInstanceId()))) ?
-        ((Position)*this).GetDistance((Position)loc) :
-        MAX_VISIBILITY_DISTANCE + 1.0f;
+    if (!HasMap() || !loc.HasMap() || ((GetMapId() == loc.GetMapId()) && (GetInstanceId() == loc.GetInstanceId())))
+    {
+        if (GetTransportPos().IsEmpty() && loc.GetTransportPos().IsEmpty())
+            return ((Position)*this).GetDistance((Position)loc);
+        else if (GetPhaseMask() & loc.GetPhaseMask() &&  GetTransportPos().GetPhaseMask() & loc.GetTransportPos().GetPhaseMask())
+            return (((Vector3)*this + (Vector3)GetTransportPos()) - ((Vector3)loc + (Vector3)loc.GetTransportPos())).magnitude();
+    }
+
+    return MAX_VISIBILITY_DISTANCE + 1.0f;
 };
 
 float WorldLocation::GetDistance(Location const& loc) const
 {
-    return ((Location)*this).GetDistance(loc);
+    return (((Vector3)*this + (Vector3)GetTransportPos()) - (Vector3)loc).magnitude();
 };
 
 ByteBuffer& operator << (ByteBuffer& buf, Location const& loc)
