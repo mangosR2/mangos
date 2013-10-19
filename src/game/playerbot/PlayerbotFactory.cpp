@@ -7,6 +7,7 @@
 #include "../AccountMgr.h"
 #include "../../shared/Database/DBCStore.h"
 #include "../SharedDefines.h"
+#include "../ahbot/AhBot.h"
 
 using namespace ai;
 using namespace std;
@@ -1407,7 +1408,7 @@ void PlayerbotFactory::InitInventorySkill()
 Item* PlayerbotFactory::StoreItem(uint32 itemId, uint32 count)
 {
     ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
-    Item* newItem = bot->StoreNewItemInInventorySlot(itemId, urand(1, min(count, proto->GetMaxStackSize())));
+    Item* newItem = bot->StoreNewItemInInventorySlot(itemId, min(count, proto->GetMaxStackSize()));
     if (newItem)
         newItem->AddToUpdateQueueOf(bot);
 
@@ -1426,10 +1427,7 @@ void PlayerbotFactory::InitInventoryTrade()
         if (proto->Class != ITEM_CLASS_TRADE_GOODS || proto->Bonding != NO_BIND)
             continue;
 
-        if (bot->getLevel() >= 40 && proto->Quality < ITEM_QUALITY_RARE)
-            continue;
-
-        if (bot->getLevel() >= 20 && proto->Quality < ITEM_QUALITY_UNCOMMON)
+        if (proto->ItemLevel < bot->getLevel())
             continue;
 
         if (proto->RequiredLevel > bot->getLevel() || proto->RequiredLevel < bot->getLevel() - 10)
@@ -1441,18 +1439,40 @@ void PlayerbotFactory::InitInventoryTrade()
         ids.push_back(itemId);
     }
 
-    int maxCount = urand(0, 5);
-    int count = 0;
-    for (int attempts = 0; attempts < 15; attempts++)
+    if (ids.empty())
     {
-        uint32 index = urand(0, ids.size() - 1);
-        if (index >= ids.size())
-            continue;
-
-        uint32 itemId = ids[index];
-        if (StoreItem(itemId, 250) && count++ >= maxCount)
-            break;
+        sLog.outError("No trade items available for bot %s (%d level)", bot->GetName(), bot->getLevel());
+        return;
     }
+
+    uint32 index = urand(0, ids.size() - 1);
+    if (index >= ids.size())
+        return;
+
+    uint32 itemId = ids[index];
+    ItemPrototype const* proto = sObjectMgr.GetItemPrototype(itemId);
+    if (!proto)
+        return;
+
+    uint32 count = 1, stacks = 1;
+    switch (proto->Quality)
+    {
+    case ITEM_QUALITY_NORMAL:
+        count = proto->GetMaxStackSize();
+        stacks = urand(1, 7) / auctionbot.GetRarityPriceMultiplier(proto);
+        break;
+    case ITEM_QUALITY_UNCOMMON:
+        stacks = 1;
+        count = urand(1, proto->GetMaxStackSize());
+        break;
+    case ITEM_QUALITY_RARE:
+        stacks = 1;
+        count = urand(1, min(uint32(3), proto->GetMaxStackSize()));
+        break;
+    }
+
+    for (uint32 i = 0; i < stacks; i++)
+        StoreItem(itemId, count);
 }
 
 void PlayerbotFactory::InitInventoryEquip()

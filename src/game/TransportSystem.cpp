@@ -95,22 +95,27 @@ void TransportBase::UpdateGlobalPositionOf(ObjectGuid const& passengerGuid, Posi
     if (!passenger)
         return;
 
-    Position g = CalculateGlobalPositionOf(pos);
+    //Position g = CalculateGlobalPositionOf(pos);
+    WorldLocation globalPos = GetOwner()->GetPosition();
+    globalPos.SetTransportPosition(pos);
+
+    if (globalPos == passenger->GetPosition())
+        return;
 
     switch(passenger->GetTypeId())
     {
         case TYPEID_GAMEOBJECT:
         case TYPEID_DYNAMICOBJECT:
-            m_owner->GetMap()->Relocation((GameObject*)passenger, g);
+            m_owner->GetMap()->Relocation((GameObject*)passenger, globalPos);
             break;
         case TYPEID_UNIT:
-            m_owner->GetMap()->Relocation((Creature*)passenger, g);
+            m_owner->GetMap()->Relocation((Creature*)passenger, globalPos);
             // If passenger is vehicle
             if (((Unit*)passenger)->IsVehicle())
                 ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
             break;
         case TYPEID_PLAYER:
-            m_owner->GetMap()->Relocation((Player*)passenger, g);
+            m_owner->GetMap()->Relocation((Player*)passenger, globalPos);
             // If passenger is vehicle
             if (((Unit*)passenger)->IsVehicle())
                 ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
@@ -206,8 +211,7 @@ void TransportBase::UnBoardPassenger(WorldObject* passenger)
 
 void TransportInfo::SetLocalPosition(Position const& pos)
 {
-    m_owner.SetTransportPosition(pos);
-
+    // m_owner.SetTransportPosition(pos);
     // Update global position
     m_transport.UpdateGlobalPositionOf(m_owner.GetObjectGuid(), pos);
 }

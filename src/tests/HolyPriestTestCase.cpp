@@ -11,6 +11,7 @@ class HolyPriestTestCase : public EngineTestBase
     CPPUNIT_TEST_SUITE( HolyPriestTestCase );
     CPPUNIT_TEST( combat );
 	CPPUNIT_TEST( incompatibles );
+	CPPUNIT_TEST( flee );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -34,6 +35,14 @@ protected:
 		tick();
 
 		assertActions(">T:holy fire>T:smite>T:shoot");
+    }
+
+    void flee()
+    {
+        tickInMeleeRange();
+        tickInMeleeRange();
+
+        assertActions(">S:fade>S:flee");
     }
 
     void incompatibles()

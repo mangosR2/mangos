@@ -14,6 +14,8 @@ class MeleeShamanTestCase : public EngineTestBase
 	CPPUNIT_TEST( incompatibles );
     CPPUNIT_TEST( aoe );
     CPPUNIT_TEST( boost );
+    CPPUNIT_TEST( interruptSpell );
+    CPPUNIT_TEST( interrupt_enemy_healer );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -81,6 +83,20 @@ protected:
         tickWithBalancePercent(1);
 
         assertActions(">S:heroism>S:bloodlust");
+    }
+
+    void interruptSpell()
+    {
+        tickWithTargetIsCastingNonMeleeSpell();
+
+        assertActions(">T:wind shear");
+    }
+
+    void interrupt_enemy_healer()
+    {
+        tickWithEnemyHealerIsCastingInterruptableSpell("wind shear");
+
+        assertActions(">H:wind shear on enemy healer");
     }
 };
 

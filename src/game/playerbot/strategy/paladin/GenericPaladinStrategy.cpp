@@ -36,6 +36,10 @@ void GenericPaladinStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 		NextAction::array(0, new NextAction("hammer of justice", ACTION_INTERRUPT), NULL)));
 
 	triggers.push_back(new TriggerNode(
+		"hammer of justice on enemy healer",
+		NextAction::array(0, new NextAction("hammer of justice on enemy healer", ACTION_INTERRUPT), NULL)));
+
+	triggers.push_back(new TriggerNode(
 		"critical health",
 		NextAction::array(0, new NextAction("lay on hands", ACTION_EMERGENCY), NULL)));
 

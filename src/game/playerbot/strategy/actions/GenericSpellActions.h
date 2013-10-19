@@ -258,4 +258,14 @@ namespace ai
         CastArcaneTorrentAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "arcane torrent") {}
     };
 
+    class CastSpellOnEnemyHealerAction : public CastSpellAction
+    {
+    public:
+        CastSpellOnEnemyHealerAction(PlayerbotAI* ai, string spell) : CastSpellAction(ai, spell) {}
+        Value<Unit*>* GetTargetValue()
+        {
+            return context->GetValue<Unit*>("enemy healer target", spell);
+        }
+        virtual string getName() { return spell + " on enemy healer"; }
+    };
 }

@@ -118,4 +118,10 @@ namespace ai {
     public:
         EclipseLunarTrigger(PlayerbotAI* ai) : HasAuraTrigger(ai, "eclipse (lunar)") {}
     };
+
+    class BashInterruptEnemyHealerSpellTrigger : public InterruptEnemyHealerTrigger
+    {
+    public:
+        BashInterruptEnemyHealerSpellTrigger(PlayerbotAI* ai) : InterruptEnemyHealerTrigger(ai, "bash") {}
+    };
 }

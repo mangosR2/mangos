@@ -28,4 +28,9 @@ namespace ai
         ExposeArmorTrigger(PlayerbotAI* ai) : DebuffTrigger(ai, "expose armor") {}
     };
 
+    class KickInterruptEnemyHealerSpellTrigger : public InterruptEnemyHealerTrigger
+    {
+    public:
+        KickInterruptEnemyHealerSpellTrigger(PlayerbotAI* ai) : InterruptEnemyHealerTrigger(ai, "kick") {}
+    };
 }

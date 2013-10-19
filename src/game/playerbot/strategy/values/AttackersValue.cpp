@@ -79,7 +79,6 @@ bool AttackersValue::hasRealThreat(Unit *attacker)
         attacker->IsInWorld() &&
         attacker->isAlive() &&
         !attacker->IsPolymorphed() &&
-        !attacker->isFrozen() &&
         !attacker->isInRoots() &&
         !attacker->IsFriendlyTo(bot) &&
         (attacker->getThreatManager().getCurrentVictim() || attacker->GetObjectGuid().IsPlayer());

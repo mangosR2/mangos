@@ -12,7 +12,7 @@ uint32 PricingStrategy::GetSellPrice(ItemPrototype const* proto, uint32 auctionH
     uint32 now = time(0);
     double price = sAhBotConfig.GetItemPriceMultiplier(proto->Name1) *
         auctionbot.GetCategoryMultiplier(category->GetName()) *
-        GetRarityPriceMultiplier(proto) *
+        GetRarityPriceMultiplier(proto->ItemId) *
         GetCategoryPriceMultiplier(now, auctionHouse) *
         GetItemPriceMultiplier(proto, now, auctionHouse) *
         sAhBotConfig.GetSellPriceMultiplier(category->GetName()) *
@@ -44,7 +44,7 @@ uint32 PricingStrategy::GetBuyPrice(ItemPrototype const* proto, uint32 auctionHo
     uint32 untilTime = time(0) - 3600 * 12;
     double price = sAhBotConfig.GetItemPriceMultiplier(proto->Name1) *
         auctionbot.GetCategoryMultiplier(category->GetName()) *
-        GetRarityPriceMultiplier(proto) *
+        GetRarityPriceMultiplier(proto->ItemId) *
         GetCategoryPriceMultiplier(untilTime, auctionHouse) *
         GetItemPriceMultiplier(proto, untilTime, auctionHouse) *
         sAhBotConfig.GetBuyPriceMultiplier(category->GetName()) *
@@ -59,7 +59,7 @@ string PricingStrategy::ExplainSellPrice(ItemPrototype const* proto, uint32 auct
     uint32 untilTime = time(0);
     out << sAhBotConfig.GetItemPriceMultiplier(proto->Name1) << " (item const) * " <<
         auctionbot.GetCategoryMultiplier(category->GetName()) << " (random) * " <<
-        GetRarityPriceMultiplier(proto) << " (rariry) * " <<
+        GetRarityPriceMultiplier(proto->ItemId) << " (rariry) * " <<
         GetCategoryPriceMultiplier(untilTime, auctionHouse) << " (category) * " <<
         GetItemPriceMultiplier(proto, untilTime, auctionHouse) << " (item) * " <<
         sAhBotConfig.GetSellPriceMultiplier(category->GetName()) << " (sell) * " <<
@@ -81,7 +81,7 @@ string PricingStrategy::ExplainBuyPrice(ItemPrototype const* proto, uint32 aucti
     uint32 untilTime = time(0) - 3600 * 12;
     out << sAhBotConfig.GetItemPriceMultiplier(proto->Name1) << " (item const) * " <<
         auctionbot.GetCategoryMultiplier(category->GetName()) << " (random) * " <<
-        GetRarityPriceMultiplier(proto) << " (rarity) * " <<
+        GetRarityPriceMultiplier(proto->ItemId) << " (rarity) * " <<
         GetCategoryPriceMultiplier(untilTime, auctionHouse) << " (category) * " <<
         GetItemPriceMultiplier(proto, untilTime, auctionHouse) << " (item) * " <<
         sAhBotConfig.GetBuyPriceMultiplier(category->GetName()) << " (buy) * " <<
@@ -89,11 +89,10 @@ string PricingStrategy::ExplainBuyPrice(ItemPrototype const* proto, uint32 aucti
     return out.str();
 }
 
-double PricingStrategy::GetRarityPriceMultiplier(ItemPrototype const* proto)
+double PricingStrategy::GetRarityPriceMultiplier(uint32 itemId)
 {
     double result = 1.0;
 
-    uint32 i = proto->ItemId;
     QueryResult* results = WorldDatabase.PQuery(
         "select max(ChanceOrQuestChance) from ( "
         "select ChanceOrQuestChance from gameobject_loot_template where item = '%u' "
@@ -106,22 +105,23 @@ double PricingStrategy::GetRarityPriceMultiplier(ItemPrototype const* proto)
         "union select ChanceOrQuestChance from prospecting_loot_template where item = '%u' "
         "union select ChanceOrQuestChance from reference_loot_template where item = '%u' "
         "union select ChanceOrQuestChance from skinning_loot_template where item = '%u' "
+        "union select ChanceOrQuestChance from creature_loot_template where item = '%u' "
         "union select 0 "
         ") a",
-        i,i,i,i,i,i,i,i,i,i);
+        itemId,itemId,itemId,itemId,itemId,itemId,itemId,itemId,itemId,itemId,itemId);
 
     if (results)
     {
         Field* fields = results->Fetch();
         float chance = fields[0].GetFloat();
 
-        if (chance && chance <= 90.0)
+        if (chance > 0 && chance <= 90.0)
             result = sqrt((100.0 - chance) / 10.0);
 
         delete results;
     }
 
-    return result;
+    return result >= 1.0 ? result : 1.0;
 }
 
 

@@ -41,6 +41,7 @@ namespace ahbot
 
         int32 GetSellPrice(const ItemPrototype* proto);
         int32 GetBuyPrice(const ItemPrototype* proto);
+        double GetRarityPriceMultiplier(const ItemPrototype* proto);
 
     private:
         int Answer(int auction, Category* category, ItemBag* inAuctionItems);
@@ -61,10 +62,10 @@ namespace ahbot
                 int& auction);
         void FindMinPrice(const AuctionHouseObject::AuctionEntryMap& auctionEntryMap, AuctionEntry*& entry, Item*& item, uint32* minBid,
                 uint32* minBuyout);
-        uint32 GetBuyTime(uint32 entry, uint32 itemId, uint32 auctionHouse, string category, double priceLevel);
+        uint32 GetBuyTime(uint32 entry, uint32 itemId, uint32 auctionHouse, Category*& category, double priceLevel);
         uint32 GetTime(string category, uint32 id, uint32 auctionHouse, uint32 type);
         void SetTime(string category, uint32 id, uint32 auctionHouse, uint32 type, uint32 value);
-        uint32 GetSellTime(uint32 itemId, uint32 auctionHouse, string category);
+        uint32 GetSellTime(uint32 itemId, uint32 auctionHouse, Category*& category);
 
     public:
         static uint32 auctionIds[MAX_AUCTIONS];

@@ -234,6 +234,7 @@ bool UseItemAction::UseItem(Item* item, ObjectGuid goGuid, Item* itemTarget)
         if (bot->isInCombat())
             return false;
 
+        ai->InterruptSpell();
         ai->SetNextCheckDelay(30000);
     }
 

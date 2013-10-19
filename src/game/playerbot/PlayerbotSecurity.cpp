@@ -69,7 +69,7 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* rea
 
         int botGS = (int)bot->GetEquipGearScore(false, false);
         int fromGS = (int)from->GetEquipGearScore(false, false);
-        if (botGS && bot->getLevel() > 15 && 100 * (botGS - fromGS) / botGS >= (10 + (91 - (int)bot->getLevel()) / 4))
+        if (botGS && bot->getLevel() > 15 && (100 * (botGS - fromGS) / botGS) >= 20)
         {
             if (reason) *reason = PLAYERBOT_DENY_GEARSCORE;
             return PLAYERBOT_SECURITY_TALK;

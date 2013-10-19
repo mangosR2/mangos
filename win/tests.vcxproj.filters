@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Druid">
+      <UniqueIdentifier>{7f7bc479-c7cb-440a-80c5-bb28465af12e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hunter">
+      <UniqueIdentifier>{77b66c31-8bf2-41ae-9d6c-d54c68ed85c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mage">
+      <UniqueIdentifier>{5b4928b5-9eaa-433f-a4ea-59441e199474}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generic">
+      <UniqueIdentifier>{c2b8fcfe-f333-47f0-87d1-3440ca689d41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Warrior">
+      <UniqueIdentifier>{5a22b7d5-b6df-46fc-9a78-0502e7f008c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Priest">
+      <UniqueIdentifier>{9f958ef4-bc06-4f7a-b2a9-68ee949141e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Paladin">
+      <UniqueIdentifier>{492aeae3-163d-4112-b47c-6bbe5ce24457}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Warlock">
+      <UniqueIdentifier>{3f5b45ad-fcc9-41bb-a86d-5471117675bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Performance">
+      <UniqueIdentifier>{ab5ab49e-e790-4458-aa85-257d45347418}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaman">
+      <UniqueIdentifier>{eb601dea-bbd8-4330-bc83-c4f62880c350}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rogue">
+      <UniqueIdentifier>{0b65c0e2-b9e3-49cf-bd15-a104c7e04269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mocks">
+      <UniqueIdentifier>{89a9daa6-604a-4673-9497-d76541abdac2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="efficiency">
+      <UniqueIdentifier>{c30a2538-6a50-4c32-b8d0-d4704f715952}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\tests\AcceptAllQuestStrategyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ArcaneMageTestCase.cpp" />
+    <ClCompile Include="..\src\tests\BearTankDruidTestCase.cpp" />
+    <ClCompile Include="..\src\tests\CasterDruidTestCase.cpp" />
+    <ClCompile Include="..\src\tests\CasterShamanTestCase.cpp" />
+    <ClCompile Include="..\src\tests\CatDpsDruidTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ChatCommandTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ChatFilterTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsPriestTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DruidNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsHunterEngineTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DuelTestCase.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\DruidEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\EfficiencyActionExecutionListener.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\MageEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\PriestEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\ShamanEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\efficiency\WarlockEfficiencyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\EventTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ExternalEventHelperTestCase.cpp" />
+    <ClCompile Include="..\src\tests\HealDruidTestCase.cpp" />
+    <ClCompile Include="..\src\tests\HolyPriestTestCase.cpp" />
+    <ClCompile Include="..\src\tests\HunterNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\FireMageTestCase.cpp" />
+    <ClCompile Include="..\src\tests\FrostMageTestCase.cpp" />
+    <ClCompile Include="..\src\tests\KiteTestCase.cpp" />
+    <ClCompile Include="..\src\tests\LootObjectStackTestCase.cpp" />
+    <ClCompile Include="..\src\tests\MageNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\EngineTestBase.cpp" />
+    <ClCompile Include="..\src\tests\EngineTestCase.cpp" />
+    <ClCompile Include="..\src\tests\GenericTestCase.cpp" />
+    <ClCompile Include="..\src\tests\MockAiObjectContext.cpp" />
+    <ClCompile Include="..\src\tests\MockPlayerbotAIBase.cpp" />
+    <ClCompile Include="..\src\tests\NonCombatEngineTestCase.cpp" />
+    <ClCompile Include="..\src\tests\NonCombatEngineTestCase2.cpp" />
+    <ClCompile Include="..\src\tests\PriestNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\QualifiedValueTestCase.cpp" />
+    <ClCompile Include="..\src\tests\QuestStrategyTestCase.cpp" />
+    <ClCompile Include="..\src\tests\RacialsTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsWarriorTestCase.cpp" />
+    <ClCompile Include="..\src\tests\TankWarriorTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ValueTestCase.cpp" />
+    <ClCompile Include="..\src\tests\WarrirorNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\HealPriestTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsPaladinTestCase.cpp" />
+    <ClCompile Include="..\src\tests\PaladinNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\TankPaladinTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsWarlockTestCase.cpp" />
+    <ClCompile Include="..\src\tests\TankWarlockTestCase.cpp" />
+    <ClCompile Include="..\src\tests\WarlockNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\PerformanceTestCase.cpp" />
+    <ClCompile Include="..\src\tests\HealShamanTestCase.cpp" />
+    <ClCompile Include="..\src\tests\MeleeShamanTestCase.cpp" />
+    <ClCompile Include="..\src\tests\ShamanNonCombatTestCase.cpp" />
+    <ClCompile Include="..\src\tests\DpsRogueTestCase.cpp" />
+    <ClCompile Include="..\src\tests\main.cpp" />
+    <ClCompile Include="..\src\tests\NextActionTestCase.cpp" />
+    <ClCompile Include="..\src\tests\pch.cpp" />
+    <ClCompile Include="..\src\tests\QueueTestCase.cpp" />
+    <ClCompile Include="..\src\tests\WorldPacketHandlerTestCase.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\tests\AiObjectContextWrapper.h" />
+    <ClInclude Include="..\src\tests\efficiency\EfficiencyActionExecutionListener.h" />
+    <ClInclude Include="..\src\tests\EngineTestBase.h" />
+    <ClInclude Include="..\src\tests\EverythingUnavailableAiManagerRegistry.h" />
+    <ClInclude Include="..\src\tests\aitest.h" />
+    <ClInclude Include="..\src\tests\MockAiObjectContext.h" />
+    <ClInclude Include="..\src\tests\MockedAiObjectContextTestCase.h" />
+    <ClInclude Include="..\src\tests\MockedTargets.h" />
+    <ClInclude Include="..\src\tests\MockPlayerbotAIBase.h" />
+    <ClInclude Include="..\src\tests\pch.h" />
+  </ItemGroup>
+</Project>

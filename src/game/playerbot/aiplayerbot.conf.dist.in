@@ -65,10 +65,10 @@ AiPlayerbot.RandomClassSpecProbability.11.2 = 45
 #AiPlayerbot.ReactDelay = 100
 
 # Distances
-#AiPlayerbot.SightDistance = 50.0
-#AiPlayerbot.SpellDistance = 25.0
-#AiPlayerbot.ReactDistance = 100.0
-#AiPlayerbot.GrindDistance = 75.0
+#AiPlayerbot.SightDistance = 75.0
+#AiPlayerbot.SpellDistance = 30.0
+#AiPlayerbot.ReactDistance = 150.0
+#AiPlayerbot.GrindDistance = 100.0
 #AiPlayerbot.LootDistance = 20.0
 #AiPlayerbot.FleeDistance = 20.0
 #AiPlayerbot.TooCloseDistance = 7.0

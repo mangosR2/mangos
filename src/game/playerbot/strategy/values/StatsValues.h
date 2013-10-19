@@ -122,4 +122,12 @@ namespace ai
         virtual bool Calculate() ;
     };
 
+    class BagSpaceValue : public Uint8CalculatedValue
+    {
+    public:
+        BagSpaceValue(PlayerbotAI* ai) : Uint8CalculatedValue(ai) {}
+
+        virtual uint8 Calculate();
+    };
+
 }

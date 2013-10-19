@@ -41,6 +41,18 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z)
     if (!IsMovingAllowed(mapId, x, y, z))
         return false;
 
+    bot->UpdateGroundPositionZ(x, y, z);
+
+    float botZ = bot->GetPositionZ();
+    if (z - botZ > 0.5f)
+    {
+        WaitForReach(0.5f);
+        MotionMaster &mm = *bot->GetMotionMaster();
+        mm.Clear();
+        mm.MoveJump(x, y, botZ + 0.5f, bot->GetSpeed(MOVE_RUN), 0.5f);
+        return true;
+    }
+
     float distance = bot->GetDistance(x, y, z);
     if (distance > sPlayerbotAIConfig.meleeDistance / 2)
     {
@@ -49,7 +61,11 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z)
         if (bot->IsSitState())
             bot->SetStandState(UNIT_STAND_STATE_STAND);
 
-        bot->CastStop();
+        if (bot->IsNonMeleeSpellCasted(true))
+        {
+            bot->CastStop();
+            ai->InterruptSpell();
+        }
 
         bool generatePath = bot->GetAurasByType(SPELL_AURA_MOD_FLIGHT_SPEED_MOUNTED).empty() &&
                 !bot->IsFlying() && !bot->IsUnderWater();
@@ -84,6 +100,14 @@ bool MovementAction::MoveTo(Unit* target, float distance)
         needToGo = maxDistance;
     else if (needToGo < 0 && needToGo < -maxDistance)
         needToGo = -maxDistance;
+
+    MotionMaster &mm = *bot->GetMotionMaster();
+    if (distance <= sPlayerbotAIConfig.meleeDistance)
+    {
+        WaitForReach(needToGo);
+        mm.MoveChase(target, distance, GetFollowAngle());
+        return true;
+    }
 
     float dx = cos(angle) * needToGo + bx;
     float dy = sin(angle) * needToGo + by;
@@ -185,10 +209,19 @@ bool MovementAction::Follow(Unit* target, float distance, float angle)
     if (target->IsFriendlyTo(bot) && bot->IsMounted() && AI_VALUE(list<ObjectGuid>, "possible targets").empty())
         distance += angle;
 
-	bool canMove = MoveNear(target, distance);
-	if (!canMove)
-		return false;
-    //mm.MoveFollow(target, distance, angle);
+    if (bot->GetDistance(target) <= sPlayerbotAIConfig.followDistance)
+        return false;
+
+    if (bot->IsSitState())
+        bot->SetStandState(UNIT_STAND_STATE_STAND);
+
+    if (bot->IsNonMeleeSpellCasted(true))
+    {
+        bot->CastStop();
+        ai->InterruptSpell();
+    }
+
+    mm.MoveFollow(target, distance, angle);
 
     AI_VALUE(LastMovement&, "last movement").Set(target);
     return true;

@@ -98,7 +98,11 @@ void DpsRogueStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
 	triggers.push_back(new TriggerNode(
 		"kick",
-		NextAction::array(0, new NextAction("kick", ACTION_INTERRUPT + 1), NULL)));
+		NextAction::array(0, new NextAction("kick", ACTION_INTERRUPT + 2), NULL)));
+
+	triggers.push_back(new TriggerNode(
+		"kick on enemy healer",
+		NextAction::array(0, new NextAction("kick on enemy healer", ACTION_INTERRUPT + 1), NULL)));
 
     triggers.push_back(new TriggerNode(
         "behind target",

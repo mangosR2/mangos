@@ -22,6 +22,13 @@ bool LfgJoinAction::Execute(Event event)
     if (sLFGMgr.GetQueueInfo(bot->GetObjectGuid()))
         return false;
 
+    if (bot->IsBeingTeleported())
+        return false;
+
+    Map* map = bot->GetMap();
+    if (map && map->Instanceable())
+        return false;
+
     return JoinProposal();
 }
 
@@ -37,6 +44,8 @@ bool LfgJoinAction::SetRoles()
     case CLASS_DRUID:
         if (spec == 2)
             state->SetRoles(LFG_ROLE_MASK_HEALER);
+        else if (spec == 1 && bot->getLevel() >= 40)
+            state->SetRoles(LFG_ROLE_MASK_TANK_DAMAGE);
         else
             state->SetRoles(LFG_ROLE_MASK_DAMAGE);
         break;
@@ -88,14 +97,16 @@ bool LfgJoinAction::JoinProposal()
 
     ItemCountByQuality visitor;
     IterateItems(&visitor, ITERATE_ITEMS_IN_EQUIP);
-	bool heroic = visitor.count[ITEM_QUALITY_EPIC] >= 3 && bot->getLevel() >= 70;
+	bool heroic = urand(0, 100) < 50 && (visitor.count[ITEM_QUALITY_EPIC] >= 3 || visitor.count[ITEM_QUALITY_RARE] >= 10) && bot->getLevel() >= 70;
     bool random = urand(0, 100) < 25;
+    bool raid = urand(0, 100) < 50 && visitor.count[ITEM_QUALITY_EPIC] >= 5 && (bot->getLevel() == 60 || bot->getLevel() == 70 || bot->getLevel() == 80);
 
     LFGDungeonSet list;
     for (uint32 i = 0; i < sLFGDungeonStore.GetNumRows(); ++i)
     {
         LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(i);
-        if (!dungeon || (dungeon->type != LFG_TYPE_RANDOM_DUNGEON && dungeon->type != LFG_TYPE_DUNGEON && dungeon->type != LFG_TYPE_HEROIC_DUNGEON))
+        if (!dungeon || (dungeon->type != LFG_TYPE_RANDOM_DUNGEON && dungeon->type != LFG_TYPE_DUNGEON && dungeon->type != LFG_TYPE_HEROIC_DUNGEON &&
+                dungeon->type != LFG_TYPE_RAID))
             continue;
 
         int botLevel = (int)bot->getLevel();
@@ -111,6 +122,9 @@ bool LfgJoinAction::JoinProposal()
         if (heroic && !dungeon->difficulty)
             continue;
 
+        if (raid && dungeon->type != LFG_TYPE_RAID)
+            continue;
+
         list.insert(dungeon);
     }
 
@@ -123,6 +137,11 @@ bool LfgJoinAction::JoinProposal()
 	{
 		sLog.outDetail("Bot %s joined to LFG_TYPE_HEROIC_DUNGEON", bot->GetName());
         state->SetType(LFG_TYPE_HEROIC_DUNGEON);
+	}
+    else if (raid)
+	{
+		sLog.outDetail("Bot %s joined to LFG_TYPE_RAID", bot->GetName());
+        state->SetType(LFG_TYPE_RAID);
 	}
     else
 	{

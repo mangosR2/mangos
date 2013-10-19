@@ -1,6 +1,7 @@
 #include "../../../pchdef.h"
 #include "../../playerbot.h"
 #include "TellTargetAction.h"
+#include "../../../ThreatManager.h"
 
 
 using namespace ai;
@@ -31,6 +32,23 @@ bool TellAttackersAction::Execute(Event event)
             continue;
 
         ai->TellMaster(unit->GetName());
+    }
+
+    ai->TellMaster("--- Threat ---");
+    HostileReference *ref = bot->getHostileRefManager().getFirst();
+    if (!ref)
+        return true;
+
+    while( ref )
+    {
+        ThreatManager *threatManager = ref->getSource();
+        Unit *unit = threatManager->getOwner();
+        float threat = ref->getThreat();
+
+        ostringstream out; out << unit->GetName() << " (" << threat << ")";
+        ai->TellMaster(out);
+
+        ref = ref->next();
     }
     return true;
 }

@@ -40,6 +40,7 @@
 #include "OutdoorPvP/OutdoorPvP.h"
 #include "Util.h"
 #include "ScriptMgr.h"
+#include "Transports.h"
 #include "vmap/GameObjectModel.h"
 #include "vmap/DynamicTree.h"
 #include "SQLStorages.h"
@@ -239,7 +240,9 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
 
 void GameObject::Update(uint32 update_diff, uint32 p_time)
 {
-    switch (m_lootState)
+    UpdateSplineMovement(p_time);
+
+    switch (getLootState())
     {
         case GO_NOT_READY:
         {
@@ -429,6 +432,22 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                         m_captureTimer -= 5000;
                     }
                     break;
+                case GAMEOBJECT_TYPE_TRANSPORT:
+                case GAMEOBJECT_TYPE_MO_TRANSPORT:
+                {
+                    if (IsTransport() && ((Transport*)this)->GetTransportKit())
+                    {
+                        if (TransportKit* tKit = ((Transport*)this)->GetTransportKit())
+                        {
+                            if (!tKit->IsInitialized())
+                                tKit->Initialize();
+                            else
+                            // Update passenger positions
+                                tKit->Update(p_time);
+                        }
+                    }
+                    return;
+                }
                 default:
                     break;
             }
@@ -466,6 +485,9 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                     m_UniqueUsers.clear();
                     SetLootState(GO_READY);
                     return; // SetLootState and return because go is treated as "burning flag" due to GetGoAnimProgress() being 100 and would be removed on the client
+                case GAMEOBJECT_TYPE_TRANSPORT:
+                case GAMEOBJECT_TYPE_MO_TRANSPORT:
+                    return;
                 default:
                     break;
             }
@@ -527,7 +549,6 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
             break;
         }
     }
-    UpdateSplineMovement(p_time);
 }
 
 void GameObject::UpdateSplineMovement(uint32 t_diff)
@@ -780,8 +801,18 @@ bool GameObject::IsTransport() const
 {
     // If something is marked as a transport, don't transmit an out of range packet for it.
     GameObjectInfo const* gInfo = GetGOInfo();
-    if (!gInfo) return false;
+    if (!gInfo)
+        return false;
     return gInfo->type == GAMEOBJECT_TYPE_TRANSPORT || gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
+}
+
+bool GameObject::IsMOTransport() const
+{
+    // If something is marked as a transport, don't transmit an out of range packet for it.
+    GameObjectInfo const* gInfo = GetGOInfo();
+    if (!gInfo)
+        return false;
+    return gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
 }
 
 // is Dynamic transport = non-stop Transport
@@ -789,7 +820,8 @@ bool GameObject::IsDynTransport() const
 {
     // If something is marked as a transport, don't transmit an out of range packet for it.
     GameObjectInfo const * gInfo = GetGOInfo();
-    if(!gInfo) return false;
+    if(!gInfo)
+        return false;
     return gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT || (gInfo->type == GAMEOBJECT_TYPE_TRANSPORT && !gInfo->transport.pause);
 }
 

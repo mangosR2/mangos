@@ -37,7 +37,7 @@ protected:
         tickWithCcTarget("banish");
         tickWithCcTarget("fear");
 
-        assertActions(">Cc:banish>Cc:fear");
+        assertActions(">Cc:banish on cc>Cc:fear on cc");
     }
 
     void incompatibles()

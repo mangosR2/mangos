@@ -50,6 +50,7 @@ public:
 
         remove(name, " on party");
         remove(name, " on cc");
+        remove(name, " on enemy healer");
         if (name.find("cleanse") != string ::npos)
             name = "cleanse";
         if (name.find("purify") != string ::npos)
@@ -468,4 +469,11 @@ void EngineTestBase::tickWithItemForSpell(string spell)
     set<Item*>("item for spell", "1", (Item*)(void*)0x01);
     tick();
     set<Item*>("item for spell", "1", NULL);
+}
+
+void EngineTestBase::tickWithEnemyHealerIsCastingInterruptableSpell(string interrupt)
+{
+    set<Unit*>("enemy healer target", interrupt, MockedTargets::GetEnemyHealer());
+    tick();
+    set<Unit*>("enemy healer target", interrupt, NULL);
 }

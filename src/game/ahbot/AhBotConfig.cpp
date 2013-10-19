@@ -41,10 +41,10 @@ bool AhBotConfig::Initialize()
     guid = (uint64)config.GetIntDefault("AhBot.GUID", 0);
     updateInterval = config.GetIntDefault("AhBot.UpdateIntervalInSeconds", 300);
     historyDays = config.GetIntDefault("AhBot.History.Days", 30);
-    itemBuyInterval = config.GetIntDefault("AhBot.ItemBuyInterval", 7200);
+    itemBuyInterval = config.GetIntDefault("AhBot.ItemBuyInterval", 28800);
     itemSellInterval = config.GetIntDefault("AhBot.ItemSellInterval", 14400);
     maxSellInterval = config.GetIntDefault("AhBot.MaxSellInterval", 3600 * 8);
-    alwaysAvailableMoney = config.GetIntDefault("AhBot.AlwaysAvailableMoney", 10000);
+    alwaysAvailableMoney = config.GetIntDefault("AhBot.AlwaysAvailableMoney", 200000);
     priceMultiplier = config.GetFloatDefault("AhBot.PriceMultiplier", 1.0f);
     defaultMinPrice = config.GetIntDefault("AhBot.DefaultMinPrice", 20);
     maxItemLevel = config.GetIntDefault("AhBot.MaxItemLevel", 199);

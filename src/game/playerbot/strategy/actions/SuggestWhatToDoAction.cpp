@@ -152,17 +152,32 @@ void SuggestWhatToDoAction::achievement()
 class FindTradeItemsVisitor : public IterateItemsVisitor
 {
 public:
-    FindTradeItemsVisitor() : IterateItemsVisitor() {}
+    FindTradeItemsVisitor(uint32 quality) : quality(quality), IterateItemsVisitor() {}
 
     virtual bool Visit(Item* item)
     {
-        if (item->GetProto()->Class == ITEM_CLASS_TRADE_GOODS && item->GetProto()->Bonding == NO_BIND)
-            items.push_back(item);
+        ItemPrototype const* proto = item->GetProto();
+        if (proto->Quality != quality)
+            return true;
+
+        if (proto->Class == ITEM_CLASS_TRADE_GOODS && proto->Bonding == NO_BIND)
+        {
+            if(proto->Quality == ITEM_QUALITY_NORMAL && item->GetCount() > 1 && item->GetCount() == item->GetMaxStackCount())
+                stacks.push_back(proto->ItemId);
+
+            items.push_back(proto->ItemId);
+            count[proto->ItemId] += item->GetCount();
+        }
 
         return true;
     }
 
-    vector<Item*> items;
+    map<uint32, int > count;
+    vector<uint32> stacks;
+    vector<uint32> items;
+
+private:
+    uint32 quality;
 };
 
 
@@ -171,21 +186,55 @@ void SuggestWhatToDoAction::trade()
     if (!sRandomPlayerbotMgr.IsRandomBot(bot))
         return;
 
-    FindTradeItemsVisitor visitor;
-    IterateItems(&visitor);
-    if (visitor.items.empty())
+    uint32 quality = urand(0, 100);
+    if (quality > 90)
+        quality = ITEM_QUALITY_EPIC;
+    else if (quality >75)
+        quality = ITEM_QUALITY_RARE;
+    else if (quality > 50)
+        quality = ITEM_QUALITY_UNCOMMON;
+    else
+        quality = ITEM_QUALITY_NORMAL;
+
+    uint32 item = 0, count = 0;
+    while (quality-- > ITEM_QUALITY_POOR)
+    {
+        FindTradeItemsVisitor visitor(quality);
+        IterateItems(&visitor);
+        if (!visitor.stacks.empty())
+        {
+            int index = urand(0, visitor.stacks.size() - 1);
+            item = visitor.stacks[index];
+        }
+
+        if (!item)
+        {
+            if (!visitor.items.empty())
+            {
+                int index = urand(0, visitor.items.size() - 1);
+                item = visitor.items[index];
+            }
+        }
+
+        if (item)
+        {
+            count = visitor.count[item];
+            break;
+        }
+    }
+
+    if (!item || !count)
         return;
 
-    int index = urand(0, visitor.items.size() - 1);
-    Item* item = visitor.items[index];
-    if (!item)
+    ItemPrototype const* proto = sObjectMgr.GetItemPrototype(item);
+    if (!proto)
         return;
 
-    uint32 price = auctionbot.GetSellPrice(item->GetProto()) * sRandomPlayerbotMgr.GetSellMultiplier(bot) * item->GetCount();
+    uint32 price = auctionbot.GetSellPrice(proto) * sRandomPlayerbotMgr.GetSellMultiplier(bot) * count;
     if (!price)
         return;
 
-    ostringstream out; out << "Selling " << chat->formatItem(item->GetProto(), item->GetCount()) << " for " << chat->formatMoney(price);
+    ostringstream out; out << "Selling " << chat->formatItem(proto, count) << " for " << chat->formatMoney(price);
     spam(out.str());
 }
 

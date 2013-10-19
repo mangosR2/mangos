@@ -98,6 +98,7 @@ namespace ai
                 creators["living bomb"] = &TriggerFactoryInternal::living_bomb;
                 creators["missile barrage"] = &TriggerFactoryInternal::missile_barrage;
                 creators["arcane blast"] = &TriggerFactoryInternal::arcane_blast;
+                creators["counterspell on enemy healer"] = &TriggerFactoryInternal::counterspell_enemy_healer;
 
             }
 
@@ -118,6 +119,7 @@ namespace ai
             static Trigger* living_bomb(PlayerbotAI* ai) { return new LivingBombTrigger(ai); }
             static Trigger* missile_barrage(PlayerbotAI* ai) { return new MissileBarrageTrigger(ai); }
             static Trigger* arcane_blast(PlayerbotAI* ai) { return new ArcaneBlastTrigger(ai); }
+            static Trigger* counterspell_enemy_healer(PlayerbotAI* ai) { return new CounterspellEnemyHealerTrigger(ai); }
         };
     };
 };
@@ -166,6 +168,7 @@ namespace ai
                 creators["arcane blast"] = &AiObjectContextInternal::arcane_blast;
                 creators["arcane barrage"] = &AiObjectContextInternal::arcane_barrage;
                 creators["arcane missiles"] = &AiObjectContextInternal::arcane_missiles;
+                creators["counterspell on enemy healer"] = &AiObjectContextInternal::counterspell_on_enemy_healer;
             }
 
         private:
@@ -201,6 +204,7 @@ namespace ai
             static Action* blast_wave(PlayerbotAI* ai) { return new CastBlastWaveAction(ai); }
             static Action* invisibility(PlayerbotAI* ai) { return new CastInvisibilityAction(ai); }
             static Action* evocation(PlayerbotAI* ai) { return new CastEvocationAction(ai); }
+            static Action* counterspell_on_enemy_healer(PlayerbotAI* ai) { return new CastCounterspellOnEnemyHealerAction(ai); }
         };
     };
 };

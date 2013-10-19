@@ -26,12 +26,15 @@ namespace ai
                 creators["nc"] = &druid::StrategyFactoryInternal::nc;
                 creators["cat aoe"] = &druid::StrategyFactoryInternal::cat_aoe;
                 creators["caster aoe"] = &druid::StrategyFactoryInternal::caster_aoe;
+                creators["caster debuff"] = &druid::StrategyFactoryInternal::caster_debuff;
+                creators["dps debuff"] = &druid::StrategyFactoryInternal::caster_debuff;
             }
 
         private:
             static Strategy* nc(PlayerbotAI* ai) { return new GenericDruidNonCombatStrategy(ai); }
             static Strategy* cat_aoe(PlayerbotAI* ai) { return new CatAoeDruidStrategy(ai); }
             static Strategy* caster_aoe(PlayerbotAI* ai) { return new CasterDruidAoeStrategy(ai); }
+            static Strategy* caster_debuff(PlayerbotAI* ai) { return new CasterDruidDebuffStrategy(ai); }
         };
 
         class DruidStrategyFactoryInternal : public NamedObjectContext<Strategy>
@@ -43,7 +46,7 @@ namespace ai
                 creators["tank"] = &druid::DruidStrategyFactoryInternal::bear;
                 creators["cat"] = &druid::DruidStrategyFactoryInternal::cat;
                 creators["caster"] = &druid::DruidStrategyFactoryInternal::caster;
-                creators["dps"] = &druid::DruidStrategyFactoryInternal::caster;
+                creators["dps"] = &druid::DruidStrategyFactoryInternal::cat;
                 creators["heal"] = &druid::DruidStrategyFactoryInternal::heal;
             }
 
@@ -86,6 +89,7 @@ namespace ai
                 creators["tree form"] = &TriggerFactoryInternal::tree_form;
                 creators["eclipse (solar)"] = &TriggerFactoryInternal::eclipse_solar;
                 creators["eclipse (lunar)"] = &TriggerFactoryInternal::eclipse_lunar;
+                creators["bash on enemy healer"] = &TriggerFactoryInternal::bash_on_enemy_healer;
             }
 
         private:
@@ -108,6 +112,7 @@ namespace ai
             static Trigger* bear_form(PlayerbotAI* ai) { return new BearFormTrigger(ai); }
             static Trigger* cat_form(PlayerbotAI* ai) { return new CatFormTrigger(ai); }
             static Trigger* tree_form(PlayerbotAI* ai) { return new TreeFormTrigger(ai); }
+            static Trigger* bash_on_enemy_healer(PlayerbotAI* ai) { return new BashInterruptEnemyHealerSpellTrigger(ai); }
         };
     };
 };
@@ -179,6 +184,7 @@ namespace ai
                 creators["hurricane"] = &AiObjectContextInternal::hurricane;
                 creators["innervate"] = &AiObjectContextInternal::innervate;
                 creators["tranquility"] = &AiObjectContextInternal::tranquility;
+                creators["bash on enemy healer"] = &AiObjectContextInternal::bash_on_enemy_healer;
             }
 
         private:
@@ -238,6 +244,7 @@ namespace ai
             static Action* lacerate(PlayerbotAI* ai) { return new CastLacerateAction(ai); }
             static Action* hurricane(PlayerbotAI* ai) { return new CastHurricaneAction(ai); }
             static Action* innervate(PlayerbotAI* ai) { return new CastInnervateAction(ai); }
+            static Action* bash_on_enemy_healer(PlayerbotAI* ai) { return new CastBashOnEnemyHealerAction(ai); }
         };
     };
 };

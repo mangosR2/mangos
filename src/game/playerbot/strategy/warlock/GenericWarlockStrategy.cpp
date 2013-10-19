@@ -45,10 +45,6 @@ void GenericWarlockStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
     RangedCombatStrategy::InitTriggers(triggers);
 
     triggers.push_back(new TriggerNode(
-        "corruption",
-        NextAction::array(0, new NextAction("corruption", 12.0f), NULL)));
-
-    triggers.push_back(new TriggerNode(
         "curse of agony",
         NextAction::array(0, new NextAction("curse of agony", 11.0f), NULL)));
 
@@ -70,7 +66,7 @@ void GenericWarlockStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "fear",
-        NextAction::array(0, new NextAction("fear", 20.0f), NULL)));
+        NextAction::array(0, new NextAction("fear on cc", 20.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
         "immolate",

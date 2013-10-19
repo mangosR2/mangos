@@ -114,6 +114,7 @@ namespace ai
                 creators["cleanse party member cure magic"] = &TriggerFactoryInternal::CleanseCurePartyMemberMagic;
                 creators["righteous fury"] = &TriggerFactoryInternal::righteous_fury;
                 creators["holy shield"] = &TriggerFactoryInternal::holy_shield;
+                creators["hammer of justice on enemy healer"] = &TriggerFactoryInternal::hammer_of_justice_on_enemy_target;
             }
 
         private:
@@ -139,6 +140,7 @@ namespace ai
             static Trigger* CleanseCurePartyMemberPoison(PlayerbotAI* ai) { return new CleanseCurePartyMemberPoisonTrigger(ai); }
             static Trigger* CleanseCureMagic(PlayerbotAI* ai) { return new CleanseCureMagicTrigger(ai); }
             static Trigger* CleanseCurePartyMemberMagic(PlayerbotAI* ai) { return new CleanseCurePartyMemberMagicTrigger(ai); }
+            static Trigger* hammer_of_justice_on_enemy_target(PlayerbotAI* ai) { return new HammerOfJusticeEnemyHealerTrigger(ai); }
         };
     };
 };
@@ -205,6 +207,7 @@ namespace ai
                 creators["fire resistance aura"] = &AiObjectContextInternal::fire_resistance_aura;
                 creators["righteous fury"] = &AiObjectContextInternal::righteous_fury;
                 creators["blessing of sanctuary"] = &AiObjectContextInternal::blessing_of_sanctuary;
+                creators["hammer of justice on enemy healer"] = &AiObjectContextInternal::hammer_of_justice_on_enemy_healer;
             }
 
         private:
@@ -259,6 +262,7 @@ namespace ai
             static Action* shadow_resistance_aura(PlayerbotAI* ai) { return new CastShadowResistanceAuraAction(ai); }
             static Action* frost_resistance_aura(PlayerbotAI* ai) { return new CastFrostResistanceAuraAction(ai); }
             static Action* fire_resistance_aura(PlayerbotAI* ai) { return new CastFireResistanceAuraAction(ai); }
+            static Action* hammer_of_justice_on_enemy_healer(PlayerbotAI* ai) { return new CastHammerOfJusticeOnEnemyHealerAction(ai); }
         };
     };
 };

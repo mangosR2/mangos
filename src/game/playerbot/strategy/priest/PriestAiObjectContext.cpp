@@ -27,12 +27,15 @@ namespace ai
                 creators["pull"] = &priest::StrategyFactoryInternal::pull;
                 creators["aoe"] = &priest::StrategyFactoryInternal::shadow_aoe;
                 creators["shadow aoe"] = &priest::StrategyFactoryInternal::shadow_aoe;
+                creators["dps debuff"] = &priest::StrategyFactoryInternal::shadow_debuff;
+                creators["shadow debuff"] = &priest::StrategyFactoryInternal::shadow_debuff;
             }
 
         private:
             static Strategy* nc(PlayerbotAI* ai) { return new PriestNonCombatStrategy(ai); }
             static Strategy* shadow_aoe(PlayerbotAI* ai) { return new ShadowPriestAoeStrategy(ai); }
             static Strategy* pull(PlayerbotAI* ai) { return new PullStrategy(ai, "shoot"); }
+            static Strategy* shadow_debuff(PlayerbotAI* ai) { return new ShadowPriestDebuffStrategy(ai); }
         };
 
         class CombatStrategyFactoryInternal : public NamedObjectContext<Strategy>

@@ -23,15 +23,11 @@
 #define _PACKAGENAME "SingleCore"
 #endif
 
-#include "config.h"
+#include "../../config.h"
 #include "Platform/Define.h"
 
 #ifndef _VERSION
-#if PLATFORM == PLATFORM_WINDOWS
-# define _VERSION(REVD,REVT,REVN,REVH) "0.17" " (" REVD " " REVT " Revision " REVN " - " REVH ")"
-#else
-# define _VERSION(REVN) "${MANGOS_VERSION}" " (Revision " REVN ")"
-#endif
+# define _VERSION(REVN) MANGOS_VERSION " (Revision " REVN ")"
 #endif
 
 #ifndef _R2VERSION

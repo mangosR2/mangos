@@ -110,8 +110,9 @@ namespace ai
     class CastBanishAction : public CastBuffSpellAction
     {
     public:
-        CastBanishAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "banish") {}
-        virtual Value<Unit*>* GetTargetValue();
+        CastBanishAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "banish on cc") {}
+        virtual Value<Unit*>* GetTargetValue() { return context->GetValue<Unit*>("cc target", "banish"); }
+        virtual bool Execute(Event event) { return ai->CastSpell("banish", GetTarget()); }
     };
 
     class CastSeedOfCorruptionAction : public CastDebuffSpellAction
@@ -150,11 +151,18 @@ namespace ai
         CastIncinirateAction(PlayerbotAI* ai) : CastSpellAction(ai, "incinirate") {}
     };
 
-    class CastFearAction : public CastBuffSpellAction
+    class CastFearAction : public CastDebuffSpellAction
     {
     public:
-        CastFearAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "fear") {}
-        virtual Value<Unit*>* GetTargetValue() { return context->GetValue<Unit*>("cc target", getName()); }
+        CastFearAction(PlayerbotAI* ai) : CastDebuffSpellAction(ai, "fear") {}
+    };
+
+    class CastFearOnCcAction : public CastBuffSpellAction
+    {
+    public:
+        CastFearOnCcAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "fear on cc") {}
+        virtual Value<Unit*>* GetTargetValue() { return context->GetValue<Unit*>("cc target", "fear"); }
+        virtual bool Execute(Event event) { return ai->CastSpell("fear", GetTarget()); }
     };
 
     class CastLifeTapAction: public CastSpellAction

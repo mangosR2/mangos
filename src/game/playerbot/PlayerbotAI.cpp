@@ -122,11 +122,33 @@ PlayerbotAI::~PlayerbotAI()
         delete aiObjectContext;
 }
 
-void PlayerbotAI::UpdateAIInternal(uint32 elapsed)
+void PlayerbotAI::UpdateAI(uint32 elapsed)
 {
     if (bot->IsBeingTeleported())
         return;
 
+    if (nextAICheckDelay > sPlayerbotAIConfig.globalCoolDown &&
+            bot->IsNonMeleeSpellCasted(true, true, false) &&
+            *GetAiObjectContext()->GetValue<bool>("invalid target", "current target"))
+    {
+        Spell* spell = bot->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+        if (spell && !IsPositiveSpell(spell->m_spellInfo))
+        {
+            InterruptSpell();
+            SetNextCheckDelay(sPlayerbotAIConfig.globalCoolDown);
+        }
+    }
+
+    if (nextAICheckDelay > sPlayerbotAIConfig.maxWaitForMove && bot->isInCombat() && !bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+    {
+        nextAICheckDelay = sPlayerbotAIConfig.maxWaitForMove;
+    }
+
+    PlayerbotAIBase::UpdateAI(elapsed);
+}
+
+void PlayerbotAI::UpdateAIInternal(uint32 elapsed)
+{
     ExternalEventHelper helper(aiObjectContext);
     while (!chatCommands.empty())
     {
@@ -185,6 +207,7 @@ void PlayerbotAI::Reset()
 
     bot->GetMotionMaster()->Clear();
     bot->m_taxi.ClearTaxiDestinations();
+    InterruptSpell();
 
     for (int i = 0 ; i < BOT_STATE_MAX; i++)
     {
@@ -999,13 +1022,31 @@ void PlayerbotAI::InterruptSpell()
         return;
 
     LastSpellCast& lastSpell = aiObjectContext->GetValue<LastSpellCast&>("last spell cast")->Get();
-    WorldPacket* const packet = new WorldPacket(CMSG_CANCEL_CAST, 5);
-    *packet << lastSpell.id;
-    *packet << lastSpell.target;
-    bot->GetSession()->QueuePacket(packet);
 
     for (int type = CURRENT_MELEE_SPELL; type < CURRENT_CHANNELED_SPELL; type++)
+    {
+        Spell* spell = bot->GetCurrentSpell((CurrentSpellTypes)type);
+        if (!spell)
+            continue;
+
         bot->InterruptSpell((CurrentSpellTypes)type);
+
+        WorldPacket data(SMSG_SPELL_FAILURE, 8 + 1 + 4 + 1);
+        data << bot->GetPackGUID();
+        data << uint8(1);
+        data << uint32(spell->m_spellInfo->Id);
+        data << uint8(0);
+        bot->SendMessageToSet(&data, true);
+
+        data.Initialize(SMSG_SPELL_FAILED_OTHER, 8 + 1 + 4 + 1);
+        data << bot->GetObjectGuid();
+        data << uint8(1);
+        data << uint32(spell->m_spellInfo->Id);
+        data << uint8(0);
+        bot->SendMessageToSet(&data, true);
+
+        SpellInterrupted(spell->m_spellInfo->Id);
+    }
 
     SpellInterrupted(lastSpell.id);
 }

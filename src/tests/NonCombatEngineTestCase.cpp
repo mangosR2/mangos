@@ -166,7 +166,11 @@ protected:
         set<bool>("can loot", false);
         tick();
 
-        assertActions(">S:loot>S:move to loot>S:open loot>S:stay");
+        set<uint8>("bag space", 99);
+        tickWithLootAvailable();
+        set<uint8>("bag space", 0);
+
+        assertActions(">S:loot>S:move to loot>S:open loot>S:stay>S:check mount state");
     }
 
     void loot_failed()

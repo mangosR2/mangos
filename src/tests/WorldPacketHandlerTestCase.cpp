@@ -222,7 +222,7 @@ protected:
 
     void lfg()
     {
-        trigger("random");
+        trigger("no possible targets");
         tick();
 
         trigger("lfg role check");

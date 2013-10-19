@@ -67,3 +67,10 @@ void DpsAoeWarlockStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("corruption on attacker", 28.0f), NULL)));
 
 }
+
+void DpsWarlockDebuffStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
+{
+    triggers.push_back(new TriggerNode(
+        "corruption",
+        NextAction::array(0, new NextAction("corruption", 12.0f), NULL)));
+}

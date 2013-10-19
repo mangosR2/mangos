@@ -236,3 +236,7 @@ bool TargetChangedTrigger::IsActive()
     return target && oldTarget != target;
 }
 
+Value<Unit*>* InterruptEnemyHealerTrigger::GetTargetValue()
+{
+    return context->GetValue<Unit*>("enemy healer target", spell);
+}

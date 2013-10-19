@@ -25,4 +25,14 @@ namespace ai
         virtual void InitTriggers(std::list<TriggerNode*> &triggers);
         virtual string getName() { return "shadow aoe"; }
     };
+
+    class ShadowPriestDebuffStrategy : public CombatStrategy
+    {
+    public:
+        ShadowPriestDebuffStrategy(PlayerbotAI* ai) : CombatStrategy(ai) {}
+
+    public:
+        virtual void InitTriggers(std::list<TriggerNode*> &triggers);
+        virtual string getName() { return "shadow debuff"; }
+    };
 }

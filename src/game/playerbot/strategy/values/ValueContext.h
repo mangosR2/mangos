@@ -52,6 +52,7 @@
 #include "LastSpellCastTimeValue.h"
 #include "ManaSaveLevelValue.h"
 #include "LfgValues.h"
+#include "EnemyHealerTargetValue.h"
 
 namespace ai
 {
@@ -134,6 +135,8 @@ namespace ai
             creators["mana save level"] = &ValueContext::mana_save_level;
             creators["combat"] = &ValueContext::combat;
             creators["lfg proposal"] = &ValueContext::lfg_proposal;
+            creators["bag space"] = &ValueContext::bag_space;
+            creators["enemy healer target"] = &ValueContext::enemy_healer_target;
         }
 
     private:
@@ -210,5 +213,7 @@ namespace ai
         static UntypedValue* threat(PlayerbotAI* ai) { return new ThreatValue(ai); }
         static UntypedValue* combat(PlayerbotAI* ai) { return new IsInCombatValue(ai); }
         static UntypedValue* lfg_proposal(PlayerbotAI* ai) { return new LfgProposalValue(ai); }
+        static UntypedValue* bag_space(PlayerbotAI* ai) { return new BagSpaceValue(ai); }
+        static UntypedValue* enemy_healer_target(PlayerbotAI* ai) { return new EnemyHealerTargetValue(ai); }
     };
 };

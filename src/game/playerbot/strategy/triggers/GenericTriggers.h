@@ -524,6 +524,15 @@ namespace ai
         virtual bool IsActive();
     };
 
+    class InterruptEnemyHealerTrigger : public SpellTrigger
+    {
+    public:
+        InterruptEnemyHealerTrigger(PlayerbotAI* ai, string spell) : SpellTrigger(ai, spell) {}
+    public:
+        virtual Value<Unit*>* GetTargetValue();
+        virtual string getName() { return spell + " on enemy healer"; }
+    };
+
 }
 
 #include "RangeTriggers.h"

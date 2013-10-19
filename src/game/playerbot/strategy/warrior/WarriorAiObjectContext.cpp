@@ -72,6 +72,7 @@ namespace ai
                 creators["disarm"] = &TriggerFactoryInternal::disarm;
                 creators["concussion blow"] = &TriggerFactoryInternal::concussion_blow;
                 creators["sword and board"] = &TriggerFactoryInternal::SwordAndBoard;
+                creators["shield bash on enemy healer"] = &TriggerFactoryInternal::shield_bash_on_enemy_healer;
 
             }
 
@@ -87,6 +88,7 @@ namespace ai
             static Trigger* disarm(PlayerbotAI* ai) { return new DisarmDebuffTrigger(ai); }
             static Trigger* concussion_blow(PlayerbotAI* ai) { return new ConcussionBlowTrigger(ai); }
             static Trigger* SwordAndBoard(PlayerbotAI* ai) { return new SwordAndBoardTrigger(ai); }
+            static Trigger* shield_bash_on_enemy_healer(PlayerbotAI* ai) { return new ShieldBashInterruptEnemyHealerSpellTrigger(ai); }
         };
     };
 };
@@ -137,6 +139,7 @@ namespace ai
                 creators["shockwave"] = &AiObjectContextInternal::shockwave;
                 creators["cleave"] = &AiObjectContextInternal::cleave;
                 creators["concussion blow"] = &AiObjectContextInternal::concussion_blow;
+                creators["shield bash on enemy healer"] = &AiObjectContextInternal::shield_bash_on_enemy_healer;
             }
 
         private:
@@ -174,6 +177,7 @@ namespace ai
             static Action* shield_wall(PlayerbotAI* ai) { return new CastShieldWallAction(ai); }
             static Action* battle_shout(PlayerbotAI* ai) { return new CastBattleShoutAction(ai); }
             static Action* thunder_clap(PlayerbotAI* ai) { return new CastThunderClapAction(ai); }
+            static Action* shield_bash_on_enemy_healer(PlayerbotAI* ai) { return new CastShieldBashOnEnemyHealerAction(ai); }
 
         };
     };

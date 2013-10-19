@@ -12,13 +12,14 @@ class DpsWarlockTestCase : public EngineTestBase
       CPPUNIT_TEST( combatVsMelee );
       CPPUNIT_TEST( aoe );
       CPPUNIT_TEST( low_mana );
+      CPPUNIT_TEST( cc );
   CPPUNIT_TEST_SUITE_END();
 
 public:
     void setUp()
     {
         EngineTestBase::setUp();
-        setupEngine(new WarlockAiObjectContext(ai), "dps", NULL);
+        setupEngine(new WarlockAiObjectContext(ai), "dps", "dps debuff", NULL);
     }
 
 protected:
@@ -79,6 +80,13 @@ protected:
         tick();
 
 		assertActions(">T:shadowfury>T:seed of corruption>T:rain of fire>A:corruption on attacker>T:immolate");
+    }
+
+    void cc()
+    {
+        tickWithCcTarget("fear");
+
+        assertActions(">Cc:fear on cc");
     }
 };
 

@@ -59,29 +59,34 @@ namespace ai
     public:
         IcyVeinsTrigger(PlayerbotAI* ai) : BoostTrigger(ai, "icy veins") {}
     };
-    
+
     class PolymorphTrigger : public HasCcTargetTrigger
     {
     public:
         PolymorphTrigger(PlayerbotAI* ai) : HasCcTargetTrigger(ai, "polymorph") {}
     };
 
-    class RemoveCurseTrigger : public NeedCureTrigger 
+    class RemoveCurseTrigger : public NeedCureTrigger
     {
     public:
         RemoveCurseTrigger(PlayerbotAI* ai) : NeedCureTrigger(ai, "remove curse", DISPEL_CURSE) {}
     };
 
-    class PartyMemberRemoveCurseTrigger : public PartyMemberNeedCureTrigger 
+    class PartyMemberRemoveCurseTrigger : public PartyMemberNeedCureTrigger
     {
     public:
         PartyMemberRemoveCurseTrigger(PlayerbotAI* ai) : PartyMemberNeedCureTrigger(ai, "remove curse", DISPEL_CURSE) {}
     };
-    
-    class SpellstealTrigger : public TargetAuraDispelTrigger 
+
+    class SpellstealTrigger : public TargetAuraDispelTrigger
     {
     public:
         SpellstealTrigger(PlayerbotAI* ai) : TargetAuraDispelTrigger(ai, "spellsteal", DISPEL_MAGIC) {}
     };
-    
+
+    class CounterspellEnemyHealerTrigger : public InterruptEnemyHealerTrigger
+    {
+    public:
+        CounterspellEnemyHealerTrigger(PlayerbotAI* ai) : InterruptEnemyHealerTrigger(ai, "counterspell") {}
+    };
 }

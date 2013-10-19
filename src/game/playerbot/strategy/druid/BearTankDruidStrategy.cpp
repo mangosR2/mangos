@@ -162,6 +162,10 @@ void BearTankDruidStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "bash",
-        NextAction::array(0, new NextAction("bash", ACTION_INTERRUPT + 1), NULL)));
+        NextAction::array(0, new NextAction("bash", ACTION_INTERRUPT + 2), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "bash on enemy healer",
+        NextAction::array(0, new NextAction("bash on enemy healer", ACTION_INTERRUPT + 1), NULL)));
 
 }

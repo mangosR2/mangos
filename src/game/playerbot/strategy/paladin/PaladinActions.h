@@ -356,4 +356,10 @@ namespace ai
 	public:
 		CastRedemptionAction(PlayerbotAI* ai) : ResurrectPartyMemberAction(ai, "redemption") {}
 	};
+
+    class CastHammerOfJusticeOnEnemyHealerAction : public CastSpellOnEnemyHealerAction
+    {
+    public:
+        CastHammerOfJusticeOnEnemyHealerAction(PlayerbotAI* ai) : CastSpellOnEnemyHealerAction(ai, "hammer of justice") {}
+    };
 }

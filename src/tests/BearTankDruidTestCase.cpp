@@ -19,6 +19,7 @@ class BearTankDruidTestCase : public EngineTestBase
         CPPUNIT_TEST( buff );
         CPPUNIT_TEST( aoe );
         CPPUNIT_TEST( incompatibles );
+        CPPUNIT_TEST( interrupt_enemy_healer );
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -129,14 +130,14 @@ protected:
     {
         tick();
         addAura("dire bear form");
-        
+
         spellAvailable("healing touch");
         spellAvailable("regrowth");
         spellAvailable("rejuvenation");
         addAura("dire bear form");
         tickWithPartyLowHealth(39);
         tickWithPartyLowHealth(39);
-        
+
         spellAvailable("healing touch");
         spellAvailable("regrowth");
         spellAvailable("rejuvenation");
@@ -202,6 +203,12 @@ protected:
         engine->addStrategies("bear", "cat", "caster", "dps", "tank", NULL);
 
         CPPUNIT_ASSERT(engine->ListStrategies() == "Strategies: bear");
+    }
+
+    void interrupt_enemy_healer()
+    {
+        tickWithEnemyHealerIsCastingInterruptableSpell("bash");
+        assertActions(">H:bash on enemy healer");
     }
 };
 

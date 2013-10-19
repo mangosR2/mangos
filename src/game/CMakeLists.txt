@@ -923,6 +923,8 @@ playerbot/strategy/values/ValueContext.h
 playerbot/strategy/values/LastSpellCastTimeValue.h
 playerbot/strategy/values/ManaSaveLevelValue.h
 playerbot/strategy/values/LfgValues.h
+playerbot/strategy/values/EnemyHealerTargetValue.cpp
+playerbot/strategy/values/EnemyHealerTargetValue.h
 playerbot/strategy/warlock/DpsWarlockStrategy.cpp
 playerbot/strategy/warlock/DpsWarlockStrategy.h
 playerbot/strategy/warlock/GenericWarlockNonCombatStrategy.cpp

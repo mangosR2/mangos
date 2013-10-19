@@ -30,6 +30,16 @@ bool AddAllLootAction::Execute(Event event)
     return added;
 }
 
+bool AddLootAction::isUseful()
+{
+    return AI_VALUE(uint8, "bag space") < 80;
+}
+
+bool AddAllLootAction::isUseful()
+{
+    return AI_VALUE(uint8, "bag space") < 80;
+}
+
 bool AddAllLootAction::AddLoot(ObjectGuid guid)
 {
     return AI_VALUE(LootObjectStack*, "available loot")->Add(guid);

@@ -14,7 +14,6 @@ bool InvalidTargetValue::Calculate()
                 target->GetMapId() != bot->GetMapId() ||
                 target->isDead() ||
                 target->IsPolymorphed() ||
-                target->isFrozen() ||
                 target->isCharmed() ||
                 target->isFeared() ||
                 target->hasUnitState(UNIT_STAT_ISOLATED) ||

@@ -105,7 +105,11 @@ void GenericShamanStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 
     triggers.push_back(new TriggerNode(
         "wind shear",
-        NextAction::array(0, new NextAction("wind shear", 15.0f), NULL)));
+        NextAction::array(0, new NextAction("wind shear", 23.0f), NULL)));
+
+    triggers.push_back(new TriggerNode(
+        "wind shear on enemy healer",
+        NextAction::array(0, new NextAction("wind shear on enemy healer", 23.0f), NULL)));
 
 	triggers.push_back(new TriggerNode(
         "purge",

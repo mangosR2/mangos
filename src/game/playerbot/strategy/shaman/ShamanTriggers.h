@@ -188,4 +188,10 @@ namespace ai
     public:
         MaelstromWeaponTrigger(PlayerbotAI* ai) : HasAuraTrigger(ai, "maelstrom weapon") {}
     };
+
+    class WindShearInterruptEnemyHealerSpellTrigger : public InterruptEnemyHealerTrigger
+    {
+    public:
+        WindShearInterruptEnemyHealerSpellTrigger(PlayerbotAI* ai) : InterruptEnemyHealerTrigger(ai, "wind shear") {}
+    };
 }

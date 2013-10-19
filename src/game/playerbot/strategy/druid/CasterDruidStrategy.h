@@ -25,4 +25,14 @@ namespace ai
         virtual void InitTriggers(std::list<TriggerNode*> &triggers);
         virtual string getName() { return "caster aoe"; }
     };
+
+    class CasterDruidDebuffStrategy : public CombatStrategy
+    {
+    public:
+        CasterDruidDebuffStrategy(PlayerbotAI* ai) : CombatStrategy(ai) {}
+
+    public:
+        virtual void InitTriggers(std::list<TriggerNode*> &triggers);
+        virtual string getName() { return "caster debuff"; }
+    };
 }

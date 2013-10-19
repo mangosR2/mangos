@@ -23,7 +23,7 @@ public:
     void setUp()
     {
 		EngineTestBase::setUp();
-		setupEngine(new HunterAiObjectContext(ai), "dps", NULL);
+		setupEngine(new HunterAiObjectContext(ai), "dps", "dps debuff", NULL);
 		engine->addStrategy("bdps");
 
         addAura("aspect of the hawk");
@@ -139,6 +139,7 @@ protected:
     void incompatibles()
     {
         engine->removeStrategy("dps");
+        engine->removeStrategy("dps debuff");
         engine->addStrategies("bdps", "bspeed", "rnature", NULL);
 
         CPPUNIT_ASSERT(engine->ListStrategies() == "Strategies: rnature");

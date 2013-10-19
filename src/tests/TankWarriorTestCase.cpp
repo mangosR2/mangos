@@ -18,6 +18,7 @@ class TankWarriorTestCase : public EngineTestBase
 	CPPUNIT_TEST( snare );
     CPPUNIT_TEST( interruptSpells );
     CPPUNIT_TEST( incompatibles );
+    CPPUNIT_TEST( interrupt_enemy_healer );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -154,6 +155,13 @@ protected:
         engine->addStrategies("tank", "dps", NULL);
 
         CPPUNIT_ASSERT(engine->ListStrategies() == "Strategies: dps");
+    }
+
+    void interrupt_enemy_healer()
+    {
+        tickWithEnemyHealerIsCastingInterruptableSpell("shield bash");
+
+        assertActions(">H:shield bash on enemy healer");
     }
 };
 

@@ -72,7 +72,7 @@ void WorldPacketHandlerStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("finish ready check", relevance), NULL)));
 
     triggers.push_back(new TriggerNode(
-        "random",
+        "no possible targets",
         NextAction::array(0, new NextAction("lfg join", relevance), NULL)));
 
     triggers.push_back(new TriggerNode(

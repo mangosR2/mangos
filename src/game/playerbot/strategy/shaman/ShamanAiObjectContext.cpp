@@ -108,6 +108,7 @@ namespace ai
                 creators["heroism"] = &TriggerFactoryInternal::heroism;
                 creators["bloodlust"] = &TriggerFactoryInternal::bloodlust;
                 creators["maelstrom weapon"] = &TriggerFactoryInternal::maelstrom_weapon;
+                creators["wind shear on enemy healer"] = &TriggerFactoryInternal::wind_shear_on_enemy_healer;
             }
 
         private:
@@ -137,6 +138,7 @@ namespace ai
             static Trigger* lightning_shield(PlayerbotAI* ai) { return new LightningShieldTrigger(ai); }
             static Trigger* shock(PlayerbotAI* ai) { return new ShockTrigger(ai); }
             static Trigger* frost_shock_snare(PlayerbotAI* ai) { return new FrostShockSnareTrigger(ai); }
+            static Trigger* wind_shear_on_enemy_healer(PlayerbotAI* ai) { return new WindShearInterruptEnemyHealerSpellTrigger(ai); }
         };
     };
 };
@@ -164,6 +166,7 @@ namespace ai
                 creators["mana tide totem"] = &AiObjectContextInternal::mana_tide_totem;
                 creators["healing stream totem"] = &AiObjectContextInternal::healing_stream_totem;
                 creators["wind shear"] = &AiObjectContextInternal::wind_shear;
+                creators["wind shear on enemy healer"] = &AiObjectContextInternal::wind_shear_on_enemy_healer;
                 creators["rockbiter weapon"] = &AiObjectContextInternal::rockbiter_weapon;
                 creators["flametongue weapon"] = &AiObjectContextInternal::flametongue_weapon;
                 creators["frostbrand weapon"] = &AiObjectContextInternal::frostbrand_weapon;
@@ -248,6 +251,7 @@ namespace ai
             static Action* stormstrike(PlayerbotAI* ai) { return new CastStormstrikeAction(ai); }
             static Action* lava_lash(PlayerbotAI* ai) { return new CastLavaLashAction(ai); }
             static Action* ancestral_spirit(PlayerbotAI* ai) { return new CastAncestralSpiritAction(ai); }
+            static Action* wind_shear_on_enemy_healer(PlayerbotAI* ai) { return new CastWindShearOnEnemyHealerAction(ai); }
         };
     };
 };

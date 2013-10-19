@@ -77,7 +77,11 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
     {
         case CLASS_PRIEST:
             if (tab == 2)
+            {
                 engine->addStrategies("dps", "threat", NULL);
+                if (player->getLevel() > 19)
+                    engine->addStrategy("dps debuff");
+            }
             else
                 engine->addStrategy("heal");
 
@@ -101,9 +105,9 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             break;
         case CLASS_SHAMAN:
             if (tab == 0)
-                engine->addStrategies("caster", "caster aoe", "bmana", "threat", NULL);
+                engine->addStrategies("caster", "caster aoe", "bmana", "threat", "flee", NULL);
             else if (tab == 2)
-                engine->addStrategies("heal", "bmana", NULL);
+                engine->addStrategies("heal", "bmana", "flee", NULL);
             else
                 engine->addStrategies("dps", "melee aoe", "bdps", "threat", NULL);
             break;
@@ -115,14 +119,20 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             break;
         case CLASS_DRUID:
             if (tab == 0)
-                engine->addStrategies("caster", "caster aoe", "threat", NULL);
+            {
+                engine->addStrategies("caster", "caster aoe", "threat", "flee", NULL);
+                if (player->getLevel() > 19)
+                    engine->addStrategy("caster debuff");
+            }
             else if (tab == 2)
-                engine->addStrategies("heal", NULL);
+                engine->addStrategies("heal", "flee", NULL);
             else
-                engine->addStrategies("bear", "tank aoe", "threat", NULL);
+                engine->addStrategies("bear", "tank aoe", "threat", "flee", NULL);
             break;
         case CLASS_HUNTER:
             engine->addStrategies("dps", "bdps", "threat", NULL);
+            if (player->getLevel() > 19)
+                engine->addStrategy("dps debuff");
             break;
         case CLASS_ROGUE:
             engine->addStrategies("dps", "threat", NULL);
@@ -132,6 +142,9 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
                 engine->addStrategies("tank", "threat", NULL);
             else
                 engine->addStrategies("dps", "threat", NULL);
+
+            if (player->getLevel() > 19)
+                engine->addStrategy("dps debuff");
 
             engine->addStrategy("flee");
             break;

@@ -45,13 +45,13 @@ bool PlayerbotAIConfig::Initialize()
     }
 
     globalCoolDown = (uint32) config.GetIntDefault("AiPlayerbot.GlobalCooldown", 500);
-    maxWaitForMove = config.GetIntDefault("AiPlayerbot.MaxWaitForMove", 5000);
+    maxWaitForMove = config.GetIntDefault("AiPlayerbot.MaxWaitForMove", 3000);
     reactDelay = (uint32) config.GetIntDefault("AiPlayerbot.ReactDelay", 100);
 
-    sightDistance = config.GetFloatDefault("AiPlayerbot.SightDistance", 50.0f);
-    spellDistance = config.GetFloatDefault("AiPlayerbot.SpellDistance", 25.0f);
-    reactDistance = config.GetFloatDefault("AiPlayerbot.ReactDistance", 100.0f);
-    grindDistance = config.GetFloatDefault("AiPlayerbot.GrindDistance", 75.0f);
+    sightDistance = config.GetFloatDefault("AiPlayerbot.SightDistance", 75.0f);
+    spellDistance = config.GetFloatDefault("AiPlayerbot.SpellDistance", 30.0f);
+    reactDistance = config.GetFloatDefault("AiPlayerbot.ReactDistance", 150.0f);
+    grindDistance = config.GetFloatDefault("AiPlayerbot.GrindDistance", 100.0f);
     lootDistance = config.GetFloatDefault("AiPlayerbot.LootDistance", 20.0f);
     fleeDistance = config.GetFloatDefault("AiPlayerbot.FleeDistance", 20.0f);
     tooCloseDistance = config.GetFloatDefault("AiPlayerbot.TooCloseDistance", 7.0f);
@@ -59,9 +59,9 @@ bool PlayerbotAIConfig::Initialize()
     followDistance = config.GetFloatDefault("AiPlayerbot.FollowDistance", 2.0f);
     whisperDistance = config.GetFloatDefault("AiPlayerbot.WhisperDistance", 6000.0f);
 
-    criticalHealth = config.GetIntDefault("AiPlayerbot.CriticalHealth", 25);
-    lowHealth = config.GetIntDefault("AiPlayerbot.LowHealth", 45);
-    mediumHealth = config.GetIntDefault("AiPlayerbot.MediumHealth", 65);
+    criticalHealth = config.GetIntDefault("AiPlayerbot.CriticalHealth", 20);
+    lowHealth = config.GetIntDefault("AiPlayerbot.LowHealth", 50);
+    mediumHealth = config.GetIntDefault("AiPlayerbot.MediumHealth", 70);
     almostFullHealth = config.GetIntDefault("AiPlayerbot.AlmostFullHealth", 85);
     lowMana = config.GetIntDefault("AiPlayerbot.LowMana", 15);
     mediumMana = config.GetIntDefault("AiPlayerbot.MediumMana", 40);

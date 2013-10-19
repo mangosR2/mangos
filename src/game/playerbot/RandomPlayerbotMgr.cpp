@@ -387,10 +387,21 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
     }
 
     bot->GetPlayerbotAI()->Reset();
-    if (bot->IsInWorld() && !bot->IsBeingTeleported())
-        bot->GetMap()->RemoveAllAttackersFor(bot->GetObjectGuid());
-    ThreatManager& tm = bot->getThreatManager();
-    tm.clearReferences();
+
+    HostileReference *ref = bot->getHostileRefManager().getFirst();
+    while( ref )
+    {
+        ThreatManager *threatManager = ref->getSource();
+        Unit *unit = threatManager->getOwner();
+        float threat = ref->getThreat();
+
+        unit->RemoveAllAttackers();
+        unit->ClearInCombat();
+
+        ref = ref->next();
+    }
+
+    bot->RemoveAllAttackers();
     bot->ClearInCombat();
 
     bot->DurabilityRepairAll(false, 1.0f, false);
@@ -816,4 +827,10 @@ void RandomPlayerbotMgr::SetLootAmount(Player* bot, uint32 value)
 {
     uint32 id = bot->GetObjectGuid();
     SetEventValue(id, "lootamount", value, 24 * 3600);
+}
+
+uint32 RandomPlayerbotMgr::GetTradeDiscount(Player* bot)
+{
+    Group* group = bot->GetGroup();
+    return GetLootAmount(bot) / (group ? group->GetMembersCount() : 10);
 }

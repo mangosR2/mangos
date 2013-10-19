@@ -12,6 +12,7 @@ class DpsRogueTestCase : public EngineTestBase
 		CPPUNIT_TEST( combatVsMelee );
 		CPPUNIT_TEST( healHimself );
 		CPPUNIT_TEST( interruptSpells );
+		CPPUNIT_TEST( interrupt_enemy_healer );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -60,6 +61,13 @@ protected:
 		tickWithTargetIsCastingNonMeleeSpell();
 
 		assertActions(">T:riposte>T:kick>T:kidney shot");
+	}
+
+	void interrupt_enemy_healer()
+	{
+	    tickWithEnemyHealerIsCastingInterruptableSpell("kick");
+
+		assertActions(">H:kick on enemy healer");
 	}
 };
 

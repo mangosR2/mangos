@@ -105,4 +105,10 @@ namespace ai
     public:
         CleanseCurePartyMemberMagicTrigger(PlayerbotAI* ai) : PartyMemberNeedCureTrigger(ai, "cleanse", DISPEL_MAGIC) {}
     };
+
+    class HammerOfJusticeEnemyHealerTrigger : public InterruptEnemyHealerTrigger
+    {
+    public:
+        HammerOfJusticeEnemyHealerTrigger(PlayerbotAI* ai) : InterruptEnemyHealerTrigger(ai, "hammer of justice") {}
+    };
 }

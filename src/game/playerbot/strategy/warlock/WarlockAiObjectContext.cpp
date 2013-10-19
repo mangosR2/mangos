@@ -26,11 +26,13 @@ namespace ai
                 creators["nc"] = &warlock::StrategyFactoryInternal::nc;
                 creators["pull"] = &warlock::StrategyFactoryInternal::pull;
                 creators["aoe"] = &warlock::StrategyFactoryInternal::aoe;
+                creators["dps debuff"] = &warlock::StrategyFactoryInternal::dps_debuff;
             }
 
         private:
             static Strategy* nc(PlayerbotAI* ai) { return new GenericWarlockNonCombatStrategy(ai); }
             static Strategy* aoe(PlayerbotAI* ai) { return new DpsAoeWarlockStrategy(ai); }
+            static Strategy* dps_debuff(PlayerbotAI* ai) { return new DpsWarlockDebuffStrategy(ai); }
             static Strategy* pull(PlayerbotAI* ai) { return new PullStrategy(ai, "shoot"); }
         };
 
@@ -132,6 +134,7 @@ namespace ai
                 creators["shadowfury"] = &AiObjectContextInternal::shadowfury;
                 creators["life tap"] = &AiObjectContextInternal::life_tap;
                 creators["fear"] = &AiObjectContextInternal::fear;
+                creators["fear on cc"] = &AiObjectContextInternal::fear_on_cc;
                 creators["incinirate"] = &AiObjectContextInternal::incinirate;
                 creators["conflagrate"] = &AiObjectContextInternal::conflagrate;
             }
@@ -139,6 +142,7 @@ namespace ai
         private:
             static Action* conflagrate(PlayerbotAI* ai) { return new CastConflagrateAction(ai); }
             static Action* incinirate(PlayerbotAI* ai) { return new CastIncinirateAction(ai); }
+            static Action* fear_on_cc(PlayerbotAI* ai) { return new CastFearOnCcAction(ai); }
             static Action* fear(PlayerbotAI* ai) { return new CastFearAction(ai); }
             static Action* immolate(PlayerbotAI* ai) { return new CastImmolateAction(ai); }
             static Action* summon_imp(PlayerbotAI* ai) { return new CastSummonImpAction(ai); }

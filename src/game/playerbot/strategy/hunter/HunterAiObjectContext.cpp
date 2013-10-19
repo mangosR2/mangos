@@ -25,12 +25,14 @@ namespace ai
                 creators["dps"] = &hunter::StrategyFactoryInternal::dps;
                 creators["nc"] = &hunter::StrategyFactoryInternal::nc;
                 creators["aoe"] = &hunter::StrategyFactoryInternal::aoe;
+                creators["dps debuff"] = &hunter::StrategyFactoryInternal::dps_debuff;
             }
 
         private:
             static Strategy* aoe(PlayerbotAI* ai) { return new DpsAoeHunterStrategy(ai); }
             static Strategy* dps(PlayerbotAI* ai) { return new DpsHunterStrategy(ai); }
             static Strategy* nc(PlayerbotAI* ai) { return new GenericHunterNonCombatStrategy(ai); }
+            static Strategy* dps_debuff(PlayerbotAI* ai) { return new DpsHunterDebuffStrategy(ai); }
         };
 
         class BuffStrategyFactoryInternal : public NamedObjectContext<Strategy>

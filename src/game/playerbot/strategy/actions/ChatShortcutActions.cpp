@@ -102,7 +102,7 @@ bool MaxDpsChatShortcutAction::Execute(Event event)
         return false;
 
     ai->Reset();
-    ai->ChangeStrategy("-threat,-conserve mana,-cast time", BOT_STATE_COMBAT);
+    ai->ChangeStrategy("-threat,-conserve mana,-cast time,+dps debuff", BOT_STATE_COMBAT);
     ai->TellMaster("Max DPS");
     return true;
 }

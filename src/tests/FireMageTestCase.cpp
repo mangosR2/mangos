@@ -29,9 +29,6 @@ protected:
  	void combatVsMelee()
 	{
         tick();
-		addTargetAura("living bomb");
-
-        tick();
 		addTargetAura("pyroblast");
 
         tick();
@@ -43,7 +40,7 @@ protected:
         tick();
         tick();
 
-        assertActions(">T:living bomb>T:pyroblast>T:scorch>T:fireball>T:fire blast>T:pyroblast>T:shoot");
+        assertActions(">T:pyroblast>T:scorch>T:fireball>T:fire blast>T:pyroblast>T:shoot");
 	}
 
  	void avoid_melee()
@@ -90,8 +87,9 @@ protected:
         engine->addStrategy("fire aoe");
 
 		tickWithAttackerCount(3);
+		tickWithAttackerCount(3);
 
-		assertActions(">T:flamestrike");
+		assertActions(">T:living bomb>T:flamestrike");
     }
 
     void invisibility()

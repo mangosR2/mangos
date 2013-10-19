@@ -295,4 +295,10 @@ namespace ai
     public:
         CastBloodlustAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "bloodlust") {}
     };
+
+    class CastWindShearOnEnemyHealerAction : public CastSpellOnEnemyHealerAction
+    {
+    public:
+        CastWindShearOnEnemyHealerAction(PlayerbotAI* ai) : CastSpellOnEnemyHealerAction(ai, "wind shear") {}
+    };
 }

@@ -111,6 +111,10 @@ void GenericMageStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         "counterspell",
         NextAction::array(0, new NextAction("counterspell", 40.0f), NULL)));
 
+    triggers.push_back(new TriggerNode(
+        "counterspell on enemy healer",
+        NextAction::array(0, new NextAction("counterspell on enemy healer", 40.0f), NULL)));
+
 	triggers.push_back(new TriggerNode(
 		"critical health",
 		NextAction::array(0, new NextAction("ice block", 80.0f), NULL)));

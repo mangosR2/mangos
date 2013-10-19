@@ -86,7 +86,7 @@ void TradeStatusAction::BeginTrade()
 
     if (sRandomPlayerbotMgr.IsRandomBot(bot))
     {
-        uint32 discount = sRandomPlayerbotMgr.GetLootAmount(bot) / 10;
+        uint32 discount = sRandomPlayerbotMgr.GetTradeDiscount(bot);
         if (discount)
         {
             ostringstream out; out << "Free trade: " << chat->formatMoney(discount);
@@ -128,7 +128,7 @@ bool TradeStatusAction::CheckTrade()
     int32 botMoney = CalculateCost(bot->GetTradeData(), true);
     int32 playerMoney = CalculateCost(master->GetTradeData(), false);
 
-    int32 discount = sRandomPlayerbotMgr.GetLootAmount(bot) / 10;
+    int32 discount = sRandomPlayerbotMgr.GetTradeDiscount(bot);
     botMoney = max(0, botMoney - discount);
 
     if (playerMoney >= botMoney)

@@ -22,7 +22,7 @@ public:
     virtual void setUp()
     {
 		EngineTestBase::setUp();
-		setupEngine(new DruidAiObjectContext(ai), "caster", NULL);
+		setupEngine(new DruidAiObjectContext(ai), "caster", "caster debuff", NULL);
 
 		addAura("moonkin form");
     }

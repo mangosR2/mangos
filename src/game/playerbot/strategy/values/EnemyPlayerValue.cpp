@@ -19,7 +19,7 @@ public:
         if (!result)
         {
             Player* enemy = dynamic_cast<Player*>(attacker);
-            if (enemy && ai->IsOpposing(enemy))
+            if (enemy && ai->IsOpposing(enemy) && enemy->IsOutdoorPvPActive())
                 result = attacker;
         }
     }

@@ -23,6 +23,7 @@ class TankPaladinTestCase : public EngineTestBase
 		CPPUNIT_TEST( buffIncompatibles );
 		CPPUNIT_TEST( resistanceIncompatibles );
 		CPPUNIT_TEST( lowMana );
+		CPPUNIT_TEST( interrupt_enemy_healer );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -210,6 +211,13 @@ protected:
         engine->addStrategies("rshadow", "rfrost", "rfire", NULL);
 
         CPPUNIT_ASSERT(engine->ListStrategies() == "Strategies: rfire");
+    }
+
+    void interrupt_enemy_healer()
+    {
+        tickWithEnemyHealerIsCastingInterruptableSpell("hammer of justice");
+
+        assertActions(">H:hammer of justice on enemy healer");
     }
 };
 

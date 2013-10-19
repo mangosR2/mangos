@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../Action.h"
+#include "MovementActions.h"
 
 namespace ai
 {
-    class SetHomeAction : public Action {
+    class SetHomeAction : public MovementAction {
     public:
-        SetHomeAction(PlayerbotAI* ai) : Action(ai, "home") {}
+        SetHomeAction(PlayerbotAI* ai) : MovementAction(ai, "home") {}
         virtual bool Execute(Event event);
     };
 }

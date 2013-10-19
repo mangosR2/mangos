@@ -25,6 +25,10 @@ bool EmoteAction::Execute(Event event)
         emote = emotes[param];
     }
 
+	bot->CastStop();
+	ai->InterruptSpell();
+	bot->SetStandState(UNIT_STAND_STATE_STAND);
+
     Player* master = GetMaster();
 	if (master)
 	{
@@ -33,13 +37,13 @@ bool EmoteAction::Execute(Event event)
         {
             ObjectGuid oldSelection = bot->GetSelectionGuid();
             bot->SetSelectionGuid(masterSelection);
-            ai->GetBot()->HandleEmoteCommand(emote);
+            bot->HandleEmoteCommand(emote);
             bot->SetSelectionGuid(oldSelection);
             return true;
         }
 	}
 
-    ai->GetBot()->HandleEmoteCommand(emote);
+    bot->HandleEmoteCommand(emote);
     return true;
 }
 

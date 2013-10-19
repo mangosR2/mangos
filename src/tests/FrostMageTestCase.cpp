@@ -17,6 +17,7 @@ class FrostMageTestCase : public EngineTestBase
   CPPUNIT_TEST( aoe );
   CPPUNIT_TEST( incompatibles );
   CPPUNIT_TEST( low_mana );
+  CPPUNIT_TEST( interrupt_enemy_healer );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -123,6 +124,13 @@ protected:
         tickWithLowMana(5);
 
         assertActions(">S:evocation>T:frost nova>S:flee");
+    }
+
+    void interrupt_enemy_healer()
+    {
+        tickWithEnemyHealerIsCastingInterruptableSpell("counterspell");
+
+        assertActions(">H:counterspell on enemy healer");
     }
 
 };

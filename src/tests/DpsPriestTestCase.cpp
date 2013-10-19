@@ -19,7 +19,7 @@ public:
     void setUp()
     {
 		EngineTestBase::setUp();
-		setupEngine(new PriestAiObjectContext(ai), "dps", NULL);
+		setupEngine(new PriestAiObjectContext(ai), "dps", "dps debuff", NULL);
 
         addAura("power word: fortitude");
         addAura("divine spirit");
@@ -71,10 +71,10 @@ protected:
         addAura("shadowform");
         addTargetAura("devouring plague");
         addTargetAura("shadow word: pain");
+        addTargetAura("vampiric touch");
 
         engine->addStrategy("aoe");
 
-        spellUnavailable("vampiric touch");
         set<Unit*>("attacker without aura", "shadow word: pain", MockedTargets::GetAttackerWithoutAura());
         tick();
 

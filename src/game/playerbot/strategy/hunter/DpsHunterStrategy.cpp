@@ -75,10 +75,6 @@ void DpsHunterStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
         NextAction::array(0, new NextAction("black arrow", 51.0f), NULL)));
 
     triggers.push_back(new TriggerNode(
-        "no stings",
-        NextAction::array(0, new NextAction("serpent sting", 50.0f), NULL)));
-
-    triggers.push_back(new TriggerNode(
         "low mana",
         NextAction::array(0, new NextAction("viper sting", ACTION_EMERGENCY + 5), NULL)));
 
@@ -112,4 +108,11 @@ void DpsAoeHunterStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
 	triggers.push_back(new TriggerNode(
 		"serpent sting on attacker",
 		NextAction::array(0, new NextAction("serpent sting on attacker", 49.0f), NULL)));
+}
+
+void DpsHunterDebuffStrategy::InitTriggers(std::list<TriggerNode*> &triggers)
+{
+    triggers.push_back(new TriggerNode(
+        "no stings",
+        NextAction::array(0, new NextAction("serpent sting", 50.0f), NULL)));
 }

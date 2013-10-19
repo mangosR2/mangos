@@ -82,3 +82,30 @@ bool IsInCombatValue::Calculate()
     return target->IsInCombat();
 }
 
+uint8 BagSpaceValue::Calculate()
+{
+    uint32 totalused = 0, total = 16;
+    for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; slot++)
+    {
+        if (bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+            totalused++;
+    }
+
+    uint32 totalfree = 16 - totalused;
+    for (uint8 bag = INVENTORY_SLOT_BAG_START; bag < INVENTORY_SLOT_BAG_END; ++bag)
+    {
+        const Bag* const pBag = (Bag*) bot->GetItemByPos(INVENTORY_SLOT_BAG_0, bag);
+        if (pBag)
+        {
+            ItemPrototype const* pBagProto = pBag->GetProto();
+            if (pBagProto->Class == ITEM_CLASS_CONTAINER && pBagProto->SubClass == ITEM_SUBCLASS_CONTAINER)
+            {
+                total += pBag->GetBagSize();
+                totalfree += pBag->GetFreeSlots();
+            }
+        }
+
+    }
+
+    return (static_cast<float> (totalused) / total) * 100;
+}
