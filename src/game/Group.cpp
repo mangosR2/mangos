@@ -623,10 +623,10 @@ void Group::Disband(bool hideDestroy)
         else
         {
             //we can remove player who is in battleground from his original group
-            if (player->GetOriginalGroup() == this)
-                player->SetOriginalGroup(NULL);
+            if (player->GetOriginalGroupGuid() == GetObjectGuid())
+                player->SetOriginalGroup(ObjectGuid());
             else
-                player->SetGroup(NULL);
+                player->SetGroup(ObjectGuid());
         }
 
         // quest related GO state dependent from raid membership
@@ -1437,13 +1437,13 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
         player->SetGroupInvite(NULL);
         //if player is in group and he is being added to BG raid group, then call SetBattleGroundRaid()
         if (player->GetGroup() && isBGGroup())
-            player->SetBattleGroundRaid(this, group);
+            player->SetBattleGroundRaid(GetObjectGuid(), group);
         //if player is in bg raid and we are adding him to normal group, then call SetOriginalGroup()
         else if (player->GetGroup())
-            player->SetOriginalGroup(this, group);
+            player->SetOriginalGroup(GetObjectGuid(), group);
         //if player is not in group, then call set group
         else
-            player->SetGroup(this, group);
+            player->SetGroup(GetObjectGuid(), group);
 
         if (player->IsInWorld())
         {
@@ -1490,10 +1490,10 @@ bool Group::_removeMember(ObjectGuid guid)
         else
         {
             //we can remove player who is in battleground from his original group
-            if (player->GetOriginalGroup() == this)
-                player->SetOriginalGroup(NULL);
+            if (player->GetOriginalGroupGuid() == GetObjectGuid())
+                player->SetOriginalGroup(ObjectGuid());
             else
-                player->SetGroup(NULL);
+                player->SetGroup(ObjectGuid());
         }
     }
 
@@ -1755,7 +1755,7 @@ void Group::ChangeMembersGroup(Player *player, uint8 group)
 
     if (_setMembersGroup(player->GetObjectGuid(), group))
     {
-        if (player->GetGroup() == this)
+        if (player->GetGroupGuid() == GetObjectGuid())
             player->GetGroupRef().setSubGroup(group);
         //if player is in BG raid, it is possible that he is also in normal raid - and that normal raid is stored in m_originalGroup reference
         else

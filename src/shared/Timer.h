@@ -57,8 +57,8 @@ class WorldTimer
         //analogue to getMSTime() but it persists m_SystemTickTime
         static uint32 getMSTime_internal(bool savetime = false);
 
-        static MANGOS_DLL_SPEC uint32 m_iTime;
-        static MANGOS_DLL_SPEC uint32 m_iPrevTime;
+        static MANGOS_DLL_SPEC ACE_Atomic_Op<ACE_Thread_Mutex, uint32> m_iTime;
+        static MANGOS_DLL_SPEC ACE_Atomic_Op<ACE_Thread_Mutex, uint32> m_iPrevTime;
 };
 
 class IntervalTimer

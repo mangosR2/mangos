@@ -29,22 +29,22 @@ static MTRandTSS mtRand;
 
 static ACE_Time_Value g_SystemTickTime = ACE_OS::gettimeofday();
 
-uint32 WorldTimer::m_iTime = 0;
-uint32 WorldTimer::m_iPrevTime = 0;
+ACE_Atomic_Op<ACE_Thread_Mutex, uint32> WorldTimer::m_iTime = 0;
+ACE_Atomic_Op<ACE_Thread_Mutex, uint32> WorldTimer::m_iPrevTime = 0;
 
-uint32 WorldTimer::tickTime() { return m_iTime; }
-uint32 WorldTimer::tickPrevTime() { return m_iPrevTime; }
+uint32 WorldTimer::tickTime() { return m_iTime.value(); }
+uint32 WorldTimer::tickPrevTime() { return m_iPrevTime.value(); }
 
 uint32 WorldTimer::tick()
 {
     //save previous world tick time
-    m_iPrevTime = m_iTime;
+    m_iPrevTime = m_iTime.value();
 
     //get the new one and don't forget to persist current system time in m_SystemTickTime
     m_iTime = WorldTimer::getMSTime_internal(true);
 
     //return tick diff
-    return getMSTimeDiff(m_iPrevTime, m_iTime);
+    return getMSTimeDiff(m_iPrevTime.value(), m_iTime.value());
 }
 
 uint32 WorldTimer::getMSTime()

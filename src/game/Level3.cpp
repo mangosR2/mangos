@@ -7637,15 +7637,15 @@ bool ChatHandler::HandleTransportCurrentCommand(char* args)
         transport->GetOrientation());
 
     PSendSysMessage("Player position: %f %f %f (offset %f %f %f) delta %f %f %f",
-                player->m_movementInfo.GetPos()->x,
-                player->m_movementInfo.GetPos()->y,
-                player->m_movementInfo.GetPos()->z,
-                player->m_movementInfo.GetTransportPos()->x,
-                player->m_movementInfo.GetTransportPos()->y,
-                player->m_movementInfo.GetTransportPos()->z,
-                player->m_movementInfo.GetPos()->x - transport->GetPositionX(),
-                player->m_movementInfo.GetPos()->y - transport->GetPositionY(),
-                player->m_movementInfo.GetPos()->z - transport->GetPositionZ()
+                player->m_movementInfo.GetPosition().getX(),
+                player->m_movementInfo.GetPosition().getY(),
+                player->m_movementInfo.GetPosition().getZ(),
+                player->m_movementInfo.GetTransportPosition().getX(),
+                player->m_movementInfo.GetTransportPosition().getY(),
+                player->m_movementInfo.GetTransportPosition().getZ(),
+                player->m_movementInfo.GetPosition().getX() - transport->GetPositionX(),
+                player->m_movementInfo.GetPosition().getY() - transport->GetPositionY(),
+                player->m_movementInfo.GetPosition().getZ() - transport->GetPositionZ()
                 );
 
     return true;
