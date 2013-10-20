@@ -59,11 +59,9 @@ Map::~Map()
     sMapMgr.GetMapUpdater().MapStatisticDataRemove(this);
 
     // unload instance specific navigation data
-    MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(m_TerrainData->GetMapId(), GetInstanceId());
+    MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(GetTerrain()->GetMapId(), GetInstanceId());
 
-    //release reference count
-    if(m_TerrainData->Release())
-        sTerrainMgr.UnloadTerrain(m_TerrainData->GetMapId());
+    sTerrainMgr.UnloadTerrain(GetTerrain()->GetMapId());
 
     DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::~Map removing map %u instance %u complete", GetId(), GetInstanceId());
 }
@@ -73,7 +71,7 @@ void Map::LoadMapAndVMap(int gx,int gy)
     if (m_bLoadedGrids[gx][gy])
         return;
 
-    if (m_TerrainData->Load(gx, gy))
+    if (GetTerrain()->Load(gx, gy))
         m_bLoadedGrids[gx][gy] = true;
 }
 
@@ -99,9 +97,6 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
 
     //lets initialize visibility distance for map
     Map::InitVisibilityDistance();
-
-    //add reference for TerrainData object
-    m_TerrainData->AddRef();
 
     MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
     persistentState->SetUsedByMapState(this);
@@ -1031,7 +1026,7 @@ bool Map::UnloadGrid(NGridType& grid, bool pForce)
     if (m_bLoadedGrids[gx][gy])
     {
         m_bLoadedGrids[gx][gy] = false;
-        m_TerrainData->Unload(gx, gy);
+        GetTerrain()->Unload(gx, gy);
     }
 
     return true;
@@ -2641,7 +2636,7 @@ bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float
 
 float Map::GetHeight(uint32 phasemask, float x, float y, float z) const
 {
-    float staticHeight = m_TerrainData->GetHeightStatic(x, y, z);
+    float staticHeight = GetTerrain()->GetHeightStatic(x, y, z);
 
     // Get Dynamic Height around static Height (if valid)
     float dynSearchHeight = 2.0f + (z < staticHeight ? staticHeight : z);
