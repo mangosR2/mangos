@@ -227,24 +227,20 @@ public:
 protected:
     friend class Map;
     //load/unload terrain data
-    GridMap*  Load(uint32 const& x, uint32 const& y);
+    GridMapPtr  Load(uint32 const& x, uint32 const& y);
     void Unload(uint32 const& x, uint32 const& y);
 
 private:
     TerrainInfo(const TerrainInfo&);
     TerrainInfo& operator = (TerrainInfo const&);
 
-    GridMap* GetGrid(float const& x, float const& y );
-    GridMap* LoadMapAndVMap(uint32 const& x, uint32 const& y);
-    GridMap* GetGridMap(uint32 const& x, uint32 const& y);
-
-    int RefGrid(uint32 const& x, uint32 const& y);
-    int UnrefGrid(uint32 const& x, uint32 const& y);
+    GridMapPtr GetGrid(float const& x, float const& y );
+    GridMapPtr LoadMapAndVMap(uint32 const& x, uint32 const& y);
+    GridMapPtr GetGridMap(uint32 const& x, uint32 const& y);
 
     uint32 const m_mapId;
 
-    GridMap* m_GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
-    int16 m_GridRef[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
+    GridMapPtr m_GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
     //global garbage collection timer
     ShortIntervalTimer i_timer;
