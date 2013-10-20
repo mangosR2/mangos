@@ -251,7 +251,7 @@ void MapManager::UnloadAll()
     while(!i_maps.empty())
         i_maps.erase(i_maps.begin());
 
-    TerrainManager::Instance().UnloadAll();
+    sTerrainMgr.UnloadAll();
 
     if (GetMapUpdater().activated())
         GetMapUpdater().deactivate();
