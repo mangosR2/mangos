@@ -43,7 +43,7 @@ class MANGOS_DLL_SPEC Transport : public GameObject
         virtual void Start() {};
         virtual void Stop() {};
 
-        TransportKit* GetTransportKit() { return m_transportKit; };
+        virtual TransportKit* GetTransportKit() override { return m_transportKit; };
 
         virtual bool IsTransport() const override { return bool(m_transportKit); };
         TransportBase* GetTransportBase() { return (TransportBase*)m_transportKit; };
