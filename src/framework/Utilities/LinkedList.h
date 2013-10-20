@@ -28,6 +28,7 @@ class LinkedListElement
 {
     private:
 
+        volatile mutable bool RefLock;
         friend class LinkedListHead;
 
         LinkedListElement* iNext;
@@ -35,17 +36,58 @@ class LinkedListElement
 
     public:
 
-        LinkedListElement()  { iNext = NULL; iPrev = NULL; }
-        ~LinkedListElement() { delink(); }
+        LinkedListElement() : RefLock(0), iNext(NULL), iPrev(NULL)
+        {}
+        virtual ~LinkedListElement() { delink(); }
 
         bool hasNext() const  { return (iNext != NULL && iNext->iNext != NULL); }
         bool hasPrev() const  { return (iPrev != NULL && iPrev->iPrev != NULL); }
         bool isInList() const { return (iNext != NULL && iPrev != NULL); }
 
-        LinkedListElement      * next()       { return hasNext() ? iNext : NULL; }
-        LinkedListElement const* next() const { return hasNext() ? iNext : NULL; }
-        LinkedListElement      * prev()       { return hasPrev() ? iPrev : NULL; }
-        LinkedListElement const* prev() const { return hasPrev() ? iPrev : NULL; }
+        LinkedListElement*       next()
+        {
+            if (hasNext())
+            {
+                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
+                LinkedListElement* ret = iNext;
+                MANGOSR2_ATOMIC_LOCK_END(RefLock);
+                return ret;
+            }
+            return NULL;
+        }
+        LinkedListElement const* next() const
+        {
+            if (hasNext())
+            {
+                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
+                LinkedListElement const* ret = iNext;
+                MANGOSR2_ATOMIC_LOCK_END(RefLock);
+                return ret;
+            }
+            return NULL;
+        }
+        LinkedListElement*       prev()
+        {
+            if (hasPrev())
+            {
+                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
+                LinkedListElement* ret = iPrev;
+                MANGOSR2_ATOMIC_LOCK_END(RefLock);
+                return ret;
+            }
+            return NULL;
+        }
+        LinkedListElement const* prev() const
+        {
+            if (hasPrev())
+            {
+                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
+                LinkedListElement const* ret = iPrev;
+                MANGOSR2_ATOMIC_LOCK_END(RefLock);
+                return ret;
+            }
+            return NULL;
+        }
 
         LinkedListElement      * nocheck_next()       { return iNext; }
         LinkedListElement const* nocheck_next() const { return iNext; }
@@ -56,27 +98,33 @@ class LinkedListElement
         {
             if (isInList())
             {
+                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
                 iNext->iPrev = iPrev;
                 iPrev->iNext = iNext;
                 iNext = NULL;
                 iPrev = NULL;
+                MANGOSR2_ATOMIC_LOCK_END(RefLock);
             }
         }
 
         void insertBefore(LinkedListElement* pElem)
         {
+            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iNext = this;
             pElem->iPrev = iPrev;
             iPrev->iNext = pElem;
             iPrev = pElem;
+            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         void insertAfter(LinkedListElement* pElem)
         {
+            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iPrev = this;
             pElem->iNext = iNext;
             iNext->iPrev = pElem;
             iNext = pElem;
+            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 };
 
