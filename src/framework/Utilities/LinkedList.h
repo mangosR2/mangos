@@ -20,15 +20,6 @@
 #define _LINKEDLIST
 
 #include "Common.h"
-// for multithread locking
-
-#ifdef WIN32
-    #define ATOMIC_LOCK_BEGIN(lockHolder) while (InterlockedExchange<bool>(&lockHolder, true)) SwitchToThread()
-    #define ATOMIC_LOCK_END(lockHolder) InterlockedExchange<bool>(&lockHolder, false)
-#else
-    #define ATOMIC_LOCK_BEGIN(lockHolder) while (__sync_bool_compare_and_swap(&lockHolder, false, true)) usleep(50)
-    #define ATOMIC_LOCK_END(lockHolder) __sync_bool_compare_and_swap(&lockHolder, true, false)
-#endif
 
 //============================================
 class LinkedListHead;
@@ -37,7 +28,6 @@ class LinkedListElement
 {
     private:
 
-        mutable bool RefLock;
         friend class LinkedListHead;
 
         LinkedListElement* iNext;
@@ -45,58 +35,17 @@ class LinkedListElement
 
     public:
 
-        LinkedListElement() : RefLock(0)
-            { ATOMIC_LOCK_BEGIN(RefLock); iNext = NULL; iPrev = NULL; ATOMIC_LOCK_END(RefLock);}
+        LinkedListElement()  { iNext = NULL; iPrev = NULL; }
         ~LinkedListElement() { delink(); }
 
         bool hasNext() const  { return (iNext != NULL && iNext->iNext != NULL); }
         bool hasPrev() const  { return (iPrev != NULL && iPrev->iPrev != NULL); }
         bool isInList() const { return (iNext != NULL && iPrev != NULL); }
 
-        LinkedListElement*       next()
-        {
-            if (hasNext())
-            {
-                ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement* ret = iNext;
-                ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement const* next() const
-        {
-            if (hasNext())
-            {
-                ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement const* ret = iNext;
-                ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement*       prev()
-        {
-            if (hasPrev())
-            {
-                ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement* ret = iPrev;
-                ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement const* prev() const
-        {
-            if (hasPrev())
-            {
-                ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement const* ret = iPrev;
-                ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
+        LinkedListElement      * next()       { return hasNext() ? iNext : NULL; }
+        LinkedListElement const* next() const { return hasNext() ? iNext : NULL; }
+        LinkedListElement      * prev()       { return hasPrev() ? iPrev : NULL; }
+        LinkedListElement const* prev() const { return hasPrev() ? iPrev : NULL; }
 
         LinkedListElement      * nocheck_next()       { return iNext; }
         LinkedListElement const* nocheck_next() const { return iNext; }
@@ -107,33 +56,27 @@ class LinkedListElement
         {
             if (isInList())
             {
-                ATOMIC_LOCK_BEGIN(RefLock);
                 iNext->iPrev = iPrev;
                 iPrev->iNext = iNext;
                 iNext = NULL;
                 iPrev = NULL;
-                ATOMIC_LOCK_END(RefLock);
             }
         }
 
         void insertBefore(LinkedListElement* pElem)
         {
-            ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iNext = this;
             pElem->iPrev = iPrev;
             iPrev->iNext = pElem;
             iPrev = pElem;
-            ATOMIC_LOCK_END(RefLock);
         }
 
         void insertAfter(LinkedListElement* pElem)
         {
-            ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iPrev = this;
             pElem->iNext = iNext;
             iNext->iPrev = pElem;
             iNext = pElem;
-            ATOMIC_LOCK_END(RefLock);
         }
 };
 
