@@ -2203,7 +2203,6 @@ void Map::AddUpdateObject(ObjectGuid const& guid)
 
 void Map::RemoveUpdateObject(ObjectGuid const& guid)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_objectsToClientUpdate.erase(guid);
 }
 

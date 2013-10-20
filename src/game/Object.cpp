@@ -2168,6 +2168,7 @@ void WorldObject::AddToClientUpdateList()
 
 void WorldObject::RemoveFromClientUpdateList()
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_MAPOBJECTS);
     GetMap()->RemoveUpdateObject(GetObjectGuid());
 }
 
