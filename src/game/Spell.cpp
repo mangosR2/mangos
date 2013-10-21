@@ -5945,12 +5945,12 @@ SpellCastResult Spell::CheckCast(bool strict)
 
     bool castOnVehicleAllowed = false;
 
-    if (m_caster->GetVehicle())
+    if (VehicleKitPtr vehicle = m_caster->GetVehicle())
     {
         if (m_spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE))
             castOnVehicleAllowed = true;
 
-        if (VehicleSeatEntry const* seatInfo = m_caster->GetVehicle()->GetSeatInfo(m_caster))
+        if (VehicleSeatEntry const* seatInfo = vehicle->GetSeatInfo(m_caster))
             if ((seatInfo->m_flags & SEAT_FLAG_CAN_CAST) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
                 castOnVehicleAllowed = true;
     }
