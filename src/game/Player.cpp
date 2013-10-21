@@ -20620,12 +20620,8 @@ void Player::SendPetComboPoints(Unit* pet, ObjectGuid targetGuid, uint8 combopoi
 
 void Player::SetGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (guid.IsEmpty())
-    {
-        m_groupGuid.Clear();
-        m_group.unlink();
-        return;
-    }
+    m_groupGuid.Clear();
+    m_group.unlink();
 
     Group* group = sObjectMgr.GetGroup(guid);
 
@@ -20636,7 +20632,6 @@ void Player::SetGroup(ObjectGuid const& guid, int8 subgroup)
 
     // never use SetGroup without a subgroup unless you specify NULL for group
     MANGOS_ASSERT(subgroup >= 0);
-    m_group.unlink();
     m_group.link(group, this);
     m_group.setSubGroup((uint8)subgroup);
 }
@@ -21930,12 +21925,8 @@ void Player::RemoveFromBattleGroundRaid()
 
 void Player::SetOriginalGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (guid.IsEmpty())
-    {
-        m_originalGroupGuid.Clear();
-        m_originalGroup.unlink();
-        return;
-    }
+    m_originalGroupGuid.Clear();
+    m_originalGroup.unlink();
 
     Group* group = sObjectMgr.GetGroup(guid);
 
@@ -21946,7 +21937,6 @@ void Player::SetOriginalGroup(ObjectGuid const& guid, int8 subgroup)
 
     // never use SetOriginalGroup without a subgroup unless you specify NULL for group
     MANGOS_ASSERT(subgroup >= 0);
-    m_originalGroup.unlink();
     m_originalGroup.link(group, this);
     m_originalGroup.setSubGroup((uint8)subgroup);
 }
