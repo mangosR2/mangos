@@ -404,9 +404,13 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void ForcedUnload();
 
         // Dynamic VMaps
+        DynamicMapTree const& GetDynamicMapTree() const;
         float GetHeight(uint32 phasemask, float x, float y, float z) const;
         bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const;
         bool GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, uint32 phasemask, float modifyDist) const;
+        void DynamicMapTreeBalance();
+        void DynamicMapTreeUpdate(uint32 const& t_diff);
+        bool IsInLineOfSightByDynamicMapTree(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const;
 
         void InsertGameObjectModel(const GameObjectModel& mdl);
         void RemoveGameObjectModel(const GameObjectModel& mdl);

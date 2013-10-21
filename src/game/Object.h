@@ -410,6 +410,7 @@ class MANGOS_DLL_SPEC Object
         uint16 m_fieldNotifyFlags;
 
         bool m_objectUpdated;
+        bool m_skipUpdate;
 
     private:
         bool m_inWorld;
@@ -423,9 +424,16 @@ class MANGOS_DLL_SPEC Object
         // for output helpfull error messages from ASSERTs
         bool PrintIndexError(uint32 index, bool set) const;
         bool PrintEntryError(char const* descr) const;
+
+    public:
+        // SkipUpdate mechanic used if object (Player, MOTransport, etc) moved from one map to another,
+        // for skipping double-update in one world update tick
+        bool SkipUpdate() const { return m_skipUpdate; };
+        void SkipUpdate(bool value) { m_skipUpdate = value; };
 };
 
 struct WorldObjectChangeAccumulator;
+class TransportKit;
 
 namespace Movement
 {
@@ -444,11 +452,16 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         {
             public:
                 explicit UpdateHelper(WorldObject * obj) : m_obj(obj) {}
-                ~UpdateHelper() { }
+                ~UpdateHelper() {}
 
-                void Update( uint32 time_diff )
+                void Update(uint32 time_diff)
                 {
-                    m_obj->Update( m_obj->m_updateTracker.timeElapsed(), time_diff);
+                    if (m_obj->SkipUpdate())
+                    {
+                        m_obj->SkipUpdate(false);
+                        return;
+                    }
+                    m_obj->Update(m_obj->m_updateTracker.timeElapsed(), time_diff);
                     m_obj->m_updateTracker.Reset();
                 }
 
@@ -475,6 +488,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         virtual bool IsTransport() const { return false; };
         virtual bool IsMOTransport() const { return false; };
         TransportBase* GetTransportBase();
+        virtual TransportKit* GetTransportKit() { return NULL; };
 
         void Relocate(WorldLocation const& location);
         void Relocate(Position const& position);
@@ -483,21 +497,22 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         // FIXME - need remove wrapper after cleanup SD2
         void Relocate(float x, float y, float z, float orientation = 0.0f) { Relocate(Position(x, y, z, orientation, GetPhaseMask())); };
 
-        float const& GetPositionX() const     { return m_position.x; }
-        float const& GetPositionY() const     { return m_position.y; }
-        float const& GetPositionZ() const     { return m_position.z; }
-        float const& GetOrientation() const   { return m_position.orientation; }
+        float const& GetPositionX() const     { return GetPosition().getX(); }
+        float const& GetPositionY() const     { return GetPosition().getY(); }
+        float const& GetPositionZ() const     { return GetPosition().getZ(); }
+        float const& GetOrientation() const   { return GetPosition().getO(); }
         void GetPosition(float &x, float &y, float &z ) const { x = m_position.x; y = m_position.y; z = m_position.z; }
         WorldLocation const& GetPosition() const { return m_position; };
 
         virtual bool IsOnTransport() const;
         virtual Transport* GetTransport() const;
-        float GetTransOffsetX() const { return m_position.GetTransportPos().getX(); }
-        float GetTransOffsetY() const { return m_position.GetTransportPos().getY(); }
-        float GetTransOffsetZ() const { return m_position.GetTransportPos().getZ(); }
-        float GetTransOffsetO() const { return m_position.GetTransportPos().getO(); }
-        Position const& GetTransportPosition() const { return m_position.GetTransportPos(); };
+        float GetTransOffsetX() const { return GetPosition().GetTransportPos().getX(); }
+        float GetTransOffsetY() const { return GetPosition().GetTransportPos().getY(); }
+        float GetTransOffsetZ() const { return GetPosition().GetTransportPos().getZ(); }
+        float GetTransOffsetO() const { return GetPosition().GetTransportPos().getO(); }
+        Position const& GetTransportPosition() const { return GetPosition().GetTransportPos(); };
         void SetTransportPosition(Position const& pos) { m_position.SetTransportPosition(pos); };
+        bool HasTransportPosition() const { return !GetTransportPosition().IsEmpty(); };
         void ClearTransportData() { m_position.ClearTransportData(); };
 
         /// Gives a 2d-point in distance distance2d in direction absAngle around the current position (point-to-point)

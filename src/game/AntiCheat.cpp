@@ -435,13 +435,13 @@ bool AntiCheat::CheckNeeded(AntiCheatCheck checktype)
                 return false;
             if (m_currentmovementInfo->HasMovementFlag(MovementFlags(MOVEFLAG_SWIMMING | MOVEFLAG_CAN_FLY | MOVEFLAG_FLYING)))
                 return false;
-            if (GetMover()->HasAura(60068) && GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z-5.0f))
+            if (GetMover()->HasAura(60068) && GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPosition().getX(), m_currentmovementInfo->GetPosition().getY(), m_currentmovementInfo->GetPosition().getZ() - 5.0f))
                 return false;
             break;
         case CHECK_MOVEMENT_AIRJUMP:
             if (isCanFly() ||
                 !isActiveMover() ||
-                GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z-5.0f))
+                GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPosition().getX(), m_currentmovementInfo->GetPosition().getY(), m_currentmovementInfo->GetPosition().getZ()-5.0f))
                 return false;
             break;
         case CHECK_MOVEMENT_TELEPORT:
@@ -487,9 +487,9 @@ bool AntiCheat::CheckMovement()
 
     SetLastLiveState(GetPlayer()->getDeathState());
 
-    float delta_x   = GetMover()->GetPositionX() - m_currentmovementInfo->GetPos()->x;
-    float delta_y   = GetMover()->GetPositionY() - m_currentmovementInfo->GetPos()->y;
-    m_currentDeltaZ = GetMover()->GetPositionZ() - m_currentmovementInfo->GetPos()->z;
+    float delta_x   = GetMover()->GetPositionX() - m_currentmovementInfo->GetPosition().getX();
+    float delta_y   = GetMover()->GetPositionY() - m_currentmovementInfo->GetPosition().getY();
+    m_currentDeltaZ = GetMover()->GetPositionZ() - m_currentmovementInfo->GetPosition().getZ();
 
     m_currentDelta = sqrt(delta_x * delta_x + delta_y * delta_y);
 
@@ -629,12 +629,12 @@ bool AntiCheat::CheckFall()
     if (!m_isFall)
     {
         m_lastfalltime = m_currentmovementInfo->GetFallTime();
-        m_lastfallz    = m_currentmovementInfo->GetPos()->z;
+        m_lastfallz    = m_currentmovementInfo->GetPosition().getZ();
         SetInFall(true);
     }
     else
     {
-        if (m_lastfallz - m_currentmovementInfo->GetPos()->z >= 0.0f)
+        if (m_lastfallz - m_currentmovementInfo->GetPosition().getZ() >= 0.0f)
             SetInFall(false);
     }
     return true;
@@ -649,7 +649,7 @@ bool AntiCheat::CheckFly()
         || m_currentmovementInfo->HasMovementFlag(MOVEFLAG_FALLINGFAR))
         return true;
 
-    if (GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, m_currentmovementInfo->GetPos()->z - 2.0f))
+    if (GetMover()->GetTerrain()->IsUnderWater(m_currentmovementInfo->GetPosition().getX(), m_currentmovementInfo->GetPosition().getY(), m_currentmovementInfo->GetPosition().getZ() - 2.0f))
         return true;
 
     float ground_z = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),GetPlayer()->GetPositionX(),GetPlayer()->GetPositionY(),MAX_HEIGHT);
@@ -685,7 +685,7 @@ bool AntiCheat::CheckAirJump()
 
 bool AntiCheat::CheckTp2Plane()
 {
-    if (m_currentmovementInfo->GetPos()->z > m_currentConfig->checkFloatParam[0] || m_currentmovementInfo->GetPos()->z < -m_currentConfig->checkFloatParam[0])
+    if (m_currentmovementInfo->GetPosition().getZ() > m_currentConfig->checkFloatParam[0] || m_currentmovementInfo->GetPosition().getZ() < -m_currentConfig->checkFloatParam[0])
         return true;
 
     if (GetMover()->HasAuraType(SPELL_AURA_GHOST))
@@ -693,7 +693,7 @@ bool AntiCheat::CheckTp2Plane()
 
     float plane_z = 0.0f;
 
-    plane_z = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),m_currentmovementInfo->GetPos()->x, m_currentmovementInfo->GetPos()->y, MAX_HEIGHT) - m_currentmovementInfo->GetPos()->z;
+    plane_z = GetMover()->GetMap()->GetHeight(GetPlayer()->GetPhaseMask(),m_currentmovementInfo->GetPosition().getX(), m_currentmovementInfo->GetPosition().getY(), MAX_HEIGHT) - m_currentmovementInfo->GetPosition().getZ();
     plane_z = (plane_z < -500.0f) ? 0 : plane_z; //check holes in heigth map
     if(plane_z < m_currentConfig->checkFloatParam[1] && plane_z > -m_currentConfig->checkFloatParam[1])
             return true;
@@ -713,13 +713,13 @@ bool AntiCheat::CheckZAxis()
     if (m_currentDeltaZ > 0.0f && fabs(GetPlayer()->GetPositionZ()) < MAX_HEIGHT) //Don't check falling.
         return true;
 
-    float delta_x   = GetPlayer()->GetPositionX() - m_currentmovementInfo->GetPos()->x;
-    float delta_y   = GetPlayer()->GetPositionY() - m_currentmovementInfo->GetPos()->y;
+    float delta_x   = GetPlayer()->GetPositionX() - m_currentmovementInfo->GetPosition().getX();
+    float delta_y   = GetPlayer()->GetPositionY() - m_currentmovementInfo->GetPosition().getY();
 
     if(fabs(delta_x) > m_currentConfig->checkFloatParam[0] || fabs(delta_y) > m_currentConfig->checkFloatParam[0])
         return true;
 
-    float delta_z   = GetPlayer()->GetPositionZ() - m_currentmovementInfo->GetPos()->z;
+    float delta_z   = GetPlayer()->GetPositionZ() - m_currentmovementInfo->GetPosition().getZ();
 
     if (fabs(delta_z) < m_currentConfig->checkFloatParam[1] && fabs(GetPlayer()->GetPositionZ()) < MAX_HEIGHT)
         return true;
