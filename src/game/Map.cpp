@@ -544,7 +544,7 @@ void Map::MessageDistBroadcast(WorldObject const* obj, WorldPacket* msg, float d
 
 bool Map::loaded(GridPair const& p) const
 {
-    NGridType* grid = getNGrid(p.x_coord, p.y_coord);
+    NGridType const* grid = getNGridWithoutLock(p.x_coord, p.y_coord);
     return grid ? IsGridObjectDataLoaded(grid) : false;
 }
 

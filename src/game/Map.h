@@ -458,6 +458,13 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
             return i_grids[x][y];
         }
 
+        NGridType const* getNGridWithoutLock(uint32 x, uint32 y) const
+        {
+            MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
+            MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
+            return i_grids[x][y];
+        }
+
         template<class T> void LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg);
         template<class T> void setUnitCell(T* /*obj*/) {}
         void setUnitCell(Creature* obj);
