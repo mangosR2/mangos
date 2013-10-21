@@ -316,17 +316,20 @@ bool Map::EnsureGridLoaded(const Cell &cell)
     MANGOS_ASSERT(grid != NULL);
     if (!IsGridObjectDataLoaded(grid))
     {
-        //it's important to set it loaded before loading!
-        //otherwise there is a possibility of infinity chain (grid loading will be called many times for the same grid)
-        //possible scenario:
-        //active object A(loaded with loader.LoadN call and added to the  map)
-        //summons some active object B, while B added to map grid loading called again and so on..
-        SetGridObjectDataLoaded(true, *grid);
-        ObjectGridLoader loader(*grid, this, cell);
-        loader.LoadN();
+        {
+            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+            //it's important to set it loaded before loading!
+            //otherwise there is a possibility of infinity chain (grid loading will be called many times for the same grid)
+            //possible scenario:
+            //active object A(loaded with loader.LoadN call and added to the  map)
+            //summons some active object B, while B added to map grid loading called again and so on..
+            SetGridObjectDataLoaded(true, *grid);
+            ObjectGridLoader loader(*grid, this, cell);
+            loader.LoadN();
 
-        // Add resurrectable corpses to world object list in grid
-        sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
+            // Add resurrectable corpses to world object list in grid
+            sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
+        }
         DynamicMapTreeBalance();
         return true;
     }
