@@ -22,6 +22,7 @@
 #include "Common.h"
 #include "SharedDefines.h"
 #include "ByteBuffer.h"
+#include "ObjectGuid.h"
 #include <G3D/Vector3.h>
 
 class MovementInfo;

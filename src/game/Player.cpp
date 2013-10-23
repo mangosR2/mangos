@@ -2606,10 +2606,13 @@ void Player::UninviteFromGroup()
     }
 }
 
-void Player::RemoveFromGroup() 
+void Player::RemoveFromGroup(bool logout /*=false*/)
 {
     if (Group* group = GetGroup())
-        group->RemoveMember(GetObjectGuid(), 0);
+    {
+        if (group->RemoveMember(GetObjectGuid(), 0, logout) <= 1)
+            delete group;
+    }
     else
         SetGroup(ObjectGuid());
 }

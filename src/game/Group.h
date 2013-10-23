@@ -255,10 +255,10 @@ class MANGOS_DLL_SPEC Group
         void   RemoveAllInvites();
         bool   AddLeaderInvite(Player *player);
         bool   AddMember(ObjectGuid guid, const char* name);
-        uint32 RemoveMember(ObjectGuid guid, uint8 method); // method: 0=just remove, 1=kick
+        uint32 RemoveMember(ObjectGuid guid, uint8 method, bool logout = false); // method: 0=just remove, 1=kick
         void   RemoveGroupBuffsOnMemberRemove(ObjectGuid guid);
         void   ChangeLeader(ObjectGuid guid);
-        void CheckLeader(ObjectGuid const& guid, bool isLogout);
+        void CheckLeader(ObjectGuid const& guid, bool logout);
         bool ChangeLeaderToFirstSuitableMember(bool onlySet = false);
         void   SetLootMethod(LootMethod method) { m_lootMethod = method; }
         void   SetLooterGuid(ObjectGuid guid) { m_looterGuid = guid; }
@@ -483,7 +483,6 @@ class MANGOS_DLL_SPEC Group
         BoundInstancesMap   m_boundInstances[MAX_DIFFICULTY];
         uint8*              m_subGroupsCounts;
 
-        time_t              m_leaderLogoutTime;
-
+        uint32              m_waitLeaderTimer;
 };
 #endif

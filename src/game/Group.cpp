@@ -83,7 +83,7 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
     m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
     m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
-    m_leaderLogoutTime(0)
+    m_waitLeaderTimer(0)
 {
 }
 
@@ -110,6 +110,7 @@ Group::~Group()
 
     if (GetObjectGuid())
     {
+        DEBUG_LOG("Group::~Group: %s type %u has ben deleted.", GetObjectGuid().GetString().c_str(), m_groupType);
         // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
         // will be unloaded first so we must be prepared for both cases
         // this may unload some dungeon persistent state
@@ -120,6 +121,7 @@ Group::~Group()
         // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
         sObjectMgr.RemoveGroup(this);
     }
+    else sLog.outError("Group::~Group: not fully created group type %u has ben deleted.", m_groupType);
 
     // Sub group counters clean up
     if (m_subGroupsCounts)
@@ -450,7 +452,7 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
     return true;
 }
 
-uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
+uint32 Group::RemoveMember(ObjectGuid guid, uint8 method, bool logout /*=false*/)
 {
     // Frozen Mod
     BroadcastGroupUpdate();
@@ -464,6 +466,10 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
         if (player && player->GetPlayerbotMgr())
             player->GetPlayerbotMgr()->RemoveAllBotsFromGroup();
     }
+
+    // wait to leader reconnect
+    if (logout && IsLeader(guid))
+        return m_memberSlots.size();
 
     // remove member and change leader (if need) only if strong more 2 members _before_ member remove
     if (GetMembersCount() > uint32(isBGGroup() ? 1 : 2))    // in BG group case allow 1 members group
@@ -558,35 +564,35 @@ void Group::ChangeLeader(ObjectGuid guid)
     SendUpdate();
 }
 
-void Group::CheckLeader(ObjectGuid const& guid, bool isLogout)
+void Group::CheckLeader(ObjectGuid const& guid, bool logout)
 {
     if (IsLeader(guid))
     {
-        if (isLogout)
-            m_leaderLogoutTime = time(NULL);
+        if (logout)
+            m_waitLeaderTimer = sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD) * IN_MILLISECONDS;
         else
-            m_leaderLogoutTime = 0;
+            m_waitLeaderTimer = 0;
+        return;
     }
-    else
+
+    // normal member logins
+    if (logout || m_waitLeaderTimer)
+        return;
+
+    Player* pLeader = NULL;
+
+    // find the leader from group members
+    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
     {
-        if (!isLogout && !m_leaderLogoutTime) // normal member logins
+        if (itr->getSource()->GetObjectGuid() == m_leaderGuid)
         {
-            Player* leader = NULL;
-
-            // find the leader from group members
-            for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
-            {
-                if (itr->getSource()->GetObjectGuid() == m_leaderGuid)
-                {
-                    leader = itr->getSource();
-                    break;
-                }
-            }
-
-            if (!leader || !leader->IsInWorld())
-                m_leaderLogoutTime = time(NULL);
+            pLeader = itr->getSource();
+            break;
         }
     }
+
+    if (!pLeader || !pLeader->IsInWorld())
+        m_waitLeaderTimer = sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD) * IN_MILLISECONDS;
 }
 
 Player* Group::GetMemberWithRole(GroupFlagMask role)
@@ -693,6 +699,7 @@ void Group::Disband(bool hideDestroy)
 
         _homebindIfInstance(player);
     }
+
     RollId.clear();
     m_memberSlots.clear();
 
@@ -715,6 +722,7 @@ void Group::Disband(bool hideDestroy)
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, false, NULL);
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, true, NULL);
     }
+
     if (GetObjectGuid())
         sObjectMgr.RemoveGroup(this);
 
@@ -1334,17 +1342,23 @@ void Group::SendUpdate()
     }
 }
 
-void Group::Update(uint32 /*diff*/)
+void Group::Update(uint32 diff)
 {
-    if (!m_leaderLogoutTime)
+    if (!m_waitLeaderTimer)
         return;
 
-    time_t nowTime = time(NULL);
-
-    if (nowTime >= m_leaderLogoutTime + sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD))
+    if (m_waitLeaderTimer > diff)
     {
-        ChangeLeaderToFirstSuitableMember();
-        m_leaderLogoutTime = 0;
+        m_waitLeaderTimer -= diff;
+        return;
+    }
+
+    m_waitLeaderTimer = 0;
+
+    if (!ChangeLeaderToFirstSuitableMember())
+    {
+        if (RemoveMember(m_leaderGuid, 0) <= 1)
+            delete this;
     }
 }
 
@@ -1961,8 +1975,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         ++allowedPlayerCount;
     }
 
-    if(bgOrTemplate->GetTypeID() == BATTLEGROUND_AA)
-        if(allowedPlayerCount < MinPlayerCount || allowedPlayerCount > MaxPlayerCount)
+    if (bgOrTemplate->isArena() && (allowedPlayerCount < MinPlayerCount || allowedPlayerCount > MaxPlayerCount))
             return ERR_ARENA_TEAM_PARTY_SIZE;
 
     return GroupJoinBattlegroundResult(bgOrTemplate->GetTypeID());

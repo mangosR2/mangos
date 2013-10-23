@@ -1745,7 +1745,7 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool IsInSameGroupWith(Player const* p) const;
         bool IsInSameRaidWith(Player const* p) const { return p == this || (GetGroupGuid() && GetGroupGuid() == p->GetGroupGuid()); }
         void UninviteFromGroup();
-        void RemoveFromGroup();
+        void RemoveFromGroup(bool logout = false);
         void SendUpdateToOutOfRangeGroupMembers();
         void SetAllowLowLevelRaid(bool allow) { ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_ENABLE_LOW_LEVEL_RAID, allow); }
         bool GetAllowLowLevelRaid() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_ENABLE_LOW_LEVEL_RAID); }
