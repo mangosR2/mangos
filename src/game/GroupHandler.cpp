@@ -175,6 +175,8 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
             delete group;
             return;
         }
+        sObjectMgr.AddGroup(group);
+        DEBUG_LOG("WorldSession::HandleGroupInviteOpcode %s send invite to %s, try create %s.",GetPlayer()->GetObjectGuid().GetString().c_str(), player->GetObjectGuid().GetString().c_str(),group->GetObjectGuid().GetString().c_str());
     }
     else
     {
@@ -183,6 +185,7 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recv_data)
         {
             return;
         }
+        DEBUG_LOG("WorldSession::HandleGroupInviteOpcode %s send invite to %s",GetPlayer()->GetObjectGuid().GetString().c_str(), player->GetObjectGuid().GetString().c_str());
     }
 
     SendGroupInvite(player);
@@ -231,7 +234,11 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& recv_data)
             sObjectMgr.AddGroup(group);
         else
             return;
+
+        DEBUG_LOG("WorldSession::HandleGroupAcceptOpcode %s accept group invite, %s created.",GetPlayer()->GetObjectGuid().GetString().c_str(), group->GetObjectGuid().GetString().c_str());
     }
+    else
+        DEBUG_LOG("WorldSession::HandleGroupAcceptOpcode %s accept %s invite.",GetPlayer()->GetObjectGuid().GetString().c_str(), group->GetObjectGuid().GetString().c_str());
 
     // everything is fine, do it, PLAYER'S GROUP IS SET IN ADDMEMBER!!!
     if (!group->AddMember(GetPlayer()->GetObjectGuid(), GetPlayer()->GetName()))
@@ -253,6 +260,8 @@ void WorldSession::HandleGroupDeclineOpcode(WorldPacket& /*recv_data*/ )
 
     // remember leader if online
     Player* leader = sObjectMgr.GetPlayer(group->GetLeaderGuid());
+
+    DEBUG_LOG("WorldSession::HandleGroupDeclineOpcode %s tried to decline %s invite",GetPlayer()->GetObjectGuid().GetString().c_str(), group->GetObjectGuid().GetString().c_str());
 
     // uninvite, group can be deleted
     GetPlayer()->UninviteFromGroup();
@@ -284,6 +293,8 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket & recv_data)
     Group* grp = GetPlayer()->GetGroup();
     if (!grp)
         return;
+
+    DEBUG_LOG("WorldSession::HandleGroupUninviteGuidOpcode %s tried to be uninvited from  %s",guid.GetString().c_str(), grp->GetObjectGuid().GetString().c_str());
 
     if (grp->IsMember(guid) && grp->isLFGGroup())
     {
@@ -329,11 +340,14 @@ void WorldSession::HandleGroupUninviteOpcode(WorldPacket & recv_data)
         return;
     }
 
+
     Group* grp = GetPlayer()->GetGroup();
     if (!grp)
         return;
 
     ObjectGuid guid = grp->GetMemberGuid(membername);
+
+    DEBUG_LOG("WorldSession::HandleGroupUninviteOpcode %s tried to be uninvited from  %s",guid.GetString().c_str(), grp->GetObjectGuid().GetString().c_str());
 
     if (grp->IsMember(guid) && grp->isLFGGroup())
     {
@@ -372,7 +386,9 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recv_data)
     if (!group)
         return;
 
-    Player *player = sObjectMgr.GetPlayer(guid);
+    Player* player = sObjectMgr.GetPlayer(guid);
+
+    DEBUG_LOG("WorldSession::HandleGroupSetLeaderOpcode: %s tried to be setted as leader of %s",guid.GetString().c_str(), group->GetObjectGuid().GetString().c_str());
 
     /** error handling **/
     if (!player || !group->IsLeader(GetPlayer()->GetObjectGuid()) || player->GetGroup() != group)

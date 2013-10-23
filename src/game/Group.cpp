@@ -110,6 +110,7 @@ Group::~Group()
 
     if (GetObjectGuid())
     {
+        DEBUG_LOG("Group::~Group: %s type %u has ben deleted.", GetObjectGuid().GetString().c_str(), m_groupType);
         // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
         // will be unloaded first so we must be prepared for both cases
         // this may unload some dungeon persistent state
@@ -118,6 +119,7 @@ Group::~Group()
         // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
         sObjectMgr.RemoveGroup(this);
     }
+    else sLog.outError("Group::~Group: not fully created group type %u has ben deleted.", m_groupType);
 
     // Sub group counters clean up
     if (m_subGroupsCounts)
