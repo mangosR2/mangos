@@ -255,7 +255,7 @@ class MANGOS_DLL_SPEC Group
         void   RemoveAllInvites();
         bool   AddLeaderInvite(Player *player);
         bool   AddMember(ObjectGuid guid, const char* name);
-        uint32 RemoveMember(ObjectGuid guid, uint8 method); // method: 0=just remove, 1=kick
+        uint32 RemoveMember(ObjectGuid guid, uint8 method, bool logout = false); // method: 0=just remove, 1=kick
         void   RemoveGroupBuffsOnMemberRemove(ObjectGuid guid);
         void   ChangeLeader(ObjectGuid guid);
         void CheckLeader(ObjectGuid const& guid, bool logout);

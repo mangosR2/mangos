@@ -108,7 +108,7 @@ void VehicleKit::RemoveAllPassengers()
  * Checks a specific seat for empty
  * If seatId < 0, every seat check
  */
-bool VehicleKit::HasEmptySeat(int8 seatId) const
+bool VehicleKit::HasEmptySeat(SeatId seatId) const
 {
     if (seatId < 0)
         return (GetNextEmptySeatWithFlag(0) != -1);
@@ -126,7 +126,7 @@ bool VehicleKit::HasEmptySeat(int8 seatId) const
  * return next free seat with a specific vehicleSeatFlag
  * -1 will returned if no free seat found
  */
-int8 VehicleKit::GetNextEmptySeatWithFlag(int8 seatId, bool next /*= true*/, uint32 vehicleSeatFlag /*= 0 */) const
+SeatId VehicleKit::GetNextEmptySeatWithFlag(SeatId seatId, bool next /*= true*/, uint32 vehicleSeatFlag /*= 0 */) const
 {
 
     if (m_Seats.empty() || seatId >= MAX_VEHICLE_SEAT)
@@ -148,7 +148,7 @@ int8 VehicleKit::GetNextEmptySeatWithFlag(int8 seatId, bool next /*= true*/, uin
     return -1;
 }
 
-Unit* VehicleKit::GetPassenger(int8 seatId) const
+Unit* VehicleKit::GetPassenger(SeatId seatId) const
 {
     SeatMap::const_iterator seat = m_Seats.find(seatId);
 
@@ -184,7 +184,7 @@ Position VehicleKit::CalculateSeatPositionOf(VehicleSeatEntry const* seatInfo) c
     return pos;
 }
 
-bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
+bool VehicleKit::AddPassenger(Unit* passenger, SeatId seatId)
 {
     SeatMap::iterator seat;
 
@@ -522,7 +522,7 @@ void VehicleKit::InstallAccessory(VehicleAccessory const* accessory)
         sLog.outError("Vehicle::InstallAccessory cannot summon creature id %u (seat %u of %s)", accessory->passengerEntry, accessory->seatId, GetBase()->GetGuidStr().c_str());
 }
 
-void VehicleKit::InstallAccessory(int8 seatID)
+void VehicleKit::InstallAccessory(SeatId seatID)
 {
     SQLMultiStorage::SQLMSIteratorBounds<VehicleAccessory> const& bounds = sVehicleAccessoryStorage.getBounds<VehicleAccessory>(GetBase()->GetEntry());
     for (SQLMultiStorage::SQLMultiSIterator<VehicleAccessory> itr = bounds.first; itr != bounds.second; ++itr)
@@ -556,28 +556,35 @@ void VehicleKit::UpdateFreeSeatCount()
 
 VehicleSeatEntry const* VehicleKit::GetSeatInfo(Unit* passenger)
 {
-    if (m_Seats.empty())
+    if (m_Seats.empty() || !passenger || passenger->GetMap() != GetBase()->GetMap())
         return NULL;
 
+    return GetSeatInfo(passenger->GetObjectGuid());
+}
+
+VehicleSeatEntry const* VehicleKit::GetSeatInfo(ObjectGuid const& guid)
+{
     for (SeatMap::const_iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
-        ObjectGuid guid = itr->second.passenger;
-        if (Unit* pPassenger = GetBase()->GetMap()->GetUnit(guid))
-        {
-            if (pPassenger == passenger)
-                return itr->second.seatInfo;
-        }
+        if (guid == itr->second.passenger)
+            return itr->second.seatInfo;
     }
     return NULL;
 }
 
-int8 VehicleKit::GetSeatId(Unit* passenger)
+SeatId VehicleKit::GetSeatId(Unit* passenger)
+{
+    if (m_Seats.empty() || !passenger || passenger->GetMap() != GetBase()->GetMap())
+        return -1;
+    return GetSeatId(passenger->GetObjectGuid());
+}
+
+SeatId VehicleKit::GetSeatId(ObjectGuid const& guid)
 {
     for (SeatMap::iterator itr = m_Seats.begin(); itr != m_Seats.end(); ++itr)
     {
-        if (Unit* pPassenger = GetBase()->GetMap()->GetUnit(itr->second.passenger))
-            if (pPassenger == passenger)
-                return itr->first;
+        if (guid == itr->second.passenger)
+            return itr->first;
     }
     return -1;
 }
@@ -722,7 +729,7 @@ void VehicleKit::DisableDismount(Unit* passenger)
     if (!passenger)
         return;
 
-    int8 seatId = GetSeatId(passenger);
+    SeatId seatId = GetSeatId(passenger);
     if (seatId == -1)
         return;
 
