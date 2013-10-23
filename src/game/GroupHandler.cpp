@@ -396,7 +396,7 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recv_data)
     /********************/
 
     // everything is fine, do it
-    sLFGMgr.GetLFGPlayerState(GetPlayer()->GetObjectGuid())->RemoveRole(ROLE_LEADER);
+    GetPlayer()->GetLFGPlayerState()->RemoveRole(ROLE_LEADER);
     group->ChangeLeader(guid);
 }
 
