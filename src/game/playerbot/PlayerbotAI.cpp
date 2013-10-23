@@ -1158,7 +1158,7 @@ void PlayerbotAI::HandleBotOutgoingPacket(const WorldPacket& packet)
         {
             if (m_bot->GetGroupInvite())
             {
-                const Group* const grp = m_bot->GetGroupInvite();
+                Group const* grp = sObjectMgr.GetGroup(m_bot->GetGroupInvite());
                 if (!grp)
                     return;
 

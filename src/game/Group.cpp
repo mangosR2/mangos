@@ -83,7 +83,7 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
     m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
     m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
-    m_LFGState(LFGGroupState(this)), m_leaderLogoutTime(0)
+    m_LFGState(LFGGroupState(this)), m_waitLeaderTimer(0)
 {
 }
 
@@ -140,7 +140,8 @@ bool Group::Create(ObjectGuid guid, const char* name)
     SetDungeonDifficulty(DUNGEON_DIFFICULTY_NORMAL);
     SetRaidDifficulty(RAID_DIFFICULTY_10MAN_NORMAL);
 
-    m_Guid = ObjectGuid(HIGHGUID_GROUP, sObjectMgr.GenerateGroupLowGuid());
+    if (!GetObjectGuid())
+        m_Guid = ObjectGuid(HIGHGUID_GROUP, sObjectMgr.GenerateGroupLowGuid());
 
     if (!isBGGroup())
     {
@@ -297,7 +298,7 @@ bool Group::AddInvite(Player* player)
 
     m_invitees.insert(player);
 
-    player->SetGroupInvite(this);
+    player->SetGroupInvite(GetObjectGuid());
 
     return true;
 }
@@ -306,6 +307,10 @@ bool Group::AddLeaderInvite(Player* player)
 {
     if (!AddInvite(player))
         return false;
+
+    // Group may be added without Create() call - need make ObjectGuid manually
+    if (!GetObjectGuid())
+        m_Guid = ObjectGuid(HIGHGUID_GROUP, sObjectMgr.GenerateGroupLowGuid());
 
     m_leaderGuid = player->GetObjectGuid();
     m_leaderName = player->GetName();
@@ -316,14 +321,14 @@ uint32 Group::RemoveInvite(Player *player)
 {
     m_invitees.erase(player);
 
-    player->SetGroupInvite(NULL);
+    player->SetGroupInvite(ObjectGuid());
     return GetMembersCount();
 }
 
 void Group::RemoveAllInvites()
 {
     for (InvitesList::iterator itr = m_invitees.begin(); itr!=m_invitees.end(); ++itr)
-        (*itr)->SetGroupInvite(NULL);
+        (*itr)->SetGroupInvite(ObjectGuid());
 
     m_invitees.clear();
 }
@@ -405,8 +410,8 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
         // Broadcast group members' fields to player
         for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
         {
-            if (itr->getSource() == player)
-                continue;
+//            if (itr->getSource() == player)
+//                continue;
 
             if (Player* member = itr->getSource())
             {
@@ -443,11 +448,13 @@ bool Group::AddMember(ObjectGuid guid, const char* name)
     return true;
 }
 
-uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
+uint32 Group::RemoveMember(ObjectGuid guid, uint8 method, bool logout /*=false*/)
 {
     // Frozen Mod
     BroadcastGroupUpdate();
     // Frozen Mod
+
+    RemoveGroupBuffsOnMemberRemove(guid);
 
     if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
     {
@@ -455,6 +462,10 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
         if (player && player->GetPlayerbotMgr())
             player->GetPlayerbotMgr()->RemoveAllBotsFromGroup();
     }
+
+    // wait to leader reconnect
+    if (logout && IsLeader(guid))
+        return m_memberSlots.size();
 
     // remove member and change leader (if need) only if strong more 2 members _before_ member remove
     if (GetMembersCount() > uint32(isBGGroup() ? 1 : 2))    // in BG group case allow 1 members group
@@ -510,6 +521,29 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method)
     return m_memberSlots.size();
 }
 
+void Group::RemoveGroupBuffsOnMemberRemove(ObjectGuid guid)
+{
+    // Attention! player may be NULL (offline)
+    Player* pLeaver = sObjectMgr.GetPlayer(guid);
+
+    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
+    {
+        if (Player* pGroupGuy = itr->getSource())
+        {
+            // dont remove my auras from myself, also skip offlined
+            if (pGroupGuy->GetObjectGuid() == guid)
+                continue;
+
+            // remove all buffs cast by me from group members before leaving
+            pGroupGuy->RemoveAllGroupBuffsFromCaster(guid);
+
+            // remove from me all buffs cast by group members
+            if (pLeaver)
+                pLeaver->RemoveAllGroupBuffsFromCaster(pGroupGuy->GetObjectGuid());
+        }
+    }
+}
+
 void Group::ChangeLeader(ObjectGuid guid)
 {
     member_citerator slot = _getMemberCSlot(guid);
@@ -526,35 +560,35 @@ void Group::ChangeLeader(ObjectGuid guid)
     SendUpdate();
 }
 
-void Group::CheckLeader(ObjectGuid const& guid, bool isLogout)
+void Group::CheckLeader(ObjectGuid const& guid, bool logout)
 {
     if (IsLeader(guid))
     {
-        if (isLogout)
-            m_leaderLogoutTime = time(NULL);
+        if (logout)
+            m_waitLeaderTimer = sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD) * IN_MILLISECONDS;
         else
-            m_leaderLogoutTime = 0;
+            m_waitLeaderTimer = 0;
+        return;
     }
-    else
+
+    // normal member logins
+    if (logout || m_waitLeaderTimer)
+        return;
+
+    Player* pLeader = NULL;
+
+    // find the leader from group members
+    for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
     {
-        if (!isLogout && !m_leaderLogoutTime) // normal member logins
+        if (itr->getSource()->GetObjectGuid() == m_leaderGuid)
         {
-            Player* leader = NULL;
-
-            // find the leader from group members
-            for (GroupReference* itr = GetFirstMember(); itr != NULL; itr = itr->next())
-            {
-                if (itr->getSource()->GetObjectGuid() == m_leaderGuid)
-                {
-                    leader = itr->getSource();
-                    break;
-                }
-            }
-
-            if (!leader || !leader->IsInWorld())
-                m_leaderLogoutTime = time(NULL);
+            pLeader = itr->getSource();
+            break;
         }
     }
+
+    if (!pLeader || !pLeader->IsInWorld())
+        m_waitLeaderTimer = sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD) * IN_MILLISECONDS;
 }
 
 Player* Group::GetMemberWithRole(GroupFlagMask role)
@@ -661,6 +695,7 @@ void Group::Disband(bool hideDestroy)
 
         _homebindIfInstance(player);
     }
+
     RollId.clear();
     m_memberSlots.clear();
 
@@ -683,6 +718,7 @@ void Group::Disband(bool hideDestroy)
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, false, NULL);
         ResetInstances(INSTANCE_RESET_GROUP_DISBAND, true, NULL);
     }
+
     if (GetObjectGuid())
         sObjectMgr.RemoveGroup(this);
 
@@ -1302,17 +1338,23 @@ void Group::SendUpdate()
     }
 }
 
-void Group::Update(uint32 /*diff*/)
+void Group::Update(uint32 diff)
 {
-    if (!m_leaderLogoutTime)
+    if (!m_waitLeaderTimer)
         return;
 
-    time_t nowTime = time(NULL);
-
-    if (nowTime >= m_leaderLogoutTime + sWorld.getConfig(CONFIG_UINT32_GROUPLEADER_RECONNECT_PERIOD))
+    if (m_waitLeaderTimer > diff)
     {
-        ChangeLeaderToFirstSuitableMember();
-        m_leaderLogoutTime = 0;
+        m_waitLeaderTimer -= diff;
+        return;
+    }
+
+    m_waitLeaderTimer = 0;
+
+    if (!ChangeLeaderToFirstSuitableMember())
+    {
+        if (RemoveMember(m_leaderGuid, 0) <= 1)
+            delete this;
     }
 }
 
@@ -1434,7 +1476,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name, uint8 group, GroupFlag
 
     if (player)
     {
-        player->SetGroupInvite(NULL);
+        player->SetGroupInvite(ObjectGuid());
         //if player is in group and he is being added to BG raid group, then call SetBattleGroundRaid()
         if (player->GetGroup() && isBGGroup())
             player->SetBattleGroundRaid(GetObjectGuid(), group);
@@ -1929,8 +1971,7 @@ GroupJoinBattlegroundResult Group::CanJoinBattleGroundQueue(BattleGround const* 
         ++allowedPlayerCount;
     }
 
-    if(bgOrTemplate->GetTypeID() == BATTLEGROUND_AA)
-        if(allowedPlayerCount < MinPlayerCount || allowedPlayerCount > MaxPlayerCount)
+    if (bgOrTemplate->isArena() && (allowedPlayerCount < MinPlayerCount || allowedPlayerCount > MaxPlayerCount))
             return ERR_ARENA_TEAM_PARTY_SIZE;
 
     return GroupJoinBattlegroundResult(bgOrTemplate->GetTypeID());

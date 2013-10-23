@@ -430,7 +430,7 @@ Player::Player (WorldSession *session): Unit(), m_mover(this), m_camera(NULL), m
     m_social = NULL;
 
     // group is initialized in the reference constructor
-    SetGroupInvite(NULL);
+    SetGroupInvite(ObjectGuid());
     m_groupUpdateMask = 0;
     m_auraUpdateMask = 0;
 
@@ -2592,60 +2592,32 @@ bool Player::IsInSameGroupWith(Player const* p) const
 /// \todo Shouldn't we also check if there is no other invitees before disbanding the group?
 void Player::UninviteFromGroup()
 {
-    Group* group = GetGroupInvite();
+    Group* group = sObjectMgr.GetGroup(GetGroupInvite());
     if (!group)
+    {
+        SetGroupInvite(ObjectGuid());
         return;
+    }
 
     group->RemoveInvite(this);
 
     if (group->GetMembersCount() <= 1)                       // group has just 1 member => disband
     {
-        if (group->IsCreated())
-        {
-            group->Disband(true);
-            sObjectMgr.RemoveGroup(group);
-        }
-        else
-            group->RemoveAllInvites();
-
+        group->RemoveAllInvites();
+        group->Disband(true);
         delete group;
     }
 }
 
-void Player::RemoveFromGroup(Group* group, ObjectGuid guid)
+void Player::RemoveFromGroup(bool logout /*=false*/)
 {
-    if (group)
+    if (Group* group = GetGroup())
     {
-        // remove all auras affecting only group members
-        Player *pLeaver = sObjectMgr.GetPlayer(guid);
-        if (pLeaver)
-        {
-            for (GroupReference *itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
-            {
-                if (Player *pGroupGuy = itr->getSource())
-                {
-                    // dont remove my auras from myself
-                    if (pGroupGuy->GetObjectGuid() == guid)
-                        continue;
-
-                    // remove all buffs cast by me from group members before leaving
-                    pGroupGuy->RemoveAllGroupBuffsFromCaster(guid);
-
-                    // remove from me all buffs cast by group members
-                    pLeaver->RemoveAllGroupBuffsFromCaster(pGroupGuy->GetObjectGuid());
-                }
-            }
-        }
-
-        // remove member from group
-        if (group->RemoveMember(guid, 0) <= 1)
-        {
-            // group->Disband(); already disbanded in RemoveMember
-            sObjectMgr.RemoveGroup(group);
+        if (group->RemoveMember(GetObjectGuid(), 0, logout) <= 1)
             delete group;
-            // removemember sets the player's group pointer to NULL
-        }
     }
+    else
+        SetGroup(ObjectGuid());
 }
 
 void Player::SendLogXPGain(uint32 GivenXP, Unit* victim, uint32 BonusXP, bool ReferAFriend)
@@ -4277,9 +4249,12 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
     {
         uint32 groupId = (*resultGroup)[0].GetUInt32();
         delete resultGroup;
-        Group* group = sObjectMgr.GetGroupById(groupId);
-        if (group)
-            RemoveFromGroup(group, playerguid);
+        ObjectGuid groupGuid = ObjectGuid(HIGHGUID_GROUP, groupId);
+
+        if (Group* group = sObjectMgr.GetGroup(groupGuid))
+        {
+            group->RemoveMember(playerguid, 0);
+        }
     }
 
     // remove signs from petitions (also remove petitions if owner);
@@ -20678,12 +20653,8 @@ void Player::SendPetComboPoints(Unit* pet, ObjectGuid targetGuid, uint8 combopoi
 
 void Player::SetGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (guid.IsEmpty())
-    {
-        m_groupGuid.Clear();
-        m_group.unlink();
-        return;
-    }
+    m_groupGuid.Clear();
+    m_group.unlink();
 
     Group* group = sObjectMgr.GetGroup(guid);
 
@@ -20694,7 +20665,6 @@ void Player::SetGroup(ObjectGuid const& guid, int8 subgroup)
 
     // never use SetGroup without a subgroup unless you specify NULL for group
     MANGOS_ASSERT(subgroup >= 0);
-    m_group.unlink();
     m_group.link(group, this);
     m_group.setSubGroup((uint8)subgroup);
 }
@@ -21988,12 +21958,8 @@ void Player::RemoveFromBattleGroundRaid()
 
 void Player::SetOriginalGroup(ObjectGuid const& guid, int8 subgroup)
 {
-    if (guid.IsEmpty())
-    {
-        m_originalGroupGuid.Clear();
-        m_originalGroup.unlink();
-        return;
-    }
+    m_originalGroupGuid.Clear();
+    m_originalGroup.unlink();
 
     Group* group = sObjectMgr.GetGroup(guid);
 
@@ -22004,7 +21970,6 @@ void Player::SetOriginalGroup(ObjectGuid const& guid, int8 subgroup)
 
     // never use SetOriginalGroup without a subgroup unless you specify NULL for group
     MANGOS_ASSERT(subgroup >= 0);
-    m_originalGroup.unlink();
     m_originalGroup.link(group, this);
     m_originalGroup.setSubGroup((uint8)subgroup);
 }
