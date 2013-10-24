@@ -335,9 +335,9 @@ Unit::~Unit()
     MANGOS_ASSERT(m_deletedHolders.size() == 0);
 }
 
-void Unit::Update( uint32 update_diff, uint32 p_time )
+void Unit::Update(uint32 update_diff, uint32 p_time)
 {
-    if(!IsInWorld())
+    if (!IsInWorld())
         return;
 
     /*if (p_time > m_AurasCheck)
@@ -370,7 +370,7 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
         getThreatManager().UpdateForClient(update_diff);
 
     // update combat timer only for players and pets
-    if (isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (m_CombatTimer && isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
     {
         // Check UNIT_STAT_MELEE_ATTACKING or UNIT_STAT_CHASE (without UNIT_STAT_FOLLOW in this case) so pets can reach far away
         // targets without stopping half way there and running off.
@@ -387,12 +387,12 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
 
     if (uint32 base_att = getAttackTimer(BASE_ATTACK))
     {
-        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (uint32 base_att = getAttackTimer(OFF_ATTACK))
     {
-        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (IsVehicle() && !IsInEvadeMode())
@@ -407,11 +407,11 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     }
 
     // update abilities available only for fraction of time
-    UpdateReactives( update_diff );
+    UpdateReactives(update_diff);
 
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth()*0.20f);
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth()*0.35f);
-    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth()*0.75f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
+    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth() * 0.75f);
     UpdateSplineMovement(p_time);
     GetUnitStateMgr().Update(p_time);
 }
