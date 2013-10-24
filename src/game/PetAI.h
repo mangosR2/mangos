@@ -60,13 +60,11 @@ enum
     ALLIES_UPDATE_TIME = 10*IN_MILLISECONDS,
 };
 
-class MANGOS_DLL_SPEC PetAI : public CreatureAI
+class MANGOS_DLL_DECL PetAI : public CreatureAI
 {
     public:
 
         explicit PetAI(Creature *c);
-		
-		~PetAI();
 
         void Reset();
 

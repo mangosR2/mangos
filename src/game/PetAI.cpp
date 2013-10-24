@@ -37,9 +37,6 @@ int PetAI::Permissible(const Creature *creature)
     return PERMIT_BASE_NO;
 }
 
-PetAI::~PetAI()
-{}
-
 PetAI::PetAI(Creature* c) : CreatureAI(c), inCombat(false)
 {
     Reset();

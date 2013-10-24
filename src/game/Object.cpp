@@ -1407,7 +1407,7 @@ float WorldObject::GetAngle(const float x, const float y) const
 bool WorldObject::HasInArc(const float arcangle, const float x, const float y) const
 {
     // always have self in arc
-    if(x == m_positionX && y == m_positionY)
+    if(x == m_position.x && y == m_position.y)
         return true;
 
     float arc = arcangle;
@@ -1419,7 +1419,8 @@ bool WorldObject::HasInArc(const float arcangle, const float x, const float y) c
         arc +=  2.0f * M_PI_F;
 
     float angle = GetAngle( x, y );
-    angle -= m_orientation;
+	//FIXME
+    //angle -= m_orientation;
 
     // move angle to range -pi ... +pi
     while( angle > M_PI_F)
