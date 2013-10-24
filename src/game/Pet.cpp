@@ -28,6 +28,7 @@
 #include "PetAI.h"
 #include "Unit.h"
 #include "Util.h"
+#include "Totem.h"
 
 Pet::Pet(PetType type) :
 Creature(CREATURE_SUBTYPE_PET),

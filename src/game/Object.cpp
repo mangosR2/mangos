@@ -1202,6 +1202,16 @@ float WorldObject::GetDistance(WorldLocation const& loc) const
     return (dist > M_NULL_F ? dist : 0.0f);
 }
 
+float WorldObject::GetDistanceSqr(float x, float y, float z) const
+{
+    float dx = GetPositionX() - x;
+    float dy = GetPositionY() - y;
+    float dz = GetPositionZ() - z;
+    float sizefactor = GetObjectBoundingRadius();
+    float dist = dx*dx+dy*dy+dz*dz-sizefactor;
+    return (dist > 0 ? dist : 0);
+}
+
 float WorldObject::GetDistance2d(float x, float y) const
 {
     float sizefactor = GetObjectBoundingRadius();
@@ -1392,6 +1402,34 @@ float WorldObject::GetAngle(const float x, const float y) const
     float ang = atan2(dy, dx);                              // returns value between -Pi..Pi
     ang = (ang >= 0) ? ang : 2 * M_PI_F + ang;
     return MapManager::NormalizeOrientation(ang);
+}
+
+bool WorldObject::HasInArc(const float arcangle, const float x, const float y) const
+{
+    // always have self in arc
+    if(x == m_positionX && y == m_positionY)
+        return true;
+
+    float arc = arcangle;
+
+    // move arc to range 0.. 2*pi
+    while( arc >= 2.0f * M_PI_F )
+        arc -=  2.0f * M_PI_F;
+    while( arc < 0 )
+        arc +=  2.0f * M_PI_F;
+
+    float angle = GetAngle( x, y );
+    angle -= m_orientation;
+
+    // move angle to range -pi ... +pi
+    while( angle > M_PI_F)
+        angle -= 2.0f * M_PI_F;
+    while(angle < -M_PI_F)
+        angle += 2.0f * M_PI_F;
+
+    float lborder =  -1 * (arc/2.0f);                       // in range -pi..0
+    float rborder = (arc/2.0f);                             // in range 0..pi
+    return (( angle >= lborder ) && ( angle <= rborder ));
 }
 
 bool WorldObject::HasInArc(const float arcangle, const WorldObject* obj) const

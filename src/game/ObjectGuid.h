@@ -275,7 +275,7 @@ typedef ACE_Based::LockedVector<ObjectGuid> GuidVector;
 
 class PackedGuid
 {
-    friend ByteBuffer& operator<< (ByteBuffer& buf, PackedGuid const& guid);
+    friend MANGOS_DLL_SPEC ByteBuffer& operator<< (ByteBuffer& buf, PackedGuid const& guid);
 
     public:                                                 // constructors
         explicit PackedGuid() : m_packedGuid(PACKED_GUID_MIN_BUFFER_SIZE) { m_packedGuid.appendPackGUID(0); }
