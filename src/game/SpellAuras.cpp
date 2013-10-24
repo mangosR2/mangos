@@ -8281,18 +8281,24 @@ void Aura::HandleAuraUntrackable(bool apply, bool /*Real*/)
 void Aura::HandleAuraModPacify(bool apply, bool Real)
 {
     // only at real add/remove aura
-    if(!Real)
+    if (!Real)
         return;
 
-    if (!GetTarget())
+    Unit* pTarget = GetTarget();
+    if (!pTarget)
         return;
 
     if (apply)
-        GetTarget()->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+    {
+        pTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+        pTarget->AttackStop();
+    }
     else
-        if (!GetTarget()->HasAuraType(SPELL_AURA_MOD_PACIFY) &&
-            !GetTarget()->HasAuraType(SPELL_AURA_MOD_PACIFY_SILENCE))
-            GetTarget()->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+    {
+        if (!pTarget->HasAuraType(SPELL_AURA_MOD_PACIFY) &&
+            !pTarget->HasAuraType(SPELL_AURA_MOD_PACIFY_SILENCE))
+            pTarget->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+    }
 }
 
 void Aura::HandleAuraModPacifyAndSilence(bool apply, bool Real)
@@ -9758,8 +9764,8 @@ void Aura::PeriodicDummyTick()
                     }
                     return;
                 }
-                case 61968:                                 // Flash Freeze 
-                { 
+                case 61968:                                 // Flash Freeze
+                {
                     if (GetAuraTicks() == 1 && !target->HasAura(62464))
                         target->CastSpell(target, 61970, true, NULL, this);
                     return;
@@ -9775,10 +9781,10 @@ void Aura::PeriodicDummyTick()
                     target->CastSpell(target, 62020, true, NULL, this);
                     return;
                 }
-                case 62038:                                 // Biting Cold 
-                { 
+                case 62038:                                 // Biting Cold
+                {
                     if (target->GetTypeId() != TYPEID_PLAYER)
-                        return; 
+                        return;
 
                     // if player is moving remove one aura stack
                     if (((Player*)target)->isMoving())
@@ -9788,10 +9794,10 @@ void Aura::PeriodicDummyTick()
                         target->CastSpell(target, 62039, true, NULL, this);
                     return;
                 }
-                case 62039:                                 // Biting Cold 
-                { 
-                    target->CastSpell(target, 62188, true); 
-                    return; 
+                case 62039:                                 // Biting Cold
+                {
+                    target->CastSpell(target, 62188, true);
+                    return;
                 }
                 case 62566:                                 // Healthy Spore Summon Periodic
                 {
@@ -9864,10 +9870,10 @@ void Aura::PeriodicDummyTick()
                     }
                     return;
                 }
-                case 65272:                                 // Shatter Chest 
-                { 
-                    target->CastSpell(target, 62501, true, NULL, this); 
-                    return; 
+                case 65272:                                 // Shatter Chest
+                {
+                    target->CastSpell(target, 62501, true, NULL, this);
+                    return;
                 }
                 case 67574:                                // Trial Of Crusader (Spike Aggro Aura - Anub'arak)
                 {
