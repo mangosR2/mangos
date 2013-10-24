@@ -38,7 +38,7 @@ MapManager::MapManager()
 
 MapManager::~MapManager()
 {
-    Guard guard(*this);
+    RemoveAllObjectsInRemoveList();
     i_maps.clear();
 }
 
