@@ -674,9 +674,9 @@ TerrainInfo::TerrainInfo(uint32 mapid) : m_mapId(mapid)
     }
 
     // clean up GridMap objects every minute
-    uint32 const iCleanUpInterval = 60;
+    const uint32 iCleanUpInterval = 60;
     // schedule start randlomly
-    uint32 const iRandomStart = urand(20, 40);
+    const uint32 iRandomStart = urand(20, 40);
 
     i_timer.SetInterval(iCleanUpInterval * 1000);
     i_timer.SetCurrent(iRandomStart * 1000);
@@ -692,7 +692,7 @@ TerrainInfo::~TerrainInfo()
     MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(m_mapId);
 }
 
-GridMap* TerrainInfo::Load(uint32 const& x, uint32 const& y)
+GridMap* TerrainInfo::Load(const uint32 x, const uint32 y)
 {
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
@@ -701,7 +701,7 @@ GridMap* TerrainInfo::Load(uint32 const& x, uint32 const& y)
     RefGrid(x, y);
 
     // quick check if GridMap already loaded
-    GridMap* pMap = GetGridMap(x, y);
+    GridMap* pMap = m_GridMaps[x][y];
     if (!pMap)
         pMap = LoadMapAndVMap(x, y);
 
@@ -709,12 +709,12 @@ GridMap* TerrainInfo::Load(uint32 const& x, uint32 const& y)
 }
 
 // schedule lazy GridMap object cleanup
-void TerrainInfo::Unload(uint32 const& x, uint32 const& y)
+void TerrainInfo::Unload(const uint32 x, const uint32 y)
 {
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    if (GetGridMap(x, y))
+    if (m_GridMaps[x][y])
     {
         // decrease grid reference count...
         if (UnrefGrid(x, y) == 0)
@@ -726,7 +726,7 @@ void TerrainInfo::Unload(uint32 const& x, uint32 const& y)
 }
 
 // call this method only
-void TerrainInfo::CleanUpGrids(uint32 const diff)
+void TerrainInfo::CleanUpGrids(const uint32 diff)
 {
     i_timer.Update(diff);
     if (!i_timer.Passed())
@@ -737,12 +737,11 @@ void TerrainInfo::CleanUpGrids(uint32 const diff)
         for (int x = 0; x < MAX_NUMBER_OF_GRIDS; ++x)
         {
             const int16& iRef = m_GridRef[x][y];
-            GridMap* pMap = GetGridMap(x,y);
+            GridMap* pMap = m_GridMaps[x][y];
 
             // delete those GridMap objects which have refcount = 0
             if (pMap && iRef == 0)
             {
-                WriteGuard Guard(GetLock(), true);
                 m_GridMaps[x][y] = NULL;
                 // delete grid data if reference count == 0
                 pMap->unloadData();
@@ -760,23 +759,23 @@ void TerrainInfo::CleanUpGrids(uint32 const diff)
     i_timer.Reset();
 }
 
-int TerrainInfo::RefGrid(uint32 const& x, uint32 const& y)
+int TerrainInfo::RefGrid(const uint32& x, const uint32& y)
 {
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
-    WriteGuard Guard(GetLock(), true);
+    LOCK_GUARD _lock(m_refMutex);
     return (m_GridRef[x][y] += 1);
 }
 
-int TerrainInfo::UnrefGrid(uint32 const& x, uint32 const& y)
+int TerrainInfo::UnrefGrid(const uint32& x, const uint32& y)
 {
     MANGOS_ASSERT(x < MAX_NUMBER_OF_GRIDS);
     MANGOS_ASSERT(y < MAX_NUMBER_OF_GRIDS);
 
     int16& iRef = m_GridRef[x][y];
 
-    WriteGuard Guard(GetLock(), true);
+    LOCK_GUARD _lock(m_refMutex);
     if (iRef > 0)
         return (iRef -= 1);
 
@@ -1155,7 +1154,7 @@ float TerrainInfo::GetWaterOrGroundLevel(float x, float y, float z, float* pGrou
     return VMAP_INVALID_HEIGHT_VALUE;
 }
 
-GridMap* TerrainInfo::GetGrid(float const& x, float const& y)
+GridMap* TerrainInfo::GetGrid(const float x, const float y)
 {
     // half opt method
     int gx = (int)(32 - x / SIZE_OF_GRIDS);                 // grid x
@@ -1166,19 +1165,20 @@ GridMap* TerrainInfo::GetGrid(float const& x, float const& y)
         return NULL;
 
     // quick check if GridMap already loaded
-    GridMap* pMap = GetGridMap(gx,gy);
+    GridMap* pMap = m_GridMaps[gx][gy];
     if (!pMap)
         pMap = LoadMapAndVMap(gx, gy);
 
     return pMap;
 }
 
-GridMap* TerrainInfo::LoadMapAndVMap(uint32 const& x, uint32 const& y)
+GridMap* TerrainInfo::LoadMapAndVMap(const uint32 x, const uint32 y)
 {
     // double checked lock pattern
-    if (!GetGridMap(x, y))
+    if (!m_GridMaps[x][y])
     {
-        WriteGuard Guard(GetLock(), true);
+        LOCK_GUARD lock(m_mutex);
+
         if (!m_GridMaps[x][y])
         {
             GridMap* map = new GridMap();
@@ -1220,7 +1220,8 @@ GridMap* TerrainInfo::LoadMapAndVMap(uint32 const& x, uint32 const& y)
             MMAP::MMapFactory::createOrGetMMapManager()->loadMap(m_mapId, x, y);
         }
     }
-    return GetGridMap(x, y);
+
+    return  m_GridMaps[x][y];
 }
 
 float TerrainInfo::GetWaterLevel(float x, float y, float z, float* pGround /*= NULL*/) const
@@ -1249,15 +1250,6 @@ bool TerrainInfo::IsNextZcoordOK(float x, float y, float oldZ, float maxDiff) co
     return ((fabs(GetHeightStatic(x, y, oldZ, true) - oldZ) < maxDiff ) || (fabs(GetHeightStatic(x, y, oldZ, false) - oldZ) < maxDiff ));
 }
 
-GridMap* TerrainInfo::GetGridMap(uint32 const& x, uint32 const& y)
-{
-    if (x >= MAX_NUMBER_OF_GRIDS || y >= MAX_NUMBER_OF_GRIDS)
-        return NULL;
-
-    ReadGuard Guard(GetLock(), true);
-    return m_GridMaps[x][y];
-}
-
 //////////////////////////////////////////////////////////////////////////
 INSTANTIATE_SINGLETON_1(TerrainManager);
 
@@ -1267,20 +1259,21 @@ TerrainManager::TerrainManager()
 
 TerrainManager::~TerrainManager()
 {
-    i_TerrainMap.clear();
+    for (TerrainDataMap::iterator it = i_TerrainMap.begin(); it != i_TerrainMap.end(); ++it)
+        delete it->second;
 }
 
-TerrainInfoPtr TerrainManager::LoadTerrain(uint32 const& mapId)
+TerrainInfo* TerrainManager::LoadTerrain(uint32 const& mapId)
 {
-    TerrainInfoPtr ptr = TerrainInfoPtr();
+    TerrainInfo* ptr = NULL;
     TerrainDataMap::const_iterator iter = i_TerrainMap.find(mapId);
     if (iter == i_TerrainMap.end())
     {
-        ptr = TerrainInfoPtr(new TerrainInfo(mapId));
-        i_TerrainMap.insert(TerrainDataMap::value_type(mapId,ptr));
+        ptr = new TerrainInfo(mapId);
+        i_TerrainMap[mapId] = ptr;
     }
     else
-        ptr = iter->second;
+        ptr = (*iter).second;
 
     return ptr;
 }
@@ -1293,11 +1286,12 @@ void TerrainManager::UnloadTerrain(uint32 const& mapId)
     TerrainDataMap::iterator iter = i_TerrainMap.find(mapId);
     if (iter != i_TerrainMap.end())
     {
-        // lets check if this object can be actually freed (1 count SmartPtr in container, 1 count in map, from there called UnloadTerrain()
-        if (iter->second.count() < 3)
+        TerrainInfo* ptr = (*iter).second;
+        // lets check if this object can be actually freed
+        if (ptr->IsReferenced() == false)
         {
             i_TerrainMap.erase(iter);
-            // TerrainInfo data be auto-deleted if last link to smartPtr erased (in Map destructor).
+            delete ptr;
         }
     }
 }
@@ -1311,6 +1305,9 @@ void TerrainManager::Update(uint32 const& diff)
 
 void TerrainManager::UnloadAll()
 {
+    for (TerrainDataMap::iterator it = i_TerrainMap.begin(); it != i_TerrainMap.end(); ++it)
+        delete it->second;
+
     i_TerrainMap.clear();
 }
 

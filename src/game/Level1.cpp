@@ -2100,8 +2100,8 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
             return false;
         }
 
-        TerrainInfoPtr gridMap = sTerrainMgr.LoadTerrain(mapid);
-        z = gridMap->GetWaterOrGroundLevel(x, y, MAX_HEIGHT);
+        TerrainInfo const* map = sTerrainMgr.LoadTerrain(mapid);
+        z = map->GetWaterOrGroundLevel(x, y, MAX_HEIGHT);
     }
 
     player->InterruptTaxiFlying();
