@@ -28,7 +28,6 @@ class LinkedListElement
 {
     private:
 
-        MANGOSR2_ATOMIC_LOCK_TYPE RefLock;
         friend class LinkedListHead;
 
         LinkedListElement* iNext;
@@ -36,58 +35,17 @@ class LinkedListElement
 
     public:
 
-        LinkedListElement() : RefLock(0), iNext(NULL), iPrev(NULL)
-        {}
-        virtual ~LinkedListElement() { delink(); }
+        LinkedListElement()  { iNext = NULL; iPrev = NULL; }
+        ~LinkedListElement() { delink(); }
 
         bool hasNext() const  { return (iNext != NULL && iNext->iNext != NULL); }
         bool hasPrev() const  { return (iPrev != NULL && iPrev->iPrev != NULL); }
         bool isInList() const { return (iNext != NULL && iPrev != NULL); }
 
-        LinkedListElement*       next()
-        {
-            if (hasNext())
-            {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement* ret = iNext;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement const* next() const
-        {
-            if (hasNext())
-            {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement const* ret = iNext;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement*       prev()
-        {
-            if (hasPrev())
-            {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement* ret = iPrev;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
-        LinkedListElement const* prev() const
-        {
-            if (hasPrev())
-            {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-                LinkedListElement const* ret = iPrev;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
-                return ret;
-            }
-            return NULL;
-        }
+        LinkedListElement      * next()       { return hasNext() ? iNext : NULL; }
+        LinkedListElement const* next() const { return hasNext() ? iNext : NULL; }
+        LinkedListElement      * prev()       { return hasPrev() ? iPrev : NULL; }
+        LinkedListElement const* prev() const { return hasPrev() ? iPrev : NULL; }
 
         LinkedListElement      * nocheck_next()       { return iNext; }
         LinkedListElement const* nocheck_next() const { return iNext; }
@@ -98,33 +56,27 @@ class LinkedListElement
         {
             if (isInList())
             {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
                 iNext->iPrev = iPrev;
                 iPrev->iNext = iNext;
                 iNext = NULL;
                 iPrev = NULL;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
             }
         }
 
         void insertBefore(LinkedListElement* pElem)
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iNext = this;
             pElem->iPrev = iPrev;
             iPrev->iNext = pElem;
             iPrev = pElem;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         void insertAfter(LinkedListElement* pElem)
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             pElem->iPrev = this;
             pElem->iNext = iNext;
             iNext->iPrev = pElem;
             iNext = pElem;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 };
 
@@ -134,48 +86,41 @@ class LinkedListHead
 {
     private:
 
-        MANGOSR2_ATOMIC_LOCK_TYPE RefLock;
         LinkedListElement iFirst;
         LinkedListElement iLast;
         uint32 iSize;
 
     public:
 
-        LinkedListHead() : RefLock(0)
+        LinkedListHead()
         {
             // create empty list
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
+
             iFirst.iNext = &iLast;
             iLast.iPrev = &iFirst;
             iSize = 0;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
-        bool isEmpty() const { MANGOSR2_ATOMIC_LOCK_WAIT(RefLock); return (!iFirst.iNext->isInList()); }
+        bool isEmpty() const { return (!iFirst.iNext->isInList()); }
 
-        LinkedListElement      * getFirst()       { MANGOSR2_ATOMIC_LOCK_WAIT(RefLock); return (isEmpty() ? NULL : iFirst.iNext); }
-        LinkedListElement const* getFirst() const { MANGOSR2_ATOMIC_LOCK_WAIT(RefLock); return (isEmpty() ? NULL : iFirst.iNext); }
+        LinkedListElement      * getFirst()       { return (isEmpty() ? NULL : iFirst.iNext); }
+        LinkedListElement const* getFirst() const { return (isEmpty() ? NULL : iFirst.iNext); }
 
-        LinkedListElement      * getLast()        { MANGOSR2_ATOMIC_LOCK_WAIT(RefLock); return (isEmpty() ? NULL : iLast.iPrev); }
-        LinkedListElement const* getLast() const  { MANGOSR2_ATOMIC_LOCK_WAIT(RefLock); return (isEmpty() ? NULL : iLast.iPrev); }
+        LinkedListElement      * getLast()        { return (isEmpty() ? NULL : iLast.iPrev); }
+        LinkedListElement const* getLast() const  { return (isEmpty() ? NULL : iLast.iPrev); }
 
         void insertFirst(LinkedListElement* pElem)
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             iFirst.insertAfter(pElem);
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         void insertLast(LinkedListElement* pElem)
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             iLast.insertBefore(pElem);
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         uint32 getSize() const
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             if (!iSize)
             {
                 uint32 result = 0;
@@ -187,15 +132,14 @@ class LinkedListHead
                     e = e->next();
                 }
 
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
                 return result;
             }
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
-            return iSize;
+            else
+                return iSize;
         }
 
-        void incSize() { MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock); ++iSize; MANGOSR2_ATOMIC_LOCK_END(RefLock); }
-        void decSize() { MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock); --iSize; MANGOSR2_ATOMIC_LOCK_END(RefLock); }
+        void incSize() { ++iSize; }
+        void decSize() { --iSize; }
 
         template<class _Ty>
         class Iterator

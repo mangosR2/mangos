@@ -28,7 +28,6 @@ class Reference : public LinkedListElement
 {
     private:
 
-        MANGOSR2_ATOMIC_LOCK_TYPE RefLock;
         TO* iRefTo;
         FROM* iRefFrom;
 
@@ -46,11 +45,11 @@ class Reference : public LinkedListElement
     public:
 
         Reference()
-            : RefLock(0), iRefTo(NULL), iRefFrom(NULL)
-        {}
+            : iRefTo(NULL), iRefFrom(NULL)
+        {
+        }
 
-        virtual ~Reference() 
-        {}
+        virtual ~Reference() {}
 
         // Create new link
         void link(TO* toObj, FROM* fromObj)
@@ -61,10 +60,8 @@ class Reference : public LinkedListElement
 
             if (toObj != NULL)
             {
-                MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
                 iRefTo = toObj;
                 iRefFrom = fromObj;
-                MANGOSR2_ATOMIC_LOCK_END(RefLock);
                 targetObjectBuildLink();
             }
         }
@@ -75,10 +72,8 @@ class Reference : public LinkedListElement
         {
             targetObjectDestroyLink();
             delink();
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             iRefTo = NULL;
             iRefFrom = NULL;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         // Link is invalid due to destruction of referenced target object. Call comes from the refTo object
@@ -87,17 +82,12 @@ class Reference : public LinkedListElement
         {
             sourceObjectDestroyLink();
             delink();
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
             iRefTo = NULL;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
         }
 
         bool isValid() const                                // Only check the iRefTo
         {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-            bool ret = iRefTo != NULL;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
-            return ret;
+            return iRefTo != NULL;
         }
 
         Reference<TO, FROM>*       next()       { return ((Reference<TO, FROM>*) LinkedListElement::next()); }
@@ -110,28 +100,10 @@ class Reference : public LinkedListElement
         Reference<TO, FROM>*       nocheck_prev()       { return ((Reference<TO, FROM>*) LinkedListElement::nocheck_prev()); }
         Reference<TO, FROM> const* nocheck_prev() const { return ((Reference<TO, FROM> const*) LinkedListElement::nocheck_prev()); }
 
-        TO* operator->() const 
-        {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-            TO* ret = iRefTo;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
-            return ret;
-        }
-        TO* getTarget() const
-        {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-            TO* ret = iRefTo;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
-            return ret;
-        }
+        TO* operator->() const { return iRefTo; }
+        TO* getTarget() const { return iRefTo; }
 
-        FROM* getSource() const
-        {
-            MANGOSR2_ATOMIC_LOCK_BEGIN(RefLock);
-            FROM* ret = iRefFrom;
-            MANGOSR2_ATOMIC_LOCK_END(RefLock);
-            return ret;
-        }
+        FROM* getSource() const { return iRefFrom; }
 };
 
 //=====================================================
