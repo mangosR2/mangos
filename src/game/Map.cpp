@@ -2201,22 +2201,20 @@ void Map::RemoveUpdateObject(ObjectGuid const& guid)
     i_objectsToClientUpdate.erase(guid);
 }
 
+ObjectGuid Map::GetNextObjectFromUpdateQueue()
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    ObjectGuid guid = i_objectsToClientUpdate.empty() ? ObjectGuid::Null : *i_objectsToClientUpdate.begin();
+    i_objectsToClientUpdate.erase(guid);
+    return guid;
+}
+ 
 void Map::SendObjectUpdates()
 {
-    UpdateDataMapType update_players;
+    UpdateDataMapType update_players = UpdateDataMapType();
 
-    while (!GetObjectsUpdateQueue()->empty())
+    while (ObjectGuid guid = GetNextObjectFromUpdateQueue())
     {
-        ObjectGuid guid;
-        {
-            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            guid = *i_objectsToClientUpdate.begin();
-            i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
-        }
-
-        if (guid.IsEmpty())
-            continue;
-
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {

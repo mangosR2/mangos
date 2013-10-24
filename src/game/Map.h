@@ -361,6 +361,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void AddUpdateObject(ObjectGuid const& guid);
         void RemoveUpdateObject(ObjectGuid const& guid);
         GuidSet const* GetObjectsUpdateQueue() { return &i_objectsToClientUpdate; };
+        ObjectGuid GetNextObjectFromUpdateQueue();
 
         // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);
