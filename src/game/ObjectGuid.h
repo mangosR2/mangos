@@ -269,6 +269,7 @@ class MANGOS_DLL_SPEC ObjectGuid
 typedef UNORDERED_SET<ObjectGuid> GuidSet;
 typedef ACE_Based::LockedVector<ObjectGuid> GuidList;
 typedef ACE_Based::LockedVector<ObjectGuid> GuidVector;
+typedef std::queue<ObjectGuid> GuidQueue;
 
 //minimum buffer size for packed guid is 9 bytes
 #define PACKED_GUID_MIN_BUFFER_SIZE 9
