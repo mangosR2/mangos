@@ -173,7 +173,9 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
     targets.Update(pUser);
 
-    if (!pItem->IsTargetValidForItemUse(targets.getUnitTarget()))
+    Unit* pTarget = pUser->GetMap()->GetUnit(pUser->GetTargetGuid());
+
+    if (!pItem->IsTargetValidForItemUse(pTarget))
     {
         // free gray item after use fail
         pUser->SendEquipError(EQUIP_ERR_NONE, pItem, NULL);
