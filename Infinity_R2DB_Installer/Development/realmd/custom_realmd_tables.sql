@@ -833,6 +833,7 @@ INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','AD5A8CBF55EC436DA968EE0B9744C93F65D9E0D6E3C1B136','','174688','37','',NULL);
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','9B6B3B311BA9007C06CF0D146BB979B11CF295C58768DD4F','','31924','23','',NULL);
 INSERT INTO `warden_data_result` (`check`, `data`, `str`, `address`, `length`, `result`, `comment`) values('191','A373FDB6A789CC46072A4CC51A429C817C40862DC6C0190F','','30012','16','',NULL);
+
 -- Warden data from TOM_RUS
 INSERT INTO `warden_data_result`(`check`,`data`,`str`,`address`,`length`,`result`,`comment`) VALUES
 (178,'07F223143C69271AA2A851FECF6DC883A9D3A7DBA6FE26CC','',710730,23,'',NULL),
@@ -1622,8 +1623,6 @@ INSERT INTO `warden_data_result`(`check`,`data`,`str`,`address`,`length`,`result
 (243,'','',8054762,2,'7506','Collision WMD'),
 (243,'','',9995315,2,'7544','Multi-Jump Patch');
 
-ALTER TABLE realmd_db_version CHANGE COLUMN required_10008_01_realmd_realmd_db_version required_12112_01_realmd_account_access bit;
-
 DROP TABLE IF EXISTS `account_access`;
 CREATE TABLE `account_access` (
   `id` int(10) unsigned NOT NULL,
@@ -1631,12 +1630,6 @@ CREATE TABLE `account_access` (
   `RealmID` int(11) NOT NULL DEFAULT '-1',
   PRIMARY KEY (`id`,`RealmID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Account Access System';
-
-INSERT IGNORE INTO `account_access` (`id`,`gmlevel`,`RealmID`) 
-    SELECT `id`, `gmlevel`, -1 FROM `account` 
-    WHERE `account`.`gmlevel` > 0;
-
-ALTER TABLE `account` DROP `gmlevel`;
 
 DROP TABLE IF EXISTS `multi_IP_whitelist`;
 CREATE TABLE `multi_IP_whitelist` (
