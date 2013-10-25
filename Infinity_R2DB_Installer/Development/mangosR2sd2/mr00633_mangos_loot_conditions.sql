@@ -1,12 +1,4 @@
-SET @ConditionEntry := 30000;
-REPLACE INTO `conditions` (`condition_entry`, `type`, `value1`, `value2`) VALUES
-(@ConditionEntry    , 18, 0, 0), -- INSTANCE_CONDITION_ID_NORMAL_MODE
-(@ConditionEntry + 1, 18, 1, 0), -- INSTANCE_CONDITION_ID_HARD_MODE
-(@ConditionEntry + 2, 18, 2, 0), -- INSTANCE_CONDITION_ID_HARD_MODE_2
-(@ConditionEntry + 3, 18, 3, 0), -- INSTANCE_CONDITION_ID_HARD_MODE_3
-(@ConditionEntry + 4, 18, 4, 0), -- INSTANCE_CONDITION_ID_HARD_MODE_4
-(@ConditionEntry + 5, 18, 5, 0), -- INSTANCE_CONDITION_ID_TEAM_HORDE
-(@ConditionEntry + 6, 18, 6, 0); -- INSTANCE_CONDITION_ID_TEAM_ALLIANCE
+SET @ConditionEntry := 1807;
 
 /*
 For use conditions system for limiting loot by SD2 always use:
@@ -15,8 +7,6 @@ For use conditions system for limiting loot by SD2 always use:
 @ConditionEntry + 2 for INSTANCE_CONDITION_ID_HARD_MODE_2
 @ConditionEntry + 3 for INSTANCE_CONDITION_ID_HARD_MODE_3
 @ConditionEntry + 4 for INSTANCE_CONDITION_ID_HARD_MODE_4
-@ConditionEntry + 5 for INSTANCE_CONDITION_ID_TEAM_HORDE
-@ConditionEntry + 6 for INSTANCE_CONDITION_ID_TEAM_ALLIANCE
 */
 -- --------------- --
 -- Flame Leviathan --
