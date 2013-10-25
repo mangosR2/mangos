@@ -1,6 +1,13 @@
 /*
-* Ebon Hold
+* Ebon Hold (DK Starting Area) - 2013 - 
 */
+
+-- ------------
+-- Special npcs
+-- ------------
+
+UPDATE `creature_template` SET `ScriptName` = 'npc_valkyr_battle_maiden' WHERE `entry` = '28534';
+
 
 -- --------------------------------------------------------------------
 -- Quest Fix Noth Special Brew  (dk starting area quest fix 12716/12717
