@@ -2655,9 +2655,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                         target->CastSpell(target, 48331, true);   //Cast Swirl Sword
                         target->CastSpell(target, 54159, true);   //Cast Remove Equipment
                         return;
-                    case 43885:                             // Headless Horseman - Horseman Laugh, Maniacal
-                        target->PlayDirectSound(11965);     // triggered by spells delaying laugh
-                        return;
                     case 50756:                             // Drakos Shpere Passive
                         target->CastSpell(target, 50758, true);
                         return;
