@@ -370,7 +370,7 @@ void Unit::Update(uint32 update_diff, uint32 p_time)
         getThreatManager().UpdateForClient(update_diff);
 
     // update combat timer only for players and pets
-    if (m_CombatTimer && isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
     {
         // Check UNIT_STAT_MELEE_ATTACKING or UNIT_STAT_CHASE (without UNIT_STAT_FOLLOW in this case) so pets can reach far away
         // targets without stopping half way there and running off.
