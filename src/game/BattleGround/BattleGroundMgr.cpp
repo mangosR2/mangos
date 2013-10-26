@@ -1756,9 +1756,9 @@ void BattleGroundMgr::BuildBattleGroundListPacket(WorldPacket* data, ObjectGuid 
     if (!plr)
         return;
 
-    uint32 win_kills = plr->GetRandomWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
-    uint32 win_arena = plr->GetRandomWinner() ? BG_REWARD_WINNER_ARENA_LAST : BG_REWARD_WINNER_ARENA_FIRST;
-    uint32 loos_kills = plr->GetRandomWinner() ? BG_REWARD_LOOSER_HONOR_LAST : BG_REWARD_LOOSER_HONOR_FIRST;
+    uint32 win_kills = plr->IsRandomBGWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
+    uint32 win_arena = plr->IsRandomBGWinner() ? BG_REWARD_WINNER_ARENA_LAST : BG_REWARD_WINNER_ARENA_FIRST;
+    uint32 loos_kills = plr->IsRandomBGWinner() ? BG_REWARD_LOOSER_HONOR_LAST : BG_REWARD_LOOSER_HONOR_FIRST;
 
     win_kills = (uint32)MaNGOS::Honor::hk_honor_at_level(plr->getLevel(), win_kills*4);
     loos_kills = (uint32)MaNGOS::Honor::hk_honor_at_level(plr->getLevel(), loos_kills*4);
@@ -1771,7 +1771,7 @@ void BattleGroundMgr::BuildBattleGroundListPacket(WorldPacket* data, ObjectGuid 
     *data << uint8(0);                                      // unk
 
     // Rewards
-    *data << uint8( plr->GetRandomWinner() );               // 3.3.3 hasWin
+    *data << uint8(plr->IsRandomBGWinner());               // 3.3.3 hasWin
     *data << uint32( win_kills );                           // 3.3.3 winHonor
     *data << uint32( win_arena );                           // 3.3.3 winArena
     *data << uint32( loos_kills );                          // 3.3.3 lossHonor
@@ -1781,7 +1781,7 @@ void BattleGroundMgr::BuildBattleGroundListPacket(WorldPacket* data, ObjectGuid 
     if (isRandom)
     {
         // Rewards (random)
-        *data << uint8( plr->GetRandomWinner() );           // 3.3.3 hasWin_Random
+        *data << uint8(plr->IsRandomBGWinner());            // 3.3.3 hasWin_Random
         *data << uint32( win_kills );                       // 3.3.3 winHonor_Random
         *data << uint32( win_arena );                       // 3.3.3 winArena_Random
         *data << uint32( loos_kills );                      // 3.3.3 lossHonor_Random

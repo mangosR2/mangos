@@ -2172,8 +2172,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CanUseBattleGroundObject();
         bool isTotalImmune();
 
-        bool GetRandomWinner() { return m_IsBGRandomWinner; }
-        void SetRandomWinner(bool isWinner);
+        void SetRandomBGWinner(bool winner);
+        bool IsRandomBGWinner() { return m_isRandomBGWinner; }
 
         /*********************************************************/
         /***                 OUTDOOR PVP SYSTEM                ***/
@@ -2459,7 +2459,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         BgBattleGroundQueueID_Rec m_bgBattleGroundQueueID[PLAYER_MAX_BATTLEGROUND_QUEUES];
         BGData                    m_bgData;
-        bool m_IsBGRandomWinner;
+
+        bool m_isRandomBGWinner;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
