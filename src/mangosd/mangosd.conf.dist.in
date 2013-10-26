@@ -1003,6 +1003,11 @@ LexicsCutterNoActionOnGM = 1
 #        Default: 0 - disable, default mangos pet AI style
 #                 1 - enable, pet returns below 20% life to owner
 #
+#    Custom.PetScale
+#        Change the base pet scale
+#        Default: 1 (Near-Blizzlike)
+#    NOTE: Do not know what will happen when set higher
+#
 #    RaidFlags.Unique
 #        Set raid flags (assistant, main assistant, main tank) unique in raid
 #        Default: 0 - flags not unique
@@ -1147,6 +1152,7 @@ PetUnsummonAtMount = 1
 PetSaveAllInDB = 0
 PetAdvancedAI = 0
 PetAdvancedAIWithSlacker = 0
+Custom.PetScale = 1
 RaidFlags.Unique = 0
 AllowFlightOnOldMaps = 0
 ClientCacheVersion = 0

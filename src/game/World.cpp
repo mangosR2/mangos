@@ -1153,6 +1153,8 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE,  "InstancesResetAnnounce", false);
 
     setConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY, "CreatureRespawnAggroDelay", 5/*sec.*/);
+
+    setConfig(CONFIG_UINT32_BASE_PET_SCALE			, "Custom.PetScale"			, 1);
 }
 
 extern void LoadGameObjectModelList();
