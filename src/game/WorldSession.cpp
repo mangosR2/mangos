@@ -423,7 +423,7 @@ void WorldSession::LogoutPlayer(bool Save)
 
             // build set of player who attack _player or who have pet attacking of _player
             std::set<Player*> aset;
-            GuidSet& attackers = mapPtr->GetAttackersFor(GetPlayer()->GetObjectGuid());
+            GuidSet& attackers = mapPtr->GetAttackersFor(GetPlayer()->GetObjectGuid(), GetPlayer()->GetCachedZoneId());
 
             for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
             {

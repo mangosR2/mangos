@@ -1716,7 +1716,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         void UpdatePvP(bool state, bool bOverride = false);
         void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
-        uint32 GetCachedZoneId() const { return m_zoneUpdateId; }
 
         void UpdateZoneDependentAuras();
         void UpdateAreaDependentAuras();                    // subzones
@@ -2614,7 +2613,6 @@ class MANGOS_DLL_SPEC Player : public Unit
         uint32 m_drunkTimer;
         uint32 m_weaponChangeTimer;
 
-        uint32 m_zoneUpdateId;
         uint32 m_zoneUpdateTimer;
         uint32 m_areaUpdateId;
         uint32 m_positionStatusUpdateTimer;

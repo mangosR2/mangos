@@ -36,17 +36,18 @@ template <class T> class ObjectUpdateRequest : public ACE_Method_Request
     protected:
         T&           m_obj;
         uint32       m_diff;
+        uint32       m_value;
         uint32 const m_startTime;
 
     public:
-        ObjectUpdateRequest(T& m, uint32 diff)
-            : m_obj(m), m_diff(diff), m_startTime(WorldTimer::getMSTime())
+        ObjectUpdateRequest(T& m, uint32 diff, uint32 value = 0)
+            : m_obj(m), m_diff(diff), m_value(value), m_startTime(WorldTimer::getMSTime())
         {
         }
 
         virtual int call()
         {
-            m_obj.Update(m_diff);
+            m_obj.Update(m_diff, m_value);
             return 0;
         }
 
@@ -125,7 +126,7 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
             return itr == m_threadsMap.end() ?  NULL : itr->second->getObject();
         }
 
-        virtual int schedule_update(T& obj, uint32 diff)
+        virtual int schedule_update(T& obj, uint32 diff, uint32 value)
         {
             if (m_round)
             {
@@ -133,7 +134,7 @@ template <class T> class ObjectUpdateTaskBase : protected ACE_Task_Base
                 return -1;
             }
 
-            if (execute(new ObjectUpdateRequest<T>(obj, diff)) == -1)
+            if (execute(new ObjectUpdateRequest<T>(obj, diff, value)) == -1)
             {
                 outError("ObjectUpdateTaskBase::schedule_update failed to schedule Object Update");
                 return -1;

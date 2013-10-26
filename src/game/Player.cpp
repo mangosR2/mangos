@@ -419,7 +419,6 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(NULL), m_
     m_regenTimer = REGEN_TIME_FULL;
     m_weaponChangeTimer = 0;
 
-    m_zoneUpdateId = 0;
     m_zoneUpdateTimer = 0;
     m_positionStatusUpdateTimer = 0;
 
@@ -666,7 +665,7 @@ void Player::CleanupsBeforeDelete()
         DuelComplete(DUEL_INTERRUPTED);
 
         // notify zone scripts for player logout
-        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
+        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, GetCachedZoneId());
     }
 
     Unit::CleanupsBeforeDelete();
@@ -1372,7 +1371,7 @@ void Player::Update(uint32 update_diff, uint32 p_time)
             uint32 newzone, newarea;
             GetZoneAndAreaId(newzone, newarea);
 
-            if (m_zoneUpdateId != newzone)
+            if (GetCachedZoneId() != newzone)
                 UpdateZone(newzone, newarea);               // Also update area
             else
             {
@@ -7110,18 +7109,23 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
     if (!zone)
         return;
 
-    if (m_zoneUpdateId != newZone)
+    if (GetCachedZoneId() != newZone)
     {
         sWorldStateMgr.CreateZoneAreaStateIfNeed(this, newZone, newArea);
 
         // Called when a player leave zone
         if (InstanceData* mapInstance = GetInstanceData())
-            mapInstance->OnPlayerLeaveZone(this, m_zoneUpdateId);
+            mapInstance->OnPlayerLeaveZone(this, GetCachedZoneId());
 
         // handle outdoor pvp zones
-        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, m_zoneUpdateId);
-        sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
+        sOutdoorPvPMgr.HandlePlayerLeaveZone(this, GetCachedZoneId());
 
+        uint32 oldZone = GetCachedZoneId();
+        SetCachedZoneId(newZone);
+        // Update zone in map storage
+        GetMap()->UpdateZone(this, oldZone, newZone);
+
+        sOutdoorPvPMgr.HandlePlayerEnterZone(this, newZone);
         SendInitWorldStates(newZone, newArea);              // only if really enters to new zone, not just area change, works strange...
 
         // call this method in order to handle some scripted zones
@@ -7140,7 +7144,6 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
         }
     }
 
-    m_zoneUpdateId    = newZone;
     m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;
 
     // zone changed, so area changed as well, update it
@@ -21789,9 +21792,9 @@ void Player::SetClientControl(Unit* target, uint8 allowMove)
 void Player::UpdateZoneDependentAuras()
 {
     // Some spells applied at enter into zone (with subzones), aura removed in UpdateAreaDependentAuras that called always at zone->area update
-    SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_zoneUpdateId);
+    SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(GetCachedZoneId());
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-        itr->second->ApplyOrRemoveSpellIfCan(this, m_zoneUpdateId, 0, true);
+        itr->second->ApplyOrRemoveSpellIfCan(this, GetCachedZoneId(), 0, true);
 }
 
 void Player::UpdateAreaDependentAuras()
@@ -21803,8 +21806,8 @@ void Player::UpdateAreaDependentAuras()
         SpellAuraHolderMap const& holdersMap = GetSpellAuraHolderMap();
         for (SpellAuraHolderMap::const_iterator iter = holdersMap.begin(); iter != holdersMap.end(); ++iter)
         {
-            // use m_zoneUpdateId for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases m_zoneUpdateId up-to-date
-            if (iter->second && (sSpellMgr.GetSpellAllowedInLocationError(iter->second->GetSpellProto(), GetMapId(), m_zoneUpdateId, m_areaUpdateId, this) != SPELL_CAST_OK))
+            // use GetCachedZoneId() for speed: UpdateArea called from UpdateZone or instead UpdateZone in both cases GetCachedZoneId() up-to-date
+            if (iter->second && (sSpellMgr.GetSpellAllowedInLocationError(iter->second->GetSpellProto(), GetMapId(), GetCachedZoneId(), m_areaUpdateId, this) != SPELL_CAST_OK))
                 toRemoveSpellList.insert(iter->first);
         }
     }
@@ -21816,7 +21819,7 @@ void Player::UpdateAreaDependentAuras()
     // some auras applied at subzone enter
     SpellAreaForAreaMapBounds saBounds = sSpellMgr.GetSpellAreaForAreaMapBounds(m_areaUpdateId);
     for (SpellAreaForAreaMap::const_iterator itr = saBounds.first; itr != saBounds.second; ++itr)
-        itr->second->ApplyOrRemoveSpellIfCan(this, m_zoneUpdateId, m_areaUpdateId, true);
+        itr->second->ApplyOrRemoveSpellIfCan(this, GetCachedZoneId(), m_areaUpdateId, true);
 }
 
 struct UpdateZoneDependentPetsHelper
@@ -21844,7 +21847,7 @@ struct UpdateZoneDependentPetsHelper
 void Player::UpdateZoneDependentPets()
 {
     // check pet (permanent pets ignored), minipet, guardians (including protector)
-    CallForAllControlledUnits(UpdateZoneDependentPetsHelper(this, m_zoneUpdateId, m_areaUpdateId), CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_MINIPET);
+    CallForAllControlledUnits(UpdateZoneDependentPetsHelper(this, GetCachedZoneId(), m_areaUpdateId), CONTROLLED_PET|CONTROLLED_GUARDIANS|CONTROLLED_MINIPET);
 }
 
 uint32 Player::GetCorpseReclaimDelay(bool pvp) const
@@ -24823,7 +24826,7 @@ void Player::AddUpdateObject(ObjectGuid const& guid)
 
     // Not need add owner to update queue if owner already marked for update.
     if (!IsMarkedForClientUpdate() && GetMap())
-        GetMap()->AddUpdateObject(GetObjectGuid());
+        GetMap()->AddUpdateObject(GetObjectGuid(), GetCachedZoneId());
 }
 
 void Player::RemoveUpdateObject(ObjectGuid const& guid)

@@ -109,9 +109,11 @@ template<> void addUnitState(Creature *obj, CellPair const& cell_pair)
 template <class T>
 void LoadHelper(CellGuidSet const& guid_set, CellPair& cell, GridRefManager<T>& /*m*/, uint32& count, Map* map, GridType& grid, TypeID objectTypeID)
 {
+    Cell _cell(cell);
+    ZoneIndex zoneIdx = map->GetZoneIdx(map->GetTerrain()->GetZoneId(_cell.GridX(), _cell.GridY(), 0.0f));
     for(CellGuidSet::const_iterator i_guid = guid_set.begin(); i_guid != guid_set.end(); ++i_guid)
     {
-        map->AddLoadingObject(new LoadingObjectQueueMember(*i_guid, objectTypeID, grid));
+        map->AddLoadingObject(new LoadingObjectQueueMember(*i_guid, objectTypeID, grid), zoneIdx);
         ++count;
     }
 }

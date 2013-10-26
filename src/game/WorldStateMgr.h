@@ -352,7 +352,7 @@ class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, Ma
         void Update();
 
         // In-map operations
-        void MapUpdate(Map* map);
+        void MapUpdate(Map* map, uint32 zoneId);
 
         // WorldState operations
         WorldState const* CreateWorldState(WorldStateTemplate const* tmpl, uint32 instanceId, uint32 value = UINT32_MAX);

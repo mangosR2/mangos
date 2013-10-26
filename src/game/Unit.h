@@ -1349,7 +1349,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool CanReachWithMeleeAttack(Unit* pVictim, float flat_mod = 0.0f) const;
         uint32 m_extraAttacks;
 
-        bool IsInCombat() const { return GetMap() ? GetMap()->IsInCombat(GetObjectGuid()) : false; }
+        bool IsInCombat() const { return GetMap() ? GetMap()->IsInCombat(GetObjectGuid(), GetCachedZoneId()) : false; }
         Unit* getAttackerForHelper();                       // If someone wants to help, who to give them
         bool Attack(Unit *victim, bool meleeAttack);
         void AttackedBy(Unit* attacker);

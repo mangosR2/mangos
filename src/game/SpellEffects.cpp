@@ -4779,7 +4779,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         ihit->effectMask &= ~(1<<1);
 
                     // not empty (checked), copy
-                    GuidSet& attackers = friendTarget->GetMap()->GetAttackersFor(friendTarget->GetObjectGuid());
+                    GuidSet& attackers = friendTarget->GetMap()->GetAttackersFor(friendTarget->GetObjectGuid(), friendTarget->GetCachedZoneId());
                     if (!attackers.empty())
                     {
                         // selected from list 3

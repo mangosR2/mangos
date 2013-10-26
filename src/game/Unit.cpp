@@ -7223,7 +7223,7 @@ Unit* Unit::getAttackerForHelper()
     if (!IsInCombat())
         return NULL;
 
-    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid(), GetCachedZoneId());
     if (!attackers.empty())
     {
         for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
@@ -7231,7 +7231,7 @@ Unit* Unit::getAttackerForHelper()
             ObjectGuid guid = *itr++;
             Unit* attacker = GetMap()->GetUnit(guid);
             if (!attacker || !attacker->isAlive())
-                GetMap()->RemoveAttackerFor(GetObjectGuid(), guid);
+                GetMap()->RemoveAttackerFor(GetObjectGuid(),guid, GetCachedZoneId());
             else
                 return attacker;
         }
@@ -7322,7 +7322,7 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
 
     m_attackingGuid = victim->GetObjectGuid();
 
-    GetMap()->AddAttackerFor(m_attackingGuid,GetObjectGuid());
+    GetMap()->AddAttackerFor(m_attackingGuid,GetObjectGuid(), GetCachedZoneId());
 
     if (GetTypeId() == TYPEID_UNIT)
     {
@@ -7383,8 +7383,8 @@ bool Unit::AttackStop(bool targetSwitch /*=false*/)
     }
 
     Unit* victim = GetMap()->GetUnit(m_attackingGuid);
-    GetMap()->RemoveAttackerFor(m_attackingGuid, GetObjectGuid());
-    GetMap()->RemoveAttackerFor(GetObjectGuid(), m_attackingGuid);
+    GetMap()->RemoveAttackerFor(m_attackingGuid, GetObjectGuid(), GetCachedZoneId());
+    GetMap()->RemoveAttackerFor(GetObjectGuid(), m_attackingGuid, GetCachedZoneId());
     m_attackingGuid.Clear();
 
     // Clear our target
@@ -7465,7 +7465,7 @@ void Unit::RemoveAllAttackers()
     if (!GetMap())
         return;
 
-    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid(), GetCachedZoneId());
     for (GuidSet::iterator itr = attackers.begin(); !attackers.empty() && itr != attackers.end();)
     {
         ObjectGuid guid = *itr;
@@ -7473,7 +7473,7 @@ void Unit::RemoveAllAttackers()
         if (!attacker || !attacker->AttackStop())
         {
             sLog.outError("Unit::RemoveAllAttackers %s has attacker %s that isn't attacking it!", GetObjectGuid().GetString().c_str(), guid.GetString().c_str());
-            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid);
+            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid, GetCachedZoneId());
         }
         itr = attackers.begin();
     }
@@ -7482,7 +7482,7 @@ void Unit::RemoveAllAttackers()
     if (!attackers.empty())
     {
         sLog.outError("Unit::RemoveAllAttackers %s has %u attackers after step-to-step cleanup!", GetObjectGuid().GetString().c_str(), attackers.size());
-        GetMap()->RemoveAllAttackersFor(GetObjectGuid());
+        GetMap()->RemoveAllAttackersFor(GetObjectGuid(), GetCachedZoneId());
     }
 }
 
@@ -10936,7 +10936,7 @@ bool Unit::SelectHostileTarget(bool withEvade)
     // Note: creature not have targeted movement generator but have attacker in this case
     if (!IsInUnitState(UNIT_ACTION_CHASE))
     {
-        GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+        GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid(), GetCachedZoneId());
 
         for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end(); ++itr)
         {
@@ -13909,7 +13909,7 @@ void Unit::StopAttackFaction(uint32 faction_id)
         }
     }
 
-    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
+    GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid(), GetCachedZoneId());
 
     for (GuidSet::iterator itr = attackers.begin(); itr != attackers.end();)
     {
@@ -13922,7 +13922,7 @@ void Unit::StopAttackFaction(uint32 faction_id)
                 attacker->AttackStop();
         }
         else
-            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid);
+            GetMap()->RemoveAttackerFor(GetObjectGuid(),guid, GetCachedZoneId());
     }
 
     getHostileRefManager().deleteReferencesForFaction(faction_id);

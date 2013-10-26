@@ -89,7 +89,7 @@ void GameObject::AddToWorld()
     WorldObject::AddToWorld();
 
     if (m_model)
-        GetMap()->InsertGameObjectModel(*m_model);
+        GetMap()->InsertGameObjectModel(*m_model, GetCachedZoneId());
 
     EnableCollision(CalculateCurrentCollisionState());
 
@@ -122,8 +122,8 @@ void GameObject::RemoveFromWorld(bool remove)
     }
 
     if (m_model && GetMap())
-        if (GetMap()->ContainsGameObjectModel(*m_model))
-            GetMap()->RemoveGameObjectModel(*m_model);
+        if (GetMap()->ContainsGameObjectModel(*m_model, GetCachedZoneId()))
+            GetMap()->RemoveGameObjectModel(*m_model, GetCachedZoneId());
 
     WorldObject::RemoveFromWorld(remove);
 }
@@ -2299,13 +2299,17 @@ void GameObject::UpdateModel()
 {
     if (!IsInWorld())
         return;
+
     if (m_model)
-        if (GetMap()->ContainsGameObjectModel(*m_model))
-            GetMap()->RemoveGameObjectModel(*m_model);
+        if (GetMap()->ContainsGameObjectModel(*m_model, GetCachedZoneId()))
+            GetMap()->RemoveGameObjectModel(*m_model, GetCachedZoneId());
+
     delete m_model;
+
     m_model = GameObjectModel::construct(this);
+
     if (m_model)
-        GetMap()->InsertGameObjectModel(*m_model);
+        GetMap()->InsertGameObjectModel(*m_model, GetCachedZoneId());
 
     EnableCollision(CalculateCurrentCollisionState());
 }

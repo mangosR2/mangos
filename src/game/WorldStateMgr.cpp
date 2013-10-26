@@ -660,7 +660,7 @@ WorldStateTemplate const* WorldStateMgr::FindTemplate(uint32 stateId, uint32 typ
     return NULL;
 }
 
-void WorldStateMgr::MapUpdate(Map* map)
+void WorldStateMgr::MapUpdate(Map* map, uint32 zoneId)
 {
 //    if (!map)
 //        return;

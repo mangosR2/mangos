@@ -33,10 +33,15 @@
 template<class T>
 inline void MaNGOS::VisibleNotifier::Visit(GridRefManager<T>& m)
 {
-    for (typename GridRefManager<T>::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (typename GridRefManager<T>::iterator iter = m.begin();  iter != m.end();)
     {
-        i_camera.UpdateVisibilityOf(iter->getSource(), i_data, i_visibleNow);
-        i_clientGuids.erase(iter->getSource()->GetObjectGuid());
+        T* obj = iter->getSource();
+        ++iter;
+        if (!obj)
+            continue;
+
+        i_camera.UpdateVisibilityOf(obj, i_data, i_visibleNow);
+        i_clientGuids.erase(obj->GetObjectGuid());
     }
 }
 
@@ -50,14 +55,19 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
     std::vector<uint32> lastUpdateTimeList;
     lastUpdateTimeList.clear();
 
-    for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (CreatureMapType::iterator iter = m.begin();  iter != m.end();)
     {
+        Creature* obj = iter->getSource();
+        ++iter;
+        if (!obj)
+            continue;
+
         ++visitorsCount;
-        lastUpdateTime = iter->getSource()->GetLastUpdateTime();
+        lastUpdateTime = obj->GetLastUpdateTime();
         if (lastUpdateTime == 0)
         {
-            iter->getSource()->SetLastUpdateTime();
-            lastUpdateTime = iter->getSource()->GetLastUpdateTime();
+            obj->SetLastUpdateTime();
+            lastUpdateTime = obj->GetLastUpdateTime();
         }
         lastUpdateTimeList.push_back(lastUpdateTime);
     }
@@ -82,19 +92,24 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
             DEBUG_LOG("Entry: %u, GUID: %u, VisitorCount: %u", iter->getSource()->GetEntry(),iter->getSource()->GetGUIDLow(), VisitorCount);
         }*/
 
-    for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (CreatureMapType::iterator iter = m.begin(); iter != m.end();)
     {
-        lastUpdateTime = iter->getSource()->GetLastUpdateTime();
+        Creature* obj =  iter->getSource();
+        ++iter;
+        if (!obj)
+            continue;
+
+        lastUpdateTime = obj->GetLastUpdateTime();
         diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
 
-        if (diffTime < (iter->getSource()->IsInCombat() ?
+        if (diffTime < (obj->IsInCombat() ?
             sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE) : 5 * sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)) ||
             lastUpdateTime > minUpdateTime)
             continue;
 
-        WorldObject::UpdateHelper helper(iter->getSource());
+        WorldObject::UpdateHelper helper(obj);
         helper.Update(diffTime);
-        iter->getSource()->SetLastUpdateTime();
+        obj->SetLastUpdateTime();
         visitCount++;
         if (visitCount > sWorld.getConfig(CONFIG_UINT32_MAPUPDATE_MAXVISITS))
             break;
@@ -103,16 +118,22 @@ inline void MaNGOS::ObjectUpdater::Visit(CreatureMapType& m)
 
 inline void MaNGOS::ObjectUpdater::Visit(GameObjectMapType& m)
 {
-    for (GameObjectMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (GameObjectMapType::iterator iter = m.begin();  iter != m.end();)
     {
-        uint32 lastUpdateTime = iter->getSource()->GetLastUpdateTime();
+        GameObject* obj = iter->getSource();
+        ++iter;
+        if (!obj)
+            continue;
+
+        uint32 lastUpdateTime = obj->GetLastUpdateTime();
         uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
 
         if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
             continue;
 
-        iter->getSource()->SetLastUpdateTime();
-        WorldObject::UpdateHelper helper(iter->getSource());
+        obj->SetLastUpdateTime();
+
+        WorldObject::UpdateHelper helper(obj);
         helper.Update(i_timeDiff);
     }
 }
@@ -147,9 +168,15 @@ inline void MaNGOS::PlayerRelocationNotifier::Visit(CreatureMapType& m)
     if (!i_player.isAlive() || i_player.IsTaxiFlying())
         return;
 
-    for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (CreatureMapType::iterator iter = m.begin();  iter != m.end();)
     {
+        // Lock need
         Creature* c = iter->getSource();
+        ++iter;
+
+        if (!c)
+            continue;
+
         if (c->isAlive())
             PlayerCreatureRelocationWorker(&i_player, c);
     }
@@ -161,9 +188,15 @@ inline void MaNGOS::CreatureRelocationNotifier::Visit(PlayerMapType& m)
     if (!i_creature.isAlive())
         return;
 
-    for (PlayerMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (PlayerMapType::iterator iter = m.begin();  iter != m.end();)
     {
+        // Lock need
         Player* player = iter->getSource();
+        ++iter;
+
+        if (!player)
+            continue;
+
         if (player->isAlive() && !player->IsTaxiFlying())
             PlayerCreatureRelocationWorker(player, &i_creature);
     }
@@ -175,9 +208,14 @@ inline void MaNGOS::CreatureRelocationNotifier::Visit(CreatureMapType& m)
     if (!i_creature.isAlive())
         return;
 
-    for (CreatureMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
+    for (CreatureMapType::iterator iter = m.begin();  iter != m.end();)
     {
         Creature* c = iter->getSource();
+        ++iter;
+
+        if (!c)
+            continue;
+
         if (c != &i_creature && c->isAlive())
             CreatureCreatureRelocationWorker(c, &i_creature);
     }
