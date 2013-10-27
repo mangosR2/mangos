@@ -547,7 +547,6 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
 
         if (oldMap != newMap)
         {
-            oldMap->Relocation((GameObject*)this, GetPosition());
             // Transport inserted in current map ActiveObjects list
             if (!GetTransportKit()->GetPassengers().empty())
             {
@@ -556,16 +555,13 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
             }
 
             oldMap->Remove((GameObject*)this, false);
-
             SkipUpdate(true);
 
             SetMap(newMap);
 
             Relocate(loc);
-            SetLocationMapId(loc.GetMapId());
-            SetLocationInstanceId(loc.GetInstanceId());
-
             newMap->Add((GameObject*)this);
+            newMap->Relocation((GameObject*)this, loc);
 
             // Transport inserted in current map ActiveObjects list
             if (!GetTransportKit()->GetPassengers().empty())
