@@ -149,7 +149,6 @@ UPDATE creature_template SET ScriptName='npc_doctor' WHERE entry IN (12939,12920
 UPDATE creature_template SET ScriptName='npc_injured_patient' WHERE entry IN (12936,12937,12938,12923,12924,12925);
 UPDATE creature_template SET ScriptName='npc_prof_blacksmith' WHERE entry IN (5164,11145,11146,11176,11177,11178,11191,11192,11193);
 UPDATE creature_template SET ScriptName='npc_prof_leather' WHERE entry IN (7866,7867,7868,7869,7870,7871);
-UPDATE creature_template SET ScriptName='npc_prof_tailor' WHERE entry IN (22208,22212,22213);
 -- disabled, but can be used for custom
 -- UPDATE creature_template SET ScriptName='' WHERE npcflag!=npcflag|65536 AND ScriptName='npc_innkeeper';
 -- UPDATE creature_template SET ScriptName='npc_innkeeper' WHERE npcflag=npcflag|65536;
@@ -538,7 +537,6 @@ INSERT INTO scripted_areatrigger VALUES
 UPDATE creature_template SET ScriptName='npc_eris_havenfire' WHERE entry=14494;
 
 /* EBON HOLD */
-UPDATE creature_template SET ScriptName='npc_valkyr_battle_maiden' WHERE entry=28534;
 UPDATE creature_template SET ScriptName='npc_death_knight_initiate' WHERE entry=28406;
 UPDATE creature_template SET ScriptName='npc_unworthy_initiate_anchor' WHERE entry=29521;
 UPDATE creature_template SET ScriptName='npc_unworthy_initiate' WHERE entry IN (29519,29520,29565,29566,29567);
@@ -550,6 +548,7 @@ UPDATE creature_template SET ScriptName='npc_scarlet_ghoul' WHERE entry=28845;
 UPDATE creature_template SET ScriptName='npc_highlord_darion_mograine' WHERE entry=29173;
 UPDATE creature_template SET ScriptName='npc_fellow_death_knight' WHERE entry IN (29199, 29204, 29200);
 UPDATE creature_template SET ScriptName='npc_lich_king_light_dawn' WHERE entry=29183;
+UPDATE creature_template SET ScriptName='npc_acherus_deathcharger' WHERE entry=28782;
 
 /* ELWYNN FOREST */
 
@@ -1315,7 +1314,11 @@ UPDATE creature_template SET ScriptName='npc_healthy_spore' WHERE entry=33215;
 UPDATE creature_template SET ScriptName='npc_water_spirit' WHERE entry=33202;
 UPDATE creature_template SET ScriptName='npc_snaplasher' WHERE entry=32916;
 UPDATE creature_template SET ScriptName='npc_storm_lasher' WHERE entry=32919;
+UPDATE creature_template SET ScriptName='boss_mimiron' WHERE entry=33350;
 UPDATE creature_template SET ScriptName='boss_leviathan_mk2' WHERE entry=33432;
+UPDATE creature_template SET ScriptName='boss_vx001' WHERE entry=33651;
+UPDATE creature_template SET ScriptName='boss_aerial_unit' WHERE entry=33670;
+UPDATE gameobject_template SET ScriptName='go_big_red_button' WHERE entry=194739;
 DELETE FROM scripted_event_id WHERE id IN (9735,20907,20964,21030,21031,21032,21033,21045,21605,21606,21620);
 INSERT INTO scripted_event_id VALUES
 (9735, 'event_spell_saronite_barrier'), -- Vezax saronite barrier event

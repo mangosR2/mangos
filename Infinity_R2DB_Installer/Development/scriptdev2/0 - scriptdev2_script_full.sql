@@ -3840,9 +3840,6 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1609095,'$gPoppy:Mama;!',0,0,0,434,'scarlet ghoul SAY_GHUL_SPAWN_5'),
 (-1609096,'It puts the ghoul in the pit or else it gets the lash!',0,0,0,25,'gothik the harvester SAY_GOTHIK_THROW_IN_PIT'),
 
-(-1609097,'%s rears up, beckoning you to ride it.',0,2,0,0,'Acherus Deathcharger EMOTE_HORSE_READY'),
-(-1609098,'Impressive, death knight. Return to me in the world of the living for your reward.',0,0,0,2,'Salanar the Horseman SAY_RACE_FINISHED'),
-
 (-1609201,'Soldiers of the Scourge, stand ready! Prepare to unleash your fury upon the Argent Dawn!',14677,1,0,0,'Highlord Darion Mograine'),
 (-1609202,'The sky weeps at the devastation of these lands! Soon, Azeroth\'s futile tears will rain down upon us!',14678,1,0,0,'Highlord Darion Mograine'),
 (-1609203,'Death knights of Acherus, the death march begins!',14681,1,0,0,'Highlord Darion Mograine'),
