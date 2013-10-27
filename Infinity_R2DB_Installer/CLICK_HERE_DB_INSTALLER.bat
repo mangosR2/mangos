@@ -108,23 +108,12 @@ for %%i in (%dbpath4%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\
 if %quick% == off echo.
 if %quick% == off echo This run the r2sd2 sql Updates.
 if %quick% == off set /p yesno=Do you wish to continue? (y/n)
-if %quick% == off if %yesno% neq y if %yesno% neq Y goto Infinity_DB_UPDATES
-
-echo.
-echo Importing World database updates
-
-for %%i in (%dbpath5%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
-
-:Infinity_DB_UPDATES
-if %quick% == off echo.
-if %quick% == off echo This will your DB with Infinity Updates.
-if %quick% == off set /p yesno=Do you wish to continue? (y/n)
 if %quick% == off if %yesno% neq y if %yesno% neq Y goto sd2
 
 echo.
 echo Importing World database updates
 
-for %%i in (%dbpath9%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
+for %%i in (%dbpath5%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
 
 :sd2
 if %quick% == off echo.
@@ -152,12 +141,23 @@ for %%i in (%dbpath1%\*.sql) do if %%i neq %dbpath%\*.sql if %%i neq %dbpath1%\*
 echo.
 echo This will wipe out your current Realm database and replace it.
 set /p yesno=Do you wish to continue? (y/n)
-if %yesno% neq y if %yesno% neq Y goto Run_Last
+if %yesno% neq y if %yesno% neq Y goto Infinity_DB_UPDATES
 
 echo.
 echo Importing Realm database
 
 for %%i in (%dbpath2%\*.sql) do if %%i neq %dbpath%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath3%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %rdb% < %%i
+
+:Infinity_DB_UPDATES
+if %quick% == off echo.
+if %quick% == off echo This will your DB with Infinity Updates.
+if %quick% == off set /p yesno=Do you wish to continue? (y/n)
+if %quick% == off if %yesno% neq y if %yesno% neq Y goto Run_Last
+
+echo.
+echo Importing World database updates
+
+for %%i in (%dbpath9%\*.sql) do if %%i neq %dbpath3%\*.sql if %%i neq %dbpath1%\*.sql if %%i neq %dbpath2%\*.sql echo %%i & %mysql%\mysql -q -s -h %svr% --user=%user% --password=%pass% --port=%port% %wdb% < %%i
 
 :Run_Last
 if %quick% == off echo.

@@ -52,6 +52,8 @@ UPDATE `creature_template` SET `minhealth` = 4906, `maxhealth` = 4906 WHERE `ent
 UPDATE `creature_template` SET `minhealth` = 5398, `maxhealth` = 5398 WHERE `entry` = 28642;
 -- Death Knight init (these are the ones around the DK camp)
 UPDATE `creature_template` SET `minhealth` = 6535, `maxhealth` = 6535 WHERE `entry` = 28406;
+-- Dark Rider
+UPDATE `creature_template` SET `minhealth` = 7842, `maxhealth` = 7842 WHERE `entry` = 28768;
 
 -- Fix creature Spawn Table for health adjustments
 UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28892;
@@ -72,6 +74,7 @@ UPDATE `creature` SET `curhealth` = 5228 WHERE `id` = 28898;
 UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28709;
 UPDATE `creature` SET `curhealth` = 5398 WHERE `id` = 28642;
 UPDATE `creature` SET `curhealth` = 6535 WHERE `id` = 28406;
+UPDATE `creature` SET `curhealth` = 7842 WHERE `id` = 28768;
 
 
 -- ROUGH DRAFT NOT FINSIHED YET
