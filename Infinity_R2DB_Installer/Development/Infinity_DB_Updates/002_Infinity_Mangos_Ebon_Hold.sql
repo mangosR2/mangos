@@ -96,6 +96,47 @@ UPDATE `quest_template` SET `ExclusiveGroup` = 12716 WHERE `entry` = 12716;
 -- some updates to the eye of archerus
 UPDATE `creature_template` SET `minlevel` = 55, `maxlevel` = 55, `unit_flags` = 0, `InhabitType` = 4 WHERE `entry` = 28511;
 
+-- -----------------------------------
+-- Quest The Gift That Keeps On Giving
+-- -----------------------------------
+
+DELETE FROM `spell_script_target` WHERE entry = 52479;
+INSERT INTO `spell_script_target` (entry, type, targetEntry) VALUES
+(52479, 1, 28819),
+(52479, 1, 28822),
+(52479, 1, 28891);
+
+UPDATE `creature_template` SET `AIName` = 'EventAI', `ScriptName` = '' WHERE `entry` = 28846;
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'mob_scarlet_miner' WHERE `entry` = 28822;
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'mob_scarlet_miner' WHERE `entry` = 28819;
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'mob_scarlet_miner' WHERE `entry` = 28891;
+UPDATE `item_template` SET `ScriptName` = 'mob_scarlet_miner' WHERE `entry` = 39253;
+-- INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES ('52514', '1', '28845');
+
+DELETE FROM `world_template` WHERE `map` = 609;
+INSERT INTO `world_template` VALUES (609, 'world_map_ebon_hold');
+
+-- fix to take Quest Item Away at end of quest
+UPDATE `quest_template` SET `ReqItemId1` = 39253, `ReqItemCount1` = 1 WHERE `entry` = 12698;
+
+UPDATE `creature_template` SET `AIName` = 'EventAI', `ScriptName` = '' WHERE `entry` = 28846;
+DELETE FROM `creature_ai_scripts` WHERE `creature_id` = 28846;
+INSERT INTO `creature_ai_scripts` VALUES
+(2884601, 28846, 11, 0, 100, 0, 0, 0, 0, 0, 1, -286100, -286101, -286102, 0, 0, 0, 0, 0, 0, 0, 0, "Scarlet Ghost - Random say at spawn");
+DELETE FROM `creature_ai_texts` WHERE `entry` IN (-286102, -286101, -286100);
+INSERT INTO `creature_ai_texts` VALUES
+(-286100, "Die, Scourge filth!", NULL, NULL, NULL, NULL, NULL, NULL, NULL,NULL, 0, 0, 0, 0, "Scarlet Ghost SAY1"),
+(-286101, "It won't be that easy, friend!", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, "Scarlet Ghost SAY2"),
+(-286102, "I'll take you with me!", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, "Scarlet Ghost SAY3");
+
+/* everything they say
+Scarlet Ghost says: Die, Scourge filth!
+Scarlet Ghost says: I'll take you with me!
+Scarlet Ghost says: It won't be that easy, fiend!
+Scarlet Ghost says: The grave calls to us all!
+Scarlet Ghost says: Vengeance is mine!
+Scarlet Ghost says: YOU KILLED ME!
+*/
 
 -- --------------------------------------------------------
 -- KEEP ALL OTHER ACTIVE SQL ABOVE THIS LINE
