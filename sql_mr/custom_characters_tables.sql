@@ -29,21 +29,16 @@ CREATE TABLE `anticheat_config` (
     PRIMARY KEY (`checktype`)
 ) DEFAULT CHARSET=utf8 PACK_KEYS=0 COMMENT='Anticheat configuration';
 
-DROP TABLE IF EXISTS `anticheat_log`;
+  -- better not drop table here, because of custom data
 CREATE TABLE IF NOT EXISTS `anticheat_log` (
-    `entry` bigint(20) NOT NULL AUTO_INCREMENT,
-    `guid` int(11) unsigned NOT NULL,
     `playername` varchar(32) NOT NULL,
-    `account` int(11) NOT NULL,
     `checktype` mediumint(8) unsigned NOT NULL,
     `alarm_time` datetime NOT NULL,
-    `count` int(11) NOT NULL DEFAULT '1',
-    `Map` smallint(5) NOT NULL DEFAULT '-1',
-    `Level` mediumint(9) NOT NULL DEFAULT '0',
     `reason` varchar(255) NOT NULL DEFAULT 'Unknown',
+    `guid` int(11) unsigned NOT NULL,
     `action1` mediumint(8) NOT NULL default '0',
     `action2` mediumint(8) NOT NULL default '0',
-    PRIMARY KEY (`entry`),
+    PRIMARY KEY (`checktype`, `alarm_time`, `guid`),
     KEY idx_Player (`guid`)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8 COMMENT='Anticheat log table';
 
