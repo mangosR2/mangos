@@ -138,6 +138,45 @@ Scarlet Ghost says: Vengeance is mine!
 Scarlet Ghost says: YOU KILLED ME!
 */
 
+-- -------------------------------------
+-- -- Massacre at Light's point quest 12701
+-- -------------------------------------
+
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_scarlet_miner' WHERE `entry` = 28841;
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_mine_car' WHERE `entry` = 28817;
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_scourge_gryphon' WHERE `entry` = 28864;
+UPDATE `gameobject_template` SET `ScriptName` = 'go_inconspicous_mine_car' WHERE `entry` = 190767;
+UPDATE `creature_template` SET `mechanic_immune_mask` = 0, `flags_extra` = 0 WHERE `entry` = 28864;
+
+-- fixed dispaly of mine cart
+UPDATE `creature_template` SET `modelid_2` = 25703 WHERE `entry` = 28817;
+
+/* Scourge Gryphon */
+UPDATE `creature_template` SET `speed_run` = 2 WHERE `entry` = 28864;
+
+DELETE FROM `creature_template_addon` WHERE (`entry`=28864);
+INSERT INTO `creature_template_addon` (`entry`, `mount`, `bytes1`, `b2_0_sheath`, `b2_1_pvp_state`, `emote`, `moveflags`, `auras`) VALUES (28864, 0, 0, 0, 0, 0, 0, '61453');
+
+-- UPDATE `creature_template` SET `vehicle_id` = 79 WHERE `entry` IN (28833);
+DELETE FROM `creature_spell` WHERE `guid` IN (28833);
+INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `flags`) VALUES
+(28833, 52435, 0, 0, 0, 0),
+(28833, 52576, 1, 0, 0, 0),
+(28833, 52588, 4, 0, 0, 0);
+
+DELETE FROM `creature_spell` WHERE `guid` IN (28887);
+INSERT INTO `creature_spell` (`guid`, `spell`, `index`, `active`, `disabled`, `flags`) VALUES
+(28887, 52435, 0, 0, 0, 0),
+(28887, 52576, 1, 0, 0, 0),
+(28887, 52588, 4, 0, 0, 0);
+
+UPDATE `creature_template` SET `unit_flags` = 4, `mindmg` = 685, `maxdmg` = 715, `armor` = 3232, `attackpower` = 214 WHERE `entry` = 28833;
+UPDATE `creature_template` SET `minhealth` = 26140, `maxhealth` = 26140, `minmana` = 0, `maxmana` = 0, `unit_flags` = 4, `minlevel` = 55, `maxlevel` = 55, `mindmg` = 685, `maxdmg` = 715, `armor` = 3232, `attackpower` = 214 WHERE `entry` = 28887;
+INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
+(52576, 1, 28834),
+(52576, 1, 28886),
+(52576, 1, 28850);
+
 -- --------------------------------------------------------
 -- KEEP ALL OTHER ACTIVE SQL ABOVE THIS LINE
 
