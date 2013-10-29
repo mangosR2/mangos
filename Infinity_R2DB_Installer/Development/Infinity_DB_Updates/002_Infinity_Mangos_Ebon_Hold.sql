@@ -20,7 +20,7 @@ DELETE FROM `vehicle_accessory` WHERE  `vehicle_entry`=28782 AND `seat`=0;
 DELETE FROM `creature_template_addon` WHERE (`entry`=28768);
 INSERT INTO `creature_template_addon` (`entry`, `mount`, `bytes1`, `b2_0_sheath`, `b2_1_pvp_state`, `emote`, `moveflags`, `auras`) VALUES (28768, 25445, 0, 0, 0, 0, 0, '');
 
-UPDATE `npc_spellclick_spells` SET `cast_flags`=1 WHERE  `npc_entry`=28782 AND `spell_id`=52349 AND `quest_start`=12687 AND `quest_start_active`=1 AND `quest_end`=0 AND `cast_flags`=2 AND `condition_id`=0 LIMIT 1;
+UPDATE `npc_spellclick_spells` SET `cast_flags`=1 WHERE  `npc_entry`=28782;
 
 -- Dark Rider ACID
 DELETE FROM `creature_ai_scripts` WHERE (`creature_id`=28768);
@@ -98,7 +98,9 @@ UPDATE `creature_template` SET `minlevel` = 55, `maxlevel` = 55, `unit_flags` = 
 
 
 -- --------------------------------------------------------
--- ACID scripts & Template Fixes for Scarlet Enclave mobs -
+-- KEEP ALL OTHER ACTIVE SQL ABOVE THIS LINE
+
+-- Template Fixes for Entire Ebon Hold (DK STARTING AREA) mobs & ECT- 
 -- --------------------------------------------------------
 
 -- HP Corrections
@@ -136,6 +138,12 @@ UPDATE `creature_template` SET `minhealth` = 5398, `maxhealth` = 5398 WHERE `ent
 UPDATE `creature_template` SET `minhealth` = 6535, `maxhealth` = 6535 WHERE `entry` = 28406;
 -- Dark Rider
 UPDATE `creature_template` SET `minhealth` = 7842, `maxhealth` = 7842 WHERE `entry` = 28768;
+-- scarlet miner -28822
+UPDATE `creature_template` SET `minhealth` = 1782, `maxhealth` = 1782 WHERE `entry` = 28822;
+-- scarlet miner -28819
+UPDATE `creature_template` SET `minhealth` = 1919, `maxhealth` = 1919 WHERE `entry` = 28819;
+-- Scarlet Ghost
+UPDATE `creature_template` SET `minhealth` = 4430, `maxhealth` = 4430 WHERE `entry` = 28846;
 
 -- Fix creature Spawn Table for health adjustments
 UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28892;
@@ -157,7 +165,8 @@ UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28709;
 UPDATE `creature` SET `curhealth` = 5398 WHERE `id` = 28642;
 UPDATE `creature` SET `curhealth` = 6535 WHERE `id` = 28406;
 UPDATE `creature` SET `curhealth` = 7842 WHERE `id` = 28768;
-
+UPDATE `creature` SET `curhealth` = 1782 WHERE `id` = 28822;
+UPDATE `creature` SET `curhealth` = 1919 WHERE `id` = 28819;
 
 -- ROUGH DRAFT NOT FINSIHED YET
 
