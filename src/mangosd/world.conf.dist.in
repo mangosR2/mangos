@@ -258,7 +258,7 @@ GridCleanUpDelay = 300000
 MapUpdateInterval = 100
 ChangeWeatherInterval = 600000
 PlayerSave.Interval = 300000
-PlayerSave.Stats.MinLevel = 0
+PlayerSave.Stats.MinLevel = 1
 PlayerSave.Stats.SaveOnlyOnLogout = 1
 vmap.ignoreSpellIds = "7720"
 vmap.enableIndoorCheck = 1
@@ -1003,6 +1003,11 @@ LexicsCutterNoActionOnGM = 1
 #        Default: 0 - disable, default mangos pet AI style
 #                 1 - enable, pet returns below 20% life to owner
 #
+#    Custom.PetScale
+#        Change the base pet scale
+#        Default: 1 (Near-Blizzlike)
+#    NOTE: Do not know what will happen when set higher
+#
 #    RaidFlags.Unique
 #        Set raid flags (assistant, main assistant, main tank) unique in raid
 #        Default: 0 - flags not unique
@@ -1147,6 +1152,7 @@ PetUnsummonAtMount = 1
 PetSaveAllInDB = 0
 PetAdvancedAI = 0
 PetAdvancedAIWithSlacker = 0
+Custom.PetScale = 1
 RaidFlags.Unique = 0
 AllowFlightOnOldMaps = 0
 ClientCacheVersion = 0
@@ -1251,6 +1257,10 @@ AutoBroadcast.Timer = 30000
 #                 1.5 - 150%
 #                 0   - off (0%)
 #
+#    CreatureRespawnAggroDelay
+#        The delay in sec. between when a creature spawns and when it can be aggroed by nearby movement.
+#        Default: 5
+#
 #    CreatureFamilyFleeAssistanceRadius
 #        Radius which creature will use to seek for a near creature for assistance. Creature will flee to this creature.
 #        Default: 30
@@ -1343,6 +1353,7 @@ AutoBroadcast.Timer = 30000
 
 ThreatRadius = 100
 Rate.Creature.Aggro = 1
+CreatureRespawnAggroDelay = 5
 CreatureFamilyFleeAssistanceRadius = 30
 CreatureFamilyAssistanceRadius = 10
 CreatureFamilyAssistanceDelay = 1500
@@ -1610,6 +1621,7 @@ Visibility.AIRelocationNotifyDelay = 1000
 #         Default: 1
 #
 #    Rate.XP.Kill
+#    Rate.XP.PetKill
 #    Rate.XP.Quest
 #    Rate.XP.Explore
 #        XP rates
@@ -1755,6 +1767,7 @@ Rate.Drop.Item.Artifact = 1
 Rate.Drop.Item.Referenced = 1
 Rate.Drop.Money = 1
 Rate.XP.Kill    = 1
+Rate.XP.PetKill = 1
 Rate.XP.Quest   = 1
 Rate.XP.Explore = 1
 Rate.Rest.InGame = 1
@@ -2307,3 +2320,114 @@ VMSS.ContinentsSkip = 1
 ###################################################################################################################
 DuelReset.Enable = 0
 DuelReset.AreaIds = "12,14,4570"
+
+
+###################################################################################################################
+# Chat disable under Level Configuration
+#
+#    ChatDisable.SayLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.YellLevel
+#        Chat disable in Yell by level
+#        Default: 0
+#
+#    ChatDisable.WhisperLevel
+#        Chat disable in Whisper by level
+#        Default: 0
+#
+#    ChatDisable.PartyLevel
+#        Chat disable in Party by level
+#        Default: 0
+#
+#    ChatDisable.GuildLevel
+#        Chat disable in Guild by level
+#        Default: 0
+#
+#    ChatDisable.OfficerLevel
+#        Chat disable in Officer by level
+#        Default: 0
+#
+#    ChatDisable.RaidLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.BGLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+#    ChatDisable.ChannelLevel
+#        Chat disable in say by level
+#        Default: 0
+#
+###################################################################################################################
+
+ChatDisable.SayLevel = 0
+ChatDisable.YellLevel = 0
+ChatDisable.WhisperLevel = 0
+ChatDisable.PartyLevel = 0
+ChatDisable.GuildLevel = 0
+ChatDisable.RaidLevel = 0
+ChatDisable.BGLevel = 0
+ChatDisable.ChannelLevel = 0
+
+
+###################################################################################################################
+#    PvP Token System
+#
+#    PvPToken.Enable
+#        Enable/disable PvP Token system.
+#        Default: 1 (enabled)
+#        0 (disabled)
+#
+#    PvPToken.ItemID
+#        The item ID of the token that players will receive after killing an enemy.
+#        Default: 29434 (Badge of Justice)
+#
+#    PvPToken.ItemCount
+#        The count amount of the ItemID
+#        Default: 1
+#
+#    PvPToken.Gold
+#        The amount of gold that players will receive after killing an enemy.
+#        Default: 100000
+#    PvPToken.Honor
+#        The amount of honor points that players will receive after killing an enemy.  
+#        Default: 75000
+#
+#    PvPToken.Arena
+#        The amount of arena points that players will receive after killing an enemy.  
+#        Default: 5000
+#
+#
+#    PvPToken.MapRestriction
+#        The type of maps where players can receive the token
+#        Default: 4 - all maps
+#                 3 - battlegrounds only
+#                 2 - FFA areas only (both instanced and world arenas)
+#                 1 - battlegrounds and FFA areas only
+#
+###################################################################################################################
+
+PvPToken.Enable = 0
+PvPToken.ItemID = 29434
+PvPToken.ItemCount = 1
+PvPToken.Gold = 0
+PvPToken.Honor = 0
+PvPToken.Arena = 0
+PvPToken.MapRestriction = 4
+
+###################################################################################################################
+#    PvP Announcer System
+#
+#    PvPAnnouncer.Enable
+#       Enable/disable PvP Announcer system.
+#       Default: 1 - enabled
+#                0 - disabled
+###################################################################################################################
+
+PvPAnnouncer.Enable = 0
+PvPAnnouncer.ColorKiller = |CFFFFFF01
+PvPAnnouncer.ColorKilled = |CFFFFFF01
+PvPAnnouncer.ColorArea = |CFFFE8A0E

@@ -339,7 +339,7 @@ inline char * mangos_strdup(const char * source)
     #define MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder) while (InterlockedExchange<bool>(&lockHolder, true)) SwitchToThread()
     #define MANGOSR2_ATOMIC_LOCK_END(lockHolder) InterlockedExchange<bool>(&lockHolder, false)
 #else
-    #define MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder) while (__sync_bool_compare_and_swap(&lockHolder, false, true)) usleep(1)
+    #define MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder) while (__sync_bool_compare_and_swap(&lockHolder, false, true)) sched_yield()
     #define MANGOSR2_ATOMIC_LOCK_END(lockHolder) __sync_bool_compare_and_swap(&lockHolder, true, false)
 #endif
 

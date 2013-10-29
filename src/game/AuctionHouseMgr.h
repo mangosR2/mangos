@@ -25,7 +25,6 @@
 #include "Policies/Singleton.h"
 #include "DBCStructure.h"
 #include "Item.h"
-#include <ace/RW_Thread_Mutex.h>
 
 class Player;
 class Unit;
@@ -163,23 +162,19 @@ enum AuctionHouseType
 
 #define MAX_AUCTION_HOUSE_TYPE 3
 
-class AuctionHouseMgr
+class AuctionHouseMgr : public MaNGOS::Singleton<AuctionHouseMgr, MaNGOS::ClassLevelLockable<AuctionHouseMgr, ACE_Thread_Mutex> >
 {
     public:
         AuctionHouseMgr();
         ~AuctionHouseMgr();
 
         typedef UNORDERED_MAP<uint32, Item*> ItemMap;
-        typedef MANGOSR2_MUTEX_MODEL         LockType;
-        typedef ACE_Read_Guard<LockType>     ReadGuard;
-        typedef ACE_Write_Guard<LockType>    WriteGuard;
 
         AuctionHouseObject* GetAuctionsMap(AuctionHouseType houseType) { return &mAuctions[houseType]; }
         AuctionHouseObject* GetAuctionsMap(AuctionHouseEntry const* house);
 
         Item* GetAItem(uint32 id)
         {
-            ReadGuard guard(i_lock);
             ItemMap::const_iterator itr = mAitems.find(id);
             if (itr != mAitems.end())
             {
@@ -197,8 +192,6 @@ class AuctionHouseMgr
         static uint32 GetAuctionHouseTeam(AuctionHouseEntry const* house);
         static AuctionHouseEntry const* GetAuctionHouseEntry(Unit* unit);
 
-        LockType& GetLock() { return i_lock; }
-
     public:
         // load first auction items, because of check if item exists, when loading
         void LoadAuctionItems();
@@ -211,10 +204,7 @@ class AuctionHouseMgr
 
     private:
         AuctionHouseObject  mAuctions[MAX_AUCTION_HOUSE_TYPE];
-
         ItemMap             mAitems;
-
-        LockType            i_lock;
 };
 
 #define sAuctionMgr MaNGOS::Singleton<AuctionHouseMgr>::Instance()

@@ -335,9 +335,9 @@ Unit::~Unit()
     MANGOS_ASSERT(m_deletedHolders.size() == 0);
 }
 
-void Unit::Update( uint32 update_diff, uint32 p_time )
+void Unit::Update(uint32 update_diff, uint32 p_time)
 {
-    if(!IsInWorld())
+    if (!IsInWorld())
         return;
 
     /*if (p_time > m_AurasCheck)
@@ -387,12 +387,12 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
 
     if (uint32 base_att = getAttackTimer(BASE_ATTACK))
     {
-        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (uint32 base_att = getAttackTimer(OFF_ATTACK))
     {
-        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (IsVehicle() && !IsInEvadeMode())
@@ -407,11 +407,11 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     }
 
     // update abilities available only for fraction of time
-    UpdateReactives( update_diff );
+    UpdateReactives(update_diff);
 
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth()*0.20f);
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth()*0.35f);
-    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth()*0.75f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
+    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth() * 0.75f);
     UpdateSplineMovement(p_time);
     GetUnitStateMgr().Update(p_time);
 }
@@ -941,6 +941,18 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
         if (player_tap && player_tap != pVictim)
         {
             player_tap->ProcDamageAndSpell(pVictim, PROC_FLAG_KILL, PROC_FLAG_KILLED, PROC_EX_NONE, 0);
+
+            /// PvP Token  // set this to configureable level diff
+            int8 leveldiff = player_tap->getLevel() - pVictim->getLevel();
+            if((pVictim->GetTypeId() == TYPEID_PLAYER) && leveldiff < 1)
+                player_tap->ReceiveToken();
+
+            /// PvP Announcer
+            if (sWorld.getConfig(CONFIG_BOOL_PVP_ANNOUNCER))
+            {
+                if (pVictim->GetTypeId() == TYPEID_PLAYER)
+                    sWorld.SendPvPAnnounce(player_tap, ((Player*)pVictim));
+            }
 
             WorldPacket data(SMSG_PARTYKILLLOG, (8 + 8));   // send event PARTY_KILL
             data << player_tap->GetObjectGuid();            // player with killing blow
@@ -7141,9 +7153,21 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
         return false;
 
     // player cannot attack while mounted or in vehicle (exclude special vehicles)if
-    if (GetTypeId()==TYPEID_PLAYER && (IsMounted() ||
-        (GetVehicle() && (!GetVehicle()->GetSeatInfo(this) ||
-        !(GetVehicle()->GetSeatInfo(this)->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))))))
+    if (GetTypeId() == TYPEID_PLAYER && IsMounted())
+        return false;
+
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (VehicleKitPtr vehicle = GetVehicle())
+        {
+            if (VehicleSeatEntry const* seatInfo = vehicle->GetSeatInfo(this))
+                if (!seatInfo->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))
+                    return false;
+        }
+    }
+
+    // not attack pacified targets
+    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return false;
 
     // nobody can attack GM in GM-mode
