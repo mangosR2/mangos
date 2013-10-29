@@ -10,10 +10,10 @@ REM Install path for MaNGOS (in this be created ./bin and ./etc folders)
 SET INSTALL_PATH="C:\\SingleCore"
 
 rem Platform for build. Possible Win32, Win64. Warning! Win64 build possible only on 64-bit main OS!
-SET BUILD_PLATFORM=Win32
+SET BUILD_PLATFORM=Win64
 
 rem Count of cores on PC, where project compiled. for speedup only
-SET CORE_NUMBER=1
+SET CORE_NUMBER=8
 
 rem Used mangos memory manager. Possible managers - STD, TBB (not recommended), FASTMM (default)
 SET MEMORY_MANAGER=FASTMM
@@ -62,10 +62,12 @@ if "%menu%"=="%menu%" echo. & echo Wrong number! & pause & goto menu
 cls
 echo 1 - VC10
 echo 2 - VC11
+echo 3 - VC12
 
 set /P menu=Select a number: 
 if "%menu%"=="1" SET compiler=VC10 & goto menu
 if "%menu%"=="2" SET compiler=VC11 & goto menu
+if "%menu%"=="2" SET compiler=VC12 & goto menu
 if "%menu%"=="%menu%" echo. & echo Wrong number! & pause & goto compiler
 
 :path
@@ -107,11 +109,20 @@ if "%menu%"=="%menu%" echo. & echo Wrong number! & pause & goto win_platform
 
 :start
 REM *****************************************************************************************
+if %compiler%==VC12 goto :vc12
 if %compiler%==VC11 goto :vc11
 if %compiler%==VC10 goto :vc10
 if %win_platform%==x86 set vc_path=Program Files
 if %win_platform%==x64 set vc_path=Program Files (x86)
 goto :help
+REM *****************************************************************************************
+:vc12
+SET COMPILER="Visual Studio 12"
+if %BUILD_PLATFORM%==Win64 (SET COMPILER="Visual Studio 12 Win64")
+SET COMPILER_PATH="%win_partition%:/%vc_path%/Microsoft Visual Studio 12.0/VC/bin/cl.exe"
+SET LINKER_PATH="%win_partition%:/%vc_path%/Microsoft Visual Studio 12.0/VC/bin/link.exe"
+SET VC_VARS="%win_partition%:\\%vc_path%\\Microsoft Visual Studio 12.0\\VC\\"
+goto :common
 REM *****************************************************************************************
 :vc11
 SET COMPILER="Visual Studio 11"
@@ -141,7 +152,7 @@ SET MEMMAN_STR2="0"
 if %MEMORY_MANAGER%==STD    (SET MEMMAN_STR2="1")
 if %MEMORY_MANAGER%==TBB    (SET MEMMAN_STR3="1")
 if %MEMORY_MANAGER%==FASTMM (SET MEMMAN_STR1="1")
-SET C_FLAGS="/DWIN32 /D_WINDOWS /W3 /Zm1000 /EHsc /GR"
+SET C_FLAGS="/DWIN32 /D_WINDOWS /W3 /Zm512 /EHsc /GR"
 goto :begin
 REM *****************************************************************************************
 
