@@ -244,6 +244,12 @@ UPDATE `creature_template` SET `minhealth` = 4906, `maxhealth` = 4906 WHERE `ent
 UPDATE `creature_template` SET `minhealth` = 5228, `maxhealth` = 5228 WHERE `entry` = 28940;
 -- Scarlet crusader #2
 UPDATE `creature_template` SET `minhealth` = 4906, `maxhealth` = 4906 WHERE `entry` = 28529;
+-- scarlet Ghoul
+UPDATE `creature_template` SET `minhealth` = 1848, `maxhealth` = 1848 WHERE `entry` = 28897;
+-- scourge gryphon
+UPDATE `creature_template` SET `minhealth` = 9812, `maxhealth` = 9812 WHERE `entry` = 29501;
+UPDATE `creature_template` SET `minhealth` = 9812, `maxhealth` = 9812 WHERE `entry` = 29488;
+UPDATE `creature_template` SET `minhealth` = 10132, `maxhealth` = 10132 WHERE `entry` = 28906;
 
 -- Fix creature Spawn Table for health adjustments
 UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28892;
@@ -271,6 +277,10 @@ UPDATE `creature` SET `curhealth` = 5228 WHERE `id` = 28610;
 UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28939;
 UPDATE `creature` SET `curhealth` = 5228 WHERE `id` = 28940;
 UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28529;
+UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28897;
+UPDATE `creature` SET `curhealth` = 9812 WHERE `id` = 29501;
+UPDATE `creature` SET `curhealth` = 9812 WHERE `id` = 29488;
+UPDATE `creature` SET `curhealth` = 10132 WHERE `id` = 28906;
 
 -- ROUGH DRAFT NOT FINSIHED YET
 
