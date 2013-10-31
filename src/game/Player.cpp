@@ -65,6 +65,7 @@
 #include "DBCStores.h"
 #include "SQLStorages.h"
 #include "Calendar.h"
+#include "mangchat/IRCClient.h"
 
 #include <cmath>
 
@@ -2786,6 +2787,16 @@ void Player::GiveLevel(uint32 level)
     InitGlyphsForLevel();
 
     UpdateAllStats();
+
+    if (sIRC.BOTMASK & 64)
+    {
+        char  plevel [3];
+        sprintf(plevel, "%u", level);
+
+        std::string pname = GetName();
+        std::string channel = std::string("#") + sIRC._irc_chan[sIRC.anchn].c_str();
+        sIRC.Send_IRC_Channel(channel, "\00311["+pname+"] : Has Reached Level: "+plevel, true);
+    }
 
     // set current level health and mana/energy to maximum after applying all mods.
     if (isAlive())
@@ -6334,6 +6345,13 @@ bool Player::SetPosition(Position const& pos, bool teleport)
 
 void Player::SaveRecallPosition()
 {
+//-> for mangchat
+    m_recallMap = GetMapId();
+    m_recallX = GetPositionX();
+    m_recallY = GetPositionY();
+    m_recallZ = GetPositionZ();
+    m_recallO = GetOrientation();
+//- For mangchat
     m_recall = GetPosition();
 }
 

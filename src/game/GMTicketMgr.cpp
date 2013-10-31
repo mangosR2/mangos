@@ -34,7 +34,7 @@ void GMTicketMgr::LoadGMTickets()
 
     QueryResult* result = CharacterDatabase.Query(
                               //      0     1            2              3                                  4
-                              "SELECT guid, ticket_text, response_text, UNIX_TIMESTAMP(ticket_lastchange), ticket_id FROM character_ticket ORDER BY ticket_id ASC");
+        "SELECT guid, ticket_text, response_text, UNIX_TIMESTAMP(ticket_lastchange), ticket_id, closed FROM character_ticket WHERE closed='0' ORDER BY ticket_id ASC");
 
     if (!result)
     {
@@ -69,7 +69,7 @@ void GMTicketMgr::LoadGMTickets()
             continue;
         }
 
-        ticket.Init(guid, fields[1].GetCppString(), fields[2].GetCppString(), time_t(fields[3].GetUInt64()));
+        ticket.Init(guid, fields[1].GetCppString(), fields[2].GetCppString(), time_t(fields[3].GetUInt64()), fields[4].GetUInt8());
         m_GMTicketListByCreatingOrder.push_back(&ticket);
 
     }
@@ -80,7 +80,7 @@ void GMTicketMgr::LoadGMTickets()
     sLog.outString(">> Loaded " SIZEFMTD " GM tickets", GetTicketCount());
 }
 
-void GMTicketMgr::DeleteAll()
+void GMTicketMgr::CloseAll()
 {
     for (GMTicketMap::const_iterator itr = m_GMTicketMap.begin(); itr != m_GMTicketMap.end(); ++itr)
     {
@@ -88,7 +88,7 @@ void GMTicketMgr::DeleteAll()
         if (owner)
             owner->GetSession()->SendGMTicketGetTicket(0x0A);
     }
-    CharacterDatabase.Execute("DELETE FROM character_ticket");
+    CharacterDatabase.Execute("UPDATE character_ticket SET closed = '1'");
     m_GMTicketListByCreatingOrder.clear();
     m_GMTicketMap.clear();
 }

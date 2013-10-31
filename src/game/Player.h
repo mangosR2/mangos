@@ -2263,6 +2263,15 @@ class MANGOS_DLL_SPEC Player : public Unit
         void   SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
         // Recall position
+
+        //-> for mangchat
+        uint32 m_recallMap;
+        float  m_recallX;
+        float  m_recallY;
+        float  m_recallZ;
+        float  m_recallO;
+        //-> for mangchat
+
         WorldLocation m_recall;
         void   SaveRecallPosition();
 

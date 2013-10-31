@@ -1638,9 +1638,6 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
     bool isCrit = IsSpellCrit(damageInfo->target, damageInfo->GetSpellProto(), damageInfo->GetSchoolMask(), damageInfo->attackType);
     isCrit ? damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT : damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
 
-    // Only from players and their pets
-    bool applyResilience = IsCharmerOrOwnerPlayerOrPlayerItself();
-
     // Damage bonus (per damage class)
     switch (damageInfo->GetSpellProto()->DmgClass)
     {
@@ -1660,19 +1657,16 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             {
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->GetSpellProto(), damageInfo->damage, damageInfo->target);
 
-                if (applyResilience)
-                {
-                    // Resilience - reduce crit damage (full or reduced)
-                    uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
-                        ? damageInfo->damage
-                        : CalcNotIgnoreDamageReduction(damageInfo);
+                // Resilience - reduce crit damage (full or reduced)
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+                    ? damageInfo->damage
+                    : CalcNotIgnoreDamageReduction(damageInfo);
 
-                    uint32 damageCritReduction = (damageInfo->attackType != RANGED_ATTACK)
-                        ? damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage)
-                        : damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
+                uint32 damageCritReduction = (damageInfo->attackType != RANGED_ATTACK)
+                    ? damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage)
+                    : damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
 
-                    damageInfo->damage -= damageCritReduction;
-                }
+                damageInfo->damage -= damageCritReduction;
             }
             break;
         }
@@ -1692,15 +1686,12 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             {
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->GetSpellProto(), damageInfo->damage, damageInfo->target);
 
-                if (applyResilience)
-                {
-                    // Resilience - reduce crit damage (full or reduced)
-                    uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
-                        ? damageInfo->damage
-                        : CalcNotIgnoreDamageReduction(damageInfo);
+                // Resilience - reduce crit damage (full or reduced)
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+                    ? damageInfo->damage
+                    : CalcNotIgnoreDamageReduction(damageInfo);
 
-                    damageInfo->damage -= damageInfo->target->GetSpellCritDamageReduction(reduction_affected_damage);
-                }
+                damageInfo->damage -= damageInfo->target->GetSpellCritDamageReduction(reduction_affected_damage);
             }
             break;
         }
@@ -1719,7 +1710,8 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
         }
 
-        if (int32(damageInfo->damage) > 0 && applyResilience)
+        // Only from players and their pets
+        if (int32(damageInfo->damage) > 0 && IsCharmerOrOwnerPlayerOrPlayerItself())
         {
             // Resilience - reduce regular damage (full or reduced)
             uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
