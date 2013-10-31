@@ -711,7 +711,7 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
         Cell::VisitWorldObjects(GetPlayer(), say_worker, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY));
     }
 
-    WorldPacket data(SMSG_ACHIEVEMENT_EARNED, 8 + 4 + 8);
+    WorldPacket data(SMSG_ACHIEVEMENT_EARNED, GetPlayer()->GetPackGUID().size() + 4 + 4);
     data << GetPlayer()->GetPackGUID();
     data << uint32(achievement->ID);
     data.AppendPackedTime(time(NULL));
@@ -721,7 +721,7 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
 
 void AchievementMgr::SendCriteriaUpdate(uint32 id, CriteriaProgress const* progress)
 {
-    WorldPacket data(SMSG_CRITERIA_UPDATE, 8 + 4 + 8);
+    WorldPacket data(SMSG_CRITERIA_UPDATE, 4 + 4 + 9 + GetPlayer()->GetPackGUID().size() + 4 + 4 + 4 + 4);
     data << uint32(id);
 
     time_t now = time(NULL);
@@ -2993,7 +2993,7 @@ void AchievementMgr::IncompletedAchievement(AchievementEntry const* achievement)
 void AchievementMgr::SendAllAchievementData()
 {
     // since we don't know the exact size of the packed GUIDs this is just an approximation
-    WorldPacket data(SMSG_ALL_ACHIEVEMENT_DATA, 4 * 2 + m_completedAchievements.size() * 4 * 2 + m_completedAchievements.size() * 7 * 4);
+    WorldPacket data(SMSG_ALL_ACHIEVEMENT_DATA, m_completedAchievements.size() * (4 + 4) + m_criteriaProgress.size() * (4 + 9 + 9 + 4 + 4 + 4 + 4));
     BuildAllDataPacket(&data);
     GetPlayer()->GetSession()->SendPacket(&data);
 }
@@ -3001,7 +3001,7 @@ void AchievementMgr::SendAllAchievementData()
 void AchievementMgr::SendRespondInspectAchievements(Player* player)
 {
     // since we don't know the exact size of the packed GUIDs this is just an approximation
-    WorldPacket data(SMSG_RESPOND_INSPECT_ACHIEVEMENTS, 4 + 4 * 2 + m_completedAchievements.size() * 4 * 2 + m_completedAchievements.size() * 7 * 4);
+    WorldPacket data(SMSG_RESPOND_INSPECT_ACHIEVEMENTS, GetPlayer()->GetPackGUID().size() + m_completedAchievements.size() * (4 + 4) + m_criteriaProgress.size() * (4 + 9 + 9 + 4 + 4 + 4 + 4));
     data << GetPlayer()->GetPackGUID();
     BuildAllDataPacket(&data);
     player->GetSession()->SendPacket(&data);

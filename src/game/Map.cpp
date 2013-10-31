@@ -589,10 +589,12 @@ void Map::Update(const uint32 &t_diff)
     UpdateEvents(t_diff);
 
     /// update worldsessions for existing players (stage 1)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    GuidQueue updateQueue = GetActiveObjects();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (!guid.IsPlayer())
             continue;
 
@@ -600,20 +602,22 @@ void Map::Update(const uint32 &t_diff)
 
         if (plr && plr->IsInWorld())
         {
-            WorldSession * pSession = plr->GetSession();
-            MapSessionFilter updater(pSession);
-
-            pSession->Update(updater);
-            // sending WorldState updates
-            plr->SendUpdatedWorldStates(false);
+            if (WorldSession* pSession = plr->GetSession())
+            {
+                MapSessionFilter updater(pSession);
+                pSession->Update(updater);
+                // sending WorldState updates
+                plr->SendUpdatedWorldStates(false);
+            }
         }
     }
 
     /// update active objects (players also) at tick (stage 2)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    /*GuidQueue*/ updateQueue = GetActiveObjects();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         switch (guid.GetHigh())
         {
@@ -655,10 +659,12 @@ void Map::Update(const uint32 &t_diff)
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
     // player and non-player active objects (only cells re-mark)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    /*GuidQueue*/ updateQueue = GetActiveObjects();
+    bool hasActive = !updateQueue.empty();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         WorldObject* obj = GetWorldObject(guid);
 
@@ -688,7 +694,8 @@ void Map::Update(const uint32 &t_diff)
     }
 
     // Send world objects and item update field changes
-    SendObjectUpdates();
+    if (hasActive)
+        SendObjectUpdates();
 
     // Calculate and send map-related WorldState updates
     sWorldStateMgr.MapUpdate(this);
@@ -1157,16 +1164,19 @@ void Map::SendInitActiveObjects(Player* player)
 {
     if (!player)
         return;
-    GuidSet const& activeObjects = GetActiveObjects();
-    if (activeObjects.empty())
+
+    GuidQueue updateQueue = GetActiveObjects();
+    if (updateQueue.empty())
         return;
 
-    UpdateData initData;
+    UpdateData initData = UpdateData();
     bool hasAny = false;
 
-    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (guid.IsPlayer())
             continue;
 
@@ -1193,16 +1203,19 @@ void Map::SendRemoveActiveObjects(Player* player)
 {
     if (!player)
         return;
-    GuidSet const& activeObjects = GetActiveObjects();
-    if (activeObjects.empty())
+
+    GuidQueue updateQueue = GetActiveObjects();
+    if (updateQueue.empty())
         return;
 
-    UpdateData initData;
+    UpdateData initData = UpdateData();
     bool hasAny = false;
 
-    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (guid.IsPlayer())
             continue;
 
@@ -1319,9 +1332,14 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
     cell_max >> cell_range;
     cell_max += cell_range;
 
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    GuidQueue updateQueue = const_cast<Map*>(this)->GetActiveObjects();
+    if (updateQueue.empty())
+        return false;
+
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         WorldObject const* obj = const_cast<Map*>(this)->GetWorldObject(guid);
         if (!obj || !obj->isActiveObject())
@@ -2189,26 +2207,23 @@ void Map::AddUpdateObject(ObjectGuid const& guid)
 
 void Map::RemoveUpdateObject(ObjectGuid const& guid)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_objectsToClientUpdate.erase(guid);
 }
 
+ObjectGuid Map::GetNextObjectFromUpdateQueue()
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    ObjectGuid guid = i_objectsToClientUpdate.empty() ? ObjectGuid::Null : *i_objectsToClientUpdate.begin();
+    i_objectsToClientUpdate.erase(guid);
+    return guid;
+}
+ 
 void Map::SendObjectUpdates()
 {
-    UpdateDataMapType update_players;
+    UpdateDataMapType update_players = UpdateDataMapType();
 
-    while (!GetObjectsUpdateQueue()->empty())
+    while (ObjectGuid guid = GetNextObjectFromUpdateQueue())
     {
-        ObjectGuid guid;
-        {
-            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            guid = *i_objectsToClientUpdate.begin();
-            i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
-        }
-
-        if (guid.IsEmpty())
-            continue;
-
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {
@@ -2855,11 +2870,13 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
     return true;
 }
 
-void Map::MakeActiveObjectsSafeCopy()
+GuidQueue Map::GetActiveObjects()
 {
-    m_activeObjectsSafeCopy.clear();
     ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-    m_activeObjectsSafeCopy = m_activeObjects;
+    GuidQueue result;
+    for (GuidSet::const_iterator itr = m_activeObjects.begin(); itr != m_activeObjects.end(); ++itr)
+        result.push(*itr);
+    return result;
 }
 
 time_t Map::GetGridExpiry() const

@@ -334,9 +334,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void AddToActive(WorldObject* obj);
         // must called with RemoveFromWorld
         void RemoveFromActive(WorldObject* obj);
-        GuidSet const& GetActiveObjects() const { return m_activeObjectsSafeCopy; };
-        void MakeActiveObjectsSafeCopy();
-
+        GuidQueue GetActiveObjects();
 
         Player* GetPlayer(ObjectGuid const& guid, bool globalSearch = false);
         Creature* GetCreature(ObjectGuid  const& guid);
@@ -361,6 +359,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         void AddUpdateObject(ObjectGuid const& guid);
         void RemoveUpdateObject(ObjectGuid const& guid);
         GuidSet const* GetObjectsUpdateQueue() { return &i_objectsToClientUpdate; };
+        ObjectGuid GetNextObjectFromUpdateQueue();
 
         // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);

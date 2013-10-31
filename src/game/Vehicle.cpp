@@ -268,7 +268,7 @@ bool VehicleKit::AddPassenger(Unit* passenger, SeatId seatId)
         if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) ||
             (GetBase()->GetTypeId() == TYPEID_UNIT && ((Creature*)GetBase())->CanFly()))
         {
-            WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 8 + 4);
+            WorldPacket data(SMSG_MOVE_SET_CAN_FLY, GetBase()->GetPackGUID().size() + 4);
             data << GetBase()->GetPackGUID();
             data << uint32(0);
             GetBase()->SendMessageToSet(&data, false);
@@ -416,7 +416,7 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
             (GetBase()->GetTypeId() == TYPEID_UNIT && ((Creature*)GetBase())->CanFly())) &&
             (!player->HasAuraType(SPELL_AURA_FLY) && !player->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)))
         {
-            WorldPacket dataCF(SMSG_MOVE_UNSET_CAN_FLY, 8 + 4);
+            WorldPacket dataCF(SMSG_MOVE_UNSET_CAN_FLY, player->GetPackGUID().size() + 4);
             dataCF << player->GetPackGUID();
             dataCF << uint32(0);
             GetBase()->SendMessageToSet(&dataCF, false);

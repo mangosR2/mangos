@@ -280,10 +280,10 @@ class MANGOS_DLL_DECL TerrainManager : public MaNGOS::Singleton<TerrainManager, 
     friend class MaNGOS::OperatorNew<TerrainManager>;
 
 public:
-    TerrainInfo * LoadTerrain(const uint32 mapId);
-    void UnloadTerrain(const uint32 mapId);
+    TerrainInfo* LoadTerrain(uint32 const& mapId);
+    void UnloadTerrain(uint32 const& mapId);
 
-    void Update(const uint32 diff);
+    void Update(uint32 const& diff);
     void UnloadAll();
 
     uint16 GetAreaFlag(uint32 mapid, float x, float y, float z) const
@@ -315,7 +315,6 @@ private:
     TerrainManager(const TerrainManager &);
     TerrainManager& operator=(const TerrainManager &);
 
-    typedef MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex>::Lock Guard;
     TerrainDataMap i_TerrainMap;
 };
 

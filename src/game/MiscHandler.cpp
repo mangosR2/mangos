@@ -1535,7 +1535,7 @@ void WorldSession::HandleGrantLevel(WorldPacket& recv_data)
 
     target->AccessGrantableLevel(_player->GetObjectGuid());
 
-    WorldPacket data(SMSG_PROPOSE_LEVEL_GRANT, 8);
+    WorldPacket data(SMSG_PROPOSE_LEVEL_GRANT, _player->GetPackGUID().size());
     data << _player->GetPackGUID();
     target->GetSession()->SendPacket(&data);
 }

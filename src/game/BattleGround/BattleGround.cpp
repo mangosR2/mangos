@@ -949,9 +949,9 @@ void BattleGround::EndBattleGround(Team winner)
             }
         }
 
-        uint32 win_kills = plr->GetRandomWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
-        uint32 loos_kills = plr->GetRandomWinner() ? BG_REWARD_LOOSER_HONOR_LAST : BG_REWARD_LOOSER_HONOR_FIRST;
-        uint32 win_arena = plr->GetRandomWinner() ? BG_REWARD_WINNER_ARENA_LAST : BG_REWARD_WINNER_ARENA_FIRST;
+        uint32 win_kills = plr->IsRandomBGWinner() ? BG_REWARD_WINNER_HONOR_LAST : BG_REWARD_WINNER_HONOR_FIRST;
+        uint32 loos_kills = plr->IsRandomBGWinner() ? BG_REWARD_LOOSER_HONOR_LAST : BG_REWARD_LOOSER_HONOR_FIRST;
+        uint32 win_arena = plr->IsRandomBGWinner() ? BG_REWARD_WINNER_ARENA_LAST : BG_REWARD_WINNER_ARENA_FIRST;
 
         if (team == winner)
         {
@@ -962,8 +962,8 @@ void BattleGround::EndBattleGround(Team winner)
             {
                 UpdatePlayerScore(plr, SCORE_BONUS_HONOR, GetBonusHonorFromKill(win_kills*4));
                 plr->ModifyArenaPoints(win_arena);
-                if(!plr->GetRandomWinner())
-                    plr->SetRandomWinner(true);
+                if (!plr->IsRandomBGWinner())
+                    plr->SetRandomBGWinner(true);
             }
 
             plr->GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1);

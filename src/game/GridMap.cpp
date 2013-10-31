@@ -1251,10 +1251,7 @@ bool TerrainInfo::IsNextZcoordOK(float x, float y, float oldZ, float maxDiff) co
 }
 
 //////////////////////////////////////////////////////////////////////////
-
-#define CLASS_LOCK MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex>
-INSTANTIATE_SINGLETON_2(TerrainManager, CLASS_LOCK);
-INSTANTIATE_CLASS_MUTEX(TerrainManager, ACE_Thread_Mutex);
+INSTANTIATE_SINGLETON_1(TerrainManager);
 
 TerrainManager::TerrainManager()
 {
@@ -1266,10 +1263,8 @@ TerrainManager::~TerrainManager()
         delete it->second;
 }
 
-TerrainInfo* TerrainManager::LoadTerrain(const uint32 mapId)
+TerrainInfo* TerrainManager::LoadTerrain(uint32 const& mapId)
 {
-    Guard _guard(*this);
-
     TerrainInfo* ptr = NULL;
     TerrainDataMap::const_iterator iter = i_TerrainMap.find(mapId);
     if (iter == i_TerrainMap.end())
@@ -1283,12 +1278,10 @@ TerrainInfo* TerrainManager::LoadTerrain(const uint32 mapId)
     return ptr;
 }
 
-void TerrainManager::UnloadTerrain(const uint32 mapId)
+void TerrainManager::UnloadTerrain(uint32 const& mapId)
 {
     if (sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD) == 0)
         return;
-
-    Guard _guard(*this);
 
     TerrainDataMap::iterator iter = i_TerrainMap.find(mapId);
     if (iter != i_TerrainMap.end())
@@ -1303,7 +1296,7 @@ void TerrainManager::UnloadTerrain(const uint32 mapId)
     }
 }
 
-void TerrainManager::Update(const uint32 diff)
+void TerrainManager::Update(uint32 const& diff)
 {
     // global garbage collection for GridMap objects and VMaps
     for (TerrainDataMap::iterator iter = i_TerrainMap.begin(); iter != i_TerrainMap.end(); ++iter)
