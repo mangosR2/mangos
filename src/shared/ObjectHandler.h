@@ -35,7 +35,12 @@ class VehicleKit;
 class Map;
 class TerrainInfo;
 
-OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+#else
+    OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+#endif
+
 OBJECT_HANDLER(UnitAction,UnitActionPtr);
 OBJECT_HANDLER(VehicleKit,VehicleKitPtr);
 OBJECT_HANDLER(Map,MapPtr);
