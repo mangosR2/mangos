@@ -1104,14 +1104,14 @@ class ObjectMgr
         GameTele const* GetGameTele(uint32 id) const
         {
             GameTeleMap::const_iterator itr = m_GameTeleMap.find(id);
-            if(itr==m_GameTeleMap.end()) return NULL;
-            return &itr->second;
+            return itr != m_GameTeleMap.end() ? &itr->second : NULL;
         }
 
-        GameTele const* GetGameTele(const std::string& name) const;
+        GameTele const* GetGameTele(std::string const& name) const;
+        GameTele const* GetGameTeleExactName(std::string const& name) const;
         GameTeleMap const& GetGameTeleMap() const { return m_GameTeleMap; }
         bool AddGameTele(GameTele& data);
-        bool DeleteGameTele(const std::string& name);
+        bool DeleteGameTele(std::string const& name);
 
         uint32 GetNpcGossip(uint32 entry) const
         {

@@ -502,6 +502,7 @@ void World::LoadConfigSettings(bool reload)
     setConfigPos(CONFIG_FLOAT_RATE_DROP_ITEM_REFERENCED, "Rate.Drop.Item.Referenced", 1.0f);
     setConfigPos(CONFIG_FLOAT_RATE_DROP_MONEY,           "Rate.Drop.Money", 1.0f);
     setConfig(CONFIG_FLOAT_RATE_XP_KILL,    "Rate.XP.Kill",    1.0f);
+    setConfig(CONFIG_FLOAT_RATE_XP_PETKILL, "Rate.XP.PetKill", 1.0f);
     setConfig(CONFIG_FLOAT_RATE_XP_QUEST,   "Rate.XP.Quest",   1.0f);
     setConfig(CONFIG_FLOAT_RATE_XP_EXPLORE, "Rate.XP.Explore", 1.0f);
     setConfig(CONFIG_FLOAT_RATE_REPUTATION_GAIN,           "Rate.Reputation.Gain", 1.0f);
@@ -690,7 +691,7 @@ void World::LoadConfigSettings(bool reload)
 
     setConfigMinMax(CONFIG_FLOAT_CROWDCONTROL_HP_BASE, "CrowdControlHPBase", 0.1f, 0.0f, 1.0f);
 
-    setConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION, "ResilenceAlternativeCalculation", false);
+    setConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION, "ResilienceAlternativeCalculation", false);
 
     setConfig(CONFIG_BOOL_BLINK_ANIMATION_TYPE, "BlinkAnimationType", false);
 
@@ -888,6 +889,8 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_OFFHAND_CHECK_AT_TALENTS_RESET, "OffhandCheckAtTalentsReset", false);
 
     setConfig(CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET, "Network.KickOnBadPacket", false);
+
+    setConfig(CONFIG_BOOL_PLAYER_COMMANDS, "PlayerCommands", true);
 
     if (int clientCacheId = sConfig.GetIntDefault("ClientCacheVersion", 0))
     {
@@ -2590,7 +2593,7 @@ void World::ResetRandomBG()
     CharacterDatabase.Execute("DELETE FROM character_battleground_random");
     for(SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (itr->second->GetPlayer())
-            itr->second->GetPlayer()->SetRandomWinner(false);
+            itr->second->GetPlayer()->SetRandomBGWinner(false);
 
     m_NextRandomBGReset = time_t(m_NextRandomBGReset + DAY);
     CharacterDatabase.PExecute("UPDATE saved_variables SET NextRandomBGResetTime = '"UI64FMTD"'", uint64(m_NextRandomBGReset));

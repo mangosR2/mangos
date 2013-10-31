@@ -1357,7 +1357,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool AttackStop(bool targetSwitch = false);
         void RemoveAllAttackers();
         bool isAttackingPlayer() const;
-        Unit* getVictim() const { return IsInWorld() ? GetMap()->GetUnit(m_attackingGuid) : NULL; }
+        Unit* getVictim() const { return m_attackingGuid ? IsInWorld() ? GetMap()->GetUnit(m_attackingGuid) : NULL : NULL; }
         virtual bool IsInEvadeMode() const { return false; };
         void CombatStop(bool includingCast = false);
         void CombatStopWithPets(bool includingCast = false);
@@ -2118,6 +2118,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         virtual bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
                                                             // redefined in Creature
 
+        static bool IsDamageReducedByArmor(SpellSchoolMask damageSchoolMask, SpellEntry const* spellProto = NULL, SpellEffectIndex effIndex = MAX_EFFECT_INDEX);
         uint32 CalcArmorReducedDamage(Unit* pVictim, const uint32 damage);
         void CalculateResistance(Unit* pCaster, DamageInfo* damageInfo);
         void CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo, bool canReflect = false);

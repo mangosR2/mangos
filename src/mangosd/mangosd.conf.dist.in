@@ -1046,8 +1046,8 @@ LexicsCutterNoActionOnGM = 1
 #        min:     0.0  (default mangos method)
 #        max:     1.0  (full CrowdControl, auras like Fear not breaked by damage anyway)
 #
-#    ResilenceAlternativeCalculation
-#        enable/disable alternative resilence damage reduction calculation (for Avenger/Sanctified wrath mostly)
+#    ResilienceAlternativeCalculation
+#        enable/disable alternative resilience damage reduction calculation (for Avenger/Sanctified wrath mostly)
 #        Default: 0     (disable, default mangos style)
 #
 #    BlinkAnimationType
@@ -1073,6 +1073,11 @@ LexicsCutterNoActionOnGM = 1
 #        If the target level is greater than caster level, add to target additional resistance points.
 #        Default: 0 - disabled (don't add additional resistance points)
 #                 1 - enabled  (add to target 5 resistance points on each target over level)
+#
+#    PlayerCommands
+#        Should player chat be parsed for GM commands.
+#        Default: 1 (parse commands)
+#                 0 (ignore commands)
 #
 ###################################################################################################################
 
@@ -1158,11 +1163,12 @@ Motd = "Welcome to the Massive Network Game Object Server."
 Raid.MinLevel = 10
 CrowdControlHPBase = 0.1
 AllowTransferToCustomMap = 0
-ResilenceAlternativeCalculation = 0
+ResilienceAlternativeCalculation = 0
 BlinkAnimationType = 0
 FactiomAndRaceChangeWithoutRenaming = 0
 Resistance.CalculationMethod = 1
 Resistance.AddByOverLevel = 0
+PlayerCommands = 1
 
 ###################################################################################################################
 # PLAYER INTERACTION
@@ -1615,6 +1621,7 @@ Visibility.AIRelocationNotifyDelay = 1000
 #         Default: 1
 #
 #    Rate.XP.Kill
+#    Rate.XP.PetKill
 #    Rate.XP.Quest
 #    Rate.XP.Explore
 #        XP rates
@@ -1760,6 +1767,7 @@ Rate.Drop.Item.Artifact = 1
 Rate.Drop.Item.Referenced = 1
 Rate.Drop.Money = 1
 Rate.XP.Kill    = 1
+Rate.XP.PetKill = 1
 Rate.XP.Quest   = 1
 Rate.XP.Explore = 1
 Rate.Rest.InGame = 1

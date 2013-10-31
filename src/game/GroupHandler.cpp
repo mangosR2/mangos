@@ -725,7 +725,7 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
             byteCount += GroupUpdateLength[i];
     }
 
-    data->Initialize(SMSG_PARTY_MEMBER_STATS, 8 + 4 + byteCount);
+    data->Initialize(SMSG_PARTY_MEMBER_STATS, player->GetPackGUID().size() + 4 + byteCount);
     *data << player->GetPackGUID();
     *data << uint32(mask);
 

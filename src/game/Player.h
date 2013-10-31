@@ -1713,8 +1713,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         ActionButton const* GetActionButton(uint8 button);
 
         PvPInfo pvpInfo;
-        void UpdatePvP(bool state, bool ovrride=false);
-        void UpdateZone(uint32 newZone,uint32 newArea);
+        void UpdatePvP(bool state, bool bOverride = false);
+        void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
         uint32 GetCachedZoneId() const { return m_zoneUpdateId; }
 
@@ -2172,8 +2172,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CanUseBattleGroundObject();
         bool isTotalImmune();
 
-        bool GetRandomWinner() { return m_IsBGRandomWinner; }
-        void SetRandomWinner(bool isWinner);
+        void SetRandomBGWinner(bool winner);
+        bool IsRandomBGWinner() { return m_isRandomBGWinner; }
 
         /*********************************************************/
         /***                 OUTDOOR PVP SYSTEM                ***/
@@ -2459,7 +2459,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         BgBattleGroundQueueID_Rec m_bgBattleGroundQueueID[PLAYER_MAX_BATTLEGROUND_QUEUES];
         BGData                    m_bgData;
-        bool m_IsBGRandomWinner;
+
+        bool m_isRandomBGWinner;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/

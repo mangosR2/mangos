@@ -3473,20 +3473,6 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                 }
                 return;
             }
-            case 64398:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Scrap Bots
-            case 64426:                                     // Summon Scrap Bot (Ulduar, Mimiron) - for Assault Bots
-            case 64621:                                     // Summon Fire Bot (Ulduar, Mimiron)
-            {
-                uint32 triggerSpell = 0;
-                switch (GetId())
-                {
-                    case 64398: triggerSpell = 63819; break;
-                    case 64426: triggerSpell = 64427; break;
-                    case 64621: triggerSpell = 64622; break;
-                }
-                target->CastSpell(target, triggerSpell, false);
-                return;
-            }
             case 68839:                                     // Corrupt Soul
             {
                 // Knockdown Stun
@@ -3728,8 +3714,11 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     }
                     else
                     {
-                        if (target->getVictim() && target->isAlive())
-                            target->SetTargetGuid(target->getVictim()->GetObjectGuid());
+                        if (target->isAlive())
+                        {
+                            if (Unit* pVictim = target->getVictim())
+                                target->SetTargetGuid(pVictim->GetObjectGuid());
+                        }
                         target->clearUnitState(UNIT_STAT_STUNNED);
                         target->RemoveAurasDueToSpell(16245);
                     }
@@ -4052,11 +4041,7 @@ void Aura::HandleAuraFeatherFall(bool apply, bool Real)
     if (!apply && target->HasAuraType(SPELL_AURA_FEATHER_FALL))
         return;
 
-    WorldPacket data;
-    if (apply)
-        data.Initialize(SMSG_MOVE_FEATHER_FALL, 8+4);
-    else
-        data.Initialize(SMSG_MOVE_NORMAL_FALL, 8+4);
+    WorldPacket data(apply ? SMSG_MOVE_FEATHER_FALL : SMSG_MOVE_NORMAL_FALL, target->GetPackGUID().size() + 4);
     data << target->GetPackGUID();
     data << uint32(0);
     target->SendMessageToSet(&data, true);
@@ -4088,7 +4073,7 @@ void Aura::HandleAuraFeatherFall(bool apply, bool Real)
 void Aura::HandleAuraHover(bool apply, bool Real)
 {
     // only at real add/remove aura
-    if(!Real)
+    if (!Real)
         return;
 
     // do not remove unit flag if there are more than this auraEffect of that kind on unit on unit
@@ -4099,24 +4084,20 @@ void Aura::HandleAuraHover(bool apply, bool Real)
     if (apply)
     {
         GetTarget()->m_movementInfo.AddMovementFlag(MOVEFLAG_HOVER);
-        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_SET_HOVER, 8+4);
+        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_SET_HOVER, GetTarget()->GetPackGUID().size() + 4);
         data << GetTarget()->GetPackGUID();
         if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
-        {
             data << uint32(0);
-        }
         else
             GetTarget()->SetByteValue(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
     }
     else
     {
         GetTarget()->m_movementInfo.RemoveMovementFlag(MOVEFLAG_HOVER);
-        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_UNSET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, 8+4);
+        data.Initialize(GetTarget()->GetTypeId() == TYPEID_PLAYER ? SMSG_MOVE_UNSET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, GetTarget()->GetPackGUID().size() + 4);
         data << GetTarget()->GetPackGUID();
         if (GetTarget()->GetTypeId() == TYPEID_PLAYER)
-        {
             data << uint32(0);
-        }
         else
             GetTarget()->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
     }
@@ -5381,8 +5362,11 @@ void Aura::HandleAuraModStun(bool apply, bool Real)
 
         if (!target->hasUnitState(UNIT_STAT_ROOT | UNIT_STAT_ON_VEHICLE))       // prevent allow move if have also root effect
         {
-            if (target->getVictim() && target->isAlive())
-                target->SetTargetGuid(target->getVictim()->GetObjectGuid());
+            if (target->isAlive())
+            {
+                if (Unit* pVictim = target->getVictim())
+                    target->SetTargetGuid(pVictim->GetObjectGuid());
+            }
 
             target->SetRoot(false);
         }
@@ -8779,9 +8763,7 @@ void Aura::PeriodicTick()
             }
 
             // Calculate armor mitigation if it is a physical spell
-            // But not for bleed mechanic spells
-            if ((GetSpellSchoolMask(spellProto) & SPELL_SCHOOL_MASK_NORMAL) &&
-                GetEffectMechanic(spellProto, m_effIndex) != MECHANIC_BLEED)
+            if (Unit::IsDamageReducedByArmor(GetSpellSchoolMask(spellProto), spellProto, GetEffIndex()))
             {
                 uint32 pdamageReductedArmor = pCaster->CalcArmorReducedDamage(target, damageInfo.damage);
                 damageInfo.cleanDamage += damageInfo.damage - pdamageReductedArmor;
@@ -8889,8 +8871,8 @@ void Aura::PeriodicTick()
 
             damageInfo.damage = m_modifier.m_amount > 0 ? m_modifier.m_amount : 0;
 
-            //Calculate armor mitigation if it is a physical spell
-            if (GetSpellSchoolMask(spellProto) & SPELL_SCHOOL_MASK_NORMAL)
+            // Calculate armor mitigation if it is a physical spell
+            if (Unit::IsDamageReducedByArmor(GetSpellSchoolMask(spellProto), spellProto, GetEffIndex()))
             {
                 uint32 pdamageReductedArmor = pCaster->CalcArmorReducedDamage(target, damageInfo.damage);
                 damageInfo.cleanDamage += damageInfo.damage - pdamageReductedArmor;
@@ -9836,6 +9818,14 @@ void Aura::PeriodicDummyTick()
                         target->CastSpell(target, 62836, true, NULL, this);
                     return;
                 }
+                case 63382:                                 // Rapid Burst
+                {
+                    if (GetAuraTicks() % 2)
+                        target->CastSpell(target, target->GetMap()->IsRegularDifficulty() ? 64019 : 64532, true);
+                    else
+                        target->CastSpell(target, target->GetMap()->IsRegularDifficulty() ? 63387 : 64531, true);
+                    return;
+                }
                 case 64217:                                 // Overcharged
                 {
                     Unit *caster = GetCaster();
@@ -10004,7 +9994,7 @@ void Aura::PeriodicDummyTick()
             // Prey on the Weak
             if (spell->GetSpellIconID() == 2983)
             {
-                Unit *victim = target->getVictim();
+                Unit* victim = target->getVictim();
                 if (victim && (target->GetHealth() * 100 / target->GetMaxHealth() > victim->GetHealth() * 100 / victim->GetMaxHealth()))
                 {
                     if (!target->HasAura(58670))

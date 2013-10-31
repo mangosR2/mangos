@@ -3469,8 +3469,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
 
                     if (m_caster->GetEntry() == 15930 && unitTarget->GetEntry() == 15929)
                     {
-                        Unit *pFeugenVictim = m_caster->getVictim();
-                        Unit *pStalaggVictim = unitTarget->getVictim();
+                        Unit* pFeugenVictim = m_caster->getVictim();
+                        Unit* pStalaggVictim = unitTarget->getVictim();
 
                         if (pFeugenVictim && pStalaggVictim)
                         {
@@ -3725,6 +3725,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, m_caster->GetMap()->IsRegularDifficulty() ? 62653 : 62935, true);
                     return;
                 }
+                case 62653:                                 // Tidal Wave
+                {
+                     if (!unitTarget)
+                        return;
+
+                     m_caster->CastSpell(unitTarget, 62654, true);
+                     return;
+                }
                 case 62797:                                 // Storm Cloud
                 {
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
@@ -3742,6 +3750,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     return;
                 }
+                case 62935:                                 // Tidal Wave (H)
+                {
+                   if (!unitTarget)
+                      return;
+
+                   m_caster->CastSpell(unitTarget, 62936, true);
+                   return;
+                }
                 case 63499:                                 // Dispel Magic 
                 { 
                     if (!unitTarget) 
@@ -3756,23 +3772,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                         return; 
  
                     m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true); 
-                }
-                case 63820:                                 // Summon Scrap Bot Trigger (Ulduar - Mimiron) for Scrap Bots
-                case 64425:                                 // Summon Scrap Bot Trigger (Ulduar - Mimiron) for Assault Bots
-                case 64620:                                 // Summon Fire Bot Trigger  (Ulduar - Mimiron) for Fire Bots
-                {
-                    if (!unitTarget)
-                        return;
-
-                    uint32 triggerSpell = 0;
-                    switch (m_spellInfo->Id)
-                    {
-                        case 63820: triggerSpell = 64398; break;
-                        case 64425: triggerSpell = 64426; break;
-                        case 64620: triggerSpell = 64621; break;
-                    }
-                    unitTarget->CastSpell(unitTarget, triggerSpell, false);
-                    return;
                 }
                 case 63984:                                 // Hate to Zero (Ulduar - Yogg Saron)
                 {
@@ -3797,7 +3796,15 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                 }
                 case 64385:                                 // Spinning (from Unusual Compass)
                 {
-                    m_caster->SetFacingTo(frand(0, M_PI_F*2));
+                    m_caster->SetFacingTo(frand(0, M_PI_F * 2));
+                    return;
+                }
+                case 64402:                                 // Rocket Strike
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 63681, true);
                     return;
                 }
                 case 64489:                                 // Feral Rush
@@ -3839,6 +3846,16 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(m_caster, spell_id, true);
                     return;
                 }
+                case 65346:                                 // Proximity Mine
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    m_caster->CastSpell(m_caster, m_caster->GetMap()->IsRegularDifficulty() ? 66351 : 63009, true);
+                    m_caster->RemoveAurasDueToSpell(65345);
+                    m_caster->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                    return;
+                }
                 case 66181:                                 // Anub'arak Find Never Cold and Cast Ice Spikes
                 {
                     if (!unitTarget)
@@ -3860,12 +3877,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->GetClosePoint(x, y, z, m_caster->GetObjectBoundingRadius(), 10.0f, frand(0.0f, M_PI_F * 2));
                     m_caster->NearTeleportTo(x, y, z, m_caster->GetOrientation());
                     m_caster->CastSpell(m_caster, 65920, true); // Cast Aura Spike 01
-                    return;
-                }
-                case 67322: // Burrower Cast (Toc10)
-                {
-                    if (!m_caster->HasAura(66193) && !m_caster->HasAura(67855) && !m_caster->HasAura(67856) && !m_caster->HasAura(67857))
-                        m_caster->CastSpell(m_caster, 68394, false); // Cast Burrower
                     return;
                 }
                 case 66218:                                 // Launch - set position
@@ -3898,22 +3909,6 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     // Must have a delay for proper spell animation
                     ((Creature*)unitTarget)->ForcedDespawn(1000);
                     return;
-                }
-                case 62653:                                 // Tidal Wave
-                {
-                     if (!unitTarget)
-                        return;
-
-                     m_caster->CastSpell(unitTarget, 62654, true);
-                     return;
-                }
-                case 62935:                                 // Tidal Wave (H)
-                {
-                   if (!unitTarget)
-                      return;
-
-                   m_caster->CastSpell(unitTarget, 62936, true);
-                   return;
                 }
                 case 67019:                                 // Flask of the North
                 {
@@ -3948,6 +3943,12 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                             break;
                     }
                     m_caster->CastSpell(m_caster, spell_id, true);
+                    return;
+                }
+                case 67322: // Burrower Cast (Toc10)
+                {
+                    if (!m_caster->HasAura(66193) && !m_caster->HasAura(67855) && !m_caster->HasAura(67856) && !m_caster->HasAura(67857))
+                        m_caster->CastSpell(m_caster, 68394, false); // Cast Burrower
                     return;
                 }
                 case 67366:                                 // C-14 Gauss Rifle
@@ -5479,8 +5480,8 @@ void Spell::EffectJump(SpellEffectIndex eff_idx)
             // some spell at client send caster
             if (m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
                 pTarget = m_targets.getUnitTarget();
-            else if (unitTarget->getVictim())
-                pTarget = m_caster->getVictim();
+            else if (Unit* pVictim = m_caster->getVictim())
+                pTarget = pVictim;
             else if (m_caster->GetTypeId() == TYPEID_PLAYER)
                 pTarget = m_caster->GetMap()->GetUnit(((Player*)m_caster)->GetSelectionGuid());
 
@@ -5601,8 +5602,8 @@ void Spell::EffectTeleportUnits(SpellEffectIndex eff_idx)   // TODO - Use target
             // some spell at client send caster
             if (m_targets.getUnitTarget() && m_targets.getUnitTarget()!=unitTarget)
                 pTarget = m_targets.getUnitTarget();
-            else if (unitTarget->getVictim())
-                pTarget = unitTarget->getVictim();
+            else if (Unit* pVictim = unitTarget->getVictim())
+                pTarget = pVictim;
             else if (unitTarget->GetTypeId() == TYPEID_PLAYER)
                 pTarget = unitTarget->GetMap()->GetUnit(((Player*)unitTarget)->GetSelectionGuid());
 
@@ -7122,7 +7123,7 @@ void Spell::EffectDispel(SpellEffectIndex eff_idx)
         if (!success_list.empty())
         {
             int32 count = success_list.size();
-            WorldPacket data(SMSG_SPELLDISPELLOG, 8+8+4+1+4+count*5);
+            WorldPacket data(SMSG_SPELLDISPELLOG, unitTarget->GetPackGUID().size() + m_caster->GetPackGUID().size() + 4 + 1 + 4 + count * 5);
             data << unitTarget->GetPackGUID();              // Victim GUID
             data << m_caster->GetPackGUID();                // Caster GUID
             data << uint32(m_spellInfo->Id);                // Dispel spell id
@@ -9236,10 +9237,10 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!unitTarget)
                         return;
 
-                    if (unitTarget->getVictim())
+                    if (Unit* pVictim = unitTarget->getVictim())
                     {
                         // Cast Zap damage spell
-                        unitTarget->CastSpell(unitTarget->getVictim(), 43137, true);
+                        unitTarget->CastSpell(pVictim, 43137, true);
 
                         // Attack a new target
                         if (unitTarget->GetTypeId() == TYPEID_UNIT)
@@ -10547,8 +10548,8 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                     unitTarget->CastSpell(unitTarget, 64474, true);
 
-                    if (m_caster->getVictim())
-                        ((Creature*)unitTarget)->AI()->AttackStart(m_caster->getVictim());
+                    if (Unit* pVictim = m_caster->getVictim())
+                        ((Creature*)unitTarget)->AI()->AttackStart(pVictim);
                     return;
                 }
                 case 62524:                                 // Attuned to Nature 2 Dose Reduction
@@ -10899,6 +10900,22 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         charmer->CastSpell(charmer, damage, true);
                     return;
                 }
+                case 63667:                                 // Napalm Shell
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, m_caster->GetMap()->IsRegularDifficulty() ? 63666 : 65026, true);
+                    return;
+                }
+                case 63681:                                 // Rocket Strike
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 63036, true);
+                    return;
+                }
                 case 64456:                                 // Feral Essence Application Removal
                 {
                     if (!unitTarget)
@@ -10924,7 +10941,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     unitTarget->CastSpell(unitTarget, 62381, true);
                     return;
                 }
-                case 64767:                                 // Stormhammer 
+                case 64623:                                 // Frost Bomb
+                {
+                    if (!unitTarget)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, 64627, true);
+                    return;
+                }
+                case 64767:                                 // Stormhammer
                 { 
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT) 
                         return; 
@@ -10937,7 +10962,15 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                         target->CastSpell(target, 64778, true); 
                         target->ForcedDespawn(10000); 
                     } 
-                    return; 
+                    return;
+                }
+                case 64841:                                 // Rapid Burst
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(m_caster, 63382, false);
+                    return;
                 }
                 case 66477:                                 // Bountiful Feast
                 {
@@ -13448,7 +13481,7 @@ void Spell::EffectStealBeneficialBuff(SpellEffectIndex eff_idx)
         if (!success_list.empty())
         {
             int32 count = success_list.size();
-            WorldPacket data(SMSG_SPELLSTEALLOG, 8+8+4+1+4+count*5);
+            WorldPacket data(SMSG_SPELLSTEALLOG, unitTarget->GetPackGUID().size() + m_caster->GetPackGUID().size() + 4 + 1 + 4 + count * 5);
             data << unitTarget->GetPackGUID();       // Victim GUID
             data << m_caster->GetPackGUID();         // Caster GUID
             data << uint32(m_spellInfo->Id);         // Dispell spell id
@@ -13827,8 +13860,8 @@ void Spell::EffectServerSide(SpellEffectIndex eff_idx)
                         if ( holder->GetStackAmount() + 1 > uint32(triggerSpell->EffectBasePoints[EFFECT_INDEX_0] ))
                         {
                             unitTarget->RemoveAurasDueToSpell(triggerID == 67712 ? 67713 : 67759);
-                            if (unitTarget->getVictim())
-                                unitTarget->CastSpell(unitTarget->getVictim(), (triggerID == 67712 ? 67714 : 67760), true);
+                            if (Unit* pVictim = unitTarget->getVictim())
+                                unitTarget->CastSpell(pVictim, (triggerID == 67712 ? 67714 : 67760), true);
                             return;
                         }
                     }
