@@ -584,6 +584,7 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(NULL), m_
     m_anticheat = new AntiCheat(this);
 
     SetPendingBind(NULL, 0);
+    m_LFGState = new LFGPlayerState(this);
 
     m_camera = new Camera(*this);
 
@@ -602,7 +603,6 @@ Player::~Player()
     {
         sAccountMgr.ClearPlayerDataCache(GetObjectGuid());
         sMapPersistentStateMgr.AddToUnbindQueue(GetObjectGuid());
-        sLFGMgr.RemoveLFGState(GetObjectGuid());
     }
 
     // Note: buy back item already deleted from DB when player was saved
@@ -641,6 +641,7 @@ Player::~Player()
     delete m_declinedname;
     delete m_runes;
     delete m_anticheat;
+    delete m_LFGState;
     delete m_camera;
 
     // Playerbot mod
@@ -2805,7 +2806,7 @@ void Player::GiveLevel(uint32 level)
 
     GetAchievementMgr().UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL);
 
-    sLFGMgr.GetLFGPlayerState(GetObjectGuid())->Update();
+    GetLFGPlayerState()->Update();
 
     // resend quests status directly
     if (GetSession())
