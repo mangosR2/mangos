@@ -883,6 +883,10 @@ ChatCommand* ChatHandler::getCommandTable()
         { "ws",             SEC_GAMEMASTER,     false, NULL,                                           "", WSCommandTable },
         { "transport",      SEC_ADMINISTRATOR,  false, NULL,                                           "", transportCommandTable },
 
+        { "freeze",         SEC_ADMINISTRATOR,  true, &ChatHandler::HandleFreezeCommand,               "", NULL }, // ProEMU [Freeze Command]
+        { "unfreeze",       SEC_ADMINISTRATOR,  true, &ChatHandler::HandleUnFreezeCommand,             "", NULL }, // ProEMU [Freeze Command]
+        { "listfreeze",     SEC_ADMINISTRATOR,  true, &ChatHandler::HandleListFreezeCommand,           "", NULL }, // ProEMU [Freeze Command]
+        { "mirror",         SEC_GAMEMASTER,     false, &ChatHandler::HandleModifyMirrorCommand,        "", NULL }, // ProEMU Custom [Mirror Command]
         { "ircpm",          SEC_PLAYER,         false, &ChatHandler::HandleIRCpmCommand,               "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }

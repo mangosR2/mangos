@@ -2859,7 +2859,7 @@ bool ChatHandler::HandleTicketCommand(char* args)
     return true;
 }
 
-//close all tickets 
+//close all tickets
 bool ChatHandler::HandleCloseTicketCommand(char *args)
 {
     char* px = ExtractLiteralArg(&args);
@@ -2869,7 +2869,7 @@ bool ChatHandler::HandleCloseTicketCommand(char *args)
     // Closeticket all
     if (strncmp(px, "all", 4) == 0)
     {
-        sTicketMgr.CloseAll(); 
+        sTicketMgr.CloseAll();
         SendSysMessage(LANG_COMMAND_ALLTICKETCLOSED);
         return true;
     }
@@ -5452,6 +5452,23 @@ bool ChatHandler::HandleTitlesCurrentCommand(char* args)
     target->SetUInt32Value(PLAYER_CHOSEN_TITLE, titleInfo->bit_index);
 
     PSendSysMessage(LANG_TITLE_CURRENT_RES, id, titleInfo->name[GetSessionDbcLocale()], tNameLink.c_str());
+
+    return true;
+}
+
+bool ChatHandler::HandleModifyMirrorCommand(char* args)
+{
+    Creature *pCreature = getSelectedCreature();
+
+    if (!pCreature)
+    {
+        SendSysMessage("Please select a creature.");
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    CreatureInfo const* cInfo = pCreature->GetCreatureInfo();
+    m_session->GetPlayer()->SetDisplayId(pCreature->GetDisplayId());
 
     return true;
 }
