@@ -34,17 +34,11 @@ class UnitAction;
 class VehicleKit;
 class Map;
 class TerrainInfo;
-class GridMap;
 
 OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
 OBJECT_HANDLER(UnitAction,UnitActionPtr);
 OBJECT_HANDLER(VehicleKit,VehicleKitPtr);
 OBJECT_HANDLER(Map,MapPtr);
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
-    OBJECT_SAFE_HANDLER(TerrainInfo,TerrainInfoPtr);
-#else
-    OBJECT_HANDLER(TerrainInfo,TerrainInfoPtr);
-#endif
-OBJECT_HANDLER(GridMap,GridMapPtr);
+OBJECT_SAFE_HANDLER(TerrainInfo,TerrainInfoPtr);
 
 #endif
