@@ -7276,7 +7276,7 @@ bool ChatHandler::HandleUnFreezeCommand(char *args)
     {
         name = TargetName;
         normalizePlayerName(name);
-        player = sAccountMgr.GetPlayer(name.c_str()); //get player by #name
+        player = sObjectMgr.GetPlayer(name.c_str()); //get player by #name
     }
 
     //effect
