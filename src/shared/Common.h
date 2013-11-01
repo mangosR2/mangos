@@ -335,16 +335,6 @@ inline char * mangos_strdup(const char * source)
 
 #define MAX_CLIENT_STAT_VALUE INT16_MAX
 
-#if defined (WIN32) || defined (WIN64)
-    #define MANGOSR2_ATOMIC_LOCK_TYPE volatile mutable uint32
-    #define MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder) while (InterlockedExchange(&lockHolder, 1)) SwitchToThread()
-    #define MANGOSR2_ATOMIC_LOCK_END(lockHolder) InterlockedExchange(&lockHolder, 0)
-    #define MANGOSR2_ATOMIC_LOCK_WAIT(lockHolder) MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder); MANGOSR2_ATOMIC_LOCK_END(lockHolder)
-#else
-    #define MANGOSR2_ATOMIC_LOCK_TYPE volatile mutable uint32
-    #define MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder) while (__sync_val_compare_and_swap(&lockHolder, 0, 1)) sched_yield()
-    #define MANGOSR2_ATOMIC_LOCK_END(lockHolder) __sync_val_compare_and_swap(&lockHolder, 1, 0)
-    #define MANGOSR2_ATOMIC_LOCK_WAIT(lockHolder) MANGOSR2_ATOMIC_LOCK_BEGIN(lockHolder); MANGOSR2_ATOMIC_LOCK_END(lockHolder)
-#endif
+#include "MangosR2MembarMutex.h"
 
 #endif

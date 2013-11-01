@@ -70,6 +70,7 @@ set(LIBRARY_SRCS
     LockedVector.h
     Log.cpp
     Log.h
+    MangosR2MembarMutex.h
     ObjectUpdateTaskBase.h
     ProgressBar.cpp
     ProgressBar.h
