@@ -138,7 +138,7 @@ bool CreatureCreatePos::Relocate(Creature* cr) const
 Creature::Creature(CreatureSubtype subtype) :
 Unit(), i_AI(NULL), loot(this),
 lootForPickPocketed(false), lootForBody(false), lootForSkin(false),m_lootMoney(0),
-m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_respawnradius(5.0f),
+m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_respawnAggroDelay(0), m_respawnradius(5.0f),
 m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
 m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
 m_regenHealth(true), m_AI_locked(false), m_isDeadByDefault(false),
@@ -463,6 +463,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
                 m_respawnTime = 0;
+                m_respawnAggroDelay = sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY) * IN_MILLISECONDS;
                 lootForPickPocketed = false;
                 lootForBody         = false;
                 lootForSkin         = false;
@@ -536,6 +537,14 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         }
         case ALIVE:
         {
+            if (m_respawnAggroDelay)
+            {
+                if (m_respawnAggroDelay <= update_diff)
+                    m_respawnAggroDelay = 0;
+                else
+                    m_respawnAggroDelay -= update_diff;
+            }
+
             if (m_isDeadByDefault)
             {
                 if (m_corpseDecayTimer <= update_diff)
@@ -719,15 +728,16 @@ void Creature::RegenerateHealth()
 
 void Creature::DoFleeToGetAssistance()
 {
-    if (!getVictim())
-        return;
-
     float radius = sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_FLEE_ASSISTANCE_RADIUS);
-    if (radius > 0)
+    if (radius > 0.0f)
     {
+        Unit* pVictim = getVictim();
+        if (!pVictim)
+            return;
+
         Creature* pCreature = NULL;
 
-        MaNGOS::NearestAssistCreatureInCreatureRangeCheck u_check(this, getVictim(), radius);
+        MaNGOS::NearestAssistCreatureInCreatureRangeCheck u_check(this, pVictim, radius);
         MaNGOS::CreatureLastSearcher<MaNGOS::NearestAssistCreatureInCreatureRangeCheck> searcher(pCreature, u_check);
         Cell::VisitGridObjects(this, searcher, radius);
 
@@ -735,7 +745,7 @@ void Creature::DoFleeToGetAssistance()
         UpdateSpeed(MOVE_RUN, false);
 
         if (!pCreature)
-            SetFeared(true, getVictim()->GetObjectGuid(), 0 , sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_FLEE_DELAY));
+            SetFeared(true, pVictim->GetObjectGuid(), 0, sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_FLEE_DELAY));
         else
             GetMotionMaster()->MoveSeekAssistance(pCreature->GetPositionX(), pCreature->GetPositionY(), pCreature->GetPositionZ());
     }
@@ -1798,21 +1808,27 @@ void Creature::SendAIReaction(AiReaction reactionType)
 void Creature::CallAssistance()
 {
     // FIXME: should player pets call for assistance?
-    if (!m_AlreadyCallAssistance && getVictim() && !isCharmed())
+    if (m_AlreadyCallAssistance || isCharmed())
+        return;
+
+    if (Unit* pVictim = getVictim())
     {
         SetNoCallAssistance(true);
-        AI()->SendAIEventAround(AI_EVENT_CALL_ASSISTANCE, getVictim(), sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY), sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS));
+        AI()->SendAIEventAround(AI_EVENT_CALL_ASSISTANCE, pVictim, sWorld.getConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY), sWorld.getConfig(CONFIG_FLOAT_CREATURE_FAMILY_ASSISTANCE_RADIUS));
     }
 }
 
 void Creature::CallForHelp(float fRadius)
 {
-    if (fRadius <= 0.0f || !getVictim() || IsPet() || isCharmed())
+    if (fRadius <= 0.0f || IsPet() || isCharmed())
         return;
 
-    MaNGOS::CallOfHelpCreatureInRangeDo u_do(this, getVictim(), fRadius);
-    MaNGOS::CreatureWorker<MaNGOS::CallOfHelpCreatureInRangeDo> worker(this, u_do);
-    Cell::VisitGridObjects(this, worker, fRadius);
+    if (Unit* pVictim = getVictim())
+    {
+        MaNGOS::CallOfHelpCreatureInRangeDo u_do(this, pVictim, fRadius);
+        MaNGOS::CreatureWorker<MaNGOS::CallOfHelpCreatureInRangeDo> worker(this, u_do);
+        Cell::VisitGridObjects(this, worker, fRadius);
+    }
 }
 
 /// if enemy provided, check for initial combat help against enemy
@@ -1865,6 +1881,9 @@ bool Creature::CanInitiateAttack()
         return false;
 
     if (isPassiveToHostile())
+        return false;
+
+    if (m_respawnAggroDelay)
         return false;
 
     return true;
@@ -2559,7 +2578,7 @@ void Creature::SetWalk(bool enable, bool asDefault)
     else
         m_movementInfo.RemoveMovementFlag(MOVEFLAG_WALK_MODE);
 
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_WALK_MODE : SMSG_SPLINE_MOVE_SET_RUN_MODE, 9);
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_WALK_MODE : SMSG_SPLINE_MOVE_SET_RUN_MODE, GetPackGUID().size());
     data << GetPackGUID();
     SendMessageToSet(&data, true);
 }
@@ -2577,7 +2596,7 @@ void Creature::SetLevitate(bool enable, float altitude)
         SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 0.0f);
     }
 
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, GetPackGUID().size());
     data << GetPackGUID();
     SendMessageToSet(&data, true);
 }
@@ -2615,8 +2634,8 @@ Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
             break;
 
         case SPELL_PREFERRED_TARGET_VICTIM:
-            if (getVictim())
-                target = getVictim();
+            if (Unit* pVictim = getVictim())
+                target = pVictim;
             else
                 target = SelectAttackingTarget(ATTACKING_TARGET_TOPAGGRO, 0, spellInfo, 0);
             break;
@@ -2648,7 +2667,7 @@ Unit* Creature::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
     if (target && target != this)
     {
         float dist = GetDistance(target);
-        if ( dist > max_range || dist < GetSpellMinRange(srange))
+        if (dist > max_range || dist < GetSpellMinRange(srange))
             target = NULL;
     }
 
@@ -2688,7 +2707,7 @@ void Creature::SetRoot(bool enable)
     else
         m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
 
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_ROOT : SMSG_SPLINE_MOVE_UNROOT, 8);
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_ROOT : SMSG_SPLINE_MOVE_UNROOT, GetPackGUID().size());
     data << GetPackGUID();
     SendMessageToSet(&data, true);
 }
@@ -2700,7 +2719,7 @@ void Creature::SetWaterWalk(bool enable)
     else
         m_movementInfo.RemoveMovementFlag(MOVEFLAG_WATERWALKING);
 
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_WATER_WALK : SMSG_SPLINE_MOVE_LAND_WALK, 8);
+    WorldPacket data(enable ? SMSG_SPLINE_MOVE_WATER_WALK : SMSG_SPLINE_MOVE_LAND_WALK, GetPackGUID().size());
     data << GetPackGUID();
     SendMessageToSet(&data, true);
 }

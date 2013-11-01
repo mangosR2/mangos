@@ -1713,8 +1713,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         ActionButton const* GetActionButton(uint8 button);
 
         PvPInfo pvpInfo;
-        void UpdatePvP(bool state, bool ovrride=false);
-        void UpdateZone(uint32 newZone,uint32 newArea);
+        void UpdatePvP(bool state, bool bOverride = false);
+        void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
         uint32 GetCachedZoneId() const { return m_zoneUpdateId; }
 
@@ -1743,10 +1743,9 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         bool IsGroupVisibleFor(Player* p) const;
         bool IsInSameGroupWith(Player const* p) const;
-        bool IsInSameRaidWith(Player const* p) const { return p==this || (GetGroup() != NULL && GetGroup() == p->GetGroup()); }
+        bool IsInSameRaidWith(Player const* p) const { return p == this || (GetGroupGuid() && GetGroupGuid() == p->GetGroupGuid()); }
         void UninviteFromGroup();
-        static void RemoveFromGroup(Group* group, ObjectGuid guid);
-        void RemoveFromGroup() { RemoveFromGroup(GetGroup(), GetObjectGuid()); }
+        void RemoveFromGroup(bool logout = false);
         void SendUpdateToOutOfRangeGroupMembers();
         void SetAllowLowLevelRaid(bool allow) { ApplyModFlag(PLAYER_FLAGS, PLAYER_FLAGS_ENABLE_LOW_LEVEL_RAID, allow); }
         bool GetAllowLowLevelRaid() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_ENABLE_LOW_LEVEL_RAID); }
@@ -2173,8 +2172,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool CanUseBattleGroundObject();
         bool isTotalImmune();
 
-        bool GetRandomWinner() { return m_IsBGRandomWinner; }
-        void SetRandomWinner(bool isWinner);
+        void SetRandomBGWinner(bool winner);
+        bool IsRandomBGWinner() { return m_isRandomBGWinner; }
 
         /*********************************************************/
         /***                 OUTDOOR PVP SYSTEM                ***/
@@ -2352,8 +2351,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         /***                   GROUP SYSTEM                    ***/
         /*********************************************************/
 
-        Group* GetGroupInvite() { return m_groupInvite; }
-        void SetGroupInvite(Group* group) { m_groupInvite = group; }
+        ObjectGuid const& GetGroupInvite() { return m_groupInviteGuid; }
+        void SetGroupInvite(ObjectGuid const& groupGuid) { m_groupInviteGuid = groupGuid; }
         ObjectGuid const& GetGroupGuid() const { return m_groupGuid; };
         ObjectGuid const& GetOriginalGroupGuid() const { return m_originalGroupGuid; };
         Group* GetGroup();
@@ -2462,7 +2461,8 @@ class MANGOS_DLL_SPEC Player : public Unit
 
         BgBattleGroundQueueID_Rec m_bgBattleGroundQueueID[PLAYER_MAX_BATTLEGROUND_QUEUES];
         BGData                    m_bgData;
-        bool m_IsBGRandomWinner;
+
+        bool m_isRandomBGWinner;
 
         /*********************************************************/
         /***                    QUEST SYSTEM                   ***/
@@ -2655,9 +2655,9 @@ class MANGOS_DLL_SPEC Player : public Unit
         PlayerSocial *m_social;
 
         // Groups
+        ObjectGuid m_groupInviteGuid;
         ObjectGuid m_groupGuid;
         GroupReference m_group;
-        Group* m_groupInvite;
         uint32 m_groupUpdateMask;
         uint64 m_auraUpdateMask;
 

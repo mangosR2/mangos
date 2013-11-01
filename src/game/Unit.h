@@ -276,6 +276,8 @@ class PetAura;
 class Totem;
 class VehicleInfo;
 
+typedef int8 SeatId;
+
 struct SpellImmune
 {
     uint32 type;
@@ -754,7 +756,7 @@ class MovementInfo
 
         // Position manipulations
         Position const* GetPos() const { return &pos; }
-        void SetTransportData(ObjectGuid guid, Position const& pos, uint32 time, int8 seat, VehicleSeatEntry const* seatInfo = NULL)
+        void SetTransportData(ObjectGuid guid, Position const& pos, uint32 time, SeatId seat, VehicleSeatEntry const* seatInfo = NULL)
         {
             t_guid = guid;
             t_pos = pos;
@@ -776,7 +778,7 @@ class MovementInfo
         }
         ObjectGuid const& GetTransportGuid() const { return t_guid; }
         Position const* GetTransportPos() const { return &t_pos; }
-        int8 GetTransportSeat() const { return t_seat; }
+        SeatId GetTransportSeat() const { return t_seat; }
 
         uint32 GetTransportDBCSeat() const { return t_seatInfo ? t_seatInfo->m_ID : 0; }
         uint32 GetVehicleSeatFlags() const { return t_seatInfo ? t_seatInfo->m_flags : 0; }
@@ -841,7 +843,7 @@ class MovementInfo
         ObjectGuid t_guid;
         Position t_pos;
         uint32   t_time;
-        int8     t_seat;
+        SeatId     t_seat;
         VehicleSeatEntry const* t_seatInfo;
         uint32   t_time2;
         // swimming and flying
@@ -1363,7 +1365,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool AttackStop(bool targetSwitch = false);
         void RemoveAllAttackers();
         bool isAttackingPlayer() const;
-        Unit* getVictim() const { return IsInWorld() ? GetMap()->GetUnit(m_attackingGuid) : NULL; }
+        Unit* getVictim() const { return m_attackingGuid ? IsInWorld() ? GetMap()->GetUnit(m_attackingGuid) : NULL : NULL; }
         virtual bool IsInEvadeMode() const { return false; };
         void CombatStop(bool includingCast = false);
         void CombatStopWithPets(bool includingCast = false);
@@ -2124,6 +2126,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         virtual bool IsImmuneToSpellEffect(SpellEntry const* spellInfo, SpellEffectIndex index) const;
                                                             // redefined in Creature
 
+        static bool IsDamageReducedByArmor(SpellSchoolMask damageSchoolMask, SpellEntry const* spellProto = NULL, SpellEffectIndex effIndex = MAX_EFFECT_INDEX);
         uint32 CalcArmorReducedDamage(Unit* pVictim, const uint32 damage);
         void CalculateResistance(Unit* pCaster, DamageInfo* damageInfo);
         void CalculateDamageAbsorbAndResist(Unit* pCaster, DamageInfo* damageInfo, bool canReflect = false);

@@ -42,7 +42,7 @@ struct VehicleSeat
     bool b_dismount:1;
 };
 
-typedef std::map<int8, VehicleSeat> SeatMap;
+typedef std::map<SeatId, VehicleSeat> SeatMap;
 
 enum AccessoryFlags
 {
@@ -77,16 +77,18 @@ class MANGOS_DLL_SPEC VehicleKit : public TransportBase
         bool IsInitialized() const { return m_isInitialized; }
 
         void Reset();
-        void InstallAccessory(int8 seatID);
+        void InstallAccessory(SeatId seatID);
 
-        bool HasEmptySeat(int8 seatId) const;
-        int8 GetNextEmptySeatWithFlag(int8 seatId, bool next = true, uint32 VehicleSeatFlag = 0) const;
-        Unit* GetPassenger(int8 seatId) const;
-        bool AddPassenger(Unit* passenger, int8 seatId = -1);
+        bool HasEmptySeat(SeatId seatId) const;
+        SeatId GetNextEmptySeatWithFlag(SeatId seatId, bool next = true, uint32 VehicleSeatFlag = 0) const;
+        Unit* GetPassenger(SeatId seatId) const;
+        bool AddPassenger(Unit* passenger, SeatId seatId = -1);
         void RemovePassenger(Unit* passenger, bool dismount = false);
         void RemoveAllPassengers();
         VehicleSeatEntry const* GetSeatInfo(Unit* passenger);
-        int8 GetSeatId(Unit* passenger);
+        VehicleSeatEntry const* GetSeatInfo(ObjectGuid const& guid);
+        SeatId GetSeatId(Unit* passenger);
+        SeatId GetSeatId(ObjectGuid const& guid);
         void SetDestination(float x, float y, float z, float o, float speed, float elevation);
         void SetDestination() { m_dst_x = 0.0f; m_dst_y = 0.0f; m_dst_z  = 0.0f; m_dst_o  = 0.0f; m_dst_speed  = 0.0f; m_dst_elevation  = 0.0f; b_dstSet = false;};
         void DisableDismount(Unit* passenger);

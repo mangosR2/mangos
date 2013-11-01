@@ -711,7 +711,7 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
         Cell::VisitWorldObjects(GetPlayer(), say_worker, sWorld.getConfig(CONFIG_FLOAT_LISTEN_RANGE_SAY));
     }
 
-    WorldPacket data(SMSG_ACHIEVEMENT_EARNED, 8 + 4 + 8);
+    WorldPacket data(SMSG_ACHIEVEMENT_EARNED, GetPlayer()->GetPackGUID().size() + 4 + 4);
     data << GetPlayer()->GetPackGUID();
     data << uint32(achievement->ID);
     data.AppendPackedTime(time(NULL));
@@ -721,7 +721,7 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement)
 
 void AchievementMgr::SendCriteriaUpdate(uint32 id, CriteriaProgress const* progress)
 {
-    WorldPacket data(SMSG_CRITERIA_UPDATE, 8 + 4 + 8);
+    WorldPacket data(SMSG_CRITERIA_UPDATE, 4 + 4 + 9 + GetPlayer()->GetPackGUID().size() + 4 + 4 + 4 + 4);
     data << uint32(id);
 
     time_t now = time(NULL);
@@ -887,6 +887,65 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
 
         AchievementEntry const* achievement = sAchievementStore.LookupEntry(achievementCriteria->referredAchievement);
         // Checked in LoadAchievementCriteriaList
+
+        // Don't complete "First on server" achieves for GMs
+        if (m_player->GetSession()->GetSecurity() > SEC_PLAYER)
+        {
+            switch (achievement->ID)
+            {
+                // 80
+                case 457:
+                // class
+                case 458:
+                case 459:
+                case 460:
+                case 461:
+                case 462:
+                case 463:
+                case 464:
+                case 465:
+                case 466:
+                case 467:
+                // race
+                case 1404:
+                case 1405:
+                case 1406:
+                case 1407:
+                case 1408:
+                case 1409:
+                case 1410:
+                case 1411:
+                case 1412:
+                case 1413:
+                // profession
+                case 1414:
+                case 1415:
+                case 1416:
+                case 1417:
+                case 1418:
+                case 1419:
+                case 1420:
+                case 1421:
+                case 1422:
+                case 1423:
+                case 1424:
+                case 1425:
+                case 1426:
+                case 1427:
+                // other
+                case 456:
+                case 1400:
+                case 1402:
+                case 1463:
+                case 3117:
+                case 3259:
+                case 4078:
+                case 4576:
+                    continue;
+                default:
+                    break;
+            }
+        }
 
         if ((achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE    && GetPlayer()->GetTeam() != HORDE) ||
                 (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && GetPlayer()->GetTeam() != ALLIANCE))
@@ -2993,7 +3052,7 @@ void AchievementMgr::IncompletedAchievement(AchievementEntry const* achievement)
 void AchievementMgr::SendAllAchievementData()
 {
     // since we don't know the exact size of the packed GUIDs this is just an approximation
-    WorldPacket data(SMSG_ALL_ACHIEVEMENT_DATA, 4 * 2 + m_completedAchievements.size() * 4 * 2 + m_completedAchievements.size() * 7 * 4);
+    WorldPacket data(SMSG_ALL_ACHIEVEMENT_DATA, m_completedAchievements.size() * (4 + 4) + m_criteriaProgress.size() * (4 + 9 + 9 + 4 + 4 + 4 + 4));
     BuildAllDataPacket(&data);
     GetPlayer()->GetSession()->SendPacket(&data);
 }
@@ -3001,7 +3060,7 @@ void AchievementMgr::SendAllAchievementData()
 void AchievementMgr::SendRespondInspectAchievements(Player* player)
 {
     // since we don't know the exact size of the packed GUIDs this is just an approximation
-    WorldPacket data(SMSG_RESPOND_INSPECT_ACHIEVEMENTS, 4 + 4 * 2 + m_completedAchievements.size() * 4 * 2 + m_completedAchievements.size() * 7 * 4);
+    WorldPacket data(SMSG_RESPOND_INSPECT_ACHIEVEMENTS, GetPlayer()->GetPackGUID().size() + m_completedAchievements.size() * (4 + 4) + m_criteriaProgress.size() * (4 + 9 + 9 + 4 + 4 + 4 + 4));
     data << GetPlayer()->GetPackGUID();
     BuildAllDataPacket(&data);
     player->GetSession()->SendPacket(&data);

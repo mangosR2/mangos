@@ -941,7 +941,7 @@ void Spell::FillTargetMap()
         {
             if (Unit* pMagnetTarget = m_caster->SelectMagnetTarget(*tmpUnitLists[effToIndex[i]].begin(), this, SpellEffectIndex(i)))
             {
-                if (pMagnetTarget && pMagnetTarget != *tmpUnitLists[effToIndex[i]].begin())
+                if (pMagnetTarget != *tmpUnitLists[effToIndex[i]].begin())
                 {
                     tmpUnitLists[effToIndex[i]].clear();
                     tmpUnitLists[effToIndex[i]].push_back(pMagnetTarget);
@@ -3149,10 +3149,10 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
             // explicit cast data from client or server-side cast
             // some spell at client send caster
-            if (m_targets.getUnitTarget() && m_targets.getUnitTarget()!=m_caster)
+            if (m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
                 pTarget = m_targets.getUnitTarget();
-            else if (m_caster->getVictim())
-                pTarget = m_caster->getVictim();
+            else if (Unit* pVictim = m_caster->getVictim())
+                pTarget = pVictim;
             else if (m_caster->GetTypeId() == TYPEID_PLAYER)
                 pTarget = ObjectAccessor::GetUnit(*m_caster, ((Player*)m_caster)->GetSelectionGuid());
             else if (m_targets.getUnitTarget())
@@ -3162,7 +3162,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             {
                 float angle = 0.0f;
 
-                switch(targetMode)
+                switch (targetMode)
                 {
                     case TARGET_INFRONT_OF_VICTIM:                        break;
                     case TARGET_BEHIND_VICTIM:      angle = M_PI_F;       break;
@@ -4567,7 +4567,7 @@ void Spell::SendSpellStart()
 
     Unit *caster = m_triggeredByAuraSpell && IsChanneledSpell(m_triggeredByAuraSpell) ? GetAffectiveCaster() : m_caster;
 
-    WorldPacket data(SMSG_SPELL_START, (8+8+4+4+2));
+    WorldPacket data(SMSG_SPELL_START, 9 + caster->GetPackGUID().size() + 1 + 4 + 4 + 4 + 4 + 1 + 1 + 9 + 4 + 4 + 4);
     if (m_CastItem)
         data << m_CastItem->GetPackGUID();
     else
@@ -4852,7 +4852,7 @@ void Spell::SendLogExecute()
 
     Unit *target = m_targets.getUnitTarget() ? m_targets.getUnitTarget() : m_caster;
 
-    WorldPacket data(SMSG_SPELLLOGEXECUTE, (8+4+4+4+4+8));
+    WorldPacket data(SMSG_SPELLLOGEXECUTE, 9 + 4 + 4 + 4 + 4 + 8);
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER)
         data << m_caster->GetPackGUID();
@@ -4970,7 +4970,7 @@ void Spell::SendInterrupted(uint8 result)
     if (!m_caster || !m_caster->IsInWorld())
         return;
 
-    WorldPacket data(SMSG_SPELL_FAILURE, 8 + 1 + 4 + 1);
+    WorldPacket data(SMSG_SPELL_FAILURE, m_caster->GetPackGUID().size() + 1 + 4 + 1);
     data << m_caster->GetPackGUID();
     data << uint8(m_cast_count);
     data << uint32(m_spellInfo->Id);
@@ -5038,7 +5038,7 @@ void Spell::SendChannelUpdate(uint32 time)
         m_caster->SetUInt32Value(UNIT_CHANNEL_SPELL, 0);
     }
 
-    WorldPacket data( MSG_CHANNEL_UPDATE, 8+4 );
+    WorldPacket data(MSG_CHANNEL_UPDATE, m_caster->GetPackGUID().size() + 4);
     data << m_caster->GetPackGUID();
     data << uint32(time);
     m_caster->SendMessageToSet(&data, true);
@@ -5076,7 +5076,7 @@ void Spell::SendChannelStart(uint32 duration)
         }
     }
 
-    WorldPacket data( MSG_CHANNEL_START, (8+4+4) );
+    WorldPacket data(MSG_CHANNEL_START, m_caster->GetPackGUID().size() + 4 + 4);
     data << m_caster->GetPackGUID();
     data << uint32(m_spellInfo->Id);
     data << uint32(duration);
@@ -5945,12 +5945,12 @@ SpellCastResult Spell::CheckCast(bool strict)
 
     bool castOnVehicleAllowed = false;
 
-    if (m_caster->GetVehicle())
+    if (VehicleKitPtr vehicle = m_caster->GetVehicle())
     {
         if (m_spellInfo->HasAttribute(SPELL_ATTR_EX6_CASTABLE_ON_VEHICLE))
             castOnVehicleAllowed = true;
 
-        if (VehicleSeatEntry const* seatInfo = m_caster->GetVehicle()->GetSeatInfo(m_caster))
+        if (VehicleSeatEntry const* seatInfo = vehicle->GetSeatInfo(m_caster))
             if ((seatInfo->m_flags & SEAT_FLAG_CAN_CAST) || (seatInfo->m_flags & SEAT_FLAG_CAN_ATTACK))
                 castOnVehicleAllowed = true;
     }
@@ -8049,7 +8049,7 @@ void Spell::Delayed()
 
     DETAIL_FILTER_LOG(LOG_FILTER_SPELL_CAST, "Spell %u partially interrupted for (%d) ms at damage", m_spellInfo->Id, delaytime);
 
-    WorldPacket data(SMSG_SPELL_DELAYED, 8+4);
+    WorldPacket data(SMSG_SPELL_DELAYED, m_caster->GetPackGUID().size() + 4);
     data << m_caster->GetPackGUID();
     data << uint32(delaytime);
 
