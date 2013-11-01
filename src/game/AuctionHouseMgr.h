@@ -162,7 +162,7 @@ enum AuctionHouseType
 
 #define MAX_AUCTION_HOUSE_TYPE 3
 
-class AuctionHouseMgr : public MaNGOS::Singleton<AuctionHouseMgr, MaNGOS::ClassLevelLockable<AuctionHouseMgr, ACE_Thread_Mutex> >
+class AuctionHouseMgr : public MaNGOS::Singleton<AuctionHouseMgr, MaNGOS::ClassLevelLockable<AuctionHouseMgr, MANGOSR2_MUTEX_MODEL> >
 {
     public:
         AuctionHouseMgr();

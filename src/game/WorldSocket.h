@@ -99,7 +99,7 @@ class WorldSocket : protected WorldHandler
         typedef ACE_Acceptor< WorldSocket, ACE_SOCK_ACCEPTOR > Acceptor;
 
         /// Mutex type used for various synchronizations.
-        typedef ACE_Thread_Mutex LockType;
+        typedef MANGOSR2_MUTEX_MODEL LockType;
         typedef ACE_Guard<LockType> GuardType;
 
         /// Check if socket is closed.

@@ -529,7 +529,7 @@ struct CliCommandHolder
 class World
 {
     public:
-        static ACE_Atomic_Op<ACE_Thread_Mutex, uint32> m_worldLoopCounter;
+        static ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL, uint32> m_worldLoopCounter;
 
         World();
         ~World();
@@ -724,7 +724,7 @@ class World
         bool configNoReload(bool reload, eConfigFloatValues index, char const* fieldname, float defvalue);
         bool configNoReload(bool reload, eConfigBoolValues index, char const* fieldname, bool defvalue);
 
-        static ACE_Atomic_Op<ACE_Thread_Mutex, bool> m_stopEvent;
+        static ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL, bool> m_stopEvent;
         static uint8 m_ExitCode;
         uint32 m_ShutdownTimer;
         uint32 m_ShutdownMask;
@@ -769,7 +769,7 @@ class World
         static uint32 m_relocation_ai_notify_delay;
 
         // CLI command holder to be thread safe
-        ACE_Based::LockedQueue<CliCommandHolder*,ACE_Thread_Mutex> cliCmdQueue;
+        ACE_Based::LockedQueue<CliCommandHolder*,MANGOSR2_MUTEX_MODEL> cliCmdQueue;
 
         // next daily quests reset time
         time_t m_NextDailyQuestReset;
@@ -783,7 +783,7 @@ class World
 
         //sessions that are added async
         void AddSession_(WorldSession* s);
-        ACE_Based::LockedQueue<WorldSession*, ACE_Thread_Mutex> addSessQueue;
+        ACE_Based::LockedQueue<WorldSession*, MANGOSR2_MUTEX_MODEL> addSessQueue;
 
         //used versions
         std::string m_DBVersion;
