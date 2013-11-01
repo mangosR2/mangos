@@ -677,7 +677,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT);
 
         //obtain terrain data for map where this object belong...
-        TerrainInfo const* GetTerrain() const;
+        TerrainInfoPtr GetTerrain() const;
 
         void AddToClientUpdateList() override;
         void RemoveFromClientUpdateList() override;

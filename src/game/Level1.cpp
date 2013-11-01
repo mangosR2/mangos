@@ -350,7 +350,7 @@ bool ChatHandler::HandleGPSCommand(char* args)
 
     uint32 have_map = GridMap::ExistMap(obj->GetMapId(), gx, gy) ? 1 : 0;
     uint32 have_vmap = GridMap::ExistVMap(obj->GetMapId(), gx, gy) ? 1 : 0;
-    TerrainInfo const *terrain = obj->GetTerrain();
+    TerrainInfoPtr terrain = obj->GetTerrain();
 
     PSendSysMessage(LANG_MAP_POSITION,
                     obj->GetMapId(), (mapEntry ? mapEntry->name[GetSessionDbcLocale()] : "<unknown>"),
@@ -2112,8 +2112,8 @@ bool ChatHandler::HandleGoHelper(Player* player, uint32 mapid, float x, float y,
             return false;
         }
 
-        TerrainInfo const* map = sTerrainMgr.LoadTerrain(mapid);
-        z = map->GetWaterOrGroundLevel(x, y, MAX_HEIGHT);
+        TerrainInfoPtr gridMap = sTerrainMgr.LoadTerrain(mapid);
+        z = gridMap->GetWaterOrGroundLevel(x, y, MAX_HEIGHT);
     }
 
     player->InterruptTaxiFlying();

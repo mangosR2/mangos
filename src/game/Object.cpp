@@ -1792,7 +1792,7 @@ void WorldObject::SetMap(Map* map)
     m_position.SetInstanceId(map->GetInstanceId());
 }
 
-TerrainInfo const* WorldObject::GetTerrain() const
+TerrainInfoPtr WorldObject::GetTerrain() const
 {
     MANGOS_ASSERT(m_currMap);
     return m_currMap->GetTerrain();

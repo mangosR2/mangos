@@ -886,7 +886,15 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
         AchievementCriteriaEntry const* achievementCriteria = *itr;
 
         AchievementEntry const* achievement = sAchievementStore.LookupEntry(achievementCriteria->referredAchievement);
-        // Checked in LoadAchievementCriteriaList
+        // *achievement Checked in LoadAchievementCriteriaList
+
+        // Don't complete "First on server" achieves for GMs
+        if (m_player->GetSession()->GetSecurity() > SEC_PLAYER)
+        {
+            if ((achievement->flags & ACHIEVEMENT_FLAG_REALM_FIRST_REACH) ||
+                (achievement->flags & ACHIEVEMENT_FLAG_REALM_FIRST_RAID_REACH))
+                continue;
+        }
 
         if ((achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_HORDE    && GetPlayer()->GetTeam() != HORDE) ||
                 (achievement->factionFlag == ACHIEVEMENT_FACTION_FLAG_ALLIANCE && GetPlayer()->GetTeam() != ALLIANCE))
