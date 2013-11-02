@@ -433,6 +433,7 @@ class MANGOS_DLL_SPEC Object
 };
 
 struct WorldObjectChangeAccumulator;
+class TransportKit;
 
 namespace Movement
 {
@@ -487,6 +488,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         virtual bool IsTransport() const { return false; };
         virtual bool IsMOTransport() const { return false; };
         TransportBase* GetTransportBase();
+        virtual TransportKit* GetTransportKit() { return NULL; };
 
         void Relocate(WorldLocation const& location);
         void Relocate(Position const& position);
@@ -672,7 +674,7 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT);
 
         //obtain terrain data for map where this object belong...
-        TerrainInfo const* GetTerrain() const;
+        TerrainInfoPtr GetTerrain() const;
 
         void AddToClientUpdateList() override;
         void RemoveFromClientUpdateList() override;

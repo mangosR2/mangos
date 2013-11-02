@@ -335,9 +335,9 @@ Unit::~Unit()
     MANGOS_ASSERT(m_deletedHolders.size() == 0);
 }
 
-void Unit::Update( uint32 update_diff, uint32 p_time )
+void Unit::Update(uint32 update_diff, uint32 p_time)
 {
-    if(!IsInWorld())
+    if (!IsInWorld())
         return;
 
     /*if (p_time > m_AurasCheck)
@@ -387,12 +387,12 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
 
     if (uint32 base_att = getAttackTimer(BASE_ATTACK))
     {
-        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(BASE_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (uint32 base_att = getAttackTimer(OFF_ATTACK))
     {
-        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff) );
+        setAttackTimer(OFF_ATTACK, (update_diff >= base_att ? 0 : base_att - update_diff));
     }
 
     if (IsVehicle() && !IsInEvadeMode())
@@ -407,18 +407,18 @@ void Unit::Update( uint32 update_diff, uint32 p_time )
     }
 
     // update abilities available only for fraction of time
-    UpdateReactives( update_diff );
+    UpdateReactives(update_diff);
 
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth()*0.20f);
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth()*0.35f);
-    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth()*0.75f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
+    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
+    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth() * 0.75f);
     UpdateSplineMovement(p_time);
     GetUnitStateMgr().Update(p_time);
 }
 
 bool Unit::UpdateMeleeAttackingState()
 {
-    Unit *victim = getVictim();
+    Unit* victim = getVictim();
     if (!victim || IsNonMeleeSpellCasted(false))
         return false;
 
@@ -1083,11 +1083,11 @@ uint32 Unit::DealDamage(DamageInfo* damageInfo)
 
         if (damageInfo->damageType != DOT)
         {
-            if(!getVictim())
+            if (!getVictim())
             {
                 // if not have main target then attack state with target (including AI call)
                 //start melee attacks only after melee hit
-                Attack(pVictim, (damageInfo->damageType == DIRECT_DAMAGE));
+                Attack(pVictim, damageInfo->damageType == DIRECT_DAMAGE);
             }
 
             // if damage pVictim call AI reaction
@@ -1616,48 +1616,45 @@ uint32 Unit::SpellNonMeleeDamageLog(Unit* pVictim, uint32 spellID, uint32 damage
 
 void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
 {
-    if (!damageInfo || damageInfo->damage < 0)
+    if (!damageInfo || int32(damageInfo->damage) < 0)
         return;
 
     if (!damageInfo->target || !isAlive() || !damageInfo->target->isAlive())
         return;
 
     // Check spell crit chance
-    bool crit = IsSpellCrit(damageInfo->target, damageInfo->GetSpellProto(), damageInfo->GetSchoolMask(), damageInfo->attackType);
+    bool isCrit = IsSpellCrit(damageInfo->target, damageInfo->GetSpellProto(), damageInfo->GetSchoolMask(), damageInfo->attackType);
+    isCrit ? damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT : damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
 
-    // damage bonus (per damage class)
+    // Damage bonus (per damage class)
     switch (damageInfo->GetSpellProto()->DmgClass)
     {
         // Melee and Ranged Spells
         case SPELL_DAMAGE_CLASS_RANGED:
         case SPELL_DAMAGE_CLASS_MELEE:
         {
-            //Calculate damage bonus
+            // Calculate damage bonus
             MeleeDamageBonusDone(damageInfo);
             if (fabs(DamageMultiplier - 1.0f) > M_NULL_F)
-                damageInfo->damage = floor((float)damageInfo->damage * DamageMultiplier);
+                damageInfo->damage = floor(float(damageInfo->damage) * DamageMultiplier);
 
             damageInfo->target->MeleeDamageBonusTaken(damageInfo);
 
-            // if crit add critical bonus
-            if (crit)
+            // If crit add critical bonus
+            if (isCrit)
             {
-                damageInfo->HitInfo |=  SPELL_HIT_TYPE_CRIT;
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->GetSpellProto(), damageInfo->damage, damageInfo->target);
 
                 // Resilience - reduce crit damage (full or reduced)
-                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
-                                                   damageInfo->damage :
-                                                   CalcNotIgnoreDamageReduction(damageInfo);
-                uint32 damageCritReduction = (damageInfo->attackType != RANGED_ATTACK) ?
-                                                damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage) :
-                                                damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+                    ? damageInfo->damage
+                    : CalcNotIgnoreDamageReduction(damageInfo);
+
+                uint32 damageCritReduction = (damageInfo->attackType != RANGED_ATTACK)
+                    ? damageInfo->target->GetMeleeCritDamageReduction(reduction_affected_damage)
+                    : damageInfo->target->GetRangedCritDamageReduction(reduction_affected_damage);
 
                 damageInfo->damage -= damageCritReduction;
-            }
-            else
-            {
-                damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
             }
             break;
         }
@@ -1668,50 +1665,53 @@ void Unit::CalculateSpellDamage(DamageInfo* damageInfo, float DamageMultiplier)
             // Calculate damage bonus
             SpellDamageBonusDone(damageInfo);
             if (fabs(DamageMultiplier - 1.0f) > M_NULL_F)
-                damageInfo->damage = floor((float)damageInfo->damage * DamageMultiplier);
+                damageInfo->damage = floor(float(damageInfo->damage) * DamageMultiplier);
+
             damageInfo->target->SpellDamageBonusTaken(damageInfo);
 
             // If crit add critical bonus
-            if (crit)
+            if (isCrit)
             {
-                damageInfo->HitInfo |= SPELL_HIT_TYPE_CRIT;
                 damageInfo->damage = SpellCriticalDamageBonus(damageInfo->GetSpellProto(), damageInfo->damage, damageInfo->target);
 
                 // Resilience - reduce crit damage (full or reduced)
-                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
-                                                   damageInfo->damage :
-                                                   CalcNotIgnoreDamageReduction(damageInfo);
+                uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+                    ? damageInfo->damage
+                    : CalcNotIgnoreDamageReduction(damageInfo);
 
                 damageInfo->damage -= damageInfo->target->GetSpellCritDamageReduction(reduction_affected_damage);
-            }
-            else
-            {
-                damageInfo->HitInfo &= ~SPELL_HIT_TYPE_CRIT;
             }
             break;
         }
         default:
-            sLog.outError("Unit::CalculateSpellDamage unknown damage class by caster: %s, spell %u", GetObjectGuid().GetString().c_str(), damageInfo->GetSpellProto()->Id);
+            sLog.outError("Unit::CalculateSpellDamage: Unknown damage class by caster: %s, spell %u", GetGuidStr().c_str(), damageInfo->GetSpellProto()->Id);
             return;
     }
 
-    // Resilience - reduce regular damage (full or reduced)
-    uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION) ?
-                                       damageInfo->damage :
-                                       CalcNotIgnoreDamageReduction(damageInfo);
-    damageInfo->damage -= damageInfo->target->GetSpellDamageReduction(reduction_affected_damage);
-
     // damage mitigation
-    if (damageInfo->damage > 0)
+    if (int32(damageInfo->damage) > 0)
     {
         // physical damage => armor
-        if ((damageInfo->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL) && !damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
+        if (!damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX3_CANT_MISS) && IsDamageReducedByArmor(damageInfo->GetSchoolMask(), damageInfo->GetSpellProto()))
         {
             uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
             damageInfo->damage = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
         }
+
+        // Only from players and their pets
+        if (int32(damageInfo->damage) > 0 && IsCharmerOrOwnerPlayerOrPlayerItself())
+        {
+            // Resilience - reduce regular damage (full or reduced)
+            uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+                ? damageInfo->damage
+                : CalcNotIgnoreDamageReduction(damageInfo);
+
+            damageInfo->damage -= damageInfo->target->GetSpellDamageReduction(reduction_affected_damage);
+        }
     }
-    else
+
+    // Impossible get negative result but....
+    if (int32(damageInfo->damage) < 0)
         damageInfo->damage = 0;
 }
 
@@ -1799,10 +1799,13 @@ void Unit::CalculateMeleeDamage(DamageInfo* damageInfo)
     pVictim->MeleeDamageBonusTaken(damageInfo);
 
     // Calculate armor reduction
-    uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-    uint32 armor_reduced_damage  = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
-    damageInfo->cleanDamage     += damageInfo->damage - armor_reduced_damage;
-    damageInfo->damage           = armor_reduced_damage;
+    if (IsDamageReducedByArmor(damageInfo->GetSchoolMask()))
+    {
+        uint32 armor_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
+        uint32 armor_reduced_damage  = damageInfo->damage - armor_affected_damage + CalcArmorReducedDamage(damageInfo->target, armor_affected_damage);
+        damageInfo->cleanDamage     += damageInfo->damage - armor_reduced_damage;
+        damageInfo->damage           = armor_reduced_damage;
+    }
 
     damageInfo->hitOutCome = RollMeleeOutcomeAgainst(damageInfo->target, damageInfo->attackType);
 
@@ -1986,15 +1989,18 @@ void Unit::CalculateMeleeDamage(DamageInfo* damageInfo)
             break;
     }
 
-    // only from players and their pets
-    if (damageInfo->damage > 0 && (GetTypeId() == TYPEID_PLAYER || (GetObjectGuid().IsPet() && GetOwner() && GetOwner()->GetTypeId() == TYPEID_PLAYER)))
+    // Only from players and their pets
+    if (int32(damageInfo->damage) > 0 && IsCharmerOrOwnerPlayerOrPlayerItself())
     {
-        uint32 reduction_affected_damage = CalcNotIgnoreDamageReduction(damageInfo);
-        uint32 resilienceReduction;
-        if (damageInfo->attackType != RANGED_ATTACK)
-            resilienceReduction = pVictim->GetMeleeDamageReduction(reduction_affected_damage);
-        else
-            resilienceReduction = pVictim->GetRangedDamageReduction(reduction_affected_damage);
+        // Resilience - reduce regular damage (full or reduced)
+        uint32 reduction_affected_damage = sWorld.getConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION)
+            ? damageInfo->damage
+            : CalcNotIgnoreDamageReduction(damageInfo);
+
+        uint32 resilienceReduction = (damageInfo->attackType != RANGED_ATTACK)
+            ? pVictim->GetMeleeDamageReduction(reduction_affected_damage)
+            : pVictim->GetRangedDamageReduction(reduction_affected_damage);
+
         damageInfo->damage      -= resilienceReduction;
         damageInfo->cleanDamage += resilienceReduction;
     }
@@ -2007,9 +2013,10 @@ void Unit::CalculateMeleeDamage(DamageInfo* damageInfo)
 
         // Calculate absorb & resists
         damageInfo->target->CalculateDamageAbsorbAndResist(this, damageInfo, true);
-
     }
-    else // Umpossible get negative result but....
+
+    // Impossible get negative result but....
+    if (int32(damageInfo->damage) < 0)
         damageInfo->damage = 0;
 }
 
@@ -2165,6 +2172,75 @@ uint32 Unit::CalcNotIgnoreDamageReduction(DamageInfo* damageInfo)
             absorb_affected_rate *= (100.0f - (*i)->GetModifier()->m_amount)/100.0f;
 
     return absorb_affected_rate <= M_NULL_F ? 0 : (absorb_affected_rate < 1.0f  ? floor((float)damageInfo->damage * absorb_affected_rate) : damageInfo->damage);
+}
+
+bool Unit::IsDamageReducedByArmor(SpellSchoolMask schoolMask, SpellEntry const* spellProto /*=NULL*/, SpellEffectIndex effIndex /*=MAX_EFFECT_INDEX*/)
+{
+    // only physical spells damage gets reduced by armor
+    if (!(schoolMask & SPELL_SCHOOL_MASK_NORMAL))
+        return false;
+
+    if (!spellProto)
+        return true;
+
+    // there are spells with no specific attribute but they have "ignores armor" in tooltip
+    switch (spellProto->Id)
+    {
+        case 18500: // Wing Buffet
+        case 33086: // Wild Bite
+        case 49749: // Piercing Blow
+        case 52890: // Penetrating Strike
+        case 53454: // Impale
+        case 59446: // Impale
+        case 62383: // Shatter
+        case 64777: // Machine Gun
+        case 65239: // Machine Gun
+        case 65919: // Impale
+        case 67858: // Impale
+        case 67859: // Impale
+        case 67860: // Impale
+        case 69293: // Wing Buffet
+        case 74439: // Machine Gun
+        case 63278: // Mark of the Faceless (General Vezax)
+        case 62544: // Thrust (Argent Tournament)
+        case 64588: // Thrust (Argent Tournament)
+        case 66479: // Thrust (Argent Tournament)
+        case 68505: // Thrust (Argent Tournament)
+        case 62709: // Counterattack! (Argent Tournament)
+        case 62626: // Break-Shield (Argent Tournament, Player)
+        case 64590: // Break-Shield (Argent Tournament, Player)
+        case 64342: // Break-Shield (Argent Tournament, NPC)
+        case 64686: // Break-Shield (Argent Tournament, NPC)
+        case 65147: // Break-Shield (Argent Tournament, NPC)
+        case 68504: // Break-Shield (Argent Tournament, NPC)
+        case 62874: // Charge (Argent Tournament, Player)
+        case 68498: // Charge (Argent Tournament, Player)
+        case 64591: // Charge (Argent Tournament, Player)
+        case 63003: // Charge (Argent Tournament, NPC)
+        case 63010: // Charge (Argent Tournament, NPC)
+        case 68321: // Charge (Argent Tournament, NPC)
+        case 72255: // Mark of the Fallen Champion (Deathbringer Saurfang)
+        case 72444: // Mark of the Fallen Champion (Deathbringer Saurfang)
+        case 72445: // Mark of the Fallen Champion (Deathbringer Saurfang)
+        case 72446: // Mark of the Fallen Champion (Deathbringer Saurfang)
+        case 64422: // Sonic Screech (Auriaya)
+            return false;
+        default:
+            break;
+    }
+
+    // bleeding effects are not reduced by armor
+    if (effIndex < MAX_EFFECT_INDEX)
+    {
+        if (spellProto->EffectApplyAuraName[effIndex] == SPELL_AURA_PERIODIC_DAMAGE ||
+            spellProto->Effect[effIndex] == SPELL_EFFECT_SCHOOL_DAMAGE)
+        {
+            if (GetEffectMechanic(spellProto, effIndex) == MECHANIC_BLEED)
+                return false;
+        }
+    }
+
+    return true;
 }
 
 uint32 Unit::CalcArmorReducedDamage(Unit* pVictim, const uint32 damage)
@@ -3335,7 +3411,7 @@ void Unit::SendMeleeAttackStart(Unit* pVictim)
 
 void Unit::SendMeleeAttackStop(Unit* victim)
 {
-    WorldPacket data(SMSG_ATTACKSTOP, (8+8+4));                                        // we guess size
+    WorldPacket data(SMSG_ATTACKSTOP, GetPackGUID().size() + 9 + 4);                                        // we guess size
     data << GetPackGUID();
     data << (victim ? victim->GetPackGUID() : PackedGuid());                           // can be 0x00...
     data << uint32(0);                                                                 // can be 0x1
@@ -6607,7 +6683,7 @@ void Unit::SendSpellNonMeleeDamageLog(DamageInfo *log)
     uint32 targetHealth = log->target->GetHealth();
     uint32 overkill = log->damage > targetHealth ? log->damage - targetHealth : 0;
 
-    WorldPacket data(SMSG_SPELLNONMELEEDAMAGELOG, (16+4+4+4+1+4+4+1+1+4+4+1)); // we guess size
+    WorldPacket data(SMSG_SPELLNONMELEEDAMAGELOG, (9+9+4+4+4+1+4+4+1+1+4+4+1)); // we guess size
     data << log->target->GetPackGUID();
     data << log->attacker->GetPackGUID();
     data << uint32(log->GetSpellId());
@@ -6856,6 +6932,9 @@ FactionTemplateEntry const* Unit::getFactionTemplateEntry() const
 
 bool Unit::IsHostileTo(Unit const* unit) const
 {
+    if (!unit || !unit->IsInWorld())
+        return false;
+
     // always non-hostile to self
     if (unit == this)
         return false;
@@ -6864,24 +6943,37 @@ bool Unit::IsHostileTo(Unit const* unit) const
     if (unit->GetTypeId() == TYPEID_PLAYER && ((Player const*)unit)->isGameMaster())
         return false;
 
+    Unit const* selfVictim = getVictim();
+    Unit const* unitVictim = unit->getVictim();
+
     // always hostile to enemy
-    if (getVictim() == unit || unit->getVictim() == this)
+    if (selfVictim == unit || unitVictim == this)
         return true;
 
     // test pet/charm masters instead pers/charmeds
     Unit const* testerOwner = GetCharmerOrOwner();
     Unit const* targetOwner = unit->GetCharmerOrOwner();
+    Unit* testerVictim;
+    Unit* targetVictim;
 
     // always hostile to owner's enemy
-    if (testerOwner && (testerOwner->getVictim() == unit || unit->getVictim() == testerOwner))
-        return true;
+    if (testerOwner)
+    {
+        testerVictim = testerOwner->getVictim();
+        if (testerVictim == unit || unitVictim == testerOwner)
+            return true;
+    }
 
     // always hostile to enemy owner
-    if (targetOwner && (getVictim() == targetOwner || targetOwner->getVictim() == this))
-        return true;
+    if (targetOwner)
+    {
+        targetVictim = targetOwner->getVictim();
+        if (selfVictim == targetOwner || targetVictim == this)
+            return true;
+    }
 
     // always hostile to owner of owner's enemy
-    if (testerOwner && targetOwner && (testerOwner->getVictim() == targetOwner || targetOwner->getVictim() == testerOwner))
+    if (testerOwner && targetOwner && (testerVictim == targetOwner || targetVictim == testerOwner))
         return true;
 
     Unit const* tester = testerOwner ? testerOwner : this;
@@ -6968,7 +7060,7 @@ bool Unit::IsHostileTo(Unit const* unit) const
 
 bool Unit::IsFriendlyTo(Unit const* unit) const
 {
-    if (!unit)
+    if (!unit || !unit->IsInWorld())
         return true;
 
     // always friendly to self
@@ -6979,24 +7071,37 @@ bool Unit::IsFriendlyTo(Unit const* unit) const
     if (unit->GetTypeId() == TYPEID_PLAYER && ((Player const*)unit)->isGameMaster())
         return true;
 
+    Unit const* selfVictim = getVictim();
+    Unit const* unitVictim = unit->getVictim();
+
     // always non-friendly to enemy
-    if (getVictim() == unit || unit->getVictim() == this)
+    if (selfVictim == unit || unitVictim == this)
         return false;
 
     // test pet/charm masters instead pers/charmeds
     Unit const* testerOwner = GetCharmerOrOwner();
     Unit const* targetOwner = unit->GetCharmerOrOwner();
+    Unit* testerVictim;
+    Unit* targetVictim;
 
     // always non-friendly to owner's enemy
-    if (testerOwner && (testerOwner->getVictim() == unit || unit->getVictim() == testerOwner))
-        return false;
+    if (testerOwner)
+    {
+        testerVictim = testerOwner->getVictim();
+        if (testerVictim == unit || unitVictim == testerOwner)
+            return false;
+    }
 
     // always non-friendly to enemy owner
-    if (targetOwner && (getVictim() == targetOwner || targetOwner->getVictim() == this))
-        return false;
+    if (targetOwner)
+    {
+        targetVictim = targetOwner->getVictim();
+        if (selfVictim == targetOwner || targetVictim == this)
+            return false;
+    }
 
     // always non-friendly to owner of owner's enemy
-    if (testerOwner && targetOwner && (testerOwner->getVictim() == targetOwner || targetOwner->getVictim() == testerOwner))
+    if (testerOwner && targetOwner && (testerVictim == targetOwner || targetVictim == testerOwner))
         return false;
 
     Unit const* tester = testerOwner ? testerOwner : this;
@@ -7038,8 +7143,8 @@ bool Unit::IsFriendlyTo(Unit const* unit) const
     }
 
     // faction base cases
-    FactionTemplateEntry const*tester_faction = tester->getFactionTemplateEntry();
-    FactionTemplateEntry const*target_faction = target->getFactionTemplateEntry();
+    FactionTemplateEntry const* tester_faction = tester->getFactionTemplateEntry();
+    FactionTemplateEntry const* target_faction = target->getFactionTemplateEntry();
     if (!tester_faction || !target_faction)
         return false;
 
@@ -7109,8 +7214,8 @@ bool Unit::IsNeutralToAll() const
 
 Unit* Unit::getAttackerForHelper()
 {
-    if (getVictim())
-        return getVictim();
+    if (Unit* pVictim = getVictim())
+        return pVictim;
 
     if (!IsInCombat())
         return NULL;
@@ -7118,12 +7223,12 @@ Unit* Unit::getAttackerForHelper()
     GuidSet& attackers = GetMap()->GetAttackersFor(GetObjectGuid());
     if (!attackers.empty())
     {
-        for(GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
+        for (GuidSet::const_iterator itr = attackers.begin(); itr != attackers.end();)
         {
             ObjectGuid guid = *itr++;
             Unit* attacker = GetMap()->GetUnit(guid);
             if (!attacker || !attacker->isAlive())
-                GetMap()->RemoveAttackerFor(GetObjectGuid(),guid);
+                GetMap()->RemoveAttackerFor(GetObjectGuid(), guid);
             else
                 return attacker;
         }
@@ -7141,9 +7246,21 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
         return false;
 
     // player cannot attack while mounted or in vehicle (exclude special vehicles)if
-    if (GetTypeId()==TYPEID_PLAYER && (IsMounted() ||
-        (GetVehicle() && (!GetVehicle()->GetSeatInfo(this) ||
-        !(GetVehicle()->GetSeatInfo(this)->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))))))
+    if (GetTypeId() == TYPEID_PLAYER && IsMounted())
+        return false;
+
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (VehicleKitPtr vehicle = GetVehicle())
+        {
+            if (VehicleSeatEntry const* seatInfo = vehicle->GetSeatInfo(this))
+                if (!seatInfo->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))
+                    return false;
+        }
+    }
+
+    // not attack pacified targets
+    if (HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return false;
 
     // nobody can attack GM in GM-mode
@@ -7848,10 +7965,10 @@ Unit* Unit::SelectMagnetTarget(Unit *victim, Spell* spell, SpellEffectIndex eff)
     return victim;
 }
 
-void Unit::SendHealSpellLog(Unit *pVictim, uint32 SpellID, uint32 Damage, uint32 OverHeal, bool critical, uint32 absorb)
+void Unit::SendHealSpellLog(Unit* pVictim, uint32 SpellID, uint32 Damage, uint32 OverHeal, bool critical, uint32 absorb)
 {
     // we guess size
-    WorldPacket data(SMSG_SPELLHEALLOG, (8+8+4+4+1));
+    WorldPacket data(SMSG_SPELLHEALLOG, pVictim->GetPackGUID().size() + GetPackGUID().size() + 4 + 4 + 4 + 4 + 1 + 1);
     data << pVictim->GetPackGUID();
     data << GetPackGUID();
     data << uint32(SpellID);
@@ -7863,9 +7980,9 @@ void Unit::SendHealSpellLog(Unit *pVictim, uint32 SpellID, uint32 Damage, uint32
     SendMessageToSet(&data, true);
 }
 
-void Unit::SendEnergizeSpellLog(Unit *pVictim, uint32 SpellID, uint32 Damage, Powers powertype)
+void Unit::SendEnergizeSpellLog(Unit* pVictim, uint32 SpellID, uint32 Damage, Powers powertype)
 {
-    WorldPacket data(SMSG_SPELLENERGIZELOG, (8+8+4+4+4+1));
+    WorldPacket data(SMSG_SPELLENERGIZELOG, pVictim->GetPackGUID().size() + GetPackGUID().size() + 4 + 4 + 4);
     data << pVictim->GetPackGUID();
     data << GetPackGUID();
     data << uint32(SpellID);
@@ -9725,7 +9842,7 @@ void Unit::Unmount(bool from_aura)
     // Called NOT by Taxi system / GM command
     if (from_aura)
     {
-        WorldPacket data(SMSG_DISMOUNT, 8);
+        WorldPacket data(SMSG_DISMOUNT, GetPackGUID().size());
         data << GetPackGUID();
         SendMessageToSet(&data, true);
     }
@@ -10442,7 +10559,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate, bool forced)
             // and do it only for real sent packets and use run for run/mounted as client expected
             ++((Player*)this)->m_forced_speed_changes[mtype];
 
-            WorldPacket data(SetSpeed2Opc_table[mtype][1], 18);
+            WorldPacket data(SetSpeed2Opc_table[mtype][1], GetPackGUID().size() + 4 + 1 + 4);
             data << GetPackGUID();
             data << (uint32)0;                                  // moveEvent, NUM_PMOVE_EVTS = 0x39
             if (mtype == MOVE_RUN)
@@ -10643,8 +10760,7 @@ void Unit::TauntFadeOut(Unit *taunter)
     if (!CanHaveThreatList())
         return;
 
-    Unit *target = getVictim();
-
+    Unit* target = getVictim();
     if (!target || target != taunter)
         return;
 
@@ -11449,7 +11565,7 @@ void Unit::SetPower(Powers power, uint32 val)
 
     SetStatInt32Value(UNIT_FIELD_POWER1 + power, val);
 
-    WorldPacket data(SMSG_POWER_UPDATE);
+    WorldPacket data(SMSG_POWER_UPDATE, GetPackGUID().size() + 1 + 4);
     data << GetPackGUID();
     data << uint8(power);
     data << uint32(val);
@@ -11953,9 +12069,10 @@ void Unit::DoPetAction( Player* owner, uint8 flag, uint32 spellid, ObjectGuid pe
                     }
 
                     // This is true if pet has no target or has target but targets differs.
-                    if (getVictim() != TargetUnit)
+                    Unit* pVictim = getVictim();
+                    if (pVictim != TargetUnit)
                     {
-                        if (getVictim())
+                        if (pVictim)
                         {
                             if (IsNonMeleeSpellCasted(false))
                                 InterruptNonMeleeSpells(false);
@@ -12203,9 +12320,10 @@ void Unit::DoPetCastSpell(Player* owner, uint8 cast_count, SpellCastTargets* tar
         if (unit_target && owner && !owner->IsFriendlyTo(unit_target) && !HasAuraType(SPELL_AURA_MOD_POSSESS))
         {
             // This is true if pet has no target or has target but targets differs.
-            if (getVictim() != unit_target)
+            Unit* pVictim = getVictim();
+            if (pVictim != unit_target)
             {
-                if (getVictim())
+                if (pVictim)
                     AttackStop();
 
                 GetMotionMaster()->Clear();
@@ -12220,9 +12338,9 @@ void Unit::DoPetCastSpell(Player* owner, uint8 cast_count, SpellCastTargets* tar
     else if (pet)
     {
         if (owner)
-            Spell::SendCastResult(owner,spellInfo,0,result, true);
+            Spell::SendCastResult(owner, spellInfo, 0, result, true);
 
-        if (owner && !((Creature*)this)->HasSpellCooldown(spellInfo->Id) && !triggered)
+        if (owner && !HasSpellCooldown(spellInfo) && !triggered)
             owner->SendClearCooldown(spellInfo->Id, pet);
 
         spell->finish(false);
@@ -13550,7 +13668,7 @@ void Unit::_EnterVehicle(VehicleKitPtr vehicle, int8 seatId)
         WorldPacket data(SMSG_ON_CANCEL_EXPECTED_RIDE_VEHICLE_AURA);
         player->GetSession()->SendPacket(&data);
 
-        data.Initialize(SMSG_BREAK_TARGET, 8);
+        data.Initialize(SMSG_BREAK_TARGET, GetVehicle()->GetBase()->GetPackGUID().size());
         data << GetVehicle()->GetBase()->GetPackGUID();
         player->GetSession()->SendPacket(&data);
     }
@@ -13713,7 +13831,7 @@ void Unit::SendThreatUpdate()
     if (uint32 count = tlist.size())
     {
         DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Send SMSG_THREAT_UPDATE Message");
-        WorldPacket data(SMSG_THREAT_UPDATE, 8 + count * 8);
+        WorldPacket data(SMSG_THREAT_UPDATE, GetPackGUID().size() + count * 8);
         data << GetPackGUID();
         data << uint32(count);
         for (ThreatList::const_iterator itr = tlist.begin(); itr != tlist.end(); ++itr)
@@ -13731,7 +13849,7 @@ void Unit::SendHighestThreatUpdate(HostileReference* pHostilReference)
     if (uint32 count = tlist.size())
     {
         DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Send SMSG_HIGHEST_THREAT_UPDATE Message");
-        WorldPacket data(SMSG_HIGHEST_THREAT_UPDATE, 8 + 8 + count * 8);
+        WorldPacket data(SMSG_HIGHEST_THREAT_UPDATE, GetPackGUID().size() + 9 + 4 + count * 8);
         data << GetPackGUID();
         data << pHostilReference->getUnitGuid().WriteAsPacked();
         data << uint32(count);
@@ -13747,7 +13865,7 @@ void Unit::SendHighestThreatUpdate(HostileReference* pHostilReference)
 void Unit::SendThreatClear()
 {
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Send SMSG_THREAT_CLEAR Message");
-    WorldPacket data(SMSG_THREAT_CLEAR, 8);
+    WorldPacket data(SMSG_THREAT_CLEAR, GetPackGUID().size());
     data << GetPackGUID();
     SendMessageToSet(&data, false);
 }
@@ -13755,7 +13873,7 @@ void Unit::SendThreatClear()
 void Unit::SendThreatRemove(HostileReference* pHostileReference)
 {
     DEBUG_FILTER_LOG(LOG_FILTER_COMBAT, "WORLD: Send SMSG_THREAT_REMOVE Message");
-    WorldPacket data(SMSG_THREAT_REMOVE, 8 + 8);
+    WorldPacket data(SMSG_THREAT_REMOVE, GetPackGUID().size() + 8);
     data << GetPackGUID();
     data << pHostileReference->getUnitGuid().WriteAsPacked();
     SendMessageToSet(&data, false);
@@ -14011,7 +14129,7 @@ void Unit::SetVehicleId(uint32 entry)
 
     if (GetTypeId() == TYPEID_PLAYER)
     {
-        WorldPacket data(SMSG_SET_VEHICLE_REC_ID, 16);
+        WorldPacket data(SMSG_SET_VEHICLE_REC_ID, GetPackGUID().size() + 4);
         data << GetPackGUID();
         data << uint32(entry);
         SendMessageToSet(&data, true);

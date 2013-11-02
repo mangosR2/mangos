@@ -14,4 +14,5 @@ UPDATE `creature_template_addon` SET `auras` = '50494' WHERE `entry` =28006;
 UPDATE `creature_template_addon` SET `auras` = '18950' WHERE `entry` IN (36938, 36658);
 UPDATE `creature_template_addon` SET `auras` = '69012 69413' WHERE `entry` IN (36477, 37629);
 
+DELETE FROM `vehicle_accessory` WHERE `accessory_entry` = 36658; -- Scourgelord Tyrannus
 DELETE FROM `creature` WHERE `id` IN (SELECT `accessory_entry` FROM `vehicle_accessory`);

@@ -435,14 +435,14 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
                 case GAMEOBJECT_TYPE_TRANSPORT:
                 case GAMEOBJECT_TYPE_MO_TRANSPORT:
                 {
-                    if (IsTransport() && ((Transport*)this)->GetTransportKit())
+                    if (IsTransport() && dynamic_cast<Transport*>(this))
                     {
-                        if (TransportKit* tKit = ((Transport*)this)->GetTransportKit())
+                        if (TransportKit* tKit = dynamic_cast<Transport*>(this)->GetTransportKit())
                         {
                             if (!tKit->IsInitialized())
                                 tKit->Initialize();
                             else
-                            // Update passenger positions
+                                // Update passenger positions
                                 tKit->Update(p_time);
                         }
                     }
@@ -803,7 +803,8 @@ bool GameObject::IsTransport() const
     GameObjectInfo const* gInfo = GetGOInfo();
     if (!gInfo)
         return false;
-    return gInfo->type == GAMEOBJECT_TYPE_TRANSPORT || gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
+    //FIXME - temporary GAMEOBJECT_TYPE_TRANSPORT disabled, awaiting finish code implementing
+    return /*gInfo->type == GAMEOBJECT_TYPE_TRANSPORT ||*/ gInfo->type == GAMEOBJECT_TYPE_MO_TRANSPORT;
 }
 
 bool GameObject::IsMOTransport() const
@@ -1865,7 +1866,7 @@ void GameObject::DealGameObjectDamage(uint32 damage, uint32 spellId, Unit* caste
     if (!damage)
         return;
 
-    WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, 8+8+8+4+4);
+    WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, GetPackGUID().size() + caster->GetPackGUID().size() + 9 + 4 + 4);
     data << GetPackGUID();
     data << caster->GetPackGUID();
     data << caster->GetCharmerOrOwnerOrSelf()->GetPackGUID();

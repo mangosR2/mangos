@@ -59,11 +59,9 @@ Map::~Map()
     sMapMgr.GetMapUpdater().MapStatisticDataRemove(this);
 
     // unload instance specific navigation data
-    MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(m_TerrainData->GetMapId(), GetInstanceId());
+    MMAP::MMapFactory::createOrGetMMapManager()->unloadMapInstance(GetTerrain()->GetMapId(), GetInstanceId());
 
-    //release reference count
-    if(m_TerrainData->Release())
-        sTerrainMgr.UnloadTerrain(m_TerrainData->GetMapId());
+    sTerrainMgr.UnloadTerrain(GetTerrain()->GetMapId());
 
     DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::~Map removing map %u instance %u complete", GetId(), GetInstanceId());
 }
@@ -73,7 +71,7 @@ void Map::LoadMapAndVMap(int gx,int gy)
     if (m_bLoadedGrids[gx][gy])
         return;
 
-    if (m_TerrainData->Load(gx, gy))
+    if (GetTerrain()->Load(gx, gy))
         m_bLoadedGrids[gx][gy] = true;
 }
 
@@ -99,9 +97,6 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
 
     //lets initialize visibility distance for map
     Map::InitVisibilityDistance();
-
-    //add reference for TerrainData object
-    m_TerrainData->AddRef();
 
     MapPersistentState* persistentState = sMapPersistentStateMgr.AddPersistentState(i_mapEntry, GetInstanceId(), GetDifficulty(), 0, IsDungeon());
     persistentState->SetUsedByMapState(this);
@@ -268,14 +263,13 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            setNGrid(new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD)),
-                p.x_coord, p.y_coord);
+            NGridType* grid = new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD));
+            setNGrid(grid, p.x_coord, p.y_coord);
 
             // build a linkage between this map and NGridType
-            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
-
-            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
-            ResetGridExpiry(*getNGrid(p.x_coord, p.y_coord), 0.2f);
+            buildNGridLinkage(grid);
+            grid->SetGridState(GRID_STATE_IDLE);
+            ResetGridExpiry(*grid, 0.2f);
         }
 
         //z coord
@@ -336,7 +330,7 @@ bool Map::EnsureGridLoaded(const Cell &cell)
             // Add resurrectable corpses to world object list in grid
             sObjectAccessor.AddCorpsesToGrid(GridPair(cell.GridX(),cell.GridY()),(*grid)(cell.CellX(), cell.CellY()), this);
         }
-        m_dyn_tree.balance();
+        DynamicMapTreeBalance();
         return true;
     }
 
@@ -550,13 +544,13 @@ void Map::MessageDistBroadcast(WorldObject const* obj, WorldPacket* msg, float d
 
 bool Map::loaded(GridPair const& p) const
 {
-    NGridType* grid = getNGrid(p.x_coord, p.y_coord);
+    NGridType const* grid = getNGridWithoutLock(p.x_coord, p.y_coord);
     return grid ? IsGridObjectDataLoaded(grid) : false;
 }
 
 void Map::Update(const uint32 &t_diff)
 {
-    m_dyn_tree.update(t_diff);
+    DynamicMapTreeUpdate(t_diff);
 
     // Load all objects in begin of update diff (loading objects count limited by time)
     uint32 loadingObjectToGridUpdateTime = WorldTimer::getMSTime();
@@ -590,10 +584,12 @@ void Map::Update(const uint32 &t_diff)
     UpdateEvents(t_diff);
 
     /// update worldsessions for existing players (stage 1)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    GuidQueue updateQueue = GetActiveObjects();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (!guid.IsPlayer())
             continue;
 
@@ -601,20 +597,22 @@ void Map::Update(const uint32 &t_diff)
 
         if (plr && plr->IsInWorld())
         {
-            WorldSession * pSession = plr->GetSession();
-            MapSessionFilter updater(pSession);
-
-            pSession->Update(updater);
-            // sending WorldState updates
-            plr->SendUpdatedWorldStates(false);
+            if (WorldSession* pSession = plr->GetSession())
+            {
+                MapSessionFilter updater(pSession);
+                pSession->Update(updater);
+                // sending WorldState updates
+                plr->SendUpdatedWorldStates(false);
+            }
         }
     }
 
     /// update active objects (players also) at tick (stage 2)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    /*GuidQueue*/ updateQueue = GetActiveObjects();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         switch (guid.GetHigh())
         {
@@ -656,10 +654,12 @@ void Map::Update(const uint32 &t_diff)
     TypeContainerVisitor<MaNGOS::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
     // player and non-player active objects (only cells re-mark)
-    MakeActiveObjectsSafeCopy();
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    /*GuidQueue*/ updateQueue = GetActiveObjects();
+    bool hasActive = !updateQueue.empty();
+    while (!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         WorldObject* obj = GetWorldObject(guid);
 
@@ -689,7 +689,8 @@ void Map::Update(const uint32 &t_diff)
     }
 
     // Send world objects and item update field changes
-    SendObjectUpdates();
+    if (hasActive)
+        SendObjectUpdates();
 
     // Calculate and send map-related WorldState updates
     sWorldStateMgr.MapUpdate(this);
@@ -1021,7 +1022,7 @@ bool Map::UnloadGrid(NGridType& grid, bool pForce)
     if (m_bLoadedGrids[gx][gy])
     {
         m_bLoadedGrids[gx][gy] = false;
-        m_TerrainData->Unload(gx, gy);
+        GetTerrain()->Unload(gx, gy);
     }
 
     return true;
@@ -1050,7 +1051,6 @@ void Map::UnloadAll(bool pForce)
 
 void Map::AddLoadingObject(LoadingObjectQueueMember* obj)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_loadingObjectQueue.push(obj);
 }
 
@@ -1159,16 +1159,19 @@ void Map::SendInitActiveObjects(Player* player)
 {
     if (!player)
         return;
-    GuidSet const& activeObjects = GetActiveObjects();
-    if (activeObjects.empty())
+
+    GuidQueue updateQueue = GetActiveObjects();
+    if (updateQueue.empty())
         return;
 
-    UpdateData initData;
+    UpdateData initData = UpdateData();
     bool hasAny = false;
 
-    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (guid.IsPlayer())
             continue;
 
@@ -1195,16 +1198,19 @@ void Map::SendRemoveActiveObjects(Player* player)
 {
     if (!player)
         return;
-    GuidSet const& activeObjects = GetActiveObjects();
-    if (activeObjects.empty())
+
+    GuidQueue updateQueue = GetActiveObjects();
+    if (updateQueue.empty())
         return;
 
-    UpdateData initData;
+    UpdateData initData = UpdateData();
     bool hasAny = false;
 
-    for (GuidSet::const_iterator itr = activeObjects.begin(); itr != activeObjects.end(); ++itr)
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
+
         if (guid.IsPlayer())
             continue;
 
@@ -1321,9 +1327,14 @@ bool Map::ActiveObjectsNearGrid(uint32 x, uint32 y) const
     cell_max >> cell_range;
     cell_max += cell_range;
 
-    for (GuidSet::const_iterator itr = GetActiveObjects().begin(); itr != GetActiveObjects().end(); ++itr)
+    GuidQueue updateQueue = const_cast<Map*>(this)->GetActiveObjects();
+    if (updateQueue.empty())
+        return false;
+
+    while(!updateQueue.empty())
     {
-        ObjectGuid guid = *itr;
+        ObjectGuid guid = updateQueue.front();
+        updateQueue.pop();
 
         WorldObject const* obj = const_cast<Map*>(this)->GetWorldObject(guid);
         if (!obj || !obj->isActiveObject())
@@ -2191,26 +2202,23 @@ void Map::AddUpdateObject(ObjectGuid const& guid)
 
 void Map::RemoveUpdateObject(ObjectGuid const& guid)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     i_objectsToClientUpdate.erase(guid);
 }
 
+ObjectGuid Map::GetNextObjectFromUpdateQueue()
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS));
+    ObjectGuid guid = i_objectsToClientUpdate.empty() ? ObjectGuid::Null : *i_objectsToClientUpdate.begin();
+    i_objectsToClientUpdate.erase(guid);
+    return guid;
+}
+ 
 void Map::SendObjectUpdates()
 {
-    UpdateDataMapType update_players;
+    UpdateDataMapType update_players = UpdateDataMapType();
 
-    while (!GetObjectsUpdateQueue()->empty())
+    while (ObjectGuid guid = GetNextObjectFromUpdateQueue())
     {
-        ObjectGuid guid;
-        {
-            WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-            guid = *i_objectsToClientUpdate.begin();
-            i_objectsToClientUpdate.erase(i_objectsToClientUpdate.begin());
-        }
-
-        if (guid.IsEmpty())
-            continue;
-
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {
@@ -2598,7 +2606,7 @@ float Map::GetVisibilityDistance(WorldObject const* obj) const
 bool Map::IsInLineOfSight(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
 {
     return VMAP::VMapFactory::createOrGetVMapManager()->isInLineOfSight(GetId(), srcX, srcY, srcZ, destX, destY, destZ)
-        && m_dyn_tree.isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+        && IsInLineOfSightByDynamicMapTree(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
 }
 
 /**
@@ -2619,7 +2627,8 @@ bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float
         destZ = tempZ;
     }
     // at second all dynamic objects, if static check has an hit, then we can calculate only to this point and NOT to end, because we need closely hit point
-    bool result1 = m_dyn_tree.getObjectHitPos(phasemask, srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    bool result1 = GetDynamicMapTree().getObjectHitPos(phasemask, srcX, srcY, srcZ, destX, destY, destZ, tempX, tempY, tempZ, modifyDist);
     if (result1)
     {
         DEBUG_LOG("Map::GetHitPosition vmaps corrects gained with dynamic objects! new dest coords are X:%f Y:%f Z:%f",destX, destY, destZ);
@@ -2632,26 +2641,54 @@ bool Map::GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float
 
 float Map::GetHeight(uint32 phasemask, float x, float y, float z) const
 {
-    float staticHeight = m_TerrainData->GetHeightStatic(x, y, z);
+    float staticHeight = GetTerrain()->GetHeightStatic(x, y, z);
 
     // Get Dynamic Height around static Height (if valid)
     float dynSearchHeight = 2.0f + (z < staticHeight ? staticHeight : z);
-    return std::max<float>(staticHeight, m_dyn_tree.getHeight(x, y, dynSearchHeight, dynSearchHeight - staticHeight, phasemask));
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return std::max<float>(staticHeight, GetDynamicMapTree().getHeight(x, y, dynSearchHeight, dynSearchHeight - staticHeight, phasemask));
 }
 
-void Map::InsertGameObjectModel(const GameObjectModel& mdl)
+void Map::InsertGameObjectModel(GameObjectModel const& mdl)
 {
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_dyn_tree.insert(mdl);
 }
 
-void Map::RemoveGameObjectModel(const GameObjectModel& mdl)
+void Map::RemoveGameObjectModel(GameObjectModel const& mdl)
 {
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     m_dyn_tree.remove(mdl);
 }
 
-bool Map::ContainsGameObjectModel(const GameObjectModel& mdl) const
+bool Map::ContainsGameObjectModel(GameObjectModel const& mdl) const
 {
-    return m_dyn_tree.contains(mdl);
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return GetDynamicMapTree().contains(mdl);
+}
+
+void Map::DynamicMapTreeBalance()
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    m_dyn_tree.balance();
+}
+
+void Map::DynamicMapTreeUpdate(uint32 const& t_diff)
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    m_dyn_tree.update(t_diff);
+}
+
+bool Map::IsInLineOfSightByDynamicMapTree(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const
+{
+    ReadGuard Guard(const_cast<Map*>(this)->GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    return GetDynamicMapTree().isInLineOfSight(srcX, srcY, srcZ, destX, destY, destZ, phasemask);
+}
+
+DynamicMapTree const& Map::GetDynamicMapTree() const
+{
+   // Don't need lock here! use locks around this usage.
+   return m_dyn_tree;
 }
 
 template<class T> void Map::LoadObjectToGrid(uint32& guid, GridType& grid, BattleGround* bg)
@@ -2772,8 +2809,10 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
             info.UpdateTimeTracker(t_diff);
             if (info.getTimeTracker().Passed())
             {
+                Guard.release();
                 if (grid.ActiveObjectsInGrid() == 0 && !ActiveObjectsNearGrid(grid.getX(), grid.getY()))
                 {
+                    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
                     ObjectGridStoper stoper(grid);
                     stoper.StopN();
                     grid.SetGridState(GRID_STATE_IDLE);
@@ -2826,11 +2865,13 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
     return true;
 }
 
-void Map::MakeActiveObjectsSafeCopy()
+GuidQueue Map::GetActiveObjects()
 {
-    m_activeObjectsSafeCopy.clear();
     ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-    m_activeObjectsSafeCopy = m_activeObjects;
+    GuidQueue result;
+    for (GuidSet::const_iterator itr = m_activeObjects.begin(); itr != m_activeObjects.end(); ++itr)
+        result.push(*itr);
+    return result;
 }
 
 time_t Map::GetGridExpiry() const

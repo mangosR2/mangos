@@ -184,33 +184,14 @@ class GridMap
         GridMapLiquidStatus getLiquidStatus(float x, float y, float z, uint8 ReqLiquidType, GridMapLiquidData *data = 0);
 };
 
-template<typename Countable>
-class MANGOS_DLL_SPEC Referencable
-{
-public:
-    Referencable() { m_count = 0; }
-
-    void AddRef() { ++m_count; }
-    bool Release() { return (--m_count < 1); }
-    bool IsReferenced() const { return (m_count > 0); }
-
-private:
-    Referencable(const Referencable&);
-    Referencable& operator=(const Referencable&);
-
-    Countable m_count;
-};
-
-typedef ACE_Atomic_Op<ACE_Thread_Mutex, long> AtomicLong;
-
 //class for sharing and managin GridMap objects
-class MANGOS_DLL_SPEC TerrainInfo : public Referencable<AtomicLong>
+class MANGOS_DLL_SPEC TerrainInfo
 {
 public:
     TerrainInfo(uint32 mapid);
     ~TerrainInfo();
 
-    uint32 GetMapId() const { return m_mapId; }
+    uint32 const& GetMapId() const { return m_mapId; }
 
     // TODO: move all terrain/vmaps data info query functions
     // from 'Map' class into this class
@@ -241,54 +222,57 @@ public:
     //to cleanup unreferenced GridMap objects - they are too heavy
     //to destroy them dynamically, especially on highly populated servers
     //THIS METHOD IS NOT THREAD-SAFE!!!! AND IT SHOULDN'T BE THREAD-SAFE!!!!
-    void CleanUpGrids(const uint32 diff);
+    void CleanUpGrids(uint32 const diff);
 
 protected:
     friend class Map;
     //load/unload terrain data
-    GridMap * Load(const uint32 x, const uint32 y);
-    void Unload(const uint32 x, const uint32 y);
+    GridMap*  Load(uint32 const& x, uint32 const& y);
+    void Unload(uint32 const& x, uint32 const& y);
 
 private:
     TerrainInfo(const TerrainInfo&);
-    TerrainInfo& operator=(const TerrainInfo&);
+    TerrainInfo& operator = (TerrainInfo const&);
 
-    GridMap * GetGrid( const float x, const float y );
-    GridMap * LoadMapAndVMap(const uint32 x, const uint32 y );
+    GridMap* GetGrid(float const& x, float const& y );
+    GridMap* LoadMapAndVMap(uint32 const& x, uint32 const& y);
+    GridMap* GetGridMap(uint32 const& x, uint32 const& y);
 
-    int RefGrid(const uint32& x, const uint32& y);
-    int UnrefGrid(const uint32& x, const uint32& y);
+    int RefGrid(uint32 const& x, uint32 const& y);
+    int UnrefGrid(uint32 const& x, uint32 const& y);
 
-    const uint32 m_mapId;
+    uint32 const m_mapId;
 
-    GridMap *m_GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
+    GridMap* m_GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
     int16 m_GridRef[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
     //global garbage collection timer
     ShortIntervalTimer i_timer;
 
-    typedef ACE_Thread_Mutex LOCK_TYPE;
-    typedef ACE_Guard<LOCK_TYPE> LOCK_GUARD;
-    LOCK_TYPE m_mutex;
-    LOCK_TYPE m_refMutex;
+    typedef MANGOSR2_MUTEX_MODEL         LockType;
+    typedef ACE_Read_Guard<LockType>     ReadGuard;
+    typedef ACE_Write_Guard<LockType>    WriteGuard;
+    mutable LockType                     i_lock;
+    LockType&                            GetLock() { return i_lock; }
+
 };
 
 //class for managing TerrainData object and all sort of geometry querying operations
 class MANGOS_DLL_DECL TerrainManager : public MaNGOS::Singleton<TerrainManager, MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex> >
 {
-    typedef UNORDERED_MAP<uint32,  TerrainInfo*> TerrainDataMap;
+    typedef UNORDERED_MAP<uint32,  TerrainInfoPtr> TerrainDataMap;
     friend class MaNGOS::OperatorNew<TerrainManager>;
 
 public:
-    TerrainInfo * LoadTerrain(const uint32 mapId);
-    void UnloadTerrain(const uint32 mapId);
+    TerrainInfoPtr LoadTerrain(uint32 const& mapId);
+    void UnloadTerrain(uint32 const& mapId);
 
-    void Update(const uint32 diff);
+    void Update(uint32 const& diff);
     void UnloadAll();
 
     uint16 GetAreaFlag(uint32 mapid, float x, float y, float z) const
     {
-        TerrainInfo* pData = const_cast<TerrainManager*>(this)->LoadTerrain(mapid);
+        TerrainInfoPtr pData = const_cast<TerrainManager*>(this)->LoadTerrain(mapid);
         return pData->GetAreaFlag(x, y, z);
     }
     uint32 GetAreaId(uint32 mapid, float x, float y, float z) const
@@ -315,7 +299,6 @@ private:
     TerrainManager(const TerrainManager &);
     TerrainManager& operator=(const TerrainManager &);
 
-    typedef MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex>::Lock Guard;
     TerrainDataMap i_TerrainMap;
 };
 
