@@ -603,19 +603,15 @@ class MANGOS_DLL_SPEC BattleGroundMap : public Map
 };
 
 template<class T, class CONTAINER>
-inline void
-Map::Visit(const Cell& cell, TypeContainerVisitor<T, CONTAINER> &visitor)
+inline void Map::Visit(Cell const& cell, TypeContainerVisitor<T, CONTAINER>& visitor)
 {
-    const uint32 x = cell.GridX();
-    const uint32 y = cell.GridY();
-    const uint32 cell_x = cell.CellX();
-    const uint32 cell_y = cell.CellY();
-
-    if (!cell.NoCreate() || loaded(GridPair(x,y)))
-    {
+    NGridType const* cgrid = getNGridWithoutLock(cell.GridX(), cell.GridY());
+    if (cell.NoCreate() && !IsGridObjectDataLoaded(cgrid))
+        return;
+    if (!IsGridObjectDataLoaded(cgrid))
         EnsureGridLoaded(cell);
-        getNGrid(x, y)->Visit(cell_x, cell_y, visitor);
-    }
+    NGridType& grid = *getNGrid(cell.GridX(), cell.GridY());
+    grid.Visit(cell.CellX(), cell.CellY(), visitor);
 }
 
 #endif

@@ -259,7 +259,7 @@ void Map::setUnitCell(Creature* obj)
 void
 Map::EnsureGridCreated(const GridPair &p)
 {
-    if (!getNGrid(p.x_coord, p.y_coord))
+    if (!getNGridWithoutLock(p.x_coord, p.y_coord))
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
@@ -308,14 +308,16 @@ Map::EnsureGridLoadedAtEnter(Cell const& cell, Player* player)
         AddToGrid(player,grid,cell);
 }
 
-bool Map::EnsureGridLoaded(const Cell &cell)
+bool Map::EnsureGridLoaded(Cell const& cell)
 {
     EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
-    NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
+    NGridType const* cgrid = getNGridWithoutLock(cell.GridX(), cell.GridY());
 
-    MANGOS_ASSERT(grid != NULL);
-    if (!IsGridObjectDataLoaded(grid))
+    MANGOS_ASSERT(cgrid != NULL);
+
+    if (!IsGridObjectDataLoaded(cgrid))
     {
+        NGridType* grid = const_cast<NGridType*>(cgrid);
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             //it's important to set it loaded before loading!
@@ -2288,7 +2290,6 @@ void Map::SendObjectUpdates()
         WorldObject* obj = GetWorldObject(guid);
         if (obj && obj->IsInWorld())
         {
-            ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
             if (obj->IsMarkedForClientUpdate())
                 obj->BuildUpdateData(update_players);
             if (obj->GetObjectsUpdateQueue() && !obj->GetObjectsUpdateQueue()->empty())
@@ -2911,6 +2912,7 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
                 info.UpdateTimeTracker(t_diff);
                 if (info.getTimeTracker().Passed())
                 {
+                    Guard.release();
                     if (!UnloadGrid(grid, false))
                     {
                         DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::UpdateGridState grid[%u,%u] for map %u instance %u differed unloading due to players or active objects nearby", grid.getX(), grid.getY(), GetId(), GetInstanceId());
