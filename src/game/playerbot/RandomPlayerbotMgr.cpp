@@ -224,7 +224,7 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, vector<WorldLocation> &locs
         if (!map)
             continue;
 
-        const TerrainInfo * terrain = map->GetTerrain();
+        const TerrainInfoPtr terrain = map->GetTerrain();
         if (!terrain->IsOutdoors(x, y, z) ||
                 terrain->IsAboveWater(x, y, z) ||
                 terrain->IsUnderWater(x, y, z) ||

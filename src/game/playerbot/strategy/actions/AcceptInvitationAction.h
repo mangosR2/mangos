@@ -12,7 +12,7 @@ namespace ai
         {
             Player* master = GetMaster();
 
-            Group* grp = bot->GetGroupInvite();
+            Group* grp = sObjectMgr.GetGroup(bot->GetGroupInvite());
             if (!grp)
                 return false;
 
