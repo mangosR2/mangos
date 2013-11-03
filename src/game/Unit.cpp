@@ -6316,7 +6316,7 @@ Aura* Unit::GetAura(uint32 spellId, SpellEffectIndex effindex)
 
 Aura* Unit::GetAura(AuraType type, SpellFamily family, ClassFamilyMask const& classMask, ObjectGuid casterGuid)
 {
-    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
+    MAPLOCK_TRYREAD(this,MAP_LOCK_TYPE_AURAS);
     AuraList& auras = GetAurasByType(type);
     for(AuraList::iterator i = auras.begin(); i != auras.end(); ++i)
     {
