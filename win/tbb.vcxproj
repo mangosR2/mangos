@@ -131,11 +131,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include /DTBB_USE_CAPTURED_EXCEPTION=1 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\tbb\include;..\dep\tbb\src;..\dep\tbb\build;..\dep\tbb\build\vsproject;..\dep\tbb\src\rml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -151,6 +151,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'">
@@ -158,7 +159,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include /DTBB_USE_CAPTURED_EXCEPTION=1 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\tbb\include;..\dep\tbb\src;..\dep\tbb\build;..\dep\tbb\build\vsproject;..\dep\tbb\src\rml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -183,7 +184,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalOptions> /c /MD /O2 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /Oy- /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /c /MD /O2 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /Oy- /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include /DTBB_USE_CAPTURED_EXCEPTION=1 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>..\dep\tbb\include;..\dep\tbb\src;..\dep\tbb\build;..\dep\tbb\build\vsproject;..\dep\tbb\src\rml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -232,7 +233,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NoPCH|Win32'">
     <ClCompile>
-      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions> /c /MDd /Od /Ob0 /Zi /EHsc /GR /Zc:forScope /Zc:wchar_t /DTBB_USE_DEBUG /DDO_ITT_ANNOTATE /D_USE_RTM_VERSION /DDO_ITT_NOTIFY /DUSE_WINTHREAD /D_CRT_SECURE_NO_DEPRECATE /D_WIN32_WINNT=0x0400 /D__TBB_BUILD=1 /W3 /I../../src /I../../include /DTBB_USE_CAPTURED_EXCEPTION=1 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\tbb\include;..\dep\tbb\src;..\dep\tbb\build;..\dep\tbb\build\vsproject;..\dep\tbb\src\rml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>

@@ -1341,9 +1341,11 @@ void WorldSession::HandleCharFactionOrRaceChangeOpcode(WorldPacket& recv_data)
         uint32 groupId = (*resultGroup)[0].GetUInt32();
         delete resultGroup;
 
-        Group* group = sObjectMgr.GetGroupById(groupId);
+        ObjectGuid groupGuid = ObjectGuid(HIGHGUID_GROUP, groupId);
+        Group* group = sObjectMgr.GetGroup(groupGuid);
+
         if (group)
-            Player::RemoveFromGroup(group, guid);
+            group->RemoveMember(guid, 0);
     }
 
     CharacterDatabase.escape_string(newname);

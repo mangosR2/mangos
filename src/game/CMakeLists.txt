@@ -1114,6 +1114,9 @@ if(NOT ACE_USE_EXTERNAL)
   add_dependencies(${LIBRARY_NAME} ACE_Project)
 endif()
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot/ahbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist DESTINATION ${CONF_DIR})
+
 # Generate precompiled header
 if(PCH)
   if(MSVC OR XCODE)

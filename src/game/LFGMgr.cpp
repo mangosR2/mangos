@@ -1730,7 +1730,8 @@ void LFGMgr::UpdateBoot(Player* pPlayer, LFGAnswer answer)
                 pGroup->GetLFGGroupState()->StopBoot();
                 return;
             }
-            Player::RemoveFromGroup(pGroup, victim->GetObjectGuid());
+
+            pGroup->RemoveMember(victim->GetObjectGuid(), 1);
             victim->GetLFGPlayerState()->Clear();
 
             // group may be disbanded after Player::RemoveFromGroup!

@@ -773,6 +773,7 @@ bool IsPositiveEffect(SpellEntry const *spellproto, SpellEffectIndex effIndex)
                 case 49634:                                 // Sergeant's Flare
                 case 54530:                                 // Opening
                 case 62105:                                 // To'kini's Blowgun
+                case 64402:                                 // Rocket Strike
                     return true;
                 default:
                     break;
@@ -2669,14 +2670,13 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 63018:                                 // Searing Light
                 case 63024:                                 // Gravity Bomb (Ulduar, XT-002)
                 case 63342:                                 // Focused Eyebeam Summon Trigger (Ulduar, Kologarn)
-                case 63387:                                 // Rapid Burst
                 case 63545:                                 // Icicle Hodir(trigger spell from 62227)
                 case 63795:                                 // Psychosis (Ulduar, Yogg-Saron)
                 case 63820:                                 // Summon Scrap Bot Trigger (Ulduar, Mimiron) use for Scrap Bots, hits npc 33856
                 case 64218:                                 // Overcharge
                 case 64234:                                 // Gravity Bomb (h) (Ulduar, XT-002)
+                case 64402:                                 // Rocket Strike (Ulduar, Mimiron)
                 case 64425:                                 // Summon Scrap Bot Trigger (Ulduar, Mimiron) use for Assault Bots, hits npc 33856
-                case 64531:                                 // Rapid Burst (h)
                 case 64543:                                 // Melt Ice (Ulduar, Hodir)
                 case 64562:                                 // Summon Flames Spread Trigger (Ulduar, Mimiron)
                 case 64623:                                 // Frost Bomb (Ulduar, Mimiron)

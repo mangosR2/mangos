@@ -312,7 +312,7 @@ bool MoveRandomAction::Execute(Event event)
 
     float distance = sPlayerbotAIConfig.tooCloseDistance + sPlayerbotAIConfig.grindDistance * urand(3, 10) / 10.0f;
 
-    const TerrainInfo * terrain = bot->GetMap()->GetTerrain();
+    const TerrainInfoPtr terrain = bot->GetMap()->GetTerrain();
     if (target)
     {
         float x = target->GetPositionX();

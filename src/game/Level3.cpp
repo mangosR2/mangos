@@ -4867,7 +4867,7 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
 
     std::string name = args;
 
-    if (sObjectMgr.GetGameTele(name))
+    if (sObjectMgr.GetGameTeleExactName(name))
     {
         SendSysMessage(LANG_COMMAND_TP_ALREADYEXIST);
         SetSentErrorMessage(true);
@@ -4875,8 +4875,8 @@ bool ChatHandler::HandleTeleAddCommand(char* args)
     }
 
     GameTele tele;
-    tele.loc         = player->GetPosition();
-    tele.name        = name;
+    tele.loc  = player->GetPosition();
+    tele.name = name;
 
     if (sObjectMgr.AddGameTele(tele))
     {

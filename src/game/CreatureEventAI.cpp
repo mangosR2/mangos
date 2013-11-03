@@ -272,10 +272,14 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
             break;
         case EVENT_T_TARGET_HP:
         {
-            if (!m_creature->isInCombat() || !m_creature->getVictim() || !m_creature->getVictim()->GetMaxHealth())
+            if (!m_creature->isInCombat())
                 return false;
 
-            uint32 perc = (m_creature->getVictim()->GetHealth() * 100) / m_creature->getVictim()->GetMaxHealth();
+            Unit* pVictim = m_creature->getVictim();
+            if (!pVictim || !pVictim->GetMaxHealth())
+                return false;
+
+            uint32 perc = (pVictim->GetHealth() * 100) / pVictim->GetMaxHealth();
 
             if (perc > event.percent_range.percentMax || perc < event.percent_range.percentMin)
                 return false;
@@ -286,13 +290,19 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
             break;
         }
         case EVENT_T_TARGET_CASTING:
-            if (!m_creature->isInCombat() || !m_creature->getVictim() || !m_creature->getVictim()->IsNonMeleeSpellCasted(false, false, true))
+        {
+            if (!m_creature->isInCombat())
+                return false;
+
+            Unit* pVictim = m_creature->getVictim();
+            if (!pVictim || !pVictim->IsNonMeleeSpellCasted(false, false, true))
                 return false;
 
             LOG_PROCESS_EVENT;
             // Repeat Timers
             pHolder.UpdateRepeatTimer(m_creature, event.target_casting.repeatMin, event.target_casting.repeatMax);
             break;
+        }
         case EVENT_T_FRIENDLY_HP:
         {
             if (!m_creature->isInCombat())
@@ -362,10 +372,14 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
         }
         case EVENT_T_TARGET_MANA:
         {
-            if (!m_creature->isInCombat() || !m_creature->getVictim() || !m_creature->getVictim()->GetMaxPower(POWER_MANA))
+            if (!m_creature->isInCombat())
                 return false;
 
-            uint32 perc = (m_creature->getVictim()->GetPower(POWER_MANA) * 100) / m_creature->getVictim()->GetMaxPower(POWER_MANA);
+            Unit* pVictim = m_creature->getVictim();
+            if (!pVictim || !pVictim->GetMaxPower(POWER_MANA))
+                return false;
+
+            uint32 perc = (pVictim->GetPower(POWER_MANA) * 100) / pVictim->GetMaxPower(POWER_MANA);
 
             if (perc > event.percent_range.percentMax || perc < event.percent_range.percentMin)
                 return false;
@@ -390,10 +404,14 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
         }
         case EVENT_T_TARGET_AURA:
         {
-            if (!m_creature->isInCombat() || !m_creature->getVictim())
+            if (!m_creature->isInCombat())
                 return false;
 
-            SpellAuraHolderPtr holder = m_creature->getVictim()->GetSpellAuraHolder(event.buffed.spellId);
+            Unit* pVictim = m_creature->getVictim();
+            if (!pVictim)
+                return false;
+
+            SpellAuraHolderPtr holder = pVictim->GetSpellAuraHolder(event.buffed.spellId);
             if (!holder || holder->GetStackAmount() < event.buffed.amount)
                 return false;
 
@@ -415,10 +433,14 @@ bool CreatureEventAI::ProcessEvent(CreatureEventAIHolder& pHolder, Unit* pAction
         }
         case EVENT_T_TARGET_MISSING_AURA:
         {
-            if (!m_creature->isInCombat() || !m_creature->getVictim())
+            if (!m_creature->isInCombat())
                 return false;
 
-            SpellAuraHolderPtr holder = m_creature->getVictim()->GetSpellAuraHolder(event.buffed.spellId);
+            Unit* pVictim = m_creature->getVictim();
+            if (!pVictim)
+                return false;
+
+            SpellAuraHolderPtr holder = pVictim->GetSpellAuraHolder(event.buffed.spellId);
             if (holder && holder->GetStackAmount() >= event.buffed.amount)
                 return false;
 
@@ -734,17 +756,20 @@ void CreatureEventAI::ProcessAction(CreatureEventAI_Action const& action, uint32
             m_MeleeEnabled = action.auto_attack.state != 0;
             break;
         case ACTION_T_COMBAT_MOVEMENT:
+        {
             // ignore no affect case
             if (m_isCombatMovement == (action.combat_movement.state != 0))
                 return;
 
             SetCombatMovement(action.combat_movement.state != 0, true);
 
-            if (m_isCombatMovement && action.combat_movement.melee && m_creature->isInCombat() && m_creature->getVictim())
-                m_creature->SendMeleeAttackStart(m_creature->getVictim());
-            else if (action.combat_movement.melee && m_creature->isInCombat() && m_creature->getVictim())
-                m_creature->SendMeleeAttackStop(m_creature->getVictim());
+            Unit* pVictim = m_creature->getVictim();
+            if (m_isCombatMovement && action.combat_movement.melee && m_creature->isInCombat() && pVictim)
+                m_creature->SendMeleeAttackStart(pVictim);
+            else if (action.combat_movement.melee && m_creature->isInCombat() && pVictim)
+                m_creature->SendMeleeAttackStop(pVictim);
             break;
+        }
         case ACTION_T_SET_PHASE:
             m_Phase = action.set_phase.phase;
             DEBUG_FILTER_LOG(LOG_FILTER_EVENT_AI_DEV, "CreatureEventAI: ACTION_T_SET_PHASE - script %u for %s, phase is now %u", EventId, m_creature->GetGuidStr().c_str(), m_Phase);
@@ -1282,9 +1307,12 @@ void CreatureEventAI::UpdateAI(const uint32 diff)
                 case EVENT_T_RANGE:
                     if (Combat)
                     {
-                        if (m_creature->getVictim() && m_creature->IsInMap(m_creature->getVictim()))
-                            if (m_creature->IsInRange(m_creature->getVictim(), (float)(*i).Event.range.minDist, (float)(*i).Event.range.maxDist))
+					    Unit* pVictim = m_creature->getVictim();
+                        if (pVictim && m_creature->IsInMap(pVictim))
+                        {
+                            if (m_creature->IsInRange(pVictim, (float)(*i).Event.range.minDist, (float)(*i).Event.range.maxDist))
                                 ProcessEvent(*i);
+                        }
                     }
                     break;
             }

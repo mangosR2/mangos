@@ -251,6 +251,12 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recv_data*/)
                     playersNear.push_back(playerGroup);
             }
 
+            if (playersNear.size() == 0)
+            {
+                sLog.outError("WorldSession::HandleLootMoneyOpcode %s try aquire group loot without any group member! Cheat attempt assumed.", player->GetObjectGuid().GetString().c_str());
+                return;
+            }
+
             uint32 money_per_player = uint32((pLoot->gold) / (playersNear.size()));
 
             for (std::vector<Player*>::const_iterator i = playersNear.begin(); i != playersNear.end(); ++i)
