@@ -1,10 +1,3 @@
--- --------------------------------------------------------
--- Host:                         127.0.0.1
--- Server version:               5.0.45-community-nt - MySQL Community Edition (GPL)
--- Server OS:                    Win32
--- HeidiSQL Version:             8.0.0.4396
--- --------------------------------------------------------
-
 -- missing custom npc news
 
 -- Dumping data for table mangos.creature_template: 30,230 rows
