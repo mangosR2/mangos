@@ -95,6 +95,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\recastnavigation\Detour\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

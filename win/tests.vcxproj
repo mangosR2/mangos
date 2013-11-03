@@ -193,7 +193,7 @@
       <TypeLibraryName>.\tests__$(Platform)_$(Configuration)\tests.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP -Zm145 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/MP -Zm270</AdditionalOptions>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\dep\include\gsoap;..\dep\include;..\src\framework;..\src\shared;..\src\game;..\src\mangosd;..\dep\ACE_wrappers;..\dep\cppunit\include;..\dep\include\g3dlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VERSION=0.15.0-DEV;WIN32;NDEBUG;_CONSOLE;ENABLE_CLI;_SECURE_SCL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -295,7 +295,7 @@
       <TypeLibraryName>.\tests__$(Platform)_$(Configuration)\tests.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP /Zm200 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/MP -Zm270</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\include\gsoap;..\dep\include;..\src\framework;..\src\shared;..\src\game;..\src\mangosd;..\dep\ACE_wrappers;..\dep\cppunit\include;..\dep\include\g3dlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VERSION=0.15.0-DEV;WIN32;_DEBUG;MANGOS_DEBUG;_CONSOLE;ENABLE_CLI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -315,6 +315,7 @@
       <CompileAs>Default</CompileAs>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -399,7 +400,7 @@
       <TypeLibraryName>.\tests__$(Platform)_$(Configuration)\tests.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
-      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/MP -Zm270</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\dep\include;..\src\framework;..\src\shared;..\src\game;..\src\tests;..\dep\ACE_wrappers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>VERSION=0.15.0-DEV;WIN32;_DEBUG;MANGOS_DEBUG;_CONSOLE;ENABLE_CLI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
