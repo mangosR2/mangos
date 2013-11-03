@@ -3167,6 +3167,9 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1585030,'Oh no, he was merely an instrument, a stepping stone to a much larger plan! It has all led to this, and this time, you will not interfere!',0,1,0,0,'kaelthas MT SAY_INTRO_2');
 
 -- -1 595 000 CULLING OF STRATHOLME
+INSERT INTO script_texts (entry,content_default,sound,type,language,emote,comment) VALUES
+(-1595000,'All soldiers of Lordaeron should immediately report to the entrance of Stratholme, and await further orders from Prince Arthas.',0,6,0,0,'lordaeron crier SAY_SOLDIERS_REPORT'),
+(-1595001,'Good work with the crates! Come talk to me in front of Stratholme for your next assignment!',0,4,0,0,'chromie WHISPER_CHROMIE_CRATES');
 
 -- -1 599 000 HALLS OF STONE
 INSERT INTO script_texts (entry,content_default,sound,type,language,emote,comment) VALUES
@@ -3582,10 +3585,10 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 (-1603191,'Gaze upon its magnificence! Bask in its glorious, um, glory! I present you... V-07-TR-0N!',15624,1,0,0,'mimiron SAY_ROBOT_ACTIVE'),
 (-1603192,'Prognosis: Negative!',15625,1,0,0,'mimiron SAY_ROBOT_SLAY_1'),
 (-1603193,'You\'re not going to get up from that one, friend.',15626,1,0,0,'mimiron SAY_ROBOT_SLAY_2'),
-(-1603194,'It would appear that I\'ve made a slight miscalculation. I allowed my mind to be corrupted by the fiend in the prison, overriding my primary directive. All systems seem to be functional now. Clear.',15627,1,0,0,'mimiron SAY_ROBOT_DEATH'),
+(-1603194,'It would appear that I\'ve made a slight miscalculation. I allowed my mind to be corrupted by the fiend in the prison, overriding my primary directive. All systems seem to be functional now. Clear.',15627,1,0,1,'mimiron SAY_ROBOT_DEATH'),
 
 (-1603195,'Combat matrix enhanced. Behold wonderous rapidity!',15630,1,0,0,'mimiron SAY_HELP_YOGG'),
-(-1603196,'Leviathan Mk II begins to cast Plasma Blast!',0,3,0,0,'mimiron EMOTE_PLASMA_BLAST'),
+(-1603196,'%s begins to cast Plasma Blast!',0,3,0,0,'mimiron EMOTE_PLASMA_BLAST'),
 
 (-1603197,'Aaaaaaaaaaaaaaaaa... Help me!!! Please got to help me!',15771,1,0,0,'yogg SAY_SARA_INTRO_1'),
 (-1603198,'What do you want from me? Leave me alone!',15772,1,0,0,'yogg SAY_SARA_INTRO_2'),
@@ -3648,7 +3651,21 @@ INSERT INTO script_texts (entry,content_default,sound,type,language,emote,commen
 
 (-1603246,'I know just the place. Will you be all right?',15823,1,0,0,'brann SAY_BRANN_OUTRO'),
 
-(-1603247,'%s surrounds itself with a crackling Runic Barrier!',0,3,0,0,'thorim EMOTE_RUNIC_BARRIER');
+(-1603247,'%s surrounds itself with a crackling Runic Barrier!',0,3,0,0,'thorim EMOTE_RUNIC_BARRIER'),
+
+(-1603248,'Self-destruct sequence initiated.',15413,1,0,0,'mimiron SAY_SELF_DESTRUCT'),
+(-1603249,'This area will self-destruct in ten minutes.',15415,1,0,0,'mimiron SAY_DESTRUCT_10_MIN'),
+(-1603250,'This area will self-destruct in nine minutes.',15416,1,0,0,'mimiron SAY_DESTRUCT_9_MIN'),
+(-1603251,'This area will self-destruct in eight minutes.',15417,1,0,0,'mimiron SAY_DESTRUCT_8_MIN'),
+(-1603252,'This area will self-destruct in seven minutes.',15418,1,0,0,'mimiron SAY_DESTRUCT_7_MIN'),
+(-1603253,'This area will self-destruct in six minutes.',15419,1,0,0,'mimiron SAY_DESTRUCT_6_MIN'),
+(-1603254,'This area will self-destruct in five minutes.',15420,1,0,0,'mimiron SAY_DESTRUCT_5_MIN'),
+(-1603255,'This area will self-destruct in four minutes.',15421,1,0,0,'mimiron SAY_DESTRUCT_4_MIN'),
+(-1603256,'This area will self-destruct in three minutes.',15422,1,0,0,'mimiron SAY_DESTRUCT_3_MIN'),
+(-1603257,'This area will self-destruct in two minutes.',15423,1,0,0,'mimiron SAY_DESTRUCT_2_MIN'),
+(-1603258,'This area will self-destruct in one minute.',15424,1,0,0,'mimiron SAY_DESTRUCT_1_MIN'),
+(-1603259,'Self-destruct sequence finalized. Have a nice day.',15425,1,0,0,'mimiron SAY_DESTRUCT_0_MIN'),
+(-1603260,'Self-destruct sequence terminated. Overide code A905.',15414,1,0,0,'mimiron SAY_SELF_DESTRUCT_END');
 
 -- -1 604 000 GUNDRAK
 INSERT INTO script_texts (entry,content_default,sound,type,language,emote,comment) VALUES
@@ -4713,7 +4730,9 @@ INSERT INTO gossip_texts (entry,content_default,comment) VALUES
 (-3595002,'Very well, Chromie.','chromie GOSSIP_ITEM_ENTRANCE_3'),
 (-3595003,'Why have I been sent back to this particular place and time?','chromie GOSSIP_ITEM_INN_1'),
 (-3595004,'What was this decision?','chromie GOSSIP_ITEM_INN_2'),
-(-3595005,'So how does the Infinite Dragonflight plan to interfere?','chromie GOSSIP_ITEM_INN_3');
+(-3595005,'So how does the Infinite Dragonflight plan to interfere?','chromie GOSSIP_ITEM_INN_3'),
+(-3595006,'Chromie, you and I both know what''s going to happen in this time stream. We''ve seen this all before.$B$BCan you just skip us ahead to all the real action?','chromie GOSSIP_ITEM_INN_SKIP'),
+(-3595007,'Yes, please!','chromie GOSSIP_ITEM_INN_TELEPORT');
 
 -- -3 599 000 HALLS OF STONE
 INSERT INTO gossip_texts (entry,content_default,comment) VALUES
@@ -7502,7 +7521,7 @@ INSERT INTO script_waypoint VALUES
 (4880, 23, -2904.04, -3601.35, 34.969,  0, ''),
 (4880, 24, -2907.6,  -3612.73, 34.2434, 10000, 'SAY_STINKY_END');
 
--- Change format to match the one above someday 8) !!!
+--- Change format to match the one above someday 8) !!!
 DELETE FROM `script_waypoint` WHERE `entry`='28864';
 INSERT INTO `script_waypoint` 
     (`entry`, `pointid`, `location_x`, `location_y`, `location_z`, `waittime`) 
@@ -7535,4 +7554,5 @@ VALUES
     ('28841', '15', '2129.866699', '-6174.107910', '4.3807790', '0'),
     ('28841', '16', '2122.426270', '-6185.311035', '14.052804', '0'),
     ('28841', '17', '2117.739014', '-6193.830079', '13.354200', '10000');
+
 -- EOF

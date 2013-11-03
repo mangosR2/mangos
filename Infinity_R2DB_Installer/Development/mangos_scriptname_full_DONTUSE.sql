@@ -400,7 +400,10 @@ INSERT INTO scripted_event_id VALUES
 /* THE CULLING OF STRATHOLME */
 UPDATE instance_template SET ScriptName='instance_culling_of_stratholme' WHERE map=595;
 UPDATE creature_template SET ScriptName='npc_chromie' WHERE entry IN (26527, 27915);
-UPDATE creature_template SET ScriptName='spell_dummy_npc_crates_bunny' WHERE entry=30996;
+UPDATE creature_template SET ScriptName='spell_dummy_npc_crates_bunny' WHERE entry=27827;
+DELETE FROM scripted_areatrigger WHERE entry=5291;
+INSERT INTO scripted_areatrigger VALUES
+(5291,'at_culling_of_stratholme');
 
 /* THE DARK PORTAL */
 UPDATE creature_template SET ScriptName='boss_chrono_lord_deja' WHERE entry=17879;
@@ -1318,7 +1321,15 @@ UPDATE creature_template SET ScriptName='boss_mimiron' WHERE entry=33350;
 UPDATE creature_template SET ScriptName='boss_leviathan_mk2' WHERE entry=33432;
 UPDATE creature_template SET ScriptName='boss_vx001' WHERE entry=33651;
 UPDATE creature_template SET ScriptName='boss_aerial_unit' WHERE entry=33670;
+UPDATE creature_template SET ScriptName='npc_proximity_mine' WHERE entry=34362;
+UPDATE creature_template SET ScriptName='npc_bot_trigger' WHERE entry=33856;
+UPDATE creature_template SET ScriptName='npc_rocket_strike' WHERE entry=34047;
+UPDATE creature_template SET ScriptName='npc_frost_bomb' WHERE entry=34149;
+UPDATE creature_template SET ScriptName='npc_mimiron_flames' WHERE entry IN (34363,34121);
+UPDATE creature_template SET ScriptName='boss_leviathan_mk2_turret' WHERE entry=34071;
+UPDATE creature_template SET ScriptName='npc_computer' WHERE entry=34143;
 UPDATE gameobject_template SET ScriptName='go_big_red_button' WHERE entry=194739;
+UPDATE creature_template SET ScriptName='boss_sara' WHERE entry=33134;
 DELETE FROM scripted_event_id WHERE id IN (9735,20907,20964,21030,21031,21032,21033,21045,21605,21606,21620);
 INSERT INTO scripted_event_id VALUES
 (9735, 'event_spell_saronite_barrier'), -- Vezax saronite barrier event
