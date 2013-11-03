@@ -2879,7 +2879,6 @@ bool Map::UpdateGridState(NGridType& grid, GridInfo& info, uint32 const& t_diff)
                 Guard.release();
                 if (grid.ActiveObjectsInGrid() == 0 && !ActiveObjectsNearGrid(grid.getX(), grid.getY()))
                 {
-                    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
                     ObjectGridStoper stoper(grid);
                     stoper.StopN();
                     grid.SetGridState(GRID_STATE_IDLE);

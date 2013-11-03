@@ -65,7 +65,7 @@ void TransportBase::Update(uint32 diff)
 }
 
 // Update the global positions of all passengers
-void TransportBase::UpdateGlobalPositions()
+void TransportBase::UpdateGlobalPositions(bool isParent)
 {
     WorldLocation pos = m_owner->GetPosition();
 
@@ -78,7 +78,8 @@ void TransportBase::UpdateGlobalPositions()
 
     if (!m_passengers.empty())
     {
-        MAPLOCK_READ(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
+        if (!isParent)
+            MAPLOCK_READ(GetOwner(), MAP_LOCK_TYPE_MOVEMENT);
         // Update global positions
         for (PassengerMap::const_iterator itr = m_passengers.begin(); itr != m_passengers.end(); ++itr)
             UpdateGlobalPositionOf(itr->first, itr->second.GetLocalPosition());
@@ -112,13 +113,13 @@ void TransportBase::UpdateGlobalPositionOf(ObjectGuid const& passengerGuid, Posi
             m_owner->GetMap()->Relocation((Creature*)passenger, globalPos);
             // If passenger is vehicle
             if (((Unit*)passenger)->IsVehicle())
-                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
+                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions(true);
             break;
         case TYPEID_PLAYER:
             m_owner->GetMap()->Relocation((Player*)passenger, globalPos);
             // If passenger is vehicle
             if (((Unit*)passenger)->IsVehicle())
-                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions();
+                ((Unit*)passenger)->GetVehicleKit()->UpdateGlobalPositions(true);
             break;
         case TYPEID_CORPSE:
         // TODO - add corpse relocation

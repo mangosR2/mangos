@@ -98,7 +98,7 @@ class MANGOS_DLL_DECL TransportBase
         virtual ~TransportBase() { MANGOS_ASSERT(m_passengers.size() == 0); };
 
         void Update(uint32 diff);
-        void UpdateGlobalPositions();
+        void UpdateGlobalPositions(bool isParent = false);
         void UpdateGlobalPositionOf(ObjectGuid const& passengerGuid, Position const& pos) const;
 
         WorldObject* GetOwner() const { return m_owner; }
