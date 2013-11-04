@@ -305,7 +305,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged )
                         Unit::AuraList const& mDummy = GetAurasByType(SPELL_AURA_DUMMY);
                         for(Unit::AuraList::const_iterator itr = mDummy.begin(); itr != mDummy.end(); ++itr)
                         {
-                            if((*itr)->GetSpellProto()->SpellIconID != 1563)
+                            if((*itr)->GetSpellProto()->GetSpellIconID() != 1563)
                                 continue;
 
                             // Predatory Strikes (effect 0)

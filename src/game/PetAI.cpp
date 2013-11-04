@@ -134,7 +134,7 @@ void PetAI::Reset()
         }
 
         // all non-combat spells classified.
-        switch (spellInfo->rangeIndex)
+        switch (spellInfo->GetRangeIndex())
         {
             case SPELL_RANGE_IDX_COMBAT:
             {
@@ -158,7 +158,7 @@ void PetAI::Reset()
             }
             default:
             {
-                float range = GetSpellMaxRange(sSpellRangeStore.LookupEntry(spellInfo->rangeIndex), false);
+                float range = GetSpellMaxRange(sSpellRangeStore.LookupEntry(spellInfo->GetRangeIndex()), false);
                 if (f_range < M_NULL_F || (range > M_NULL_F && range < f_range))
                     f_range = range;
                 if (IsSpellCauseDamage(spellInfo))
