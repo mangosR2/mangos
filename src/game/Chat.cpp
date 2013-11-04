@@ -857,7 +857,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "mailbox",        SEC_ADMINISTRATOR,  false, &ChatHandler::HandleMailBoxCommand,             "", NULL },
         { "wchange",        SEC_ADMINISTRATOR,  false, &ChatHandler::HandleChangeWeatherCommand,       "", NULL },
         { "ticket",         SEC_GAMEMASTER,     true,  &ChatHandler::HandleTicketCommand,              "", NULL },
-        { "delticket",      SEC_GAMEMASTER,     true,  &ChatHandler::HandleDelTicketCommand,           "", NULL },
+        { "closeticket",    SEC_GAMEMASTER,     true,  &ChatHandler::HandleCloseTicketCommand,         "", NULL },
         { "maxskill",       SEC_ADMINISTRATOR,  false, &ChatHandler::HandleMaxSkillCommand,            "", NULL },
         { "setskill",       SEC_ADMINISTRATOR,  false, &ChatHandler::HandleSetSkillCommand,            "", NULL },
         { "whispers",       SEC_MODERATOR,      false, &ChatHandler::HandleWhispersCommand,            "", NULL },
@@ -882,6 +882,12 @@ ChatCommand* ChatHandler::getCommandTable()
         { "mmap",           SEC_GAMEMASTER,     false, NULL,                                           "", mmapCommandTable },
         { "ws",             SEC_GAMEMASTER,     false, NULL,                                           "", WSCommandTable },
         { "transport",      SEC_ADMINISTRATOR,  false, NULL,                                           "", transportCommandTable },
+
+        { "freeze",         SEC_ADMINISTRATOR,  true, &ChatHandler::HandleFreezeCommand,               "", NULL }, // ProEMU [Freeze Command]
+        { "unfreeze",       SEC_ADMINISTRATOR,  true, &ChatHandler::HandleUnFreezeCommand,             "", NULL }, // ProEMU [Freeze Command]
+        { "listfreeze",     SEC_ADMINISTRATOR,  true, &ChatHandler::HandleListFreezeCommand,           "", NULL }, // ProEMU [Freeze Command]
+        { "mirror",         SEC_GAMEMASTER,     false, &ChatHandler::HandleModifyMirrorCommand,        "", NULL }, // ProEMU Custom [Mirror Command]
+        { "ircpm",          SEC_PLAYER,         false, &ChatHandler::HandleIRCpmCommand,               "", NULL },
 
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
@@ -1406,12 +1412,12 @@ bool ChatHandler::ParseCommands(const char* text)
     MANGOS_ASSERT(text);
     MANGOS_ASSERT(*text);
 
-    // if(m_session->GetSecurity() == SEC_PLAYER)
-    //    return false;
-
     /// chat case (.command or !command format)
     if (m_session)
     {
+        if (m_session->GetSecurity() == SEC_PLAYER && !sWorld.getConfig(CONFIG_BOOL_PLAYER_COMMANDS))
+            return false;
+
         if (text[0] != '!' && text[0] != '.')
             return false;
 

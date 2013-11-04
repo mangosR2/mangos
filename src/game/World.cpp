@@ -720,7 +720,7 @@ void World::LoadConfigSettings(bool reload)
 
     setConfigMinMax(CONFIG_FLOAT_CROWDCONTROL_HP_BASE, "CrowdControlHPBase", 0.1f, 0.0f, 1.0f);
 
-    setConfig(CONFIG_BOOL_RESILENCE_ALTERNATIVE_CALCULATION, "ResilenceAlternativeCalculation", false);
+    setConfig(CONFIG_BOOL_RESILIENCE_ALTERNATIVE_CALCULATION, "ResilienceAlternativeCalculation", false);
 
     setConfig(CONFIG_BOOL_BLINK_ANIMATION_TYPE, "BlinkAnimationType", false);
 
@@ -918,6 +918,8 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_OFFHAND_CHECK_AT_TALENTS_RESET, "OffhandCheckAtTalentsReset", false);
 
     setConfig(CONFIG_BOOL_KICK_PLAYER_ON_BAD_PACKET, "Network.KickOnBadPacket", false);
+
+    setConfig(CONFIG_BOOL_PLAYER_COMMANDS, "PlayerCommands", true);
 
     if (int clientCacheId = sConfig.GetIntDefault("ClientCacheVersion", 0))
     {
@@ -2622,7 +2624,7 @@ void World::ResetRandomBG()
     CharacterDatabase.Execute("DELETE FROM character_battleground_random");
     for(SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (itr->second->GetPlayer())
-            itr->second->GetPlayer()->SetRandomWinner(false);
+            itr->second->GetPlayer()->SetRandomBGWinner(false);
 
     m_NextRandomBGReset = time_t(m_NextRandomBGReset + DAY);
     CharacterDatabase.PExecute("UPDATE saved_variables SET NextRandomBGResetTime = '"UI64FMTD"'", uint64(m_NextRandomBGReset));

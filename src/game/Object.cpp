@@ -241,7 +241,7 @@ void Object::BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) c
 
         if (isType(TYPEMASK_UNIT))
         {
-            if(((Unit*)this)->getVictim())
+            if (((Unit*)this)->getVictim())
                 updateFlags |= UPDATEFLAG_HAS_ATTACKING_TARGET;
         }
     }
@@ -458,8 +458,8 @@ void Object::BuildMovementUpdate(ByteBuffer * data, uint16 updateFlags) const
     // 0x4
     if (updateFlags & UPDATEFLAG_HAS_ATTACKING_TARGET)       // packed guid (current target guid)
     {
-        if (((Unit*)this)->getVictim())
-            *data << ((Unit*)this)->getVictim()->GetPackGUID();
+        if (Unit* pVictim = ((Unit*)this)->getVictim())
+            *data << pVictim->GetPackGUID();
         else
             data->appendPackGUID(0);
     }
@@ -1513,8 +1513,7 @@ void WorldObject::UpdateAllowedPositionZ(float x, float y, float &z) const
     {
         case TYPEID_UNIT:
         {
-            Unit* pVictim = ((Creature const*)this)->getVictim();
-            if (pVictim)
+            if (Unit* pVictim = ((Creature const*)this)->getVictim())
             {
                 // anyway creature move to victim for thinly Z distance (shun some VMAP wrong ground calculating)
                 if (fabs(GetPositionZ() - pVictim->GetPositionZ()) < 5.0f)
@@ -1793,7 +1792,7 @@ void WorldObject::SetMap(Map* map)
     m_position.SetInstanceId(map->GetInstanceId());
 }
 
-TerrainInfo const* WorldObject::GetTerrain() const
+TerrainInfoPtr WorldObject::GetTerrain() const
 {
     MANGOS_ASSERT(m_currMap);
     return m_currMap->GetTerrain();
@@ -2175,6 +2174,7 @@ void WorldObject::AddToClientUpdateList()
 
 void WorldObject::RemoveFromClientUpdateList()
 {
+    MAPLOCK_WRITE(this, MAP_LOCK_TYPE_MAPOBJECTS);
     GetMap()->RemoveUpdateObject(GetObjectGuid());
 }
 

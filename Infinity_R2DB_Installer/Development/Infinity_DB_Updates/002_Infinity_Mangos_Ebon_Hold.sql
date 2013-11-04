@@ -177,6 +177,18 @@ INSERT IGNORE INTO `spell_script_target` (`entry`, `type`, `targetEntry`) VALUES
 (52576, 1, 28886),
 (52576, 1, 28850);
 
+-- -----------------------------------------------------
+-- Quest how to win friends and how to influence enemies
+-- -----------------------------------------------------
+
+-- 28940 scarlet crusader needs to be added W/ its combat abilities
+UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_crusade_persuaded' WHERE `entry` IN (28939,28610);   
+DELETE FROM `creature_ai_scripts` WHERE (`creature_id`=28939);
+DELETE FROM `creature_ai_scripts` WHERE (`creature_id`=28610);
+
+-- EAI Text clean up for quests/sd2
+DELETE FROM `creature_ai_texts` WHERE `entry` BETWEEN -565 AND -555;
+
 -- --------------------------------------------------------
 -- KEEP ALL OTHER ACTIVE SQL ABOVE THIS LINE
 
@@ -224,6 +236,20 @@ UPDATE `creature_template` SET `minhealth` = 1782, `maxhealth` = 1782 WHERE `ent
 UPDATE `creature_template` SET `minhealth` = 1919, `maxhealth` = 1919 WHERE `entry` = 28819;
 -- Scarlet Ghost
 UPDATE `creature_template` SET `minhealth` = 4430, `maxhealth` = 4430 WHERE `entry` = 28846;
+-- Scarlet marksmen
+UPDATE `creature_template` SET `minhealth` = 5228, `maxhealth` = 5228 WHERE `entry` = 28610;
+-- Scarlet Preacher
+UPDATE `creature_template` SET `minhealth` = 4906, `maxhealth` = 4906 WHERE `entry` = 28939;
+-- Scarlet crusader
+UPDATE `creature_template` SET `minhealth` = 5228, `maxhealth` = 5228 WHERE `entry` = 28940;
+-- Scarlet crusader #2
+UPDATE `creature_template` SET `minhealth` = 4906, `maxhealth` = 4906 WHERE `entry` = 28529;
+-- scarlet Ghoul
+UPDATE `creature_template` SET `minhealth` = 1848, `maxhealth` = 1848 WHERE `entry` = 28897;
+-- scourge gryphon
+UPDATE `creature_template` SET `minhealth` = 9812, `maxhealth` = 9812 WHERE `entry` = 29501;
+UPDATE `creature_template` SET `minhealth` = 9812, `maxhealth` = 9812 WHERE `entry` = 29488;
+UPDATE `creature_template` SET `minhealth` = 10132, `maxhealth` = 10132 WHERE `entry` = 28906;
 
 -- Fix creature Spawn Table for health adjustments
 UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28892;
@@ -247,6 +273,14 @@ UPDATE `creature` SET `curhealth` = 6535 WHERE `id` = 28406;
 UPDATE `creature` SET `curhealth` = 7842 WHERE `id` = 28768;
 UPDATE `creature` SET `curhealth` = 1782 WHERE `id` = 28822;
 UPDATE `creature` SET `curhealth` = 1919 WHERE `id` = 28819;
+UPDATE `creature` SET `curhealth` = 5228 WHERE `id` = 28610;
+UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28939;
+UPDATE `creature` SET `curhealth` = 5228 WHERE `id` = 28940;
+UPDATE `creature` SET `curhealth` = 4906 WHERE `id` = 28529;
+UPDATE `creature` SET `curhealth` = 1848 WHERE `id` = 28897;
+UPDATE `creature` SET `curhealth` = 9812 WHERE `id` = 29501;
+UPDATE `creature` SET `curhealth` = 9812 WHERE `id` = 29488;
+UPDATE `creature` SET `curhealth` = 10132 WHERE `id` = 28906;
 
 -- ROUGH DRAFT NOT FINSIHED YET
 

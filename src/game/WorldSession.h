@@ -437,7 +437,7 @@ class MANGOS_DLL_SPEC WorldSession
         void HandleGMTicketCreateOpcode(WorldPacket& recvPacket);
         void HandleGMTicketSystemStatusOpcode(WorldPacket& recvPacket);
 
-        void HandleGMTicketDeleteTicketOpcode(WorldPacket& recvPacket);
+        void HandleGMTicketCloseTicketOpcode(WorldPacket& recvPacket);
         void HandleGMTicketUpdateTextOpcode(WorldPacket& recvPacket);
 
         void HandleGMSurveySubmitOpcode(WorldPacket& recvPacket);

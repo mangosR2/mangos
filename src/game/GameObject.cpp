@@ -1866,7 +1866,7 @@ void GameObject::DealGameObjectDamage(uint32 damage, uint32 spellId, Unit* caste
     if (!damage)
         return;
 
-    WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, 8+8+8+4+4);
+    WorldPacket data(SMSG_DESTRUCTIBLE_BUILDING_DAMAGE, GetPackGUID().size() + caster->GetPackGUID().size() + 9 + 4 + 4);
     data << GetPackGUID();
     data << caster->GetPackGUID();
     data << caster->GetCharmerOrOwnerOrSelf()->GetPackGUID();
