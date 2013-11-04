@@ -41,6 +41,7 @@
 #include "Language.h"
 #include "SpellMgr.h"
 #include "Calendar.h"
+#include "mangchat/IRCClient.h"
 
 // Playerbot mod:
 #include "playerbot/playerbot.h"
@@ -928,6 +929,9 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
     }
 
     delete holder;
+
+    if(sIRC.ajoin == 1)
+       sIRC.AutoJoinChannel(pCurrChar);
 }
 
 void WorldSession::HandleSetFactionAtWarOpcode(WorldPacket& recv_data)

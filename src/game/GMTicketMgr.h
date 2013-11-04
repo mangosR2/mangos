@@ -32,12 +32,13 @@ class GMTicket
         {
         }
 
-        void Init(ObjectGuid guid, const std::string& text, const std::string& responsetext, time_t update)
+        void Init(ObjectGuid guid, const std::string& text, const std::string& responsetext, time_t update, uint8 closed)
         {
             m_guid = guid;
             m_text = text;
             m_responseText = responsetext;
             m_lastUpdate = update;
+            m_closed = closed;
         }
 
         ObjectGuid const& GetPlayerGuid() const
@@ -67,7 +68,7 @@ class GMTicket
 
             std::string escapedString = m_text;
             CharacterDatabase.escape_string(escapedString);
-            CharacterDatabase.PExecute("UPDATE character_ticket SET ticket_text = '%s' WHERE guid = '%u'", escapedString.c_str(), m_guid.GetCounter());
+            CharacterDatabase.PExecute("UPDATE character_ticket SET ticket_text = '%s' WHERE (guid = '%u' AND closed = '0')", escapedString.c_str(), m_guid.GetCounter());
         }
 
         void SetResponseText(const char* text)
@@ -77,20 +78,20 @@ class GMTicket
 
             std::string escapedString = m_responseText;
             CharacterDatabase.escape_string(escapedString);
-            CharacterDatabase.PExecute("UPDATE character_ticket SET response_text = '%s' WHERE guid = '%u'", escapedString.c_str(), m_guid.GetCounter());
+            CharacterDatabase.PExecute("UPDATE character_ticket SET response_text = '%s' WHERE (guid = '%u' AND closed = '0')", escapedString.c_str(), m_guid.GetCounter());
         }
 
         bool HasResponse() { return !m_responseText.empty(); }
 
-        void DeleteFromDB() const
+        void CloseInDB() const
         {
-            CharacterDatabase.PExecute("DELETE FROM character_ticket WHERE guid = '%u' LIMIT 1", m_guid.GetCounter());
+            CharacterDatabase.PExecute("UPDATE character_ticket SET closed = '1' WHERE (guid = '%u' AND closed = '0') LIMIT 1", m_guid.GetCounter());
         }
 
         void SaveToDB() const
         {
             CharacterDatabase.BeginTransaction();
-            DeleteFromDB();
+            CloseInDB();
 
             std::string escapedString = m_text;
             CharacterDatabase.escape_string(escapedString);
@@ -98,7 +99,7 @@ class GMTicket
             std::string escapedString2 = m_responseText;
             CharacterDatabase.escape_string(escapedString2);
 
-            CharacterDatabase.PExecute("INSERT INTO character_ticket (guid, ticket_text, response_text) VALUES ('%u', '%s', '%s')", m_guid.GetCounter(), escapedString.c_str(), escapedString2.c_str());
+            CharacterDatabase.PExecute("INSERT INTO character_ticket (guid, ticket_text, response_text, closed) VALUES ('%u', '%s', '%s', '0')", m_guid.GetCounter(), escapedString.c_str(), escapedString2.c_str());
             CharacterDatabase.CommitTransaction();
         }
     private:
@@ -106,6 +107,7 @@ class GMTicket
         std::string m_text;
         std::string m_responseText;
         time_t m_lastUpdate;
+		uint8 m_closed;
 };
 typedef std::map<ObjectGuid, GMTicket> GMTicketMap;
 typedef std::list<GMTicket*> GMTicketList;                  // for creating order access
@@ -144,28 +146,28 @@ class GMTicketMgr
         }
 
 
-        void Delete(ObjectGuid guid)
+        void Close(ObjectGuid guid)
         {
             GMTicketMap::iterator itr = m_GMTicketMap.find(guid);
             if (itr == m_GMTicketMap.end())
                 return;
-            itr->second.DeleteFromDB();
+            itr->second.CloseInDB();
             m_GMTicketListByCreatingOrder.remove(&itr->second);
             m_GMTicketMap.erase(itr);
         }
 
-        void DeleteAll();
+        void CloseAll();
 
         void Create(ObjectGuid guid, const char* text)
         {
             GMTicket& ticket = m_GMTicketMap[guid];
             if (ticket.GetPlayerGuid())                     // overwrite ticket
             {
-                ticket.DeleteFromDB();
+                ticket.CloseInDB();
                 m_GMTicketListByCreatingOrder.remove(&ticket);
             }
 
-            ticket.Init(guid, text, "", time(NULL));
+            ticket.Init(guid, text, "", time(NULL), 0);
             ticket.SaveToDB();
             m_GMTicketListByCreatingOrder.push_back(&ticket);
         }

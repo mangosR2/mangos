@@ -24,6 +24,7 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Chat.h"
+#include "mangchat/IRCClient.h"
 
 void WorldSession::SendGMTicketGetTicket(uint32 status, GMTicket* ticket /*= NULL*/)
 {
@@ -86,15 +87,19 @@ void WorldSession::HandleGMTicketUpdateTextOpcode(WorldPacket& recv_data)
         sLog.outError("Ticket update: Player %s (GUID: %u) doesn't have active ticket", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow());
 }
 
-void WorldSession::HandleGMTicketDeleteTicketOpcode(WorldPacket& /*recv_data*/)
+void WorldSession::HandleGMTicketCloseTicketOpcode( WorldPacket & /*recv_data*/ )
 {
-    sTicketMgr.Delete(GetPlayer()->GetObjectGuid());
+    sTicketMgr.Close(GetPlayer()->GetObjectGuid());
 
-    WorldPacket data(SMSG_GMTICKET_DELETETICKET, 4);
+    WorldPacket data(SMSG_GMTICKET_CLOSETICKET, 4);
     data << uint32(9);
     SendPacket(&data);
 
     SendGMTicketGetTicket(0x0A);
+
+    std::string name = GetPlayer()->GetName();
+    std::string channel = std::string("#") + sIRC._irc_chan[sIRC.Status];
+    sIRC.Send_IRC_Channel(channel, sIRC.MakeMsg("\00304,08\037/!\\\037\017\00304 GM Ticket Closed For:\00304,08\037/!\\\037\017 %s", "%s", name.c_str()), true);
 }
 
 void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recv_data)
@@ -123,7 +128,7 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recv_data)
     }
 
     if (isFollowup)
-        sTicketMgr.Delete(_player->GetObjectGuid());
+        sTicketMgr.Close(_player->GetObjectGuid());
 
     sTicketMgr.Create(_player->GetObjectGuid(), ticketText.c_str());
 
@@ -140,6 +145,13 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recv_data)
         if (itr->second->GetSession()->GetSecurity() >= SEC_GAMEMASTER && itr->second->isAcceptTickets())
             ChatHandler(itr->second).PSendSysMessage(LANG_COMMAND_TICKETNEW, GetPlayer()->GetName());
     }
+
+    std::string name = GetPlayer()->GetName();
+    std::string details = ticketText;
+    std::string channel = std::string("#") + sIRC._irc_chan[sIRC.Status];
+    sIRC.Send_IRC_Channel(channel, sIRC.MakeMsg("\00304,08\037/!\\\037\017\00304 New GM Ticket from:\00304,08\037/!\\\037\017 %s", "%s", name.c_str()), true);
+    sIRC.Send_IRC_Channel(channel, sIRC.MakeMsg("\00304,08\037/!\\\037\017\00304 Ticket Details:\00304,08\037/!\\\037\017 %s", "%s", details.c_str()), true);
+
 }
 
 void WorldSession::HandleGMTicketSystemStatusOpcode(WorldPacket& /*recv_data*/)
@@ -187,7 +199,7 @@ void WorldSession::HandleGMResponseResolveOpcode(WorldPacket& recv_data)
     // empty opcode
     DEBUG_LOG("WORLD: %s", LookupOpcodeName(recv_data.GetOpcode()));
 
-    sTicketMgr.Delete(GetPlayer()->GetObjectGuid());
+    sTicketMgr.Close(GetPlayer()->GetObjectGuid());
 
     WorldPacket data(SMSG_GMTICKET_RESOLVE_RESPONSE, 1);
     data << uint8(0);                                       // ask to fill out gm survey = 1

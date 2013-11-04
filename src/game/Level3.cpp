@@ -57,6 +57,7 @@
 #include "DBCEnums.h"
 #include "AuctionHouseBot/AuctionHouseBot.h"
 #include "SQLStorages.h"
+#include "SpellAuras.h"
 
 static uint32 ahbotQualityIds[MAX_AUCTION_QUALITY] =
 {
@@ -7159,6 +7160,195 @@ bool ChatHandler::HandleFlushArenaPointsCommand(char* /*args*/)
     return true;
 }
 
+bool ChatHandler::HandleFreezeCommand(char *args)
+{
+    std::string name;
+    Player* player;
+    char* TargetName = strtok((char*)args, " "); //get entered #name
+    if (!TargetName) //if no #name entered use target
+    {
+        player = getSelectedPlayer();
+        if (player) //prevent crash with creature as target
+        {
+           name = player->GetName();
+           normalizePlayerName(name);
+        }
+    }
+    else // if #name entered
+    {
+        name = TargetName;
+        normalizePlayerName(name);
+        player = sObjectMgr.GetPlayer(name.c_str()); //get player by #name
+    }
+
+
+    //effect
+    if ((player) && (!(player==m_session->GetPlayer())))
+    {
+        PSendSysMessage(LANG_COMMAND_FREEZE,name.c_str());
+
+        //stop combat + unattackable + duel block + stop some spells
+        player->setFaction(35);
+        player->CombatStop();
+        if(player->IsNonMeleeSpellCasted(true))
+        player->InterruptNonMeleeSpells(true);
+        player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+        player->SetUInt32Value(PLAYER_DUEL_TEAM, 1);
+
+        //if player class = hunter || warlock remove pet if alive
+        if((player->getClass() == CLASS_HUNTER) || (player->getClass() == CLASS_WARLOCK))
+        {
+            if(Pet* pet = player->GetPet())
+            {
+                pet->SavePetToDB(PET_SAVE_AS_CURRENT);
+                // not let dismiss dead pet
+                if(pet && pet->isAlive())
+                player->RemovePet(PET_SAVE_NOT_IN_SLOT);
+            }
+        }
+
+        //stop movement and disable spells
+        //uint32 spellID = 9454;
+        //m_session->GetPlayer()->CastSpell(player,spellID,false);
+        uint32 spellID = 9454;
+        SpellEntry const *spellInfo = sSpellStore.LookupEntry( spellID );
+        if(spellInfo) //TODO: Change the duration of the aura to -1 instead of 5000000
+        {
+            SpellAuraHolderPtr holder = CreateSpellAuraHolder(spellInfo, player, m_session->GetPlayer());
+            for(uint32 i = 0;i<3;i++)
+            {
+                uint8 eff = spellInfo->Effect[i];
+                if (eff>=TOTAL_SPELL_EFFECTS)
+                    continue;
+                if( eff == SPELL_EFFECT_APPLY_AREA_AURA_PARTY || eff == SPELL_EFFECT_APPLY_AURA ||
+                    eff == SPELL_EFFECT_PERSISTENT_AREA_AURA || eff == SPELL_EFFECT_APPLY_AREA_AURA_FRIEND ||
+                    eff == SPELL_EFFECT_APPLY_AREA_AURA_ENEMY)
+                {
+                    SpellEffectIndex si;
+                    switch(i)
+                    {
+                        case 0: si=EFFECT_INDEX_0;break;
+                        case 1: si=EFFECT_INDEX_1;break;
+                        default:si=EFFECT_INDEX_2;
+                    }
+                    Aura* aura = holder->CreateAura(spellInfo, si, NULL, holder, player);
+                    //holder->AddAura(aura, si);
+                }
+            }
+            player->AddSpellAuraHolder(holder);
+        }
+
+
+        //save player
+        player->SaveToDB();
+    }
+
+    if (!player)
+    {
+        SendSysMessage(LANG_COMMAND_FREEZE_WRONG);
+        return true;
+    }
+
+    if (player==m_session->GetPlayer())
+    {
+        SendSysMessage(LANG_COMMAND_FREEZE_ERROR);
+        return true;
+    }
+
+    return true;
+}
+
+bool ChatHandler::HandleUnFreezeCommand(char *args)
+{
+    std::string name;
+    Player* player;
+    char* TargetName = strtok((char*)args, " "); //get entered #name
+    if (!TargetName) //if no #name entered use target
+    {
+        player = getSelectedPlayer();
+        if (player) //prevent crash with creature as target
+        {
+           name = player->GetName();
+        }
+    }
+
+    else // if #name entered
+    {
+        name = TargetName;
+        normalizePlayerName(name);
+        player = sObjectMgr.GetPlayer(name.c_str()); //get player by #name
+    }
+
+    //effect
+    if (player)
+    {
+        PSendSysMessage(LANG_COMMAND_UNFREEZE,name.c_str());
+
+        //Reset player faction + allow combat + allow duels
+        player->setFactionForRace(player->getRace());
+        player->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+
+        //allow movement and spells
+        uint32 spellID = 9454;
+        player->RemoveAurasDueToSpell(spellID);
+
+        //save player
+        player->SaveToDB();
+    }
+
+    if (!player)
+    {
+        if (TargetName)
+        {
+            //check for offline players
+            QueryResult *result = CharacterDatabase.PQuery("SELECT characters.guid FROM `characters` WHERE characters.name = '%s'",name.c_str());
+            if(!result)
+            {
+                SendSysMessage(LANG_COMMAND_FREEZE_WRONG);
+                return true;
+		    }
+            //if player found: delete his freeze aura
+            Field *fields=result->Fetch();
+            uint64 pguid = fields[0].GetUInt64();
+            delete result;
+            CharacterDatabase.PQuery("DELETE FROM `character_aura` WHERE character_aura.spell = 9454 AND character_aura.guid = '%u'",pguid);
+            PSendSysMessage(LANG_COMMAND_UNFREEZE,name.c_str());
+            return true;
+        }
+        else
+        {
+            SendSysMessage(LANG_COMMAND_FREEZE_WRONG);
+            return true;
+        }
+    }
+
+    return true;
+}
+
+bool ChatHandler::HandleListFreezeCommand(char* args)
+{
+    //Get names from DB
+    QueryResult *result = CharacterDatabase.PQuery("SELECT characters.name FROM `characters` LEFT JOIN `character_aura` ON (characters.guid = character_aura.guid) WHERE character_aura.spell = 9454");
+    if(!result)
+    {
+        SendSysMessage(LANG_COMMAND_NO_FROZEN_PLAYERS);
+        return true;
+    }
+    //Header of the names
+    PSendSysMessage(LANG_COMMAND_LIST_FREEZE);
+
+    //Output of the results
+    do
+    {
+        Field *fields = result->Fetch();
+        std::string fplayers = fields[0].GetCppString();
+        PSendSysMessage(LANG_COMMAND_FROZEN_PLAYERS,fplayers.c_str());
+    } while (result->NextRow());
+
+    delete result;
+    return true;
+}
+
 bool ChatHandler::HandleModifyGenderCommand(char* args)
 {
     if (!*args)
@@ -7412,6 +7602,124 @@ bool ChatHandler::HandleMmapTestArea(char* args)
     return true;
 }
 
+//ChatSpy control commands
+bool ChatHandler::HandleChatSpySetCommand(char *args)
+{
+    if(!args)
+       return false;
+
+    char* name = strtok((char*)args, " ");
+    std::string cname;
+    Player* target = NULL;
+
+    if(name)
+    {
+        cname = name;
+        normalizePlayerName(cname);
+        target = sObjectMgr.GetPlayer(cname.c_str());
+    }
+    else
+        target = getSelectedPlayer();
+
+    if(!target || target->GetSession() == m_session)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    target->m_chatSpyGuid = m_session->GetPlayer()->GetObjectGuid();
+    PSendSysMessage(LANG_CHATSPY_APEENDED, target->GetName(), target->GetGUIDLow());
+    return true;
+}
+
+bool ChatHandler::HandleChatSpyResetCommand(char* /*args*/)
+{
+    HashMapHolder<Player>::MapType &m = HashMapHolder<Player>::GetContainer();
+    HashMapHolder<Player>::MapType::iterator itr = m.begin();
+    for(; itr != m.end(); ++itr)
+    {
+        Player* plr = itr->second->GetSession()->GetPlayer();
+        if (plr && plr->m_chatSpyGuid)
+        {
+            if(Player* spy = sObjectMgr.GetPlayer(plr->m_chatSpyGuid))
+                if(spy->IsInWorld())
+                    ChatHandler(spy).PSendSysMessage(LANG_CHATSPY_CANCELLEDMASSIVE,
+                        plr->GetName(), plr->GetGUIDLow());
+            plr->m_chatSpyGuid.Clear();
+        }
+    }
+    SendSysMessage("All |cff00cc00ChatSpy|rs reset.");
+    return true;
+}
+
+bool ChatHandler::HandleChatSpyCancelCommand(char* args)
+{
+    if(!args)
+        return false;
+
+    char* name = strtok((char*)args, " ");
+    std::string cname;
+    Player* target = NULL;
+
+    if(name)
+    {
+        cname = name;
+        normalizePlayerName(cname);
+        target = sObjectMgr.GetPlayer(cname.c_str());
+    }
+    else
+        target = getSelectedPlayer();
+
+    if(!target || target->GetSession() == m_session)
+    {
+        SendSysMessage(LANG_PLAYER_NOT_FOUND);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    // ok, player found
+    if(!target->m_chatSpyGuid)
+    {
+        PSendSysMessage(LANG_CHATSPY_NOCHATSPY, target->GetName(), target->GetGUIDLow());
+        SetSentErrorMessage(true);
+        return false;
+    }
+    if(target->m_chatSpyGuid == m_session->GetPlayer()->GetObjectGuid())
+        SendSysMessage(LANG_CHATSPY_YOURCANCELLED);
+    else
+    {
+        Player* spy = sObjectMgr.GetPlayer(target->m_chatSpyGuid);
+        PSendSysMessage(LANG_CHATSPY_SMBCANCELLED, (spy ? spy->GetName() : "ERROR"), (spy ? spy->GetGUIDLow() : 0));
+    }
+    target->m_chatSpyGuid.Clear();
+    return true;
+}
+
+bool ChatHandler::HandleChatSpyStatusCommand(char* args)
+{
+    uint32 spynr = 0;
+    SendSysMessage(LANG_CHATSPY_LISTOFSPYS);
+
+    HashMapHolder<Player>::MapType &m = HashMapHolder<Player>::GetContainer();
+    HashMapHolder<Player>::MapType::iterator itr = m.begin();
+    for(; itr != m.end(); ++itr)
+    {
+        Player* plr = itr->second->GetSession()->GetPlayer();
+        if (plr && plr->m_chatSpyGuid)
+        {
+            Player* spy = sObjectMgr.GetPlayer(plr->m_chatSpyGuid);
+            PSendSysMessage(LANG_CHATSPY_ONESPYSANOTHER,
+                (spy ? spy->GetName() : "ERROR"), (spy ? spy->GetGUIDLow() : 0),
+                plr->GetName(), plr->GetGUIDLow()
+            );
+            spynr++;
+        }
+    }
+    PSendSysMessage(LANG_CHATSPY_TOTAL, spynr);
+    return true;
+}
+
 bool ChatHandler::HandleTransportListCommand(char* args)
 {
     uint32 mapID;
@@ -7445,7 +7753,7 @@ bool ChatHandler::HandleTransportListCommand(char* args)
             continue;
 
         PSendSysMessage("Transport: %s on map %u (%s), %s, passengers "SIZEFMTD", current coords %f %f %f",
-            transport->GetObjectGuid().GetString().c_str(), 
+            transport->GetObjectGuid().GetString().c_str(),
             mapID,
             name.c_str(),
             transport->isActiveObject() ? "active" : "passive",
@@ -7507,7 +7815,7 @@ bool ChatHandler::HandleTransportCurrentCommand(char* args)
         return true;
     }
 
-    PSendSysMessage(LANG_GAMEOBJECT_DETAIL, 
+    PSendSysMessage(LANG_GAMEOBJECT_DETAIL,
         guid.GetCounter(),
         goInfo->name,
         guid.GetCounter(),
@@ -7578,7 +7886,7 @@ bool ChatHandler::HandleTransportPathCommand(char* args)
     if (transport->IsMOTransport())
     {
         PSendSysMessage("Transport: %s on map %u (%s), %s, passengers "SIZEFMTD", current time %u (map %u xyz %f %f %f)",
-            transport->GetObjectGuid().GetString().c_str(), 
+            transport->GetObjectGuid().GetString().c_str(),
             map->GetId(),
             ((MOTransport*)transport)->GetName(),
             transport->isActiveObject() ? "active" : "passive",
@@ -7590,7 +7898,7 @@ bool ChatHandler::HandleTransportPathCommand(char* args)
             ((MOTransport*)transport)->GetCurrent()->second.loc.getZ()
         );
         PSendSysMessage("Transport: %s on map %u (%s), %s, passengers "SIZEFMTD", next time %u (map %u xyz %f %f %f)",
-            transport->GetObjectGuid().GetString().c_str(), 
+            transport->GetObjectGuid().GetString().c_str(),
             map->GetId(),
             ((MOTransport*)transport)->GetName(),
             transport->isActiveObject() ? "active" : "passive",
@@ -7605,7 +7913,7 @@ bool ChatHandler::HandleTransportPathCommand(char* args)
     else
     {
         PSendSysMessage("Transport: %s on map %u, %s, passengers "SIZEFMTD"",
-            transport->GetObjectGuid().GetString().c_str(), 
+            transport->GetObjectGuid().GetString().c_str(),
             map->GetId(),
             transport->isActiveObject() ? "active" : "passive",
             transport->GetTransportKit()->GetPassengers().size()
@@ -7655,7 +7963,7 @@ bool ChatHandler::HandleTransportCommand(char* args)
     }
 
     PSendSysMessage("Transport: %s on map %u (%s), %s, passengers "SIZEFMTD", current coords %f %f %f",
-            transport->GetObjectGuid().GetString().c_str(), 
+            transport->GetObjectGuid().GetString().c_str(),
             map->GetId(),
             transport->GetName(),
             transport->isActiveObject() ? "active" : "passive",

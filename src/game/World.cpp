@@ -73,6 +73,7 @@
 #include "ahbot/AhBot.h"
 #include "playerbot/PlayerbotAIConfig.h"
 #include "playerbot/RandomPlayerbotMgr.h"
+#include "Language.h"
 
 INSTANTIATE_SINGLETON_1( World );
 
@@ -202,6 +203,23 @@ bool World::RemoveSession(uint32 id)
     }
 
     return true;
+}
+
+///PVP Announcer
+void World::SendPvPAnnounce(Player* killer, Player* killed)
+{
+    std::ostringstream msg;
+    std::ostringstream KillerName;
+    std::ostringstream KilledName;
+    std::string KillerColor = sConfig.GetStringDefault("PvPAnnouncer.ColorKiller", "|CFFFFFF01");
+    std::string KilledColor = sConfig.GetStringDefault("PvPAnnouncer.ColorKilled", "|CFFFFFF01");
+    std::string AreaColor = sConfig.GetStringDefault("PvPAnnouncer.ColorArea", "|CFFFE8A0E");
+
+    KillerName << killer->GetName();
+    KilledName << killed->GetName();
+
+    msg << KillerColor << KillerName.str().c_str() << "]" << "|CFF0042FF Has Killed " << KilledColor << KilledName.str().c_str() << "]" << "|CFFE55BB0 in " << AreaColor << "[" << killer->GetMap()->GetMapName() << "]";
+    SendWorldText(LANG_SYSTEMMESSAGE, msg.str().c_str());
 }
 
 void World::AddSession(WorldSession* s)
@@ -543,6 +561,17 @@ void World::LoadConfigSettings(bool reload)
     setConfigPos(CONFIG_FLOAT_RATE_CORPSE_DECAY_LOOTED, "Rate.Corpse.Decay.Looted", 0.0f);
 
     setConfigMinMax(CONFIG_FLOAT_RATE_TARGET_POS_RECALCULATION_RANGE, "TargetPosRecalculateRange", 1.5f, CONTACT_DISTANCE, ATTACK_DISTANCE);
+
+    /// CHAT DISBALE BY LEVEL
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_SAYLEVEL, "ChatDisable.SayLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_YELLLEVEL, "ChatDisable.YellLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_WHISPERLEVEL, "ChatDisable.WhisperLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_PARTYLEVEL, "ChatDisable.PartyLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_GUILDLEVEL, "ChatDisable.GuildLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_RAIDLEVEL, "ChatDisable.RaidLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_BGLEVEL, "ChatDisable.BGLevel", 0);
+    setConfig(CONFIG_UINT32_CHAT_DISABLE_CHANNELLEVEL, "ChatDisable.ChannelLevel", 0);
+    /// CHAT DISBALE BY LEVEL END
 
     setConfigPos(CONFIG_FLOAT_RATE_DURABILITY_LOSS_DAMAGE, "DurabilityLossChance.Damage", 0.5f);
     setConfigPos(CONFIG_FLOAT_RATE_DURABILITY_LOSS_ABSORB, "DurabilityLossChance.Absorb", 0.5f);
@@ -1129,6 +1158,8 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE,  "InstancesResetAnnounce", false);
 
     setConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY, "CreatureRespawnAggroDelay", 5/*sec.*/);
+
+    setConfig(CONFIG_UINT32_BASE_PET_SCALE			, "Custom.PetScale"			, 1);
 }
 
 extern void LoadGameObjectModelList();

@@ -131,7 +131,7 @@ ConfVersion=2010062001
 #
 ###################################################################################################################
 
-LoginDatabaseInfo = "127.0.0.1;3306;mangos;mangos;realmd"
+LoginDatabaseInfo = "127.0.0.1;3306;root;ascent;realmd"
 LogsDir = ""
 MaxPingTime = 30
 RealmServerPort = 3724
@@ -142,7 +142,7 @@ LogTime = 0
 LogFile = "Realmd.log"
 LogTimestamp = 0
 LogFileLevel = 0
-LogColors = ""
+LogColors = "13 7 11 9"
 UseProcessors = 0
 ProcessPriority = 1
 WaitAtStartupError = 0

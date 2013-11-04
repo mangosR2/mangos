@@ -25,7 +25,7 @@ extern "C" {
 #define MY_XML_OK	0
 #define MY_XML_ERROR	1
 
-/* 
+/*
   A flag whether to use absolute tag names in call-back functions,
   like "a", "a.b" and "a.b.c" (used in character set file parser),
   or relative names like "a", "b" and "c".

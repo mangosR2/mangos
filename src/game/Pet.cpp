@@ -821,6 +821,7 @@ void Pet::Unsummon(PetSaveMode mode, Unit* owner /*= NULL*/)
 
 void Pet::GivePetXP(uint32 xp)
 {
+    xp *= sWorld.getConfig(CONFIG_FLOAT_RATE_XP_PETKILL);
     if (getPetType() != HUNTER_PET)
         return;
 
@@ -839,7 +840,7 @@ void Pet::GivePetXP(uint32 xp)
 
     uint32 nextLvlXP = GetUInt32Value(UNIT_FIELD_PETNEXTLEVELEXP);
     uint32 curXP = GetUInt32Value(UNIT_FIELD_PETEXPERIENCE);
-    uint32 newXP = curXP + xp * sWorld.getConfig(CONFIG_FLOAT_RATE_XP_PETKILL);
+    uint32 newXP = curXP + xp;
 
     while (newXP >= nextLvlXP && level < maxlevel)
     {
@@ -1012,6 +1013,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
                 else
                     scale = cFamily->minScale + float(getLevel() - cFamily->minScaleLevel) / cFamily->maxScaleLevel * (cFamily->maxScale - cFamily->minScale);
 
+                scale = (scale + sWorld.getConfig(CONFIG_UINT32_BASE_PET_SCALE));
                 SetObjectScale(scale);
                 UpdateModelData();
             }

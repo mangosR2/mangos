@@ -364,6 +364,21 @@ movement/spline.impl.h
 movement/typedefs.h
 movement/util.cpp
 
+mangchat/IRCClient.cpp
+mangchat/IRCClient.h
+mangchat/IRCCmd.cpp
+mangchat/IRCCmd.h
+mangchat/IRCCmde.cpp
+mangchat/IRCConf.cpp
+mangchat/IRCConf.h
+mangchat/IRCFunc.h
+mangchat/IRCIO.cpp
+mangchat/IRCLog.cpp
+mangchat/IRCLog.h
+mangchat/IRCSock.cpp
+mangchat/MCS_OnlinePlayers.cpp
+mangchat/MCS_OnlinePlayers.h
+
 vmap/BIH.cpp
 vmap/BIH.h
 vmap/BIHWrap.h
@@ -979,6 +994,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/vmap
   ${CMAKE_CURRENT_SOURCE_DIR}/playerbot
+  ${CMAKE_CURRENT_SOURCE_DIR}/mangchat
   ${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot
   ${CMAKE_CURRENT_SOURCE_DIR}/warden
   ${CMAKE_CURRENT_SOURCE_DIR}/OutdoorPvP
@@ -1026,6 +1042,10 @@ source_group("Tool"
 
 source_group("References"
   REGULAR_EXPRESSION Reference|RefManager|ThreatManager
+)
+
+source_group("MangChat"
+  REGULAR_EXPRESSION mangchat/.*
 )
 
 source_group("Movement"
@@ -1116,6 +1136,9 @@ endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/AuctionHouseBot/ahbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist DESTINATION ${CONF_DIR})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mangchat/mangchat.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/mangchat/mangchat.conf.dist)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mangchat/mangchat.conf.dist DESTINATION ${CONF_DIR})
 
 # Generate precompiled header
 if(PCH)

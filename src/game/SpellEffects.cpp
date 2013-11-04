@@ -1735,17 +1735,28 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     return;
                 case 24930:                                 // Hallow's End Treat
                 {
-                    uint32 spell_id = 0;
-
+                    uint32 spell_id1 = 0;
+                    uint32 spell_id2 = 0;
                     switch(urand(1,4))
                     {
-                        case 1: spell_id = 24924; break;    // Larger and Orange
-                        case 2: spell_id = 24925; break;    // Skeleton
-                        case 3: spell_id = 24926; break;    // Pirate
-                        case 4: spell_id = 24927; break;    // Ghost
+                        case 1: spell_id1 = 24924; break;    // Larger and Orange
+                        case 2: spell_id1 = 24925; break;    // Skeleton
+                        case 3: 
+                        {
+                            spell_id1 = 24926;              // Pirate
+                            uint8 gender = m_caster->getGender();
+                            if(gender == GENDER_MALE)
+                                spell_id2 = 44743;
+                            else
+                                spell_id2 = 44742;
+                            break;
+                        }
+                        case 4: spell_id1 = 24927; break;    // Ghost
                     }
 
-                    m_caster->CastSpell(m_caster, spell_id, true);
+                    m_caster->CastSpell(m_caster, spell_id1, true);
+                    if(spell_id2 != 0)
+                        m_caster->CastSpell(m_caster, spell_id2, true);
                     return;
                 }
                 case 25860:                                 // Reindeer Transformation

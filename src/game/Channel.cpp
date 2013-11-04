@@ -21,6 +21,7 @@
 #include "ObjectMgr.h"
 #include "World.h"
 #include "SocialMgr.h"
+#include "mangchat/IRCClient.h"
 
 Channel::Channel(const std::string& name, uint32 channel_id)
     : m_announce(true), m_moderate(false), m_name(name), m_flags(0), m_channelId(channel_id)
@@ -109,6 +110,8 @@ void Channel::Join(ObjectGuid p, const char* pass)
 
     MakeYouJoined(&data);
     SendToOne(&data, p);
+
+    sIRC.Handle_WoW_Channel(m_name, sObjectMgr.GetPlayer(p), CHANNEL_JOIN);
 
     JoinNotify(p);
 
