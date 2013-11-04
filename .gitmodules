@@ -1,3 +1,3 @@
-[submodule "src/bindings/ScriptDev2"]
-	path = src/bindings/ScriptDev2
-	url = git@github.com:mangosR2/scriptdev2.git
+[submodule "src/bindings/I_ScriptDev2"]
+	path = src/bindings/I_ScriptDev2
+	url = git@github.com:fallenangelX/I_ScriptDev2.git

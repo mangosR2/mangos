@@ -483,7 +483,7 @@ class Spell
         int32 GetCastTime() const { return m_casttime; }
         uint32 GetCastedTime() { return m_timer; }
         bool IsAutoRepeat() const { return m_autoRepeat; }
-        void SetAutoRepeat(bool rep) { m_autoRepeat = rep; }    
+        void SetAutoRepeat(bool rep) { m_autoRepeat = rep; }
         void ReSetTimer() { m_timer = m_casttime > 0 ? m_casttime : 0; }
         bool IsNextMeleeSwingSpell() const
         {
