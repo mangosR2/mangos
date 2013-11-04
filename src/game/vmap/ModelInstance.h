@@ -24,6 +24,8 @@
 #include <G3D/AABox.h>
 #include <G3D/Ray.h>
 
+#include "VMapManager2.h"
+
 #include "Platform/Define.h"
 
 namespace VMAP
@@ -64,9 +66,9 @@ namespace VMAP
     class ModelInstance: public ModelSpawn
     {
         public:
-            ModelInstance(): iModel(0) {}
-            ModelInstance(const ModelSpawn& spawn, WorldModel* model);
-            void setUnloaded() { iModel = 0; }
+            ModelInstance(): iModel(WorldModelPtr()) {}
+            ModelInstance(const ModelSpawn& spawn, WorldModelPtr model);
+            void setUnloaded() { iModel = WorldModelPtr(); }
             bool intersectRay(const G3D::Ray& pRay, float& pMaxDist, bool pStopAtFirstHit) const;
             void intersectPoint(const G3D::Vector3& p, AreaInfo& info) const;
             bool GetLocationInfo(const G3D::Vector3& p, LocationInfo& info) const;
@@ -74,7 +76,7 @@ namespace VMAP
         protected:
             G3D::Matrix3 iInvRot;
             float iInvScale;
-            WorldModel* iModel;
+            WorldModelPtr iModel;
 
 #ifdef MMAP_GENERATOR
         public:
