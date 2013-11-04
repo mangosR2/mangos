@@ -83,7 +83,7 @@ RollVoteMask Roll::GetVoteMaskFor(Player* player) const
 Group::Group(GroupType type) : m_Guid(ObjectGuid()), m_groupType(type),
     m_Difficulty(0), m_bgGroup(NULL), m_lootMethod(FREE_FOR_ALL),
     m_lootThreshold(ITEM_QUALITY_UNCOMMON), m_subGroupsCounts(NULL),
-    m_waitLeaderTimer(0)
+    m_LFGState(LFGGroupState(this)), m_waitLeaderTimer(0)
 {
 }
 
@@ -115,8 +115,6 @@ Group::~Group()
         // will be unloaded first so we must be prepared for both cases
         // this may unload some dungeon persistent state
         sMapPersistentStateMgr.AddToUnbindQueue(GetObjectGuid());
-
-        sLFGMgr.RemoveLFGState(GetObjectGuid());
 
         // recheck deletion in ObjectMgr (must be deleted wile disband, but additional check not be bad)
         sObjectMgr.RemoveGroup(this);
@@ -235,9 +233,6 @@ bool Group::LoadGroupFromDB(Field* fields)
     for (int i = 0; i < TARGET_ICON_COUNT; ++i)
         m_targetIcons[i] = ObjectGuid(fields[3+i].GetUInt64());
 
-    if (isLFDGroup())
-        sLFGMgr.CreateLFGState(GetObjectGuid());
-
     return true;
 }
 
@@ -260,7 +255,7 @@ bool Group::LoadMemberFromDB(uint32 guidLow, uint8 subgroup, GroupFlagMask flags
     if (Player* player = sObjectMgr.GetPlayer(member.guid))
     {
         if (player->IsInWorld())
-            sLFGMgr.GetLFGPlayerState(player->GetObjectGuid())->SetRoles(roles);
+            player->GetLFGPlayerState()->SetRoles(roles);
     }
 
     return true;
@@ -1290,7 +1285,7 @@ void Group::SendUpdate()
     for (member_citerator citr = m_memberSlots.begin(); citr != m_memberSlots.end(); ++citr)
     {
         Player* player = sObjectMgr.GetPlayer(citr->guid);
-        if (!player || !player->GetSession() || player->GetGroupGuid() != GetObjectGuid())
+        if (!player || !player->GetSession() || player->GetGroup() != this)
             continue;
                                                             // guess size
         WorldPacket data(SMSG_GROUP_LIST, (1+1+1+1+8+4+GetMembersCount()*20));
@@ -1298,10 +1293,10 @@ void Group::SendUpdate()
         data << uint8(citr->group);                         // groupid
         data << uint8(citr->flags);                         // group flags
         data << (isLFGGroup() ? uint8(citr->roles) : uint8(0)); // roles mask
-        if (isLFGGroup())
+        if(isLFGGroup())
         {
-            uint32 dungeonID = sLFGMgr.GetLFGGroupState(GetObjectGuid())->GetDungeon()->ID;
-            data << uint8(sLFGMgr.GetLFGGroupState(GetObjectGuid())->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
+            uint32 dungeonID = GetLFGGroupState()->GetDungeon() ? GetLFGGroupState()->GetDungeon()->ID : 0;
+            data << uint8(GetLFGGroupState()->GetState() == LFG_STATE_FINISHED_DUNGEON ? 2 : 0);
             data << uint32(dungeonID);
         }
         data << GetObjectGuid();                            // group guid
@@ -1433,7 +1428,7 @@ bool Group::_addMember(ObjectGuid guid, const char* name)
     LFGRoleMask roles = LFG_ROLE_MASK_NONE;
 
     if (isLFGGroup() && sObjectMgr.GetPlayer(guid))
-        roles = sLFGMgr.GetLFGPlayerState(guid)->GetRoles();
+        roles = sObjectMgr.GetPlayer(guid)->GetLFGPlayerState()->GetRoles();
 
     if (m_subGroupsCounts)
     {

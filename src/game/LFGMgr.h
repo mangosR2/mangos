@@ -141,9 +141,7 @@ typedef UNORDERED_SET<LFGQueueInfo*> LFGQueue;
 typedef UNORDERED_MAP<LFGDungeonEntry const*, GuidSet> LFGSearchMap;
 typedef std::list<LFGEvent> LFGEventList;
 
-typedef UNORDERED_MAP<ObjectGuid /*group or player guid*/, LFGStateStructure*> LFGStatesMap;
-
-class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMgr, MANGOSR2_MUTEX_MODEL> >
+class LFGMgr
 {
     public:
         LFGMgr();
@@ -251,7 +249,6 @@ class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMg
         LFGLockStatusType GetPlayerExpansionLockStatus(Player* pPlayer, LFGDungeonEntry const* pDungeon);
         LFGLockStatusType GetGroupLockStatus(Group* pGroup, LFGDungeonEntry const* pDungeon);
         LFGLockStatusMap GetPlayerLockMap(Player* pPlayer);
-        LFGLockStatusMap GetPlayerLockMap(ObjectGuid const& guid);
 
         // Search matrix
         void AddToSearchMatrix(ObjectGuid guid, bool inBegin = false);
@@ -260,12 +257,6 @@ class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMg
         bool IsInSearchFor(LFGDungeonEntry const* pDungeon, ObjectGuid guid);
         void CleanupSearchMatrix();
 
-        // LFG states operations
-        LFGPlayerState* GetLFGPlayerState(ObjectGuid const& guid);
-        LFGGroupState*  GetLFGGroupState(ObjectGuid const& guid);
-        LFGStateStructure* CreateLFGState(ObjectGuid const& guid);
-        void RemoveLFGState(ObjectGuid const& guid);
-
         // Sheduler
         void SheduleEvent();
         void AddEvent(ObjectGuid guid, LFGEventType type, time_t delay = DEFAULT_LFG_DELAY, uint8 param = 0);
@@ -273,6 +264,12 @@ class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMg
         // Scripts
         void OnPlayerEnterMap(Player* pPlayer, Map* pMap);
         void OnPlayerLeaveMap(Player* pPlayer, Map* pMap);
+
+        // multithread locking
+        typedef   MANGOSR2_MUTEX_MODEL              LockType;
+        typedef   ACE_Read_Guard<LockType>     ReadGuard;
+        typedef   ACE_Write_Guard<LockType>    WriteGuard;
+        LockType& GetLock() { return i_lock; }
 
     private:
         uint32 GenerateProposalID();
@@ -289,11 +286,12 @@ class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMg
         LFGProposalMap  m_proposalMap;                      // Proposal store
         LFGSearchMap    m_searchMatrix;                     // Search matrix
         LFGEventList    m_eventList;                        // events storage
-        LFGStatesMap    m_statesMap;                        // LFG states storage (for players or groups)
 
         IntervalTimer   m_LFGupdateTimer;                   // update timer for cleanup/statistic
         IntervalTimer   m_LFRupdateTimer;                   // update timer for LFR extend system
         IntervalTimer   m_LFGQueueUpdateTimer;              // update timer for statistic send
+
+        LockType        i_lock;
 
 };
 
