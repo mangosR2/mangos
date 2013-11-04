@@ -71,8 +71,10 @@ void Map::LoadMapAndVMap(int gx,int gy)
     if (m_bLoadedGrids[gx][gy])
         return;
 
-    if (GetTerrain()->Load(gx, gy))
-        m_bLoadedGrids[gx][gy] = true;
+    m_bLoadedGrids[gx][gy] = true;
+
+    if (!GetTerrain()->Load(gx, gy))
+        m_bLoadedGrids[gx][gy] = false;
 }
 
 Map::Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode)
@@ -263,6 +265,11 @@ Map::EnsureGridCreated(const GridPair &p)
     {
         {
             WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+
+            // Grid may be created while wait in semafore, requires double check
+            if (getNGridWithoutLock(p.x_coord, p.y_coord))
+                return;
+
             NGridType* grid = new NGridType(p.x_coord*MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN), sWorld.getConfig(CONFIG_BOOL_GRID_UNLOAD));
             setNGrid(grid, p.x_coord, p.y_coord);
 
