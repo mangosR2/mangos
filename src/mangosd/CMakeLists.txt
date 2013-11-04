@@ -117,8 +117,6 @@ install(TARGETS ${EXECUTABLE_NAME} DESTINATION ${BIN_DIR})
 install(FILES run-mangosd DESTINATION ${BIN_DIR})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/world.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/world.conf.dist)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/world.conf.dist DESTINATION ${CONF_DIR})
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../game/ahbot/ahbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist DESTINATION ${CONF_DIR})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../game/playerbot/aiplayerbot.conf.dist.in ${CMAKE_CURRENT_BINARY_DIR}/aiplayerbot.conf.dist)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/aiplayerbot.conf.dist DESTINATION ${CONF_DIR})
 
