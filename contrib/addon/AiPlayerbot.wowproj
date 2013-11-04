@@ -1,0 +1,38 @@
+﻿<Project DefaultTargets="Deploy" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Default</Configuration>
+    <Name>AiPlayerbot</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{87222322-7ac1-4154-9a3a-db6d944c5d7d}</ProjectGuid>
+    <AssemblyName>AiPlayerbot</AssemblyName>
+    <RootNamespace>AiPlayerbot</RootNamespace>
+    <WowPath>C:\Users\skuzmin\Projects\wow\wotlk\</WowPath>
+    <AddonTitle>AiPlayerbot</AddonTitle>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Default' ">
+    <OutputPath>.</OutputPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\WowAddonStudio\2.0\WowAddonStudio.targets" />
+  <ItemGroup>
+    <Content Include="AiPlayerbot.toc">
+      <SubType>TableOfContents</SubType>
+    </Content>
+    <Content Include="AiPlayerbotFrame.xml">
+      <SubType>Frame</SubType>
+    </Content>
+    <Content Include="AiPlayerbotFrame.lua">
+      <SubType>Code</SubType>
+      <DependentUpon>AiPlayerbotFrame.xml</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <!--
+	To modify your build process, add your task inside one of the targets below and uncomment it. 
+		
+	<Target Name="BeforeClean"></Target>
+	<Target Name="AfterClean"></Target>
+	<Target Name="BeforeRebuild"></Target>
+	<Target Name="AfterRebuild"></Target>
+	<Target Name="BeforeDeploy"></Target>
+	<Target Name="AfterDeploy"></Target>
+	-->
+</Project>

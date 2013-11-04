@@ -70,8 +70,8 @@
 #include <cmath>
 
 // Playerbot mod:
-#include "playerbot/PlayerbotAI.h"
-#include "playerbot/PlayerbotMgr.h"
+#include "playerbot/playerbot.h"
+
 #include "Config/Config.h"
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
@@ -394,6 +394,10 @@ void TradeData::SetAccepted(bool state, bool crosssend /*= false*/)
 
 Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(NULL), m_achievementMgr(this), m_reputationMgr(this)
 {
+    // Playerbot mod:
+    m_playerbotAI = 0;
+    m_playerbotMgr = 0;
+
     m_speakTime = 0;
     m_speakCount = 0;
 
@@ -648,18 +652,14 @@ Player::~Player()
     delete m_camera;
 
     // Playerbot mod
-    if (m_playerbotAI)
-    {
+    if (m_playerbotAI) {
         delete m_playerbotAI;
-        m_playerbotAI = NULL;
+        m_playerbotAI = 0;
     }
-
-    if (m_playerbotMgr)
-    {
+    if (m_playerbotMgr) {
         delete m_playerbotMgr;
-        m_playerbotMgr = NULL;
+        m_playerbotMgr = 0;
     }
-
 }
 
 void Player::CleanupsBeforeDelete()
@@ -1498,13 +1498,10 @@ void Player::Update(uint32 update_diff, uint32 p_time)
         TeleportTo(m_teleport_dest, m_teleport_options);
 
     // Playerbot mod
-    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-    {
-        if (m_playerbotAI)
-            m_playerbotAI->UpdateAI(p_time);
-        else if (m_playerbotMgr)
-            m_playerbotMgr->UpdateAI(p_time);
-    }
+    if (m_playerbotAI)
+       m_playerbotAI->UpdateAI(p_time);
+    if (m_playerbotMgr)
+       m_playerbotMgr->UpdateAI(p_time);
 }
 
 void Player::SetDeathState(DeathState s)
@@ -1790,11 +1787,6 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
 
     // preparing unsummon pet if lost (we must get pet before teleportation or will not find it later)
     Pet* pet = GetPet();
-
-    // Playerbot mod: if this user has bots, tell them to stop following master
-    // so they don't try to follow the master after the master teleports
-    if (GetPlayerbotMgr())
-        GetPlayerbotMgr()->Stay();
 
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.GetMapId());
     if (!mEntry)
@@ -4447,9 +4439,11 @@ void Player::DeleteFromDB(ObjectGuid playerguid, uint32 accountId, bool updateRe
             CharacterDatabase.PExecute("DELETE FROM character_equipmentsets WHERE guid = %u", lowGuid);
             CharacterDatabase.PExecute("DELETE FROM guild_eventlog WHERE PlayerGuid1 = %u OR PlayerGuid2 = %u", lowGuid, lowGuid);
             CharacterDatabase.PExecute("DELETE FROM guild_bank_eventlog WHERE PlayerGuid = %u", lowGuid);
+
             CharacterDatabase.CommitTransaction();
             break;
         }
+
         // The character gets unlinked from the account, the name gets freed up and appears as deleted ingame
         case 1:
             CharacterDatabase.PExecute("UPDATE characters SET deleteInfos_Name = name, deleteInfos_Account = account, deleteDate = '" UI64FMTD "', name = '', account = 0 WHERE guid = %u", uint64(time(NULL)), lowGuid);
@@ -16668,7 +16662,7 @@ void Player::_LoadInventory(QueryResult* result, uint32 timediff)
                 if (!item->LoadSoulboundTradeableDataFromDB(this))
                     DEBUG_LOG("Player::_LoadInventory: %s has item (GUID: %u, Entry: %u) with soulbound tradeable flag, but without data in item_soulbound_trade_data, remove flag.", GetGuidStr().c_str(), itemLowGuid, itemId);
             }
-        }
+		}
         else
         {
             item->DeleteFromInventoryDB();

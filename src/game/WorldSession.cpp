@@ -44,8 +44,7 @@
 #include "warden/WardenMac.h"
 
 // Playerbot mod
-#include "playerbot/PlayerbotMgr.h"
-#include "playerbot/PlayerbotAI.h"
+#include "playerbot/playerbot.h"
 
 // select opcodes appropriate for processing in Map::Update context for current session state
 static bool MapSessionFilterHelper(WorldSession* session, OpcodeHandler const& opHandle)
@@ -140,17 +139,14 @@ char const* WorldSession::GetPlayerName() const
 /// Send a packet to the client
 void WorldSession::SendPacket(WorldPacket const* packet)
 {
-    // Playerbot mod: send packet to bot AI
-    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-    {
-        if (GetPlayer() && GetPlayer()->IsInWorld())
-        {
-            if (GetPlayer()->GetPlayerbotAI())
-                GetPlayer()->GetPlayerbotAI()->HandleBotOutgoingPacket(*packet);
-            else if (GetPlayer()->GetPlayerbotMgr())
-                GetPlayer()->GetPlayerbotMgr()->HandleMasterOutgoingPacket(*packet);
-        }
+	// Playerbot mod: send packet to bot AI
+    if (GetPlayer()) {
+        if (GetPlayer()->GetPlayerbotAI())
+            GetPlayer()->GetPlayerbotAI()->HandleBotOutgoingPacket(*packet);
+        else if (GetPlayer()->GetPlayerbotMgr())
+            GetPlayer()->GetPlayerbotMgr()->HandleMasterOutgoingPacket(*packet);
     }
+
 
     if (!m_Socket)
         return;
@@ -250,11 +246,11 @@ bool WorldSession::Update(PacketFilter& updater)
 
                     // lag can cause STATUS_LOGGEDIN opcodes to arrive after the player started a transfer
 
-                    // playerbot mod
-                    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-                        if (_player && _player->GetPlayerbotMgr())
-                            _player->GetPlayerbotMgr()->HandleMasterIncomingPacket(*packet);
-                    // playerbot mod end
+					// playerbot mod
+					if (_player && _player->GetPlayerbotMgr())
+						_player->GetPlayerbotMgr()->HandleMasterIncomingPacket(*packet);
+					// playerbot mod end
+
                     break;
                 case STATUS_LOGGEDIN_OR_RECENTLY_LOGGEDOUT:
                     if(!_player && !m_playerRecentlyLogout)
@@ -327,31 +323,45 @@ bool WorldSession::Update(PacketFilter& updater)
         delete packet;
     }
 
-    // Playerbot mod - Process player bot packets
+	// Playerbot mod - Process player bot packets
     // The PlayerbotAI class adds to the packet queue to simulate a real player
     // since Playerbots are known to the World obj only by its master's WorldSession object
     // we need to process all master's bot's packets.
-    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-    {
-        if (GetPlayer() && GetPlayer()->GetPlayerbotMgr())
+    if (GetPlayer() && GetPlayer()->GetPlayerbotMgr()) {
+        for (PlayerBotMap::const_iterator itr = GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsBegin();
+                itr != GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsEnd(); ++itr)
         {
-            for (PlayerBotMap::const_iterator itr = GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsBegin();
-                    itr != GetPlayer()->GetPlayerbotMgr()->GetPlayerBotsEnd(); ++itr)
+            Player* const botPlayer = itr->second;
+            if (botPlayer->IsBeingTeleported())
+                botPlayer->GetPlayerbotAI()->HandleTeleportAck();
+            else if (botPlayer->IsInWorld())
             {
-                Player* const botPlayer = itr->second;
+                WorldPacket* packet;
                 WorldSession* const pBotWorldSession = botPlayer->GetSession();
-                if (botPlayer->IsBeingTeleported())
-                    botPlayer->GetPlayerbotAI()->HandleTeleportAck();
-                else if (botPlayer->IsInWorld())
+                while (pBotWorldSession->_recvQueue.next(packet))
                 {
-                    WorldPacket* packet;
-                    while (pBotWorldSession->_recvQueue.next(packet))
-                    {
-                        OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
-                        (pBotWorldSession->*opHandle.handler)(*packet);
-                        delete packet;
-                    }
+                    OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
+                    (pBotWorldSession->*opHandle.handler)(*packet);
+                    delete packet;
                 }
+            }
+        }
+    }
+    for (PlayerBotMap::const_iterator itr = sRandomPlayerbotMgr.GetPlayerBotsBegin();
+            itr != sRandomPlayerbotMgr.GetPlayerBotsEnd(); ++itr)
+    {
+        Player* const botPlayer = itr->second;
+        if (botPlayer->IsBeingTeleported())
+            botPlayer->GetPlayerbotAI()->HandleTeleportAck();
+        else if (botPlayer->IsInWorld())
+        {
+            WorldPacket* packet;
+            WorldSession* const pBotWorldSession = botPlayer->GetSession();
+            while (pBotWorldSession->_recvQueue.next(packet))
+            {
+                OpcodeHandler& opHandle = opcodeTable[packet->GetOpcode()];
+                (pBotWorldSession->*opHandle.handler)(*packet);
+                delete packet;
             }
         }
     }
@@ -406,6 +416,12 @@ void WorldSession::LogoutPlayer(bool Save)
 
         if (ObjectGuid lootGuid = GetPlayer()->GetLootGuid())
             DoLootRelease(lootGuid);
+
+	// Playerbot mod: log out all player bots owned by this toon
+        if (_player->GetPlayerbotMgr())
+            _player->GetPlayerbotMgr()->LogoutAllBots();
+        sRandomPlayerbotMgr.OnPlayerLogout(_player);
+
 
         ///- If the player just died before logging out, make him appear as a ghost
         //FIXME: logout must be delayed in case lost connection with client in time of combat
@@ -503,10 +519,13 @@ void WorldSession::LogoutPlayer(bool Save)
         // No SQL injection as AccountID is uint32
         if (!GetPlayer()->GetPlayerbotAI())
         {
-            static SqlStatementID id;
-
-            SqlStatement stmt = LoginDatabase.CreateStatement(id, "UPDATE account SET active_realm_id = ? WHERE id = ?");
-            stmt.PExecute(uint32(0), GetAccountId());
+		static SqlStatementID id;
+		// playerbot mod
+		if (! _player->GetPlayerbotAI())
+		{
+			SqlStatement stmt = LoginDatabase.CreateStatement(id, "UPDATE account SET active_realm_id = ? WHERE id = ?");
+			stmt.PExecute(uint32(0), GetAccountId());
+		}
         }
 
         ///- If the player is in a guild, update the guild roster and broadcast a logout message to other guild members
@@ -535,8 +554,9 @@ void WorldSession::LogoutPlayer(bool Save)
         // LFG cleanup
         sLFGMgr.Leave(GetPlayer());
 
+		// playerbot mod
         ///- If the player is in a group (or invited), remove him. If the group if then only 1 person, disband the group.
-        GetPlayer()->UninviteFromGroup();
+        //_player->UninviteFromGroup();
 
         // remove player from the group if he is:
         // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
@@ -583,9 +603,7 @@ void WorldSession::LogoutPlayer(bool Save)
         WorldPacket data(SMSG_LOGOUT_COMPLETE, 0);
         SendPacket(&data);
 
-        static SqlStatementID updChars;
-
-        // Playerbot mod: commented out above and do this one instead
+		static SqlStatementID updChars;
         SqlStatement stmt = CharacterDatabase.CreateStatement(updChars, "UPDATE characters SET online = 0 WHERE guid = ?");
         stmt.PExecute(guid);
 

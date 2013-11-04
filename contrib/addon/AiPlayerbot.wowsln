@@ -1,0 +1,17 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# WowAddonStudio Solution File, Format Version 10.00
+Project("{E6E1D386-69D8-4755-9E61-0950293915FC}") = "AiPlayerbot", "AiPlayerbot.wowproj", "{87222322-7AC1-4154-9A3A-DB6D944C5D7D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Default|Any CPU = Default|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87222322-7AC1-4154-9A3A-DB6D944C5D7D}.Default|Any CPU.ActiveCfg = Default|Any CPU
+		{87222322-7AC1-4154-9A3A-DB6D944C5D7D}.Default|Any CPU.Build.0 = Default|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

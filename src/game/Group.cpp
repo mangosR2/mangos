@@ -458,13 +458,6 @@ uint32 Group::RemoveMember(ObjectGuid guid, uint8 method, bool logout /*=false*/
 
     RemoveGroupBuffsOnMemberRemove(guid);
 
-    if (!sWorld.getConfig(CONFIG_BOOL_PLAYERBOT_DISABLE))
-    {
-        Player* const player = sObjectMgr.GetPlayer(guid);
-        if (player && player->GetPlayerbotMgr())
-            player->GetPlayerbotMgr()->RemoveAllBotsFromGroup();
-    }
-
     // wait to leader reconnect
     if (logout && IsLeader(guid))
         return m_memberSlots.size();

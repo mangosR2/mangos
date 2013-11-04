@@ -284,7 +284,6 @@ bool Item::Create(uint32 guidlow, uint32 itemId, Player const* owner)
         SetSpellCharges(i, itemProto->Spells[i].SpellCharges);
 
     SetUInt32Value(ITEM_FIELD_DURATION, itemProto->Duration);
-
     return true;
 }
 

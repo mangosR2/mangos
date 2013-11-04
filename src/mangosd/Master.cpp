@@ -446,14 +446,6 @@ bool Master::_StartDB()
     }
     sLog.outString("BOOT: World Database total connections: %i", nConnections + 1);
 
-#ifdef MANGOSR2_SINGLE_THREAD
-    if (nConnections > 1)
-    {
-        sLog.outError(" Your OS (%s) not support set WorldDatabaseConnections > 1! Resetted to 1", MANGOSR2_SINGLE_THREAD);
-        nConnections = 1;
-    }
-#endif
-
     ///- Initialise the world database
     if(!WorldDatabase.Initialize(dbstring.c_str(), nConnections))
     {
@@ -479,14 +471,6 @@ bool Master::_StartDB()
         return false;
     }
     sLog.outString("BOOT: Character Database total connections: %i", nConnections + 1);
-
-#ifdef MANGOSR2_SINGLE_THREAD
-    if (nConnections > 1)
-    {
-        sLog.outError("BOOT: Your OS (%s) not support set CharacterDatabaseConnections > 1! Resetted to 1", MANGOSR2_SINGLE_THREAD);
-        nConnections = 1;
-    }
-#endif
 
     ///- Initialise the Character database
     if(!CharacterDatabase.Initialize(dbstring.c_str(), nConnections))
@@ -521,14 +505,6 @@ bool Master::_StartDB()
 
     ///- Initialise the login database
     sLog.outString("BOOT: Login Database total connections: %i", nConnections + 1);
-
-#ifdef MANGOSR2_SINGLE_THREAD
-    if (nConnections > 1)
-    {
-        sLog.outError("BOOT: Your OS (%s) not support set LoginDatabaseConnections > 1! Resetted to 1", MANGOSR2_SINGLE_THREAD);
-        nConnections = 1;
-    }
-#endif
 
     if(!LoginDatabase.Initialize(dbstring.c_str(), nConnections))
     {

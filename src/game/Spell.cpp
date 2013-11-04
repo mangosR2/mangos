@@ -4439,6 +4439,11 @@ void Spell::finish(bool ok)
     if (m_spellInfo->HasAttribute(SPELL_ATTR_STOP_ATTACK_TARGET))
         m_caster->AttackStop();
 
+    // Playerbot mob
+    if (!m_caster->GetMapId())
+        return;
+    // end of playerbot mod
+
     // update encounter state if needed
     Map* map = m_caster->GetMap();
     if (map && map->IsDungeon())

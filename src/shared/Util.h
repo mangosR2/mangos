@@ -261,12 +261,12 @@ inline bool isEastAsianString(std::wstring wstr, bool numericOrSpace)
 
 inline void strToUpper(std::string& str)
 {
-    std::transform( str.begin(), str.end(), str.begin(), toupper );
+    std::transform( str.begin(), str.end(), str.begin(), (int(*)(int))toupper );
 }
 
 inline void strToLower(std::string& str)
 {
-    std::transform( str.begin(), str.end(), str.begin(), tolower );
+    std::transform( str.begin(), str.end(), str.begin(), (int(*)(int))tolower );
 }
 
 inline wchar_t wcharToUpper(wchar_t wchar)
