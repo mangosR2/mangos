@@ -55,14 +55,14 @@ CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry* pSpell, 
             return CAST_FAIL_STATE;
 
         // Check for power (also done by Spell::CheckCast())
-        if ((int32)m_creature->GetPower((Powers)pSpell->GetPowerType()) < Spell::CalculatePowerCost(pSpell, m_creature))
+        if ((int32)m_creature->GetPower((Powers)pSpell->powerType) < Spell::CalculatePowerCost(pSpell, m_creature))
             return CAST_FAIL_POWER;
 
         if (m_creature->HasSpellCooldown(pSpell))
             return CAST_FAIL_SPELL_COOLDOWN;
     }
 
-    if (SpellRangeEntry const* pSpellRange = sSpellRangeStore.LookupEntry(pSpell->GetRangeIndex()))
+    if (SpellRangeEntry const* pSpellRange = sSpellRangeStore.LookupEntry(pSpell->rangeIndex))
     {
         if (pTarget != m_creature)
         {

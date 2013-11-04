@@ -175,9 +175,6 @@ struct CreatureInfo
         // if can tame exotic then can tame any temable
         return exotic || !IsExotic();
     }
-
-    inline Powers GetPowerType() const { return Powers(powerType); };
-
 };
 
 struct EquipmentInfo

@@ -1252,7 +1252,7 @@ void CreatureEventAI::SpellHit(Unit* pUnit, const SpellEntry* pSpell)
         if ((*i).Event.event_type == EVENT_T_SPELLHIT)
             // If spell id matches (or no spell id) & if spell school matches (or no spell school)
             if (!(*i).Event.spell_hit.spellId || pSpell->Id == (*i).Event.spell_hit.spellId)
-                if (pSpell->GetSchoolMask() & (*i).Event.spell_hit.schoolMask)
+                if (pSpell->SchoolMask & (*i).Event.spell_hit.schoolMask)
                     ProcessEvent(*i, pUnit);
 }
 

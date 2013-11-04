@@ -132,7 +132,7 @@ ConfVersion=2010062001
 ###################################################################################################################
 
 LoginDatabaseInfo = "127.0.0.1;3310;root;123456;realmd"
-LogsDir = ""
+LogsDir = "logs"
 MaxPingTime = 30
 RealmServerPort = 3724
 BindIP = "0.0.0.0"

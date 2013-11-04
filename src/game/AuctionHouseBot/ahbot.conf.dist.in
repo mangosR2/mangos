@@ -160,6 +160,8 @@ ConfVersion=2010102201
 #
 ###################################################################################################################
 
+AhBot.Enabled = 0
+
 AuctionHouseBot.Seller.Enabled = 1
 AuctionHouseBot.DEBUG.Seller = 0
 

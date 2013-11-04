@@ -959,7 +959,7 @@ struct DamageInfo
         // Spell parameters
         uint32            GetSpellId()    const { return SpellID; }
         SpellEntry const* GetSpellProto() const { return m_spellInfo; }
-        SpellSchoolMask   GetSchoolMask() const;
+        SpellSchoolMask   SchoolMask()    const;
 
         // Damage types
         union {

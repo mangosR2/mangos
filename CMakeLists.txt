@@ -141,7 +141,7 @@ set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
 set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/config)
 # If win32 put it in the bin dir not lib
 if(WIN32)
-  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/SingleCore)
 else()
   set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
@@ -410,7 +410,7 @@ add_subdirectory(dep) # TODO: add vmap extractor build support
 if (UNIX)
     set(DEFINITIONS DO_MYSQL SYSCONFDIR="${CONF_DIR}/")
 else()
-    set(DEFINITIONS DO_MYSQL SYSCONFDIR="../etc/")
+    set(DEFINITIONS DO_MYSQL SYSCONFDIR="config/")
 endif()
 
 set(DEFINITIONS_RELEASE NDEBUG)
