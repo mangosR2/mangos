@@ -248,7 +248,7 @@ inline bool IsSpellRemoveAllMovementAndControlLossEffects(SpellEntry const* spel
         spellProto->EffectApplyAuraName[EFFECT_INDEX_1] == 0 &&
         spellProto->EffectApplyAuraName[EFFECT_INDEX_2] == 0 &&
         spellProto->HasAttribute(SPELL_ATTR_EX_DISPEL_AURAS_ON_IMMUNITY)/* && -- all above selected spells have SPELL_ATTR_EX5_* mask
-        ((spellProto->AttributesEx5 &
+        ((spellProto->GetAttributesEx5() &
             (SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED|SPELL_ATTR_EX5_USABLE_WHILE_FEARED|SPELL_ATTR_EX5_USABLE_WHILE_STUNNED)) ==
             (SPELL_ATTR_EX5_USABLE_WHILE_CONFUSED|SPELL_ATTR_EX5_USABLE_WHILE_FEARED|SPELL_ATTR_EX5_USABLE_WHILE_STUNNED))*/;
 }
@@ -637,7 +637,7 @@ inline bool NeedsComboPoints(SpellEntry const* spellInfo)
 
 inline SpellSchoolMask GetSpellSchoolMask(SpellEntry const* spellInfo)
 {
-    return spellInfo ? SpellSchoolMask(spellInfo->SchoolMask) : SPELL_SCHOOL_MASK_NORMAL;
+    return spellInfo ? SpellSchoolMask(spellInfo->GetSchoolMask()) : SPELL_SCHOOL_MASK_NORMAL;
 }
 
 inline uint32 GetSpellMechanicMask(SpellEntry const* spellInfo, uint32 effectMask)
@@ -687,7 +687,7 @@ inline bool IsBinaryResistedSpell(SpellEntry const* spellInfo)
             spellInfo->HasAttribute(SPELL_ATTR_EX6_EXPLICIT_NO_BINARY_RESIST) ||
             spellInfo->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY) || //???
             spellInfo->HasAttribute(SPELL_ATTR_EX4_IGNORE_RESISTANCES) ||
-           (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) ||
+           (spellInfo->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL) ||
             spellInfo->HasAttribute(SPELL_ATTR_EX3_CANT_MISS))
         return false;
 

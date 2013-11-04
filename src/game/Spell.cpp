@@ -490,7 +490,7 @@ Spell::~Spell()
 template<typename T> WorldObject* Spell::FindCorpseUsing(uint32 corpseTypeMask)
 {
     // non-standard target selection
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex());
     float max_range = GetSpellMaxRange(srange);
 
     WorldObject* result = NULL;
@@ -996,7 +996,7 @@ void Spell::prepareDataForTriggerSystem()
         {
             case SPELLFAMILY_MAGE:
                 // Arcane Missiles / Blizzard triggers need do it
-                if (m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_BLIZZARD, CF_MAGE_ARCANE_MISSILES2>() || m_spellInfo->SpellIconID == 212)
+                if (m_spellInfo->GetSpellFamilyFlags().test<CF_MAGE_BLIZZARD, CF_MAGE_ARCANE_MISSILES2>() || m_spellInfo->GetSpellIconID() == 212)
                     m_canTrigger = true;
                 // Clearcasting trigger need do it
                 // Replenish Mana, item spell with triggered cases (Mana Agate, etc mana gems)
@@ -1162,7 +1162,7 @@ void Spell::AddUnitTarget(Unit* pVictim, SpellEffectIndex effIndex)
         target.timeDelay = (uint64) floor(dist / speed_proto * 1000.0f);
 /*
 this piece of code make delayed stun and other effects for charge-like spells. seems not offlike...
-        if (m_spellInfo->AttributesEx7 & SPELL_ATTR_EX7_HAS_CHARGE_EFFECT)
+        if (m_spellInfo->GetAttributesEx7() & SPELL_ATTR_EX7_HAS_CHARGE_EFFECT)
         {
             if (target.timeDelay > GetDelayStart())
                 SetDelayStart(target.timeDelay);
@@ -1400,7 +1400,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     // Speed possible inherited from triggering spell
     // float speed_proto = GetBaseSpellSpeed();
 
-    if (m_spellInfo->speed > M_NULL_F || GetDelayStart())
+    if (m_spellInfo->GetSpeed() > M_NULL_F || GetDelayStart())
     {
         // mark effects that were already handled in Spell::HandleDelayedSpellLaunch on spell launch as processed
         for (int32 i = 0; i < MAX_EFFECT_INDEX; ++i)
@@ -1412,7 +1412,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     }
 
     // recheck for availability/visibility of target
-    if (((m_spellInfo->speed > M_NULL_F ||
+    if (((m_spellInfo->GetSpeed() > M_NULL_F ||
         (m_spellInfo->EffectImplicitTargetA[0] == TARGET_CHAIN_DAMAGE &&
         GetSpellCastTime(m_spellInfo, this) > 0)) &&
         (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell)))
@@ -1486,7 +1486,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
     {
         // Fill base damage struct (unitTarget - is real spell target)
 
-        if (m_spellInfo->speed > M_NULL_F)
+        if (m_spellInfo->GetSpeed() > M_NULL_F)
         {
             damageInfo.damage = m_damage;
             damageInfo.HitInfo = target->HitInfo;
@@ -1533,7 +1533,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
         // Haunt (NOTE: for avoid use additional field damage stored in dummy value (replace unused 100%)
         // apply before deal damage because aura can be removed at target kill
-        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && m_spellInfo->SpellIconID == 3172 &&
+        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK && m_spellInfo->GetSpellIconID() == 3172 &&
             m_spellInfo->GetSpellFamilyFlags().test<CF_WARLOCK_HAUNT>())
             if (Aura const* dummy = unitTarget->GetDummyAura(m_spellInfo->Id))
                 dummy->GetModifier()->m_amount = damageInfo.damage + damageInfo.GetAbsorb();
@@ -1626,7 +1626,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
     // float speed_proto = GetBaseSpellSpeed();
 
     // Recheck effect immune (only for delayed spells)
-    if (m_spellInfo->speed > M_NULL_F)
+    if (m_spellInfo->GetSpeed() > M_NULL_F)
     {
         for (int effectNumber = 0; effectNumber < MAX_EFFECT_INDEX; ++effectNumber)
         {
@@ -1640,7 +1640,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
     }
 
     // Recheck immune (only for delayed spells)
-    if (m_spellInfo->speed > M_NULL_F && (
+    if (m_spellInfo->GetSpeed() > M_NULL_F && (
         (IsSpellCauseDamage(m_spellInfo) && unit->IsImmunedToDamage(GetSpellSchoolMask(m_spellInfo))) ||
         unit->IsImmuneToSpell(m_spellInfo, GetAffectiveUnitCaster()->IsFriendlyTo(unit))) &&
         !m_spellInfo->HasAttribute(SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY))
@@ -1664,7 +1664,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
     if (realCaster && realCaster != unit)
     {
         // Recheck  UNIT_FLAG_NON_ATTACKABLE for delayed spells
-        if (m_spellInfo->speed > M_NULL_F &&
+        if (m_spellInfo->GetSpeed() > M_NULL_F &&
             unit->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE) &&
             unit->GetCharmerOrOwnerGuid() != m_caster->GetObjectGuid())
         {
@@ -1676,7 +1676,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
         if (!realCaster->IsFriendlyTo(unit))
         {
             // for delayed spells ignore not visible explicit target
-            if (m_spellInfo->speed > M_NULL_F && unit == m_targets.getUnitTarget() &&
+            if (m_spellInfo->GetSpeed() > M_NULL_F && unit == m_targets.getUnitTarget() &&
                 (!unit->isVisibleForOrDetect(m_caster, m_caster, false) && !m_IsTriggeredSpell))
             {
                 realCaster->SendSpellMiss(unit, m_spellInfo->Id, SPELL_MISS_EVADE);
@@ -1698,7 +1698,7 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
         else
         {
             // for delayed spells ignore negative spells (after duel end) for friendly targets
-            if (m_spellInfo->speed > M_NULL_F && !IsPositiveSpell(m_spellInfo->Id))
+            if (m_spellInfo->GetSpeed() > M_NULL_F && !IsPositiveSpell(m_spellInfo->Id))
             {
                 realCaster->SendSpellMiss(unit, m_spellInfo->Id, SPELL_MISS_EVADE);
                 ResetEffectDamageAndHeal();
@@ -2547,7 +2547,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             // Some spells untested, for affected GO type 33. May need further adjustments for spells related.
 
             std::list<GameObject*> tempTargetGOList;
-            float fSearchDistance = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex));
+            float fSearchDistance = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex()));
             SQLMultiStorage::SQLMSIteratorBounds<SpellTargetEntry> bounds = sSpellScriptTargetStorage.getBounds<SpellTargetEntry>(m_spellInfo->Id);
             if (bounds.first !=  bounds.second)
             {
@@ -2657,7 +2657,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 Unit::AuraList const& lDummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
                 for(Unit::AuraList::const_iterator i = lDummyAuras.begin(); i != lDummyAuras.end(); ++i)
                 {
-                    if((*i)->GetSpellProto()->SpellIconID == 1935)
+                    if((*i)->GetSpellProto()->GetSpellIconID() == 1935)
                     {
                         unMaxTargets = (*i)->GetModifier()->m_amount + 1;   // +1 because we are also applying this to the caster
                         break;
@@ -2764,7 +2764,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             break;
         case TARGET_ALL_FRIENDLY_UNITS_IN_AREA:
             // Circle of Healing
-            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellVisual[0] == 8253)
+            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->GetSpellVisual() == 8253)
             {
                 Unit* target = m_targets.getUnitTarget();
                 if(!target)
@@ -2778,7 +2778,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                 FillRaidOrPartyHealthPriorityTargets(targetUnitMap, m_caster, target, radius, count, true, false, true);
             }
             // Wild Growth
-            else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->SpellIconID == 2864)
+            else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_DRUID && m_spellInfo->GetSpellIconID() == 2864)
             {
                 Unit* target = m_targets.getUnitTarget();
                 if(!target)
@@ -2858,7 +2858,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         case TARGET_IN_FRONT_OF_CASTER:
         {
             SpellNotifyPushType pushType = PUSH_IN_FRONT;
-            switch (m_spellInfo->SpellVisual[0])            // Some spell require a different target fill
+            switch (m_spellInfo->GetSpellVisual())            // Some spell require a different target fill
             {
                 case 3879: pushType = PUSH_IN_BACK;     break;
                 case 7441: pushType = PUSH_IN_FRONT_15; break;
@@ -3255,7 +3255,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         {
             if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
             {
-                SpellRangeEntry const* rEntry = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
+                SpellRangeEntry const* rEntry = sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex());
                 float minRange = GetSpellMinRange(rEntry);
                 float maxRange = GetSpellMaxRange(rEntry);
                 float dist = minRange+ rand_norm_f()*(maxRange-minRange);
@@ -3371,7 +3371,7 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
                     break;
                 case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
                     // AreaAura
-                    if ((m_spellInfo->Attributes == (SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING)) || (m_spellInfo->Attributes == SPELL_ATTR_NOT_SHAPESHIFT))
+                    if ((m_spellInfo->GetAttributes() == (SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_CASTABLE_WHILE_MOUNTED | SPELL_ATTR_CASTABLE_WHILE_SITTING)) || (m_spellInfo->GetAttributes() == SPELL_ATTR_NOT_SHAPESHIFT))
                         SetTargetMap(effIndex, TARGET_AREAEFFECT_PARTY, targetUnitMap);
                     break;
                 case SPELL_EFFECT_SKIN_PLAYER_CORPSE:
@@ -3569,7 +3569,7 @@ void Spell::prepare(SpellCastTargets const* targets, Aura const* triggeredByAura
     // without adding to cast type slot
     // will not show cast bar but will show effects at casting time etc
 
-    if (m_spellInfo->speed > 0.0f && GetCastTime())
+    if (m_spellInfo->GetSpeed() > 0.0f && GetCastTime())
     {
         Unit* procTarget = m_targets.getUnitTarget();
         if (!procTarget)
@@ -3994,7 +3994,7 @@ void Spell::cast(bool skipCheck)
         procTarget = m_caster;
 
     // Okay, everything is prepared. Now we need to distinguish between immediate and evented delayed spells
-    if (m_spellInfo->speed > 0.0f || GetDelayStart() > 0)
+    if (m_spellInfo->GetSpeed() > 0.0f || GetDelayStart() > 0)
     {
 
         // Remove used for cast item if need (it can be already NULL after TakeReagents call
@@ -5181,19 +5181,19 @@ void Spell::TakePower()
         return;
 
     // health as power used
-    if (m_spellInfo->powerType == POWER_HEALTH)
+    if (m_spellInfo->GetPowerType() == POWER_HEALTH)
     {
         m_caster->ModifyHealth( -(int32)m_powerCost );
         return;
     }
 
-    if (m_spellInfo->powerType >= MAX_POWERS)
+    if (m_spellInfo->GetPowerType() >= MAX_POWERS)
     {
-        sLog.outError("Spell::TakePower: Unknown power type '%d'", m_spellInfo->powerType);
+        sLog.outError("Spell::TakePower: Unknown power type '%d'", m_spellInfo->GetPowerType());
         return;
     }
 
-    Powers powerType = Powers(m_spellInfo->powerType);
+    Powers powerType = Powers(m_spellInfo->GetPowerType());
 
     if (powerType == POWER_RUNE)
     {
@@ -5655,7 +5655,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
         if (m_caster->hasUnitState(UNIT_STAT_STUNNED))
         {
-            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellIconID == 2178)
+            if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->GetSpellIconID() == 2178)
             {
                 // Glyph of Desperation
                 if (m_caster->HasAura(63248))
@@ -5781,7 +5781,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
             // Fire Shield
             if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARLOCK &&
-                m_spellInfo->SpellIconID == 16)
+                m_spellInfo->GetSpellIconID() == 16)
                 return SPELL_FAILED_BAD_TARGETS;
 
             // Focus Magic (main spell)
@@ -5906,7 +5906,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         //Must be behind the target.
-        if (m_spellInfo->AttributesEx2 == SPELL_ATTR_EX2_UNK20 && m_spellInfo->HasAttribute(SPELL_ATTR_EX_UNK9) && target->HasInArc(M_PI_F, m_caster))
+        if (m_spellInfo->GetAttributesEx2() == SPELL_ATTR_EX2_UNK20 && m_spellInfo->HasAttribute(SPELL_ATTR_EX_UNK9) && target->HasInArc(M_PI_F, m_caster))
         {
             // Exclusion for Pounce: Facing Limitation was removed in 2.0.1, but it still uses the same, old Ex-Flags
             // Exclusion for Mutilate:Facing Limitation was removed in 2.0.1 and 3.0.3, but they still use the same, old Ex-Flags
@@ -5921,7 +5921,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         }
 
         //Target must be facing you.
-        if ((m_spellInfo->Attributes == (SPELL_ATTR_ABILITY | SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_STOP_ATTACK_TARGET)) && !target->HasInArc(M_PI_F, m_caster))
+        if ((m_spellInfo->GetAttributes() == (SPELL_ATTR_ABILITY | SPELL_ATTR_NOT_SHAPESHIFT | SPELL_ATTR_UNK18 | SPELL_ATTR_STOP_ATTACK_TARGET)) && !target->HasInArc(M_PI_F, m_caster))
         {
             SendInterrupted(2);
             return SPELL_FAILED_NOT_INFRONT;
@@ -6026,7 +6026,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         sLog.outErrorDb("Spell entry %u, effect %i has EffectImplicitTargetA/EffectImplicitTargetB = TARGET_FOCUS_OR_SCRIPTED_GAMEOBJECT, but gameobject are not defined in `spell_script_target`", m_spellInfo->Id, j);
                 }
 
-                SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
+                SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex());
                 float range = GetSpellMaxRange(srange);
 
                 Creature* targetExplicit = NULL;            // used for cases where a target is provided (by script for example)
@@ -6244,7 +6244,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 {
                     UnitList targets;
 
-                    float radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex));
+                    float radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex()));
 
                     MaNGOS::AnyUnfriendlyVisibleUnitInObjectRangeCheck unitCheck(m_caster, m_caster, radius);
                     MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyVisibleUnitInObjectRangeCheck> checker(targets, unitCheck);
@@ -6253,7 +6253,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (targets.empty())
                         return SPELL_FAILED_OUT_OF_RANGE;
                 }
-                else if (m_spellInfo->SpellIconID == 156)   // Holy Shock
+                else if (m_spellInfo->GetSpellIconID() == 156)   // Holy Shock
                 {
                     // spell different for friends and enemies
                     // hart version required facing
@@ -6265,7 +6265,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if(m_caster->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
                         return SPELL_FAILED_MOVING;
                 }
-                else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->SpellIconID == 33) // Fire Nova
+                else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_SHAMAN && m_spellInfo->GetSpellIconID() == 33) // Fire Nova
                 {
                     // fire totems slot
                     if (!m_caster->GetTotemGuid(TOTEM_SLOT_FIRE))
@@ -7123,7 +7123,7 @@ SpellCastResult Spell::CheckCasterAuras() const
     if (unitflag & UNIT_FLAG_STUNNED)
     {
         // Pain Suppression (have SPELL_ATTR_EX5_USABLE_WHILE_STUNNED that must be used only with glyph)
-        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->SpellIconID == 2178)
+        if (m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && m_spellInfo->GetSpellIconID() == 2178)
         {
             if (!m_caster->HasAura(63248))                  // Glyph of Pain Suppression
                 spellUsableWhileStunned = false;
@@ -7335,7 +7335,7 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
     Unit* target = (checkTarget && checkTarget->GetObjectGuid().IsUnit()) ? (Unit*)checkTarget : m_targets.getUnitTarget();
     GameObject* pGoTarget = (checkTarget && checkTarget->GetObjectGuid().IsGameObject()) ? (GameObject*)checkTarget : m_targets.getGOTarget();
 
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex);
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex());
 
     bool friendly = target ? target->IsFriendlyTo(m_caster) : false;
     float max_range = GetSpellMaxRange(srange, friendly);
@@ -7343,7 +7343,7 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
     float add_range = bool(checkTarget) ? checkTarget->GetObjectBoundingRadius() : (strict ? 1.25f : 6.25f);
 
     // special range cases
-    switch(m_spellInfo->rangeIndex)
+    switch(m_spellInfo->GetRangeIndex())
     {
         // self cast doesn't need range checking -- also for Starshards fix
         // spells that can be cast anywhere also need no check
@@ -7435,12 +7435,12 @@ int32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell
     if (spellInfo->HasAttribute(SPELL_ATTR_EX_DRAIN_ALL_POWER))
     {
         // If power type - health drain all
-        if (spellInfo->powerType == POWER_HEALTH)
+        if (spellInfo->GetPowerType() == POWER_HEALTH)
             return caster->GetHealth();
         // Else drain all power
-        if (spellInfo->powerType < MAX_POWERS)
-            return caster->GetPower(Powers(spellInfo->powerType));
-        sLog.outError("Spell::CalculateManaCost: Unknown power type '%d' in spell %d", spellInfo->powerType, spellInfo->Id);
+        if (spellInfo->GetPowerType() < MAX_POWERS)
+            return caster->GetPower(Powers(spellInfo->GetPowerType()));
+        sLog.outError("Spell::CalculateManaCost: Unknown power type '%d' in spell %d", spellInfo->GetPowerType(), spellInfo->Id);
         return 0;
     }
 
@@ -7449,7 +7449,7 @@ int32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell
     // PCT cost from total amount
     if (spellInfo->ManaCostPercentage)
     {
-        switch (spellInfo->powerType)
+        switch (spellInfo->GetPowerType())
         {
             // health as power used
             case POWER_HEALTH:
@@ -7462,14 +7462,14 @@ int32 Spell::CalculatePowerCost(SpellEntry const* spellInfo, Unit* caster, Spell
             case POWER_FOCUS:
             case POWER_ENERGY:
             case POWER_HAPPINESS:
-                powerCost += spellInfo->ManaCostPercentage * caster->GetMaxPower(Powers(spellInfo->powerType)) / 100;
+                powerCost += spellInfo->ManaCostPercentage * caster->GetMaxPower(Powers(spellInfo->GetPowerType())) / 100;
                 break;
             case POWER_RUNE:
             case POWER_RUNIC_POWER:
                 DEBUG_LOG("Spell::CalculateManaCost: Not implemented yet!");
                 break;
             default:
-                sLog.outError("Spell::CalculateManaCost: Unknown power type '%d' in spell %d", spellInfo->powerType, spellInfo->Id);
+                sLog.outError("Spell::CalculateManaCost: Unknown power type '%d' in spell %d", spellInfo->GetPowerType(), spellInfo->Id);
                 return 0;
         }
     }
@@ -7510,7 +7510,7 @@ SpellCastResult Spell::CheckPower()
     }
 
     // health as power used - need check health amount
-    if (Powers(m_spellInfo->powerType) == POWER_HEALTH)
+    if (Powers(m_spellInfo->GetPowerType()) == POWER_HEALTH)
     {
         if (m_caster->GetHealth() <= uint32(abs(m_powerCost)))
             return SPELL_FAILED_CASTER_AURASTATE;
@@ -7518,14 +7518,14 @@ SpellCastResult Spell::CheckPower()
     }
 
     // Check valid power type
-    if (m_spellInfo->powerType >= MAX_POWERS)
+    if (m_spellInfo->GetPowerType() >= MAX_POWERS)
     {
-        sLog.outError("Spell::CheckMana: Unknown power type '%d'", m_spellInfo->powerType);
+        sLog.outError("Spell::CheckMana: Unknown power type '%d'", m_spellInfo->GetPowerType());
         return SPELL_FAILED_UNKNOWN;
     }
 
     //check rune cost only if a spell has PowerType == POWER_RUNE
-    if (m_spellInfo->powerType == POWER_RUNE)
+    if (m_spellInfo->GetPowerType() == POWER_RUNE)
     {
         SpellCastResult failReason = CheckOrTakeRunePower(false);
         if (failReason != SPELL_CAST_OK)
@@ -7533,7 +7533,7 @@ SpellCastResult Spell::CheckPower()
     }
 
     // Check power amount
-    if (m_powerCost > 0 && (int32(m_caster->GetPower(Powers(m_spellInfo->powerType))) < m_powerCost))
+    if (m_powerCost > 0 && (int32(m_caster->GetPower(Powers(m_spellInfo->GetPowerType()))) < m_powerCost))
         return SPELL_FAILED_NO_POWER;
 
     return SPELL_CAST_OK;
@@ -8146,8 +8146,8 @@ CurrentSpellTypes Spell::GetCurrentContainer()
 
 bool Spell::IsNeedSendToClient() const
 {
-    return m_spellInfo->SpellVisual[0] || m_spellInfo->SpellVisual[1] || IsChanneledSpell(m_spellInfo) ||
-        m_spellInfo->speed > 0.0f || (!m_triggeredByAuraSpell && !m_IsTriggeredSpell);
+    return m_spellInfo->GetSpellVisual() || m_spellInfo->SpellVisual[1] || IsChanneledSpell(m_spellInfo) ||
+        m_spellInfo->GetSpeed() > 0.0f || (!m_triggeredByAuraSpell && !m_IsTriggeredSpell);
 }
 
 bool Spell::IsTriggeredSpellWithRedundentCastTime() const
@@ -8507,8 +8507,8 @@ void Spell::CancelGlobalCooldown()
 float Spell::GetBaseSpellSpeed()
 {
     // Speed possible inherited from triggering spell
-    float speed_proto = (fabs(m_spellInfo->speed) < M_NULL_F && m_triggeredBySpellInfo) ?
-                            m_triggeredBySpellInfo->speed : m_spellInfo->speed;
+    float speed_proto = (fabs(m_spellInfo->GetSpeed()) < M_NULL_F && m_triggeredBySpellInfo) ?
+                            m_triggeredBySpellInfo->GetSpeed() : m_spellInfo->GetSpeed();
 
     // spell speed calculation for charge-like spells
     if (m_spellInfo->HasAttribute(SPELL_ATTR_EX7_HAS_CHARGE_EFFECT)
@@ -8526,7 +8526,7 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList& targetUnitMap, uin
     if (m_spellInfo->EffectRadiusIndex[i])
         radius = GetSpellRadius(sSpellRadiusStore.LookupEntry(m_spellInfo->EffectRadiusIndex[i]));
     else
-        radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->rangeIndex));
+        radius = GetSpellMaxRange(sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex()));
 
     // Resulting effect depends on spell that we want to cast
     switch (m_spellInfo->Id)

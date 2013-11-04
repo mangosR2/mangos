@@ -5068,7 +5068,7 @@ static bool HandleResetStatsOrLevelHelper(Player* player)
         return false;
     }
 
-    uint8 powertype = cEntry->powerType;
+    Powers powertype = Powers(cEntry->powerType);
 
     // reset m_form if no aura
     if (!player->HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))

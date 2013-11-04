@@ -980,7 +980,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel, Unit* owner)
     createStats[MAX_STATS+5]  = int32(cinfo->minrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
     createStats[MAX_STATS+6]  = int32(cinfo->maxrangedmg * petlevel / cinfo->maxlevel/ (1 + cinfo->rank));
     SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, float(cinfo->maxrangedmg * petlevel / cinfo->maxlevel));
-    setPowerType(Powers(cinfo->powerType));
+    setPowerType(Powers(cinfo->GetPowerType()));
     SetAttackTime(BASE_ATTACK, cinfo->baseattacktime);
     SetAttackTime(RANGED_ATTACK, cinfo->rangeattacktime);
 
@@ -3283,10 +3283,10 @@ Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
     if (spellInfo->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return NULL;
 
-    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->rangeIndex);
+    SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(spellInfo->GetRangeIndex());
 
     float max_range_friendly = GetSpellMaxRange(srange,true);
-    float max_range_unfriendly = (spellInfo->rangeIndex == SPELL_RANGE_IDX_COMBAT) ?
+    float max_range_unfriendly = (spellInfo->GetRangeIndex() == SPELL_RANGE_IDX_COMBAT) ?
                                     GetObjectBoundingRadius() + 1.0f :
                                     GetSpellMaxRange(srange,false);
 
@@ -3379,7 +3379,7 @@ Unit* Pet::SelectPreferredTargetForSpell(SpellEntry const* spellInfo)
 
     if (target && target != this)
     {
-        if (spellInfo->rangeIndex == SPELL_RANGE_IDX_COMBAT)
+        if (spellInfo->GetRangeIndex() == SPELL_RANGE_IDX_COMBAT)
             max_range_unfriendly = GetMeleeAttackDistance(target);
 
         bool friendly = IsFriendlyTo(target);
