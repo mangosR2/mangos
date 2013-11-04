@@ -105,13 +105,6 @@ inline void MaNGOS::ObjectUpdater::Visit(GameObjectMapType& m)
 {
     for (GameObjectMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
     {
-        uint32 lastUpdateTime = iter->getSource()->GetLastUpdateTime();
-        uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
-
-        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
-            continue;
-
-        iter->getSource()->SetLastUpdateTime();
         WorldObject::UpdateHelper helper(iter->getSource());
         helper.Update(i_timeDiff);
     }

@@ -397,12 +397,6 @@ void Map::ActivateGrid(NGridType* nGrid)
 
 bool Map::Add(Player* player)
 {
-    if (FindObject(player->GetObjectGuid()))
-    {
-        sLog.outError("Map::Add map %u instance %u %s is found stored in Map object store, but trying to be addes!", GetId(), GetInstanceId(), player->GetObjectGuid() ? player->GetObjectGuid().GetString().c_str() : "<no GUID>");
-    }
-
-    player->GetMapRef().unlink();
     player->GetMapRef().link(this, player);
     player->SetMap(this);
 
@@ -422,8 +416,6 @@ bool Map::Add(Player* player)
     player->GetViewPoint().Event_AddedToWorld(&(*grid)(cell.CellX(), cell.CellY()));
     UpdateObjectVisibility(player,cell,p);
 
-    DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Map::Add map %u instance %u add %s to grid [%u,%u]", GetId(), GetInstanceId(), player->GetObjectGuid().GetString().c_str(), cell.GridX(), cell.GridY());
-
     if (i_data)
         i_data->OnPlayerEnter(player);
 
@@ -440,20 +432,8 @@ Map::Add(T* obj)
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
     {
-        sLog.outError("Map::Add map %u instance %u %s have invalid coordinates X:%f Y:%f grid cell [%u:%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::Add: Object (GUID: %u TypeId: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
         return;
-    }
-
-    if (FindObject(obj->GetObjectGuid()))
-    {
-        if (obj->GetObjectGuid().IsCreatureOrVehicle())
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::Add map %u instance %u %s is found stored in Map object store, but trying to be addes. Possible result of pool operations.", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>");
-        }
-        else
-        {
-            sLog.outError("Map::Add map %u instance %u %s is found stored in Map object store, but trying to be addes!", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>");
-        }
     }
 
     obj->SetMap(this);
@@ -467,7 +447,7 @@ Map::Add(T* obj)
         EnsureGridCreated(GridPair(cell.GridX(), cell.GridY()));
 
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
-    MANGOS_ASSERT(grid != NULL);
+    MANGOS_ASSERT( grid != NULL );
 
     AddToGrid(obj,grid,cell);
     obj->AddToWorld();
@@ -475,7 +455,7 @@ Map::Add(T* obj)
     if(obj->isActiveObject())
         AddToActive(obj);
 
-    DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::Add map %u instance %u add %s to grid [%u,%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", cell.GridX(), cell.GridY());
+    DEBUG_LOG("%s enters grid[%u,%u]", obj->GetGuidStr().c_str(), cell.GridX(), cell.GridY());
 
     obj->GetViewPoint().Event_AddedToWorld(&(*grid)(cell.CellX(), cell.CellY()));
     UpdateObjectVisibility(obj,cell,p);
@@ -643,24 +623,12 @@ void Map::Update(const uint32 &t_diff)
         ObjectGuid guid = updateQueue.front();
         updateQueue.pop();
 
-        WorldObject* obj = GetWorldObject(guid);
-        if (!obj || !obj->IsInWorld())
-            continue;
-
-        uint32 lastUpdateTime = obj->GetLastUpdateTime();
-        uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
-
-        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
-            continue;
-
-        obj->SetLastUpdateTime();
-
         switch (guid.GetHigh())
         {
             case HIGHGUID_PLAYER:
             {
-                Player* plr = dynamic_cast<Player*>(obj);
-                if (plr)
+                Player* plr = GetPlayer(guid);
+                if (plr && plr->IsInWorld())
                 {
                     WorldObject::UpdateHelper helper(plr);
                     helper.Update(t_diff);
@@ -670,7 +638,8 @@ void Map::Update(const uint32 &t_diff)
             case HIGHGUID_MO_TRANSPORT:
             {
                 // FIXME - temphack for update active MO_TRANSPORT objects
-                if (obj->isActiveObject() && obj->IsPositionValid())
+                WorldObject* obj = GetWorldObject(guid);
+                if (obj && obj->IsInWorld() && obj->isActiveObject() && obj->IsPositionValid())
                 {
                     WorldObject::UpdateHelper helper(obj);
                     helper.Update(t_diff);
@@ -759,11 +728,6 @@ void Map::Update(const uint32 &t_diff)
 
 void Map::Remove(Player* player, bool remove)
 {
-    if (!FindObject(player->GetObjectGuid()))
-    {
-        sLog.outError("Map::Remove: map %u instance %u %s not stored in Map object store, byt trying to be removed!", GetId(), GetInstanceId(), player->GetObjectGuid().GetString().c_str());
-    }
-
     if (i_data)
         i_data->OnPlayerLeave(player);
 
@@ -779,13 +743,19 @@ void Map::Remove(Player* player, bool remove)
     player->RemoveFromWorld(remove);
 
     // this may be called during Map::Update
+    // after decrement+unlink, ++m_mapRefIter will continue correctly
+    // when the first element of the list is being removed
+    // nocheck_prev will return the padding element of the RefManager
+    // instead of NULL in the case of prev
+    if (m_mapRefIter == player->GetMapRef())
+        m_mapRefIter = m_mapRefIter->nocheck_prev();
     player->GetMapRef().unlink();
 
     CellPair p = MaNGOS::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
         // invalid coordinates
-        sLog.outError("Map::Remove player %s invalid cellPair x:%d, y:%d", player->GetObjectGuid().GetString().c_str(), p.x_coord,p.y_coord);
+        sLog.outError("Map::Remove() player %s invalid cellPair x:%d, y:%d", player->GetObjectGuid().GetString().c_str(), p.x_coord,p.y_coord);
         remove ? DeleteFromWorld(player) :  (void)player->TeleportToHomebind();
         return;
     }
@@ -795,12 +765,12 @@ void Map::Remove(Player* player, bool remove)
     if (!grid)
     {
         // invalid coordinates
-        sLog.outError("Map::Remove player %s i_grids was NULL x:%d, y:%d",player->GetObjectGuid().GetString().c_str(),cell.data.Part.grid_x,cell.data.Part.grid_y);
+        sLog.outError("Map::Remove() player %s i_grids was NULL x:%d, y:%d",player->GetObjectGuid().GetString().c_str(),cell.data.Part.grid_x,cell.data.Part.grid_y);
         remove ? DeleteFromWorld(player) :  (void)player->TeleportToHomebind();
         return;
     }
 
-    DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Map::Remove Remove player %s from grid [%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
+    DEBUG_FILTER_LOG(LOG_FILTER_PLAYER_MOVES, "Map::Remove() Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
 
     RemoveFromGrid(player,grid,cell);
     SendRemoveActiveObjects(player);
@@ -821,38 +791,17 @@ void
 Map::Remove(T* obj, bool remove)
 {
     CellPair p = MaNGOS::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
-    if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
+    if(p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP )
     {
-        sLog.outError("Map::Remove: map %u instance %u %s have invalid coordinates X:%f Y:%f grid cell [%u:%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::Remove: Object (%s Type: %u) have invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
         return;
     }
 
     Cell cell(p);
-    if (!loaded(cell.gridPair()))
-    {
-        if (!obj->isActiveObject())
-        {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::Remove: map %u instance %u remove  %s from NOT LOADED grid [%u,%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", cell.GridX(), cell.GridY());
-            if (remove)
-            {
-                if (obj->IsInitialized() && obj->IsInWorld())
-                {
-                    obj->CleanupsBeforeDelete();
-                    obj->RemoveFromWorld(remove);
-                }
-                delete obj;
-            }
-            return;
-        }
-        BASIC_FILTER_LOG(LOG_FILTER_MAP_LOADING,"Map::Remove: map %u instance %u remove ACTIVE %s from NOT LOADED grid [%u,%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", cell.GridX(), cell.GridY());
-        PreloadGrid(obj->GetPositionX(), obj->GetPositionY());
-    }
+    if( !loaded(GridPair(cell.data.Part.grid_x, cell.data.Part.grid_y)) )
+        return;
 
-    if (!FindObject(obj->GetObjectGuid()))
-        sLog.outError("Map::Remove: map %u instance %u %s not stored in Map object store, byt trying to be removed from grid [%u,%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", cell.GridX(), cell.GridY());
-    else
-        DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "Map::Remove: map %u instance %u remove %s from grid [%u,%u]", GetId(), GetInstanceId(), obj->GetObjectGuid() ? obj->GetObjectGuid().GetString().c_str() : "<no GUID>", cell.GridX(), cell.GridY());
-
+    DEBUG_LOG("Remove object (GUID: %u TypeId:%u) from grid[%u,%u]", obj->GetGUIDLow(), obj->GetTypeId(), cell.data.Part.grid_x, cell.data.Part.grid_y);
     NGridType* grid = getNGrid(cell.GridX(), cell.GridY());
     MANGOS_ASSERT(grid != NULL);
 
@@ -860,7 +809,6 @@ Map::Remove(T* obj, bool remove)
 
     if (remove)
         obj->CleanupsBeforeDelete();
-
     obj->RemoveFromWorld(remove);
 
     if (!obj->isActiveObject())
