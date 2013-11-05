@@ -152,7 +152,7 @@ SET MEMMAN_STR2="0"
 if %MEMORY_MANAGER%==STD    (SET MEMMAN_STR2="1")
 if %MEMORY_MANAGER%==TBB    (SET MEMMAN_STR3="1")
 if %MEMORY_MANAGER%==FASTMM (SET MEMMAN_STR1="1")
-SET C_FLAGS="/DWIN32 /D_WINDOWS /W3 /Zm512 /EHsc /GR"
+SET C_FLAGS="/DWIN32 /D_WINDOWS /W3 /EHsc /GR"
 goto :begin
 REM *****************************************************************************************
 
