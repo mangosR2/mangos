@@ -4,7 +4,7 @@
 #include "Platform/CompilerDefs.h"
 
 #if PLATFORM == PLATFORM_WINDOWS
-  #define _MANGCHAT_CONFIG  "mangchat.conf"
+  #define _MANGCHAT_CONFIG  SYSCONFDIR"mangchat.conf"
 #else
   #define _MANGCHAT_CONFIG  SYSCONFDIR"mangchat.conf"
 #endif
