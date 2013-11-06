@@ -101,7 +101,7 @@ class LinkedListHead
             iSize = 0;
         }
 
-        bool isEmpty() const { return (!iFirst.iNext->isInList()); }
+        bool isEmpty() const { if (iFirst.iNext) return (!iFirst.iNext->isInList()); return true; }
 
         LinkedListElement      * getFirst()       { return (isEmpty() ? NULL : iFirst.iNext); }
         LinkedListElement const* getFirst() const { return (isEmpty() ? NULL : iFirst.iNext); }
