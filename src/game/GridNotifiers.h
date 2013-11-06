@@ -114,8 +114,7 @@ namespace MaNGOS
     struct MANGOS_DLL_DECL ObjectUpdater
     {
         uint32 i_timeDiff;
-        uint32 i_zoneId;
-        explicit ObjectUpdater(const uint32& diff, uint32 zoneId) : i_timeDiff(diff), i_zoneId(zoneId) {}
+        explicit ObjectUpdater(const uint32& diff) : i_timeDiff(diff) {}
         template<class T> void Visit(GridRefManager<T>& m);
         void Visit(PlayerMapType&) {}
         void Visit(CorpseMapType&) {}

@@ -175,7 +175,7 @@ class MANGOS_DLL_SPEC Object
         void SendForcedObjectUpdate();
 
         virtual GuidSet const* GetObjectsUpdateQueue() { return NULL; };
-        bool const& IsMarkedForClientUpdate() const { return m_objectUpdated; };
+        bool IsMarkedForClientUpdate() const { return m_objectUpdated; };
         virtual Object* GetDependentObject(ObjectGuid const& guid) { return NULL; };
         virtual void RemoveUpdateObject(ObjectGuid const& guid) {};
         virtual void AddUpdateObject(ObjectGuid const& guid) {};
@@ -678,8 +678,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         void AddToClientUpdateList() override;
         void RemoveFromClientUpdateList() override;
         void BuildUpdateData(UpdateDataMapType &) override;
-        uint32 GetCachedZoneId() const { return m_zoneUpdateId; }
-        void   SetCachedZoneId(uint32 zoneId) { m_zoneUpdateId = zoneId; }
 
         Creature* SummonCreature(uint32 id, float x, float y, float z, float ang, TempSummonType spwtype, uint32 despwtime, bool asActiveObject = false);
         Creature* SummonCreature(uint32 id, TempSummonType spwType, uint32 despwTime, bool asActiveObject = false)
@@ -757,10 +755,10 @@ class MANGOS_DLL_SPEC WorldObject : public Object
 
         ObjectGuid m_lootRecipientGuid;                     // player who will have rights for looting if m_lootGroupRecipient==0 or group disbanded
         uint32 m_lootGroupRecipientId;                      // group who will have rights for looting if set and exist
-        std::string m_name;
-        TransportInfo* m_transportInfo;
 
-        uint32     m_zoneUpdateId;
+        std::string m_name;
+
+        TransportInfo* m_transportInfo;
 
     private:
         Map* m_currMap;                                     //current object's Map location
@@ -776,7 +774,6 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         WorldObjectEventProcessor m_Events;
 
         GuidSet    m_notifiedClients;
-
 };
 
 #endif

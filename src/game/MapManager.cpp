@@ -178,21 +178,16 @@ void MapManager::Update(uint32 diff)
 
     for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
     {
-        MapPtr mapPtr = iter->second;
-        for (ZoneIDsList::const_iterator zoneItr = mapPtr->GetZoneIds().begin(); zoneItr != mapPtr->GetZoneIds().end(); ++zoneItr)
+        if (GetMapUpdater().activated())
         {
-            uint32 zoneId = *zoneItr;
-            if (m_updater.activated())
-            {
-                m_updater.schedule_update(*mapPtr, (uint32)i_timer.GetCurrent(), zoneId);
-            }
-            else
-                iter->second->Update((uint32)i_timer.GetCurrent(), zoneId);
-
-            std::string updaterErr = GetMapUpdater().getLastError();
-            if (!updaterErr.empty())
-                sLog.outError("MapManager::Update updater reports %s.", updaterErr.c_str());
+            GetMapUpdater().schedule_update(*iter->second, (uint32)i_timer.GetCurrent());
         }
+        else
+            iter->second->Update((uint32)i_timer.GetCurrent());
+
+        std::string updaterErr = GetMapUpdater().getLastError();
+        if (!updaterErr.empty())
+            sLog.outError("MapManager::Update updater reports %s.", updaterErr.c_str());
     }
 
     if (GetMapUpdater().activated())

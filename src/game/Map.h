@@ -155,9 +155,6 @@ template<> class hash <ZoneID>
 };
 HASH_NAMESPACE_END
 
-typedef size_t ZoneIndex;
-typedef std::vector<uint32> ZoneIDsList;
-
 typedef UNORDERED_MAP<ObjectGuid,GuidSet>  AttackersMap;
 
 struct LoadingObjectQueueMember
@@ -184,7 +181,7 @@ class LoadingObjectsCompare
 
 typedef std::priority_queue<LoadingObjectQueueMember*, std::vector<LoadingObjectQueueMember*>, LoadingObjectsCompare> LoadingObjectsQueue;
 
-class MANGOS_DLL_SPEC Map
+class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
 {
     friend class MapReference;
     friend class ObjectGridLoader;
@@ -214,9 +211,7 @@ class MANGOS_DLL_SPEC Map
 
         void DeleteFromWorld(Player* player);                   // player object will deleted at call
 
-        virtual void UpdateZone(WorldObject* obj, uint32 oldzone, uint32 newzone);
-
-        virtual void Update(const uint32&, uint32 zoneId = 0);
+        virtual void Update(const uint32&);
 
         void MessageBroadcast(Player const*, WorldPacket*, bool to_self);
         void MessageBroadcast(WorldObject const*, WorldPacket*);
@@ -317,7 +312,7 @@ class MANGOS_DLL_SPEC Map
         bool HavePlayers() const { return !m_mapRefManager.isEmpty(); }
         bool isFull() const { return GetPlayersCountExceptGMs() >= GetMaxPlayers(); }
         uint32 GetPlayersCountExceptGMs() const;
-        bool ActiveObjectsNearGrid(uint32 x, uint32 y) const;
+        bool ActiveObjectsNearGrid(uint32 x,uint32 y) const;
 
         void SendToPlayers(WorldPacket const* data) const;
 
@@ -339,7 +334,7 @@ class MANGOS_DLL_SPEC Map
         void AddToActive(WorldObject* obj);
         // must called with RemoveFromWorld
         void RemoveFromActive(WorldObject* obj);
-        GuidQueue GetActiveObjects(ZoneIndex zoneIdx);
+        GuidQueue GetActiveObjects();
 
         Player* GetPlayer(ObjectGuid const& guid, bool globalSearch = false);
         Creature* GetCreature(ObjectGuid  const& guid);
@@ -350,21 +345,21 @@ class MANGOS_DLL_SPEC Map
         Transport* GetTransport(ObjectGuid const& guid);
         Corpse* GetCorpse(ObjectGuid const& guid);                 // !!! find corpse can be not in world
         Unit* GetUnit(ObjectGuid const& guid);                     // only use if sure that need objects at current map, specially for player case
-        WorldObject* GetWorldObject(ObjectGuid const& guid, ZoneIndex zoneIdx = 0);       // only use if sure that need objects at current map, specially for player case
+        WorldObject* GetWorldObject(ObjectGuid const& guid);       // only use if sure that need objects at current map, specially for player case
 
         // Container maked without any locks (for faster search), need make external locks!
         typedef UNORDERED_MAP<ObjectGuid, WorldObject*> MapStoredObjectTypesContainer;
-        MapStoredObjectTypesContainer const& GetObjectsStore(ZoneIndex zoneIdx) { return *m_objectsStore[zoneIdx]; }
+        MapStoredObjectTypesContainer const& GetObjectsStore() { return m_objectsStore; }
         void InsertObject(WorldObject* object);
         void EraseObject(WorldObject* object);
-        void EraseObject(ObjectGuid const& guid, ZoneIndex zoneIdx = 0);
-        WorldObject* FindObject(ObjectGuid const& guid, ZoneIndex zoneIdx = 0);
+        void EraseObject(ObjectGuid const& guid);
+        WorldObject* FindObject(ObjectGuid const& guid);
 
         // Manipulation with objects update queue
-        void AddUpdateObject(ObjectGuid const& guid, uint32 zoneId);
-        void RemoveUpdateObject(ObjectGuid const& guid, uint32 zoneId);
-        GuidSet const* GetObjectsUpdateQueue(ZoneIndex zoneIdx) const { return &i_objectsToClientUpdate[zoneIdx]; };
-        ObjectGuid GetNextObjectFromUpdateQueue(ZoneIndex zoneIdx);
+        void AddUpdateObject(ObjectGuid const& guid);
+        void RemoveUpdateObject(ObjectGuid const& guid);
+        GuidSet const* GetObjectsUpdateQueue() { return &i_objectsToClientUpdate; };
+        ObjectGuid GetNextObjectFromUpdateQueue();
 
         // DynObjects currently
         uint32 GenerateLocalLowGuid(HighGuid guidhigh);
@@ -387,14 +382,14 @@ class MANGOS_DLL_SPEC Map
         // WorldState operations
         void UpdateWorldState(uint32 state, uint32 value);
 
-        // Attacker per-zone storage operations
-        void AddAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid, uint32 zoneId);
-        void RemoveAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid, uint32 zoneId);
-        void RemoveAllAttackersFor(ObjectGuid const& targetGuid, uint32 zoneId);
-        GuidSet& GetAttackersFor(ObjectGuid const& targetGuid, uint32 zoneId);
-        void CreateAttackersStorageFor(ObjectGuid const& targetGuid, uint32 zoneId);
-        void RemoveAttackersStorageFor(ObjectGuid const& targetGuid, uint32 zoneId);
-        bool IsInCombat(ObjectGuid const& targetGuid, uint32 zoneId) const;
+        // Attacker per-map storage operations
+        void AddAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid);
+        void RemoveAttackerFor(ObjectGuid const& targetGuid, ObjectGuid const& attackerGuid);
+        void RemoveAllAttackersFor(ObjectGuid const& targetGuid);
+        GuidSet& GetAttackersFor(ObjectGuid const& targetGuid);
+        void CreateAttackersStorageFor(ObjectGuid const& targetGuid);
+        void RemoveAttackersStorageFor(ObjectGuid const& targetGuid);
+        bool IsInCombat(ObjectGuid const& targetGuid) const;
 
         // multithread locking
         ObjectLockType& GetLock(MapLockType _locktype = MAP_LOCK_TYPE_DEFAULT) { return i_lock[_locktype]; }
@@ -407,36 +402,30 @@ class MANGOS_DLL_SPEC Map
         void SetBroken( bool _value = true ) { m_broken = _value; };
         void ForcedUnload();
 
-        // zone-related operations
-        bool IsMultiZoned() const { return  m_multizoned; };
-        ZoneIDsList const& GetZoneIds() const { return  m_zoneIds; };
-        ZoneIndex GetZoneIdx(uint32 zoneId) const;
-        GridRefManager<NGridType>& GetGridRefManager(ZoneIndex zoneIdx){ return *m_gridRefManager[zoneIdx]; };
-        GridRefManager<NGridType>* GetGridReference(ZoneIndex zoneIdx) { return m_gridRefManager[zoneIdx]; };
-
         // Dynamic VMaps
-        DynamicMapTree const& GetDynamicMapTree(ZoneIndex zoneIdx) const;
+        DynamicMapTree const& GetDynamicMapTree() const;
         float GetHeight(uint32 phasemask, float x, float y, float z) const;
         bool IsInLineOfSight(float x1, float y1, float z1, float x2, float y2, float z2, uint32 phasemask) const;
         bool GetHitPosition(float srcX, float srcY, float srcZ, float& destX, float& destY, float& destZ, uint32 phasemask, float modifyDist) const;
-        void DynamicMapTreeBalance(ZoneIndex zoneIdx);
-        void DynamicMapTreeUpdate(uint32 const& t_diff, ZoneIndex zoneIdx);
+        void DynamicMapTreeBalance();
+        void DynamicMapTreeUpdate(uint32 const& t_diff);
         bool IsInLineOfSightByDynamicMapTree(float srcX, float srcY, float srcZ, float destX, float destY, float destZ, uint32 phasemask) const;
 
-        void InsertGameObjectModel(GameObjectModel const& mdl, uint32 zoneId);
-        void RemoveGameObjectModel(GameObjectModel const& mdl, uint32 zoneId);
-        bool ContainsGameObjectModel(GameObjectModel const& mdl, uint32 zoneId) const;
+        void InsertGameObjectModel(const GameObjectModel& mdl);
+        void RemoveGameObjectModel(const GameObjectModel& mdl);
+        bool ContainsGameObjectModel(const GameObjectModel& mdl) const;
 
-        void AddLoadingObject(LoadingObjectQueueMember* obj, ZoneIndex zoneIdx);
-        LoadingObjectQueueMember* GetNextLoadingObject(ZoneIndex zoneIdx);
-        LoadingObjectsQueue const& GetLoadingObjectsQueue(ZoneIndex zoneIdx) { return i_loadingObjectQueue[zoneIdx]; };
-        bool IsLoadingObjectsQueueEmpty(ZoneIndex zoneIdx) const { return i_loadingObjectQueue[zoneIdx].empty(); };
+        void AddLoadingObject(LoadingObjectQueueMember* obj);
+        LoadingObjectQueueMember* GetNextLoadingObject();
+        LoadingObjectsQueue const& GetLoadingObjectsQueue() { return i_loadingObjectQueue; };
+        bool IsLoadingObjectsQueueEmpty() const { return i_loadingObjectQueue.empty(); };
 
         // Event handler
         WorldObjectEventProcessor* GetEvents();
         void UpdateEvents(uint32 update_diff);
         void KillAllEvents(bool force);
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
+
 
     private:
         void LoadMapAndVMap(int gx, int gy);
@@ -455,7 +444,7 @@ class MANGOS_DLL_SPEC Map
         bool EnsureGridLoaded(Cell const& c);
         void EnsureGridLoadedAtEnter(Cell const& c, Player* player = NULL);
 
-        void buildNGridLinkage(NGridType* pNGridType, ZoneIndex zoneIdx) { pNGridType->link(GetGridReference(zoneIdx)); }
+        void buildNGridLinkage(NGridType* pNGridType) { pNGridType->link(this); }
 
         template<class T> void AddType(T *obj);
         template<class T> void RemoveType(T *obj, bool);
@@ -485,11 +474,11 @@ class MANGOS_DLL_SPEC Map
         void setNGrid(NGridType* grid, uint32 x, uint32 y);
         void ScriptsProcess();
 
-        void SendObjectUpdates(ZoneIndex zoneIdx);
+        void SendObjectUpdates();
 
-        std::vector<GuidSet> i_objectsToClientUpdate;
+        GuidSet i_objectsToClientUpdate;
 
-        std::vector<LoadingObjectsQueue> i_loadingObjectQueue;
+        LoadingObjectsQueue i_loadingObjectQueue;
 
     protected:
         MapEntry const* i_mapEntry;
@@ -501,9 +490,9 @@ class MANGOS_DLL_SPEC Map
 
         MapRefManager m_mapRefManager;
 
-        std::vector<GuidSet> m_activeObjects;
-        std::vector<MapStoredObjectTypesContainer*> m_objectsStore;
-        std::vector<GridRefManager<NGridType>*> m_gridRefManager;
+        GuidSet m_activeObjects;
+        GuidSet m_activeObjectsSafeCopy;
+        MapStoredObjectTypesContainer m_objectsStore;
 
     private:
 
@@ -511,7 +500,7 @@ class MANGOS_DLL_SPEC Map
 
         //Shared geodata object with map coord info...
         TerrainInfoPtr m_TerrainData;
-        std::vector<DynamicMapTree*> m_dyn_tree;
+        DynamicMapTree m_dyn_tree;
 
         bool m_bLoadedGrids[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
@@ -542,12 +531,8 @@ class MANGOS_DLL_SPEC Map
         CreatureLinkingHolder m_creatureLinkingHolder;
 
         mutable ObjectLockType  i_lock[MAP_LOCK_TYPE_MAX];
-        std::vector<AttackersMap>        m_attackersMap;
+        AttackersMap        m_attackersMap;
         bool                m_broken;
-
-        ACE_Atomic_Op<ACE_Thread_Mutex, uint32> m_updatedZones;
-        ZoneIDsList         m_zoneIds;
-        bool                m_multizoned;
 
         WorldObjectEventProcessor m_Events;
 

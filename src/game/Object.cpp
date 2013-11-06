@@ -1096,11 +1096,9 @@ void WorldObject::AddToWorld()
     if (!IsInWorld())
         Object::AddToWorld();
 
-    m_zoneUpdateId = GetZoneId();
-
     // Possible inserted object, already exists in object store. Not must cause any problem, but need check.
     GetMap()->InsertObject(this);
-    GetMap()->AddUpdateObject(GetObjectGuid(), GetCachedZoneId());
+    GetMap()->AddUpdateObject(GetObjectGuid());
 }
 
 void WorldObject::RemoveFromWorld(bool remove)
@@ -1111,7 +1109,7 @@ void WorldObject::RemoveFromWorld(bool remove)
     if (IsInWorld())
         Object::RemoveFromWorld(remove);
 
-    map->RemoveUpdateObject(GetObjectGuid(), GetCachedZoneId());
+    map->RemoveUpdateObject(GetObjectGuid());
 
     if (remove)
     {
@@ -2164,13 +2162,13 @@ void WorldObject::UpdateObjectVisibility()
 
 void WorldObject::AddToClientUpdateList()
 {
-    GetMap()->AddUpdateObject(GetObjectGuid(), GetCachedZoneId());
+    GetMap()->AddUpdateObject(GetObjectGuid());
 }
 
 void WorldObject::RemoveFromClientUpdateList()
 {
     MAPLOCK_WRITE(this, MAP_LOCK_TYPE_MAPOBJECTS);
-    GetMap()->RemoveUpdateObject(GetObjectGuid(), GetCachedZoneId());
+    GetMap()->RemoveUpdateObject(GetObjectGuid());
 }
 
 struct WorldObjectChangeAccumulator
@@ -2187,14 +2185,9 @@ struct WorldObjectChangeAccumulator
 
     void Visit(CameraMapType &m)
     {
-        for(CameraMapType::iterator iter = m.begin(); iter != NULL && iter != m.end();)
+        for(CameraMapType::iterator iter = m.begin(); iter != m.end(); ++iter)
         {
-            Camera* obj = iter->getSource();
-            ++iter;
-            if (!obj)
-                continue;
-
-            Player* owner = obj->GetOwner();
+            Player* owner = iter->getSource()->GetOwner();
             if (owner && owner != &i_object && owner->HaveAtClient(i_object.GetObjectGuid()))
                 i_object.BuildUpdateDataForPlayer(owner, i_updateDatas);
         }
@@ -2203,7 +2196,7 @@ struct WorldObjectChangeAccumulator
     template<class SKIP> void Visit(GridRefManager<SKIP> &) {}
 };
 
-void WorldObject::BuildUpdateData(UpdateDataMapType& update_players)
+void WorldObject::BuildUpdateData( UpdateDataMapType & update_players)
 {
     WorldObjectChangeAccumulator notifier(*this, update_players);
     Cell::VisitWorldObjects(this, notifier, GetMap()->GetVisibilityDistance(this));

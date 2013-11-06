@@ -560,6 +560,7 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
             SkipUpdate(true);
 
             SetMap(newMap);
+
             Relocate(loc);
             SetLocationMapId(loc.GetMapId());
             SetLocationInstanceId(loc.GetInstanceId());
