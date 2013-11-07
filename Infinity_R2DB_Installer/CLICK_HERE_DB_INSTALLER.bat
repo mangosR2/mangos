@@ -9,8 +9,8 @@ echo (( Infinity Quick Installer ))
 rem -- Change the values below to match your server --
 set svr=localhost
 set user=root
-set pass=ascent
-set port=3306
+set pass=123456
+set port=3310
 set wdb=mangos
 set sd2db=scriptdev2
 rem -- Don't change past this point --
@@ -36,10 +36,10 @@ set /p svr=What is your MySQL host name?           [localhost]   :
 if %svr%. == . set svr=localhost
 set /p user=What is your MySQL user name?           [root]        :
 if %user%. == . set user=root
-set /p pass=What is your MySQL password?            [ ]           :
-if %pass%. == . set pass=ascent
-set /p port=What is your MySQL port?                [3306]        :
-if %port%. == . set port=3306 
+set /p pass=What is your MySQL password?            [123456]      :
+if %pass%. == . set pass=123456
+set /p port=What is your MySQL port?                [3310]        :
+if %port%. == . set port=3310 
 set /p wdb=What is your World database name?       [mangos]      :
 if %wdb%. == . set wdb=mangos
 set /p sd2db=What is your ScriptDev2 database name?  [scriptdev2]  :
