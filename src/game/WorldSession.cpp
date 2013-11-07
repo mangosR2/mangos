@@ -140,7 +140,8 @@ char const* WorldSession::GetPlayerName() const
 void WorldSession::SendPacket(WorldPacket const* packet)
 {
 	// Playerbot mod: send packet to bot AI
-    if (GetPlayer()) {
+    if (GetPlayer() && GetPlayer()->IsInWorld())
+	{
         if (GetPlayer()->GetPlayerbotAI())
             GetPlayer()->GetPlayerbotAI()->HandleBotOutgoingPacket(*packet);
         else if (GetPlayer()->GetPlayerbotMgr())
