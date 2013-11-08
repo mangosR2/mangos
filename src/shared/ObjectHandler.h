@@ -26,7 +26,7 @@
 #endif
 
 #ifndef OBJECT_SAFE_HANDLER
-#  define OBJECT_SAFE_HANDLER(TYPE,NAME) typedef ACE_Refcounted_Auto_Ptr<TYPE,MANGOSR2_MUTEX_MODEL> NAME;
+#  define OBJECT_SAFE_HANDLER(TYPE,NAME) typedef ACE_Refcounted_Auto_Ptr<TYPE,ACE_Thread_Mutex> NAME;
 #endif
 
 class SpellAuraHolder;
