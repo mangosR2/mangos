@@ -136,7 +136,7 @@ class BattleGroundQueue
         uint32 m_SumOfWaitTimes[PVP_TEAM_COUNT][MAX_BATTLEGROUND_BRACKETS];
 };
 
-class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassLevelLockable<BattleGroundMgr, MANGOSR2_MUTEX_MODEL> >
+class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassLevelLockable<BattleGroundMgr, ACE_Thread_Mutex> >
 {
     public:
         /* Construction */
@@ -230,7 +230,7 @@ class BattleGroundMgr : public MaNGOS::Singleton<BattleGroundMgr, MaNGOS::ClassL
         static BattleGroundTypeId WeekendHolidayIdToBGType(HolidayIds holiday);
         static bool IsBGWeekend(BattleGroundTypeId bgTypeId);
     private:
-        MANGOSR2_MUTEX_MODEL    SchedulerLock;
+        ACE_Thread_Mutex    SchedulerLock;
         BattleMastersMap    mBattleMastersMap;
         CreatureBattleEventIndexesMap m_CreatureBattleEventIndexMap;
         GameObjectBattleEventIndexesMap m_GameObjectBattleEventIndexMap;

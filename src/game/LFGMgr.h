@@ -143,7 +143,7 @@ typedef std::list<LFGEvent> LFGEventList;
 
 typedef UNORDERED_MAP<ObjectGuid /*group or player guid*/, LFGStateStructure*> LFGStatesMap;
 
-class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMgr, MANGOSR2_MUTEX_MODEL> >
+class LFGMgr : public MaNGOS::Singleton<LFGMgr, MaNGOS::ClassLevelLockable<LFGMgr, ACE_Thread_Mutex> >
 {
     public:
         LFGMgr();

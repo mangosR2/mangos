@@ -90,7 +90,7 @@ enum Color
 
 const int Color_count = int(WHITE)+1;
 
-class Log : public MaNGOS::Singleton<Log, MaNGOS::ClassLevelLockable<Log, MANGOSR2_MUTEX_MODEL> >
+class Log : public MaNGOS::Singleton<Log, MaNGOS::ClassLevelLockable<Log, ACE_Thread_Mutex> >
 {
         friend class MaNGOS::OperatorNew<Log>;
 

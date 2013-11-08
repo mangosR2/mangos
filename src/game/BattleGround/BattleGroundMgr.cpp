@@ -1086,7 +1086,7 @@ void BattleGroundMgr::Update(uint32 diff)
         std::vector<uint64> scheduled;
         {
             // create mutex
-            // ACE_Guard<MANGOSR2_MUTEX_MODEL> guard(SchedulerLock);
+            // ACE_Guard<ACE_Thread_Mutex> guard(SchedulerLock);
             // copy vector and clear the other
             scheduled = std::vector<uint64>(m_QueueUpdateScheduler);
             m_QueueUpdateScheduler.clear();
@@ -1958,7 +1958,7 @@ void BattleGroundMgr::ToggleArenaTesting()
 
 void BattleGroundMgr::ScheduleQueueUpdate(uint32 arenaRating, ArenaType arenaType, BattleGroundQueueTypeId bgQueueTypeId, BattleGroundTypeId bgTypeId, BattleGroundBracketId bracket_id)
 {
-    // ACE_Guard<MANGOSR2_MUTEX_MODEL> guard(SchedulerLock);
+    // ACE_Guard<ACE_Thread_Mutex> guard(SchedulerLock);
     // we will use only 1 number created of bgTypeId and bracket_id
     uint64 schedule_id = ((uint64)arenaRating << 32) | (arenaType << 24) | (bgQueueTypeId << 16) | (bgTypeId << 8) | bracket_id;
     bool found = false;

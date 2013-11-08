@@ -254,7 +254,7 @@ private:
 };
 
 //class for managing TerrainData object and all sort of geometry querying operations
-class MANGOS_DLL_DECL TerrainManager : public MaNGOS::Singleton<TerrainManager, MaNGOS::ClassLevelLockable<TerrainManager, MANGOSR2_MUTEX_MODEL> >
+class MANGOS_DLL_DECL TerrainManager : public MaNGOS::Singleton<TerrainManager, MaNGOS::ClassLevelLockable<TerrainManager, ACE_Thread_Mutex> >
 {
     typedef UNORDERED_MAP<uint32,  TerrainInfoPtr> TerrainDataMap;
     friend class MaNGOS::OperatorNew<TerrainManager>;

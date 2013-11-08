@@ -538,7 +538,7 @@ class ScriptMgr
         MANGOS_LIBRARY_HANDLE   m_hScriptLib;
 
         //atomic op counter for active scripts amount
-        ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL, long> m_scheduledScripts;
+        ACE_Atomic_Op<ACE_Thread_Mutex, long> m_scheduledScripts;
 
         void (MANGOS_IMPORT* m_pOnInitScriptLibrary)();
         void (MANGOS_IMPORT* m_pOnFreeScriptLibrary)();
