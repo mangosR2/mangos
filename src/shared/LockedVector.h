@@ -34,7 +34,7 @@ namespace ACE_Based
     {
         public:
 
-        typedef   MANGOSR2_MUTEX_MODEL         LockType;
+        typedef   MANGOSR2_MUTEX_MODEL_2       LockType;
         typedef   ACE_Read_Guard<LockType>     ReadGuard;
         typedef   ACE_Write_Guard<LockType>    WriteGuard;
 
