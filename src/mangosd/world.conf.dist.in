@@ -271,16 +271,16 @@ MaxCoreStuckTime = 0
 AddonChannel = 1
 CleanCharacterDB = 1
 WorldState.ExpireTime = 604800
-MapUpdate.Threads = 3
-MapUpdate.DynamicThreadsCount = 0
+MapUpdate.Threads = 1
+MapUpdate.DynamicThreadsCount = 1
 MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
 ObjectLoadingSplitter.MaxAllowedTime = 10
-Calendar.RemoveExpiredEvents = -1
-MapUpdate.PositionUpdateDelay = 2000
-vmap.Dynamic.DoubleCheck = 0
+Calendar.RemoveExpiredEvents = 0
+MapUpdate.PositionUpdateDelay = 400
+vmap.Dynamic.DoubleCheck = 1
 
 ###################################################################################################################
 # SERVER LOGGING
@@ -1101,7 +1101,7 @@ CharactersCreatingDisabled = 0
 CharactersPerAccount = 50
 CharactersPerRealm = 10
 HeroicCharactersPerRealm = 1
-MinLevelForHeroicCharacterCreating = 55
+MinLevelForHeroicCharacterCreating = 1
 SkipCinematics = 0
 MaxPlayerLevel = 80
 StartPlayerLevel = 1
@@ -2003,7 +2003,7 @@ OutdoorPvp.WGEnabled = 1
 Network.Threads = 4
 Network.OutKBuff = -1
 Network.OutUBuff = 65536
-Network.TcpNodelay = 1
+Network.TcpNodelay = 0
 Network.KickOnBadPacket = 0
 
 ###################################################################################################################
@@ -2350,7 +2350,7 @@ PvPToken.MapRestriction = 4
 #                0 - disabled
 ###################################################################################################################
 
-PvPAnnouncer.Enable = 0
+PvPAnnouncer.Enable = 1
 PvPAnnouncer.ColorKiller = |CFFFFFF01
 PvPAnnouncer.ColorKilled = |CFFFFFF01
 PvPAnnouncer.ColorArea = |CFFFE8A0E
