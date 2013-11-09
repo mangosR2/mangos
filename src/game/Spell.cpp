@@ -2405,17 +2405,20 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
         }
         case TARGET_AREAEFFECT_INSTANT:
         {
-            SpellTargets targetB = SPELL_TARGETS_AOE_DAMAGE;
+            SpellTargets targetB;
             switch (m_spellInfo->Effect[effIndex])
             {
                 case SPELL_EFFECT_QUEST_COMPLETE:
                 case SPELL_EFFECT_KILL_CREDIT_PERSONAL:
                 case SPELL_EFFECT_KILL_CREDIT_GROUP:
                     targetB = SPELL_TARGETS_ALL;
+                    break;
                 default:
                     // Select friendly targets for positive effect
                     if (IsPositiveEffect(m_spellInfo, effIndex))
                         targetB = SPELL_TARGETS_FRIENDLY;
+                    else
+                        targetB = SPELL_TARGETS_AOE_DAMAGE;
             }
 
             UnitList tempTargetUnitMap;
@@ -2690,18 +2693,18 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
             break;
         case TARGET_UNIT_CREATOR:
         {
-            WorldObject* caster = GetAffectiveCasterObject(); 
-            if (!caster) 
-                return; 
+            WorldObject* caster = GetAffectiveCasterObject();
+            if (!caster)
+                return;
 
-            if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTemporarySummon()) 
-                targetUnitMap.push_back(((TemporarySummon*)(Creature*)caster)->GetSummoner()); 
-            else if (caster->GetTypeId() == TYPEID_GAMEOBJECT && !((GameObject*)caster)->HasStaticDBSpawnData()) 
-                targetUnitMap.push_back(((GameObject*)caster)->GetOwner()); 
+            if (caster->GetTypeId() == TYPEID_UNIT && ((Creature*)caster)->IsTemporarySummon())
+                targetUnitMap.push_back(((TemporarySummon*)(Creature*)caster)->GetSummoner());
+            else if (caster->GetTypeId() == TYPEID_GAMEOBJECT && !((GameObject*)caster)->HasStaticDBSpawnData())
+                targetUnitMap.push_back(((GameObject*)caster)->GetOwner());
             else if (Unit* target = m_caster->GetCreator())
                 targetUnitMap.push_back(target);
-             else 
-                sLog.outError("Spell::SetTargetMap: Spell ID %u with target ID %u was used by unhandled object %s.", m_spellInfo->Id, targetMode, caster->GetGuidStr().c_str()); 
+             else
+                sLog.outError("Spell::SetTargetMap: Spell ID %u with target ID %u was used by unhandled object %s.", m_spellInfo->Id, targetMode, caster->GetGuidStr().c_str());
             break;
         }
         case TARGET_OWNED_VEHICLE:
@@ -6820,9 +6823,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                     return SPELL_FAILED_ONLY_ABOVEWATER;
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
-                if (m_caster->GetTypeId() == TYPEID_PLAYER && 
-                        (m_caster->GetMap() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed()) && 
-                        !m_IsTriggeredSpell && 
+                if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+                        (m_caster->GetMap() && !sMapStore.LookupEntry(m_caster->GetMapId())->IsMountAllowed()) &&
+                        !m_IsTriggeredSpell &&
                         !m_spellInfo->AreaGroupId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 
