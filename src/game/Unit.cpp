@@ -9334,8 +9334,9 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
     if (damageInfo->damage == 0 || ( damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)))
         return;
 
-    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
-    MAPLOCK_READ1(pVictim,MAP_LOCK_TYPE_AURAS);
+    MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
+    if (GetMap() != pVictim->GetMap())
+        MAPLOCK_READ1(pVictim, MAP_LOCK_TYPE_AURAS);
 
     // differentiate for weapon damage based spells
     bool isWeaponDamageBasedSpell = !(damageInfo->GetSpellProto() && (damageInfo->damageType == DOT || IsSpellHaveEffect(damageInfo->GetSpellProto(), SPELL_EFFECT_SCHOOL_DAMAGE)));
