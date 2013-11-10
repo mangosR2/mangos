@@ -60,7 +60,7 @@ template<> class hash <RafLinkedPair>
 };
 HASH_NAMESPACE_END
 
-class AccountMgr : public MaNGOS::Singleton<AccountMgr, MaNGOS::ClassLevelLockable<AccountMgr, ACE_Thread_Mutex> >
+class AccountMgr : public MaNGOS::Singleton<AccountMgr, MaNGOS::ClassLevelLockable<AccountMgr, MANGOSR2_MUTEX_MODEL_2> >
 {
     public:
         AccountMgr();

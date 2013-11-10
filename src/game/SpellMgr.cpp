@@ -1271,9 +1271,9 @@ void SpellMgr::LoadSpellTargetPositions()
         bool found = false;
         for(int i = 0; i < MAX_EFFECT_INDEX; ++i)
         {
-            if (spellInfo->EffectImplicitTargetA[i] == TARGET_TABLE_X_Y_Z_COORDINATES || 
+            if (spellInfo->EffectImplicitTargetA[i] == TARGET_TABLE_X_Y_Z_COORDINATES ||
                 spellInfo->EffectImplicitTargetB[i] == TARGET_TABLE_X_Y_Z_COORDINATES ||
-                spellInfo->EffectImplicitTargetA[i] == TARGET_SCRIPT_COORDINATES || 
+                spellInfo->EffectImplicitTargetA[i] == TARGET_SCRIPT_COORDINATES ||
                 spellInfo->EffectImplicitTargetB[i] == TARGET_SCRIPT_COORDINATES ||
                 spellInfo->EffectImplicitTargetB[i] == TARGET_SELF2)
             {
@@ -2286,19 +2286,19 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
                 if (spellInfo_2->GetSpellFamilyFlags().test<CF_PALADIN_BLESSING_OF_KINGS>())
                     return true;
             }
-            // Black Hole (damage) and Black Hole (phase) 
+            // Black Hole (damage) and Black Hole (phase)
             if (MatchedSpellIdPair(62169, 62168))
-                return false; 
+                return false;
 
-            // Black Hole (damage) and Worm Hole (phase) 
+            // Black Hole (damage) and Worm Hole (phase)
             if (MatchedSpellIdPair(62169, 65250))
-                return false; 
+                return false;
 
-            // Black Hole (damage) and Phase Punch (phase) 
+            // Black Hole (damage) and Phase Punch (phase)
             if (MatchedSpellIdPair(62169, 64417))
                 return false;
 
-            // Auto Grow and Healthy Spore Visual 
+            // Auto Grow and Healthy Spore Visual
             if (MatchedSpellIdPair(62559, 62538))
                 return false;
 
@@ -2664,7 +2664,7 @@ uint32 SpellMgr::GetSpellMaxTargetsWithCustom(SpellEntry const* spellInfo, Unit 
                 case 62374:                                 // Pursued (Ulduar, Flame Leviathan)
                 case 62400:                                 // Missile Barrage (Ulduar, Flame Leviathan)
                 case 62488:                                 // Activate Construct (Ulduar, Ignis)
-                case 62577:                                 // Blizzard (Ulduar, Thorim) 
+                case 62577:                                 // Blizzard (Ulduar, Thorim)
                 case 62603:                                 // Blizzard (h) (Ulduar, Thorim)
                 case 62797:                                 // Storm Cloud (Ulduar, Hodir)
                 case 63018:                                 // Searing Light
@@ -5494,7 +5494,7 @@ uint32 GetProcFlag(SpellEntry const* spellInfo)
 
 ClassFamilyMask const ClassFamilyMask::Null = ClassFamilyMask();
 
-bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
+bool IsEffectCauseDamage(SpellEntry const* spellInfo, SpellEffectIndex effecIdx)
 {
     if (!spellInfo)
         return false;
@@ -5506,6 +5506,9 @@ bool IsEffectCauseDamage(SpellEntry const *spellInfo, SpellEffectIndex effecIdx)
         case SPELL_EFFECT_DISPEL:
         case SPELL_EFFECT_TRIGGER_SPELL:
         case SPELL_EFFECT_DISPEL_MECHANIC:
+        case SPELL_EFFECT_QUEST_COMPLETE:
+        case SPELL_EFFECT_KILL_CREDIT_PERSONAL:
+        case SPELL_EFFECT_KILL_CREDIT_GROUP:
             return false;
 
         case SPELL_EFFECT_SCHOOL_DAMAGE:

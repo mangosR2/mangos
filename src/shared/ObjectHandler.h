@@ -37,21 +37,17 @@ class TerrainInfo;
 class GridMap;
 
 #ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
+    OBJECT_SAFE_HANDLER(TerrainInfo,TerrainInfoPtr);
+    OBJECT_SAFE_HANDLER(GridMap,GridMapPtr);
     OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
 #else
     OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
+    OBJECT_HANDLER(TerrainInfo,TerrainInfoPtr);
+    OBJECT_HANDLER(GridMap,GridMapPtr);
 #endif
 
 OBJECT_HANDLER(UnitAction,UnitActionPtr);
 OBJECT_HANDLER(VehicleKit,VehicleKitPtr);
 OBJECT_HANDLER(Map,MapPtr);
-
-#ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
-    OBJECT_SAFE_HANDLER(TerrainInfo,TerrainInfoPtr);
-    OBJECT_SAFE_HANDLER(GridMap,GridMapPtr);
-#else
-    OBJECT_HANDLER(TerrainInfo,TerrainInfoPtr);
-    OBJECT_HANDLER(GridMap,GridMapPtr);
-#endif
 
 #endif

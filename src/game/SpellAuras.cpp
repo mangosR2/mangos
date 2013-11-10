@@ -3758,6 +3758,20 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     else
                         target->m_AuraFlags &= ~UNIT_AURAFLAG_ALIVE_INVISIBLE;
                     return;
+                case 70733:                                 // Stoneform (ICC))
+                {
+                    target->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_OOC_NOT_ATTACKABLE, apply);
+                    target->SetUInt32Value(UNIT_NPC_EMOTESTATE, apply ? EMOTE_STATE_CUSTOM_SPELL_02 : 0);
+                    return;
+                }
+                case 73077:                                 // Rocket Pack (ICC, Gunship Battle)
+                {
+                    if (apply)
+                        target->CastSpell(target, 69188, true);
+                    else
+                        target->RemoveAurasDueToSpell(69188);
+                    return;
+                }
             }
             break;
         }

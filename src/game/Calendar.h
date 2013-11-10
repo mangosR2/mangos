@@ -208,7 +208,7 @@ private:
 typedef UNORDERED_MAP<ObjectGuid, CalendarInvite> CalendarInviteStore;
 typedef UNORDERED_MAP<ObjectGuid, CalendarEvent> CalendarEventStore;
 
-class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLockable<CalendarMgr, ACE_Thread_Mutex> >
+class CalendarMgr : public MaNGOS::Singleton<CalendarMgr, MaNGOS::ClassLevelLockable<CalendarMgr, MANGOSR2_MUTEX_MODEL_2> >
 {
     public:
         CalendarMgr();

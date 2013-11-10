@@ -319,7 +319,7 @@ inline void AddToWorldStateSet(WorldStateSet** wss, WorldState const* wState)
     (*wss)->add(wState);
 }
 
-class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, ACE_Thread_Mutex> >
+class MANGOS_DLL_DECL WorldStateMgr : public MaNGOS::Singleton<WorldStateMgr, MaNGOS::ClassLevelLockable<WorldStateMgr, MANGOSR2_MUTEX_MODEL_2> >
 {
     public:
         WorldStateMgr() {}
