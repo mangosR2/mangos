@@ -71,6 +71,13 @@ uint32 GameEventMgr::NextCheck(uint16 entry) const
 
 void GameEventMgr::StartEvent(uint16 event_id, bool overwrite /*=false*/, bool resume /*=false*/)
 {
+
+    if(event_id > mGameEvent.size())
+    {
+        sLog.outError("Attempted to start event %u which is above size of mGameEvent.", event_id);
+        return;
+    }
+
     ApplyNewEvent(event_id, resume);
     if (overwrite)
     {

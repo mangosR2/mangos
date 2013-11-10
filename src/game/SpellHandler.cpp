@@ -740,6 +740,9 @@ void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
         images.front()->GetId(),
         pCaster ? pCaster->GetObjectGuid().GetString().c_str() : "<none>");
 
+    if (!pCaster)
+        return;
+
     WorldPacket data(SMSG_MIRRORIMAGE_DATA, 68);
 
     data << guid;

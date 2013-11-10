@@ -309,6 +309,8 @@ bool AchievementCriteriaRequirement::Meets(uint32 criteria_id, Player const* sou
             return source->HasAura(aura.spell_id, SpellEffectIndex(aura.effect_idx));
         case ACHIEVEMENT_CRITERIA_REQUIRE_S_AREA:
         {
+            if (!source || !source->GetMap())
+                return false;
             uint32 zone_id, area_id;
             source->GetZoneAndAreaId(zone_id, area_id);
             return area.id == zone_id || area.id == area_id;
