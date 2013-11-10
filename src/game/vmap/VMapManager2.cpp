@@ -45,6 +45,10 @@ namespace VMAP
         {
             delete i->second;
         }
+        for (ModelFileMap::iterator i = iLoadedModelFiles.begin(); i != iLoadedModelFiles.end(); ++i)
+        {
+            delete i->second.getModel();
+        }
     }
 
     //=========================================================
@@ -254,47 +258,41 @@ namespace VMAP
 
     //=========================================================
 
-    WorldModelPtr VMapManager2::acquireModelInstance(std::string const& basepath, std::string const& filename)
+    WorldModel* VMapManager2::acquireModelInstance(const std::string& basepath, const std::string& filename)
     {
-        ModelFileMap::iterator model = getModelInstance(filename);
+        ModelFileMap::iterator model = iLoadedModelFiles.find(filename);
         if (model == iLoadedModelFiles.end())
         {
-            WorldModelPtr worldmodel = WorldModelPtr(new WorldModel());
+            WorldModel* worldmodel = new WorldModel();
             if (!worldmodel->readFile(basepath + filename + ".vmo"))
             {
-                ERROR_LOG("VMapManager2::acquireModelInstance could not load '%s%s.vmo'!", basepath.c_str(), filename.c_str());
-                return WorldModelPtr();
+                ERROR_LOG("VMapManager2: could not load '%s%s.vmo'!", basepath.c_str(), filename.c_str());
+                delete worldmodel;
+                return NULL;
             }
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "VMapManager2::acquireModelInstance loading file '%s%s'.", basepath.c_str(), filename.c_str());
-            WriteGuard Guard(GetLock());
-            model = (iLoadedModelFiles.insert(ModelFileMap::value_type(filename, worldmodel))).first;
+            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "VMapManager2: loading file '%s%s'.", basepath.c_str(), filename.c_str());
+            model = iLoadedModelFiles.insert(std::pair<std::string, ManagedModel>(filename, ManagedModel())).first;
+            model->second.setModel(worldmodel);
         }
-        return model->second;
+        model->second.incRefCount();
+        return model->second.getModel();
     }
 
-    void VMapManager2::releaseModelInstance(std::string const& filename)
+    void VMapManager2::releaseModelInstance(const std::string& filename)
     {
-        ModelFileMap::iterator model = getModelInstance(filename);
+        ModelFileMap::iterator model = iLoadedModelFiles.find(filename);
         if (model == iLoadedModelFiles.end())
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"VMapManager2::releaseModelInstance concurrent unloading file %s", filename.c_str());
+            ERROR_LOG("VMapManager2: trying to unload non-loaded file '%s'!", filename.c_str());
             return;
         }
-        if (model->second.count() == 1)
+        if (model->second.decRefCount() == 0)
         {
-            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "VMapManager2::releaseModelInstance unloading file '%s'", filename.c_str());
-            WriteGuard Guard(GetLock());
+            DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING, "VMapManager2: unloading file '%s'", filename.c_str());
+            delete model->second.getModel();
             iLoadedModelFiles.erase(model);
-            // model be auto-erased after method finish
         }
     }
-
-    ModelFileMap::iterator VMapManager2::getModelInstance(std::string const& filename)
-    {
-        ReadGuard Guard(GetLock());
-        return iLoadedModelFiles.find(filename);
-    }
-
     //=========================================================
 
     bool VMapManager2::existsMap(const char* pBasePath, unsigned int pMapId, int x, int y)
