@@ -6811,6 +6811,10 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             target->CastSpell(target, 74607, true, NULL, NULL, GetCasterGuid());
         else if (spellProto->Id == 74792) // SPELL_SOUL_CONSUMPTION - Ruby sanctum boss Halion
             target->CastSpell(target, 74799, true, NULL, NULL, GetCasterGuid());
+        else if (spellProto->Id == 55053)
+            target->CastSpell(target, 55601, true);
+        else if (spellProto->Id == 29865)
+            target->CastSpell(target, 55594, true);
         // Void Shifted
         else if (spellProto->Id == 54361 || spellProto->Id == 59743)
             target->CastSpell(target, 54343, true, NULL, NULL, GetCasterGuid());
