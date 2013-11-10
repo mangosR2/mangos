@@ -36,6 +36,7 @@
 WorldObjectEventProcessor::WorldObjectEventProcessor()
 {
     //m_time = WorldTimer::getMSTime();
+    WriteGuard Guard(GetLock());
     m_events.clear();
 }
 
@@ -44,15 +45,19 @@ void WorldObjectEventProcessor::Update(uint32 p_time, bool force)
     if (force)
         RenewEvents();
 
+    ReadGuard Guard(GetLock());
     EventProcessor::Update(p_time);
 }
 
 void WorldObjectEventProcessor::KillAllEvents(bool force)
 {
     if (force)
+    {
         RenewEvents();
-
-    EventProcessor::KillAllEvents(force);
+        EventProcessor::KillAllEvents(force);
+    }
+    else
+        SetNeedKill(true);
 }
 
 void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
@@ -67,6 +72,14 @@ void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool 
 void WorldObjectEventProcessor::RenewEvents()
 {
     bool needInsert;
+    WriteGuard Guard(GetLock());
+
+    if (IsNeedKill())
+    {
+        EventProcessor::KillAllEvents(false);
+        SetNeedKill(false);
+    }
+
     while (!m_queue.empty())
     {
         if (m_queue.front().second)
@@ -105,8 +118,7 @@ void WorldObjectEventProcessor::RenewEvents()
 
 void WorldObjectEventProcessor::CleanupEventList()
 {
-    KillAllEvents(true);
-    m_aborting = false;
+    KillAllEvents(false);
 }
 
 // Spell events

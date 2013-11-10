@@ -2816,13 +2816,11 @@ WorldObjectEventProcessor* Map::GetEvents()
 
 void Map::KillAllEvents(bool force)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     GetEvents()->KillAllEvents(force);
 }
 
 void Map::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 {
-    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
     if (set_addtime)
         GetEvents()->AddEvent(Event, GetEvents()->CalculateTime(e_time), set_addtime);
     else
@@ -2831,10 +2829,7 @@ void Map::AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime)
 
 void Map::UpdateEvents(uint32 update_diff)
 {
-    {
-        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
-        GetEvents()->RenewEvents();
-    }
+    GetEvents()->RenewEvents();
     GetEvents()->Update(update_diff);
 }
 
