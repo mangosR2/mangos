@@ -25,9 +25,14 @@
 #include <G3D/Ray.h>
 #include "../DBCStructure.h"
 #include "../GameObject.h"
-#include "VMapManager2.h"
 
 #include "Platform/Define.h"
+
+namespace VMAP
+{
+    class WorldModel;
+}
+
 
 class GameObjectModel
 {
@@ -38,9 +43,9 @@ class GameObjectModel
     //G3D::Vector3 iRot;
     float iInvScale;
     float iScale;
-    VMAP::ManagedModel iModel;
+    VMAP::WorldModel *iModel;
 
-    GameObjectModel() : phasemask(0), iModel(VMAP::ManagedModel()) {}
+    GameObjectModel() : phasemask(0), iModel(NULL) {}
     bool initialize(const GameObject* const pGo, const GameObjectDisplayInfoEntry* info);
 
 public:

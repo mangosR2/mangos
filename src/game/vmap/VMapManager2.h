@@ -45,7 +45,18 @@ namespace VMAP
     class StaticMapTree;
     class WorldModel;
 
-    typedef ACE_Refcounted_Auto_Ptr<WorldModel,MANGOSR2_MUTEX_MODEL_2> ManagedModel;
+    class ManagedModel
+    {
+        public:
+            ManagedModel(): iModel(0), iRefCount(0) {}
+            void setModel(WorldModel* model) { iModel = model; }
+            WorldModel* getModel() { return iModel; }
+            void incRefCount() { ++iRefCount; }
+            int decRefCount() { return --iRefCount; }
+        protected:
+            WorldModel* iModel;
+            int iRefCount;
+    };
 
     typedef UNORDERED_MAP<uint32 , StaticMapTree*> InstanceTreeMap;
     typedef UNORDERED_MAP<std::string, ManagedModel> ModelFileMap;
@@ -85,7 +96,7 @@ namespace VMAP
             bool getAreaInfo(unsigned int pMapId, float x, float y, float &z, uint32 &flags, int32 &adtId, int32 &rootId, int32 &groupId) const;
             bool GetLiquidLevel(uint32 pMapId, float x, float y, float z, uint8 ReqLiquidType, float &level, float &floor, uint32 &type) const;
 
-            ManagedModel acquireModelInstance(const std::string &basepath, const std::string &filename);
+            WorldModel* acquireModelInstance(const std::string &basepath, const std::string &filename);
             void releaseModelInstance(const std::string &filename);
 
             // what's the use of this? o.O
