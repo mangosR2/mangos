@@ -1997,6 +1997,7 @@ bool Map::ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* sourc
 
     if (execParams)                                         // Check if the execution should be uniquely
     {
+        ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
         for (ScriptScheduleMap::const_iterator searchItr = m_scriptSchedule.begin(); searchItr != m_scriptSchedule.end(); ++searchItr)
         {
             if (searchItr->second.IsSameScript(scripts.first, id,
@@ -2014,10 +2015,9 @@ bool Map::ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* sourc
     for (ScriptMap::const_iterator iter = s2->begin(); iter != s2->end(); ++iter)
     {
         ScriptAction sa(scripts.first, this, sourceGuid, targetGuid, ownerGuid, &iter->second);
-
-        m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + iter->first), sa));
-
         sScriptMgr.IncreaseScheduledScriptsCount();
+        WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+        m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + iter->first), sa));
     }
 
     return true;
@@ -2033,51 +2033,65 @@ void Map::ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* sou
     ObjectGuid ownerGuid  = source->isType(TYPEMASK_ITEM) ? ((Item*)source)->GetOwnerGuid() : ObjectGuid();
 
     ScriptAction sa("Internal Activate Command used for spell", this, sourceGuid, targetGuid, ownerGuid, &script);
-
-    m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + delay), sa));
-
     sScriptMgr.IncreaseScheduledScriptsCount();
+
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    m_scriptSchedule.insert(ScriptScheduleMap::value_type(time_t(sWorld.GetGameTime() + delay), sa));
 }
 
 /// Process queued scripts
 void Map::ScriptsProcess()
 {
-    if (m_scriptSchedule.empty())
-        return;
-
-    ///- Process overdue queued scripts
-    ScriptScheduleMap::iterator iter = m_scriptSchedule.begin();
     // ok as multimap is a *sorted* associative container
-    while (!m_scriptSchedule.empty() && (iter->first <= sWorld.GetGameTime()))
+    while (ScriptAction* action = GetNextSheduledScript())
     {
-        if (iter->second.HandleScriptStep())
+        if (action->HandleScriptStep())
         {
             // Terminate following script steps of this script
-            const char* tableName = iter->second.GetTableName();
-            uint32 id = iter->second.GetId();
-            ObjectGuid sourceGuid = iter->second.GetSourceGuid();
-            ObjectGuid targetGuid = iter->second.GetTargetGuid();
-            ObjectGuid ownerGuid = iter->second.GetOwnerGuid();
+            const char* tableName = action->GetTableName();
+            uint32 id = action->GetId();
+            ObjectGuid sourceGuid = action->GetSourceGuid();
+            ObjectGuid targetGuid = action->GetTargetGuid();
+            ObjectGuid ownerGuid = action->GetOwnerGuid();
 
-            for (ScriptScheduleMap::iterator rmItr = m_scriptSchedule.begin(); rmItr != m_scriptSchedule.end();)
+            for (ScriptScheduleMap::iterator rmItr = m_scriptSchedule.begin(); rmItr != m_scriptSchedule.end(); ++rmItr)
             {
                 if (rmItr->second.IsSameScript(tableName, id, sourceGuid, targetGuid, ownerGuid))
                 {
-                    m_scriptSchedule.erase(rmItr++);
-                    sScriptMgr.DecreaseScheduledScriptCount();
+                    if (EraseScriptAction(&rmItr->second))
+                        rmItr = m_scriptSchedule.begin();
                 }
-                else
-                    ++rmItr;
             }
         }
         else
-        {
-            m_scriptSchedule.erase(iter);
-
-            sScriptMgr.DecreaseScheduledScriptCount();
-        }
-        iter = m_scriptSchedule.begin();
+            EraseScriptAction(action);
     }
+}
+
+ScriptAction* Map::GetNextSheduledScript()
+{
+    ReadGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    if (m_scriptSchedule.empty())
+        return NULL;
+    ScriptScheduleMap::iterator iter = m_scriptSchedule.begin();
+    return (iter->first <= sWorld.GetGameTime()) ? &iter->second : NULL;
+}
+
+bool Map::EraseScriptAction(ScriptAction* action)
+{
+    WriteGuard Guard(GetLock(MAP_LOCK_TYPE_MAPOBJECTS), true);
+    if (m_scriptSchedule.empty())
+        return false;
+    for (ScriptScheduleMap::iterator itr = m_scriptSchedule.begin(); itr != m_scriptSchedule.end(); ++itr)
+    {
+        if (&itr->second == action)
+        {
+            m_scriptSchedule.erase(itr);
+            sScriptMgr.DecreaseScheduledScriptCount();
+            return true;
+        }
+    }
+    return false;
 }
 
 /**

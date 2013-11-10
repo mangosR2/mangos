@@ -329,6 +329,8 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         };
         bool ScriptsStart(ScriptMapMapName const& scripts, uint32 id, Object* source, Object* target, ScriptExecutionParam execParams = SCRIPT_EXEC_PARAM_NONE);
         void ScriptCommandStart(ScriptInfo const& script, uint32 delay, Object* source, Object* target);
+        ScriptAction* GetNextSheduledScript();
+        bool EraseScriptAction(ScriptAction* action);
 
         // must called with AddToWorld
         void AddToActive(WorldObject* obj);
