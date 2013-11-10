@@ -3478,6 +3478,9 @@ void Spell::SetTargetMap(SpellEffectIndex effIndex, uint32 targetMode, UnitList&
 
 void Spell::prepare(SpellCastTargets const* targets, Aura const* triggeredByAura)
 {
+    if (!m_caster || !m_caster->IsInWorld())
+        return;
+
     m_targets = *targets;
 
     m_spellState = SPELL_STATE_PREPARING;
