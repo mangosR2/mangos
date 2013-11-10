@@ -36,6 +36,7 @@
 WorldObjectEventProcessor::WorldObjectEventProcessor()
 {
     //m_time = WorldTimer::getMSTime();
+    WriteGuard Guard(GetLock());
     m_events.clear();
 }
 
@@ -44,6 +45,7 @@ void WorldObjectEventProcessor::Update(uint32 p_time, bool force)
     if (force)
         RenewEvents();
 
+    ReadGuard Guard(GetLock());
     EventProcessor::Update(p_time);
 }
 
@@ -52,6 +54,7 @@ void WorldObjectEventProcessor::KillAllEvents(bool force)
     if (force)
         RenewEvents();
 
+    WriteGuard Guard(GetLock());
     EventProcessor::KillAllEvents(force);
 }
 
@@ -67,6 +70,7 @@ void WorldObjectEventProcessor::AddEvent(BasicEvent* Event, uint64 e_time, bool 
 void WorldObjectEventProcessor::RenewEvents()
 {
     bool needInsert;
+    WriteGuard Guard(GetLock());
     while (!m_queue.empty())
     {
         if (m_queue.front().second)
