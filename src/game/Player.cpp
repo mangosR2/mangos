@@ -23682,6 +23682,8 @@ void Player::ActivateSpec(uint8 specNum)
     if (GetActiveSpec() == specNum || specNum >= GetSpecsCount())
         return;
 
+    if(GetBattleGround() && GetBattleGround()->GetStatus() == STATUS_IN_PROGRESS)
+        return;
 
     if (Pet* pet = GetPet())
         pet->Unsummon(PET_SAVE_REAGENTS, this);
