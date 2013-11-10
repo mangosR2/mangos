@@ -1031,7 +1031,7 @@ void PlayerbotAI::InterruptSpell()
 
         bot->InterruptSpell((CurrentSpellTypes)type);
 
-        WorldPacket data(SMSG_SPELL_FAILURE, 8 + 1 + 4 + 1);
+        WorldPacket data(SMSG_SPELL_FAILURE, m_caster->GetPackGUID().size() + 1 + 4 + 1);
         data << bot->GetPackGUID();
         data << uint8(1);
         data << uint32(spell->m_spellInfo->Id);
