@@ -2408,3 +2408,19 @@ TransportBase* WorldObject::GetTransportBase()
 
     return NULL;
 }
+
+void WorldObject::UpdateHelper::Update(uint32 time_diff)
+{
+    if (m_obj.SkipUpdate())
+    {
+        m_obj.SkipUpdate(false);
+        return;
+    }
+    uint32 realDiff = m_obj.m_updateTracker.timeElapsed();
+    if (realDiff < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
+        return;
+
+    m_obj.m_updateTracker.Reset();
+    m_obj.Update(realDiff, time_diff);
+    m_obj.SetLastUpdateTime();
+}

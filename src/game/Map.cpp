@@ -642,14 +642,6 @@ void Map::Update(const uint32 &t_diff)
         if (!obj || !obj->IsInWorld())
             continue;
 
-        uint32 lastUpdateTime = obj->GetLastUpdateTime();
-        uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
-
-        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
-            continue;
-
-        obj->SetLastUpdateTime();
-
         switch (guid.GetHigh())
         {
             case HIGHGUID_PLAYER:
@@ -657,7 +649,7 @@ void Map::Update(const uint32 &t_diff)
                 Player* plr = dynamic_cast<Player*>(obj);
                 if (plr)
                 {
-                    WorldObject::UpdateHelper helper(plr);
+                    WorldObject::UpdateHelper helper(*plr);
                     helper.Update(t_diff);
                 }
                 break;
@@ -667,7 +659,7 @@ void Map::Update(const uint32 &t_diff)
                 // FIXME - temphack for update active MO_TRANSPORT objects
                 if (obj->isActiveObject() && obj->IsPositionValid())
                 {
-                    WorldObject::UpdateHelper helper(obj);
+                    WorldObject::UpdateHelper helper(*obj);
                     helper.Update(t_diff);
                 }
                 break;
