@@ -329,6 +329,8 @@ Unit::~Unit()
     }
     delete m_HostileRefManager;
 
+    CleanupDeletedAuras();
+
     // those should be already removed at "RemoveFromWorld()" call
     MANGOS_ASSERT(m_gameObj.size() == 0);
     MANGOS_ASSERT(m_dynObjGuids.size() == 0);
