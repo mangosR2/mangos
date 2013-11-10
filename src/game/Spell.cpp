@@ -1620,6 +1620,9 @@ void Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask)
     if (!unit || !unit->isType(TYPEMASK_UNIT) || (!effectMask && !damage))
         return;
 
+    if (!unit->IsInWorld())
+        return;
+
     Unit* realCaster = GetAffectiveCaster();
 
     // Speed possible inherited from triggering spell
@@ -6213,6 +6216,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             return castResult;
     }
 
+    if(!m_IsTriggeredSpell)
     {
         SpellCastResult castResult = CheckPower();
         if (castResult != SPELL_CAST_OK)

@@ -474,7 +474,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recv_data)
             }
 
             // need to check team only for first character
-            // TODO: what to if account already has characters of both races?
+            // TODO: what to do if account already has characters of both races?
             if (!AllowTwoSideAccounts)
             {
                 if (acc_race == 0 || Player::TeamForRace(acc_race) != team_)
