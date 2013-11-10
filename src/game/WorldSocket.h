@@ -49,7 +49,7 @@ class WorldPacket;
 class WorldSession;
 
 /// Handler that can communicate over stream sockets.
-typedef ACE_Svc_Handler<ACE_SOCK_STREAM, ACE_NULL_SYNCH> WorldHandler;
+typedef ACE_Svc_Handler<ACE_SOCK_STREAM, ACE_MT_SYNCH> WorldHandler;
 
 /**
  * WorldSocket.
