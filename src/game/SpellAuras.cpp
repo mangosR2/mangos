@@ -3758,6 +3758,20 @@ void Aura::HandleAuraDummy(bool apply, bool Real)
                     else
                         target->m_AuraFlags &= ~UNIT_AURAFLAG_ALIVE_INVISIBLE;
                     return;
+                case 70733:                                 // Stoneform (ICC))
+                {
+                    target->ApplyModFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_OOC_NOT_ATTACKABLE, apply);
+                    target->SetUInt32Value(UNIT_NPC_EMOTESTATE, apply ? EMOTE_STATE_CUSTOM_SPELL_02 : 0);
+                    return;
+                }
+                case 73077:                                 // Rocket Pack (ICC, Gunship Battle)
+                {
+                    if (apply)
+                        target->CastSpell(target, 69188, true);
+                    else
+                        target->RemoveAurasDueToSpell(69188);
+                    return;
+                }
             }
             break;
         }
@@ -6797,6 +6811,10 @@ void Aura::HandlePeriodicDamage(bool apply, bool Real)
             target->CastSpell(target, 74607, true, NULL, NULL, GetCasterGuid());
         else if (spellProto->Id == 74792) // SPELL_SOUL_CONSUMPTION - Ruby sanctum boss Halion
             target->CastSpell(target, 74799, true, NULL, NULL, GetCasterGuid());
+        else if (spellProto->Id == 55053)
+            target->CastSpell(target, 55601, true);
+        else if (spellProto->Id == 29865)
+            target->CastSpell(target, 55594, true);
         // Void Shifted
         else if (spellProto->Id == 54361 || spellProto->Id == 59743)
             target->CastSpell(target, 54343, true, NULL, NULL, GetCasterGuid());

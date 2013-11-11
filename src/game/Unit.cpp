@@ -351,6 +351,10 @@ void Unit::Update(uint32 update_diff, uint32 p_time)
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
     // Or else we may have some SPELL_STATE_FINISHED spells stalled in pointers, that is bad.
     UpdateEvents(update_diff, p_time);
+
+    if(!IsInWorld())
+        return;
+ 
     _UpdateSpells( update_diff );
 
     {
@@ -408,10 +412,12 @@ void Unit::Update(uint32 update_diff, uint32 p_time)
 
     // update abilities available only for fraction of time
     UpdateReactives(update_diff);
-
-    ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
-    ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
-    ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth() * 0.75f);
+    if (isAlive())
+    {
+        ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, GetHealth() < GetMaxHealth() * 0.20f);
+        ModifyAuraState(AURA_STATE_HEALTHLESS_35_PERCENT, GetHealth() < GetMaxHealth() * 0.35f);
+        ModifyAuraState(AURA_STATE_HEALTH_ABOVE_75_PERCENT, GetHealth() > GetMaxHealth() * 0.75f);
+    }
     UpdateSplineMovement(p_time);
     GetUnitStateMgr().Update(p_time);
 }
@@ -9326,8 +9332,9 @@ void Unit::MeleeDamageBonusDone(DamageInfo* damageInfo, uint32 stack)
     if (damageInfo->damage == 0 || ( damageInfo->GetSpellProto() && damageInfo->GetSpellProto()->HasAttribute(SPELL_ATTR_EX6_NO_DMG_MODS)))
         return;
 
-    MAPLOCK_READ(this,MAP_LOCK_TYPE_AURAS);
-    MAPLOCK_READ1(pVictim,MAP_LOCK_TYPE_AURAS);
+    MAPLOCK_READ(this, MAP_LOCK_TYPE_AURAS);
+    if (GetMap() != pVictim->GetMap())
+        MAPLOCK_READ1(pVictim, MAP_LOCK_TYPE_AURAS);
 
     // differentiate for weapon damage based spells
     bool isWeaponDamageBasedSpell = !(damageInfo->GetSpellProto() && (damageInfo->damageType == DOT || IsSpellHaveEffect(damageInfo->GetSpellProto(), SPELL_EFFECT_SCHOOL_DAMAGE)));

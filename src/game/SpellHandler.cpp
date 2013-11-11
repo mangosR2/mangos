@@ -430,7 +430,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
             return;
         }
     }
-    else
+    else if (mover && mover->IsInWorld() && mover->GetTypeId() == TYPEID_UNIT)
     {
         // not have spell in spellbook or spell passive and not casted by client
         if ((!((Creature*)mover)->HasSpell(spellId) && !triggered)
@@ -739,6 +739,9 @@ void WorldSession::HandleGetMirrorimageData(WorldPacket& recv_data)
         guid.GetString().c_str(),
         images.front()->GetId(),
         pCaster ? pCaster->GetObjectGuid().GetString().c_str() : "<none>");
+
+    if (!pCaster)
+        return;
 
     WorldPacket data(SMSG_MIRRORIMAGE_DATA, 68);
 

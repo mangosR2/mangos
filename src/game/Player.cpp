@@ -6866,6 +6866,9 @@ bool Player::RewardHonor(Unit* uVictim, uint32 groupsize, float honor)
             if (GetTeam() == pVictim->GetTeam() && !sWorld.IsFFAPvPRealm())
                 return false;
 
+            if (!pVictim)
+                return false;
+
             float f = 1;                                    // need for total kills (?? need more info)
             uint32 k_grey = 0;
             uint32 k_level = getLevel();
@@ -23682,6 +23685,8 @@ void Player::ActivateSpec(uint8 specNum)
     if (GetActiveSpec() == specNum || specNum >= GetSpecsCount())
         return;
 
+    if(GetBattleGround() && GetBattleGround()->GetStatus() == STATUS_IN_PROGRESS)
+        return;
 
     if (Pet* pet = GetPet())
         pet->Unsummon(PET_SAVE_REAGENTS, this);

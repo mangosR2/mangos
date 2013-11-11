@@ -72,6 +72,7 @@
 # endif
 # define _MANGOSD_CONFIG  SYSCONFDIR"world.conf"
 # define _REALMD_CONFIG   SYSCONFDIR"login.conf"
+# define _MANGCHAT_CONFIG  SYSCONFDIR"mangchat.conf"
 # define _AUCTIONHOUSEBOT_CONFIG   SYSCONFDIR"ahbot.conf"
 #else
 # if defined  (__FreeBSD__)
@@ -91,6 +92,7 @@
 # endif
 # define _MANGOSD_CONFIG  SYSCONFDIR"world.conf"
 # define _REALMD_CONFIG  SYSCONFDIR"login.conf"
+# define _MANGCHAT_CONFIG  SYSCONFDIR"mangchat.conf"
 # define _AUCTIONHOUSEBOT_CONFIG   SYSCONFDIR"ahbot.conf"
 #endif
 

@@ -558,6 +558,11 @@ void LoadDBCStores(const std::string& dataPath)
                 sSpellEffectMap[spell->Id].effects[SpellEffectIndex(j)] = SpellEffectEntry(spell, SpellEffectIndex(j));
         }
     }
+    // DBC Hacks
+
+    //Throw Passanger
+    SpellEntry *sfix3 = const_cast<SpellEntry*>(sSpellStore.LookupEntry(62324));
+    sfix3->Targets |= TARGET_FLAG_UNIT_UNK;
 
     for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
     {
