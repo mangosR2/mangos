@@ -2438,6 +2438,8 @@ class MANGOS_DLL_SPEC Player : public Unit
         bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
         void SetTitle(CharTitlesEntry const* title, bool lost = false);
 
+        uint32 m_grid_update_timer;
+
         bool canSeeSpellClickOn(Creature const* creature) const;
 
         // Playerbot mod:

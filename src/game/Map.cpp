@@ -863,6 +863,13 @@ void Map::Relocation(Player* player, Position const& pos)
         player->GetViewPoint().Event_GridChanged(&(*newGrid)(new_cell.CellX(),new_cell.CellY()));
     }
 
+    // FG: attempt to use less CPU, reduce calling interval of CPU-intensive grid search to min. 500 ms
+    uint32 timems = WorldTimer::getMSTime();
+    if(WorldTimer::getMSTimeDiff(player->m_grid_update_timer, timems) >= 500)
+        player->m_grid_update_timer = timems;
+    else
+        return;
+
     player->OnRelocated();
 
     if (!same_cell)

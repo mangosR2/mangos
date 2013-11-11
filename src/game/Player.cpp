@@ -579,6 +579,8 @@ Player::Player(WorldSession* session): Unit(), m_mover(this), m_camera(NULL), m_
     m_lastFallTime = 0;
     m_lastFallZ = 0;
 
+    m_grid_update_timer = 0;
+
     m_chatSpyGuid.Clear();
 
     // Refer-A-Friend
