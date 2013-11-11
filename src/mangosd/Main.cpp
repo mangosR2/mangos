@@ -86,7 +86,7 @@ extern int main(int argc, char **argv)
     char const* cfg_file = _MANGOSD_CONFIG;
     char const* mc_cfg_file = _MANGCHAT_CONFIG;
 
-    char const *options = ":c:m:s:";
+    char const *options = ":a:c:m:s:";
 
     ACE_Get_Opt cmd_opts(argc, argv, options);
     cmd_opts.long_option("version", 'v', ACE_Get_Opt::NO_ARG);

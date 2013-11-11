@@ -415,7 +415,7 @@ vmap.Dynamic.DoubleCheck = 0
 
 LogSQL = 1
 PidFile = ""
-LogLevel = 3
+LogLevel = 1
 LogTime = 0
 LogFile = "Server.log"
 LogTimestamp = 1
