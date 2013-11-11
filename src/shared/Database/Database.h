@@ -275,7 +275,7 @@ class MANGOS_DLL_SPEC Database
 
         //connection helper counters
         int m_nQueryConnPoolSize;                               //current size of query connection pool
-        ACE_Atomic_Op<ACE_Thread_Mutex, long> m_nQueryCounter;  //counter for connection selection
+        ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL_2, long> m_nQueryCounter;  //counter for connection selection
 
         //lets use pool of connections for sync queries
         typedef std::vector< SqlConnection * > SqlConnectionContainer;
@@ -291,7 +291,7 @@ class MANGOS_DLL_SPEC Database
         bool m_bAllowAsyncTransactions;                      ///< flag which specifies if async transactions are enabled
 
         //PREPARED STATEMENT REGISTRY
-        typedef ACE_Thread_Mutex LOCK_TYPE;
+        typedef MANGOSR2_MUTEX_MODEL_2 LOCK_TYPE;
         typedef ACE_Guard<LOCK_TYPE> LOCK_GUARD;
 
         mutable LOCK_TYPE m_stmtGuard;

@@ -919,7 +919,7 @@ class MANGOS_DLL_SPEC WorldSession
         uint32 m_Tutorials[8];
         TutorialDataState m_tutorialState;
         AddonsList m_addonsList;
-        ACE_Based::LockedQueue<WorldPacket*, ACE_Thread_Mutex> _recvQueue;
+        ACE_Based::LockedQueue<WorldPacket*, MANGOSR2_MUTEX_MODEL_2> _recvQueue;
 
         // Warden
         WardenBase *m_Warden;
