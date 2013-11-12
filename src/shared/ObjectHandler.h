@@ -35,18 +35,15 @@ class VehicleKit;
 class Map;
 class TerrainInfo;
 class GridMap;
-namespace VMAP { class WorldModel; };
 
 #ifndef NOTSAFE_SEMAPHORE_OVERHANDLING
     OBJECT_SAFE_HANDLER(TerrainInfo,TerrainInfoPtr);
     OBJECT_SAFE_HANDLER(GridMap,GridMapPtr);
     OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
-    OBJECT_SAFE_HANDLER(VMAP::WorldModel, WorldModelPtr);
 #else
     OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
     OBJECT_HANDLER(TerrainInfo,TerrainInfoPtr);
     OBJECT_HANDLER(GridMap,GridMapPtr);
-    OBJECT_HANDLER(VMAP::WorldModel, WorldModelPtr);
 #endif
 
 OBJECT_HANDLER(UnitAction,UnitActionPtr);
