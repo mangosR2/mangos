@@ -179,9 +179,6 @@ BindIP = "0.0.0.0"
 #        Disable mmap pathfinding on the listed maps.
 #        List of map ids with delimiter ','
 #
-#    UpdateUptimeInterval
-#        Update realm uptime period in minutes (for save data in 'uptime' table). Must be > 0
-#        Default: 10 (minutes)
 #
 #    MaxCoreStuckTime
 #        Periodically check if the process got freezed, if this is the case force crash after the specified
@@ -266,7 +263,6 @@ DetectPosCollision = 1
 TargetPosRecalculateRange = 1.5
 mmap.enabled = 1
 mmap.ignoreMapIds = ""
-UpdateUptimeInterval = 10
 MaxCoreStuckTime = 0
 AddonChannel = 1
 CleanCharacterDB = 1
@@ -1234,14 +1230,10 @@ TalentsInspecting = 1
 #                 1 - notify
 #                 2 - both
 #
-#    AutoBroadcast.Timer
-#        Timer for auto broadcast
-#
 ###################################################################################################################
 
 AutoBroadcast.On = 0
 AutoBroadcast.Center = 0
-AutoBroadcast.Timer = 30000
 
 ###################################################################################################################
 # CREATURE AND GAMEOBJECT SETTINGS
@@ -2320,3 +2312,65 @@ VMSS.ContinentsSkip = 1
 ###################################################################################################################
 DuelReset.Enable = 0
 DuelReset.AreaIds = "12,14,4570"
+
+###################################################################################################################
+#    World timers
+#    Please, don't change defaults if not sure
+#
+#    Auctions.Timer (milliseconds)
+#        Timer for update auctions
+#        Default: 60000 (1 minute)
+#
+#    Weathers.Timer (milliseconds)
+#        Timer for update weaters in game
+#        Default: 60000 (1 minute)
+#
+#    UpdateUptimeInterval (minutes)
+#        Update realm uptime period in minutes (for save data in 'uptime' table). Must be > 0
+#        Default: 10 minutes
+#
+#    Corpse.Timer (minutes)
+#        Corpse delete timer
+#        Default: 20 minutes
+#
+#    CharDelete.Timer (hours)
+#        default interval for characters table cleanup from deleted chars
+#        Default: 8 hours
+#
+#    AHBot.Timer (milliseconds)
+#        Timer for update Auction bot
+#        Default: 20000 (20 seconds)
+#
+#    AutoBroadcast.Timer (milliseconds)
+#        Timer for auto broadcast
+#        Default: 30000 (30 seconds)
+#
+#    WorldState.Timer (milliseconds)
+#        Timer for update worldstates
+#        Default: 60000 (1 minute)
+#
+#    Calendar.Timer (milliseconds)
+#        Timer for update calendar events
+#        Default: 30000 (30 seconds)
+#
+#    Group.Timer (milliseconds)
+#        Timer for update group events
+#        Default: 1000 (1 second)
+#
+#    Terrain.Timer (milliseconds)
+#        Timer for cleanup terrains
+#        Default: 30000 (30 seconds)
+#
+###################################################################################################################
+
+Auctions.Timer       = 60000
+Weathers.Timer       = 60000
+UpdateUptimeInterval = 10
+Corpse.Timer         = 20
+CharDelete.Timer     = 8
+AHBot.Timer          = 20000
+AutoBroadcast.Timer  = 30000
+WorldState.Timer     = 60000
+Calendar.Timer       = 30000
+Groups.Timer         = 1000
+Terrain.Timer        = 30000

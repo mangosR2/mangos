@@ -757,13 +757,6 @@ void World::LoadConfigSettings(bool reload)
 
     setConfigMin(CONFIG_UINT32_MASS_MAILER_SEND_PER_TICK, "MassMailer.SendPerTick", 10, 1);
 
-    setConfig(CONFIG_UINT32_UPTIME_UPDATE, "UpdateUptimeInterval", 10);
-    if (reload)
-    {
-        m_timers[WUPDATE_UPTIME].SetInterval(getConfig(CONFIG_UINT32_UPTIME_UPDATE)*MINUTE*IN_MILLISECONDS);
-        m_timers[WUPDATE_UPTIME].Reset();
-    }
-
     setConfig(CONFIG_UINT32_SKILL_CHANCE_ORANGE, "SkillChance.Orange", 100);
     setConfig(CONFIG_UINT32_SKILL_CHANCE_YELLOW, "SkillChance.Yellow", 75);
     setConfig(CONFIG_UINT32_SKILL_CHANCE_GREEN,  "SkillChance.Green",  25);
@@ -804,6 +797,9 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_CHATFLOOD_MUTE_TIME,     "ChatFlood.MuteTime", 10);
 
     setConfig(CONFIG_BOOL_EVENT_ANNOUNCE, "Event.Announce", false);
+
+    setConfig(CONFIG_BOOL_AUTOBROADCAST, "AutoBroadcast.On", false);
+    setConfigMinMax(CONFIG_UINT32_AUTOBROADCAST_CENTER, "AutoBroadcast.Center", 0, 0, 2);
 
     setConfig(CONFIG_UINT32_CREATURE_FAMILY_ASSISTANCE_DELAY, "CreatureFamilyAssistanceDelay", 1500);
     setConfig(CONFIG_UINT32_CREATURE_FAMILY_FLEE_DELAY,       "CreatureFamilyFleeDelay",       7000);
@@ -1126,6 +1122,55 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_BOOL_INSTANCES_RESET_GROUP_ANNOUNCE,  "InstancesResetAnnounce", false);
 
     setConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY, "CreatureRespawnAggroDelay", 5/*sec.*/);
+
+    // Set  world timers
+    m_timers[WUPDATE_AUCTIONS].SetInterval(sConfig.GetIntDefault("Auctions.Timer", 60000));
+    m_timers[WUPDATE_AUCTIONS].Reset();
+
+    m_timers[WUPDATE_WEATHERS].SetInterval(sConfig.GetIntDefault("Weathers.Timer", 60000));
+    m_timers[WUPDATE_WEATHERS].Reset();
+
+    m_timers[WUPDATE_UPTIME].SetInterval(sConfig.GetIntDefault("UpdateUptimeInterval", 10) * MINUTE * IN_MILLISECONDS);
+    m_timers[WUPDATE_UPTIME].Reset();
+
+    m_timers[WUPDATE_CORPSES].SetInterval(sConfig.GetIntDefault("Corpse.Timer", 20) * MINUTE * IN_MILLISECONDS);
+    m_timers[WUPDATE_CORPSES].Reset();
+
+    // wupdate_events - VARIABLE INTERVAL, setted by GemeEvents
+
+    m_timers[WUPDATE_DELETECHARS].SetInterval(sConfig.GetIntDefault("CharDelete.Timer", 8) * HOUR * IN_MILLISECONDS);
+    m_timers[WUPDATE_DELETECHARS].Reset();
+
+    m_timers[WUPDATE_AHBOT].SetInterval(sConfig.GetIntDefault("AHBot.Timer", 20000));
+    m_timers[WUPDATE_AHBOT].Reset();
+
+    m_timers[WUPDATE_AUTOBROADCAST].SetInterval(sConfig.GetIntDefault("AutoBroadcast.Timer", 60000));
+    m_timers[WUPDATE_AUTOBROADCAST].Reset();
+
+    m_timers[WUPDATE_WORLDSTATE].SetInterval(sConfig.GetIntDefault("WorldState.Timer", 60000));
+    m_timers[WUPDATE_WORLDSTATE].Reset();
+
+    m_timers[WUPDATE_CALENDAR].SetInterval(sConfig.GetIntDefault("Calendar.Timer", 30000));
+    m_timers[WUPDATE_CALENDAR].Reset();
+
+    m_timers[WUPDATE_GROUPS].SetInterval(sConfig.GetIntDefault("Groups.Timer", 1000));
+    m_timers[WUPDATE_GROUPS].Reset();
+
+    m_timers[WUPDATE_TERRAIN].SetInterval(sConfig.GetIntDefault("Terrain.Timer", 30000));
+    m_timers[WUPDATE_TERRAIN].Reset();
+
+    tm local;
+    time_t curr;
+    time(&curr);
+    local = *(localtime(&curr));
+
+    //to set mailtimer to return mails every day between 4 and 5 am
+    //mailtimer is increased when updating auctions
+    //one second is 1000 -(tested on win system)
+    mail_timer = uint32((((localtime( &m_gameTime )->tm_hour + 20) % 24)* HOUR * IN_MILLISECONDS) / m_timers[WUPDATE_AUCTIONS].GetInterval() );
+    mail_timer_expires = uint32( (DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
+    sLog.outString("BOOT: Mail timer set to: %u, mail return is called every %u minutes", mail_timer, mail_timer_expires);
+
 }
 
 extern void LoadGameObjectModelList();
@@ -1608,29 +1653,6 @@ void World::SetInitialWorldSettings()
 
     LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, startstring, uptime) VALUES('%u', " UI64FMTD ", '%s', 0)", getConfig(CONFIG_UINT32_REALMID), uint64(m_startTime), isoDate);
 
-    static uint32 abtimer = 0;
-    abtimer = sConfig.GetIntDefault("AutoBroadcast.Timer", 60000);
-
-    m_timers[WUPDATE_WEATHERS].SetInterval(1*MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_UPTIME].SetInterval(getConfig(CONFIG_UINT32_UPTIME_UPDATE)*MINUTE*IN_MILLISECONDS);
-                                                            //Update "uptime" table based on configuration entry in minutes.
-    m_timers[WUPDATE_CORPSES].SetInterval(20*MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_DELETECHARS].SetInterval(DAY*IN_MILLISECONDS); // check for chars to delete every day
-    m_timers[WUPDATE_AUTOBROADCAST].SetInterval(abtimer);
-    m_timers[WUPDATE_WORLDSTATE].SetInterval(1*MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_CALENDAR].SetInterval(30*IN_MILLISECONDS);
-    m_timers[WUPDATE_GROUPS].SetInterval(1*IN_MILLISECONDS);
-    m_timers[WUPDATE_AHBOT].SetInterval(20*IN_MILLISECONDS); // every 20 sec
-    m_timers[WUPDATE_TERRAIN].SetInterval(30*IN_MILLISECONDS);
-
-    //to set mailtimer to return mails every day between 4 and 5 am
-    //mailtimer is increased when updating auctions
-    //one second is 1000 -(tested on win system)
-    mail_timer = uint32((((localtime( &m_gameTime )->tm_hour + 20) % 24)* HOUR * IN_MILLISECONDS) / m_timers[WUPDATE_AUCTIONS].GetInterval() );
-                                                            //1440
-    mail_timer_expires = uint32( (DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
-    DEBUG_LOG("Mail timer set to: %u, mail return is called every %u minutes", mail_timer, mail_timer_expires);
 
     ///- Initialize static helper structures
     AIRegistry::Initialize();
@@ -1740,13 +1762,15 @@ void World::Update(uint32 diff)
     m_updateTime = diff;
 
     ///- Update the different timers
-    for(int i = 0; i < WUPDATE_COUNT; ++i)
+    for (uint8 i = 0; i < WUPDATE_COUNT; ++i)
     {
-        if (m_timers[i].GetCurrent()>=0)
+        if (m_timers[i].GetCurrent() >= 0 )
             m_timers[i].Update(diff);
         else
             m_timers[i].SetCurrent(0);
     }
+
+    bool bSingletonUpdate = false;
 
     ///- Update the game time and check for shutdown time
     _UpdateGameTime();
@@ -1770,7 +1794,7 @@ void World::Update(uint32 diff)
         ResetRandomBG();
 
     /// <ul><li> Handle auctions when the timer has passed
-    if (m_timers[WUPDATE_AUCTIONS].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_AUCTIONS].Passed())
     {
         m_timers[WUPDATE_AUCTIONS].Reset();
 
@@ -1784,20 +1808,22 @@ void World::Update(uint32 diff)
 
         ///- Handle expired auctions
         sAuctionMgr.Update();
+        bSingletonUpdate = true;
     }
 
     /// <li> Handle AHBot operations
-    if (m_timers[WUPDATE_AHBOT].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_AHBOT].Passed())
     {
         sAuctionBot.Update();
         m_timers[WUPDATE_AHBOT].Reset();
+        bSingletonUpdate = true;
     }
 
     /// <li> Handle session updates
     UpdateSessions(diff);
 
     /// <li> Update groups
-    if (m_timers[WUPDATE_GROUPS].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_GROUPS].Passed())
     {
         ObjectMgr::GroupMap::iterator i_next;
         for (ObjectMgr::GroupMap::iterator itr = sObjectMgr.GetGroupMapBegin(); itr != sObjectMgr.GetGroupMapEnd(); itr = i_next)
@@ -1808,10 +1834,11 @@ void World::Update(uint32 diff)
                 group->Update(m_timers[WUPDATE_GROUPS].GetInterval());
         }
         m_timers[WUPDATE_GROUPS].Reset();
+        bSingletonUpdate = true;
     }
 
     /// <li> Handle weather updates when the timer has passed
-    if (m_timers[WUPDATE_WEATHERS].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_WEATHERS].Passed())
     {
         ///- Send an update signal to Weather objects
         for (WeatherMap::iterator itr = m_weathers.begin(); itr != m_weathers.end(); )
@@ -1826,17 +1853,18 @@ void World::Update(uint32 diff)
             else
                 ++itr;
         }
-
         m_timers[WUPDATE_WEATHERS].SetCurrent(0);
+        bSingletonUpdate = true;
     }
     /// <li> Update uptime table
-    if (m_timers[WUPDATE_UPTIME].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_UPTIME].Passed())
     {
         uint32 tmpDiff = uint32(m_gameTime - m_startTime);
         uint32 maxClientsNum = GetMaxActiveSessionCount();
 
         m_timers[WUPDATE_UPTIME].Reset();
         LoginDatabase.PExecute("UPDATE uptime SET uptime = %u, maxplayers = %u WHERE realmid = %u AND starttime = " UI64FMTD, tmpDiff, maxClientsNum, getConfig(CONFIG_UINT32_REALMID), uint64(m_startTime));
+        bSingletonUpdate = true;
     }
 
     /// <li> Handle all other objects
@@ -1846,24 +1874,27 @@ void World::Update(uint32 diff)
     sOutdoorPvPMgr.Update(diff);
 
     ///- Delete all characters which have been deleted X days before
-    if (m_timers[WUPDATE_DELETECHARS].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_DELETECHARS].Passed())
     {
         m_timers[WUPDATE_DELETECHARS].Reset();
         Player::DeleteOldCharacters();
+        bSingletonUpdate = true;
     }
 
     // Update WorldStates (cleanup and save)
-    if (m_timers[WUPDATE_WORLDSTATE].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_WORLDSTATE].Passed())
     {
         m_timers[WUPDATE_WORLDSTATE].Reset();
         sWorldStateMgr.Update();
+        bSingletonUpdate = true;
     }
 
     // Update Calendar (cleanup and save)
-    if (m_timers[WUPDATE_CALENDAR].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_CALENDAR].Passed())
     {
         m_timers[WUPDATE_CALENDAR].Reset();
         sCalendarMgr.Update();
+        bSingletonUpdate = true;
     }
 
     // Check if any group can be created by dungeon finder
@@ -1873,29 +1904,29 @@ void World::Update(uint32 diff)
     UpdateResultQueue();
 
     ///- Erase corpses once every 20 minutes
-    if (m_timers[WUPDATE_CORPSES].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_CORPSES].Passed())
     {
         m_timers[WUPDATE_CORPSES].Reset();
-
         sObjectAccessor.RemoveOldCorpses();
+        bSingletonUpdate = true;
     }
 
     ///- Process Game events when necessary
-    if (m_timers[WUPDATE_EVENTS].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_EVENTS].Passed())
     {
         m_timers[WUPDATE_EVENTS].Reset();                   // to give time for Update() to be processed
         uint32 nextGameEvent = sGameEventMgr.Update();
         m_timers[WUPDATE_EVENTS].SetInterval(nextGameEvent);
         m_timers[WUPDATE_EVENTS].Reset();
+        bSingletonUpdate = true;
     }
-    static uint32 autobroadcaston = 0;
-    autobroadcaston = sConfig.GetIntDefault("AutoBroadcast.On", 0);
-    if (autobroadcaston == 1)
+    if (getConfig(CONFIG_BOOL_AUTOBROADCAST))
     {
-        if (m_timers[WUPDATE_AUTOBROADCAST].Passed())
+        if (!bSingletonUpdate && m_timers[WUPDATE_AUTOBROADCAST].Passed())
         {
             m_timers[WUPDATE_AUTOBROADCAST].Reset();
             SendBroadcast();
+            bSingletonUpdate = true;
         }
     }
 
@@ -1906,10 +1937,11 @@ void World::Update(uint32 diff)
     ProcessCliCommands();
 
     //cleanup unused GridMap objects as well as VMaps
-    if (m_timers[WUPDATE_TERRAIN].Passed())
+    if (!bSingletonUpdate && m_timers[WUPDATE_TERRAIN].Passed())
     {
-        sTerrainMgr.Update(diff);
         m_timers[WUPDATE_TERRAIN].Reset();
+        sTerrainMgr.Update(diff);
+        bSingletonUpdate = true;
     }
 }
 
@@ -2362,7 +2394,7 @@ void World::SendBroadcast()
     std::string msg;
     static int nextid;
 
-    QueryResult *result;
+    QueryResult* result;
     if (nextid != 0)
     {
         result = CharacterDatabase.PQuery("SELECT `text`, `next` FROM `autobroadcast` WHERE `id` = %u", nextid);
@@ -2375,36 +2407,39 @@ void World::SendBroadcast()
     if(!result)
         return;
 
-    Field *fields = result->Fetch();
+    Field* fields = result->Fetch();
     nextid  = fields[1].GetUInt32();
     msg = fields[0].GetString();
     delete result;
 
-    static uint32 abcenter = 0;
-    abcenter = sConfig.GetIntDefault("AutoBroadcast.Center", 0);
-    if (abcenter == 0)
+    switch (getConfig(CONFIG_UINT32_AUTOBROADCAST_CENTER))
     {
-        sWorld.SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
-
-        sLog.outString("AutoBroadcast: '%s'",msg.c_str());
-    }
-    if (abcenter == 1)
-    {
-        WorldPacket data(SMSG_NOTIFICATION, (msg.size()+1));
-        data << msg;
-        sWorld.SendGlobalMessage(&data);
-
-        sLog.outString("AutoBroadcast: '%s'",msg.c_str());
-    }
-    if (abcenter == 2)
-    {
-        sWorld.SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
-
-        WorldPacket data(SMSG_NOTIFICATION, (msg.size()+1));
-        data << msg;
-        sWorld.SendGlobalMessage(&data);
-
-        sLog.outString("AutoBroadcast: '%s'",msg.c_str());
+        case 0:
+        {
+            sWorld.SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+            sLog.outString("AutoBroadcast: '%s'",msg.c_str());
+            break;
+        }
+        case 1:
+        {
+            WorldPacket data(SMSG_NOTIFICATION, (msg.size()+1));
+            data << msg;
+            sWorld.SendGlobalMessage(&data);
+            sLog.outString("AutoBroadcast: '%s'",msg.c_str());
+            break;
+        }
+        case 2:
+        {
+            sWorld.SendWorldText(LANG_AUTO_BROADCAST, msg.c_str());
+            WorldPacket data(SMSG_NOTIFICATION, (msg.size()+1));
+            data << msg;
+            sWorld.SendGlobalMessage(&data);
+            sLog.outString("AutoBroadcast: '%s'",msg.c_str());
+            break;
+        }
+        default:
+            //sLog.outString("AutoBroadcast:ERROR '%s'",msg.c_str());
+            break;
    }
 }
 
