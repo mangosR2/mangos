@@ -85,6 +85,7 @@ enum WorldTimers
     WUPDATE_WORLDSTATE    = 8,
     WUPDATE_CALENDAR      = 9,
     WUPDATE_GROUPS        = 10,
+    WUPDATE_TERRAIN       = 11,
     WUPDATE_COUNT
 };
 

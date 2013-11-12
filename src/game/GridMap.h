@@ -242,9 +242,6 @@ private:
 
     GridMapPtr m_GridMaps[MAX_NUMBER_OF_GRIDS][MAX_NUMBER_OF_GRIDS];
 
-    //global garbage collection timer
-    ShortIntervalTimer i_timer;
-
     typedef MANGOSR2_MUTEX_MODEL         LockType;
     typedef ACE_Read_Guard<LockType>     ReadGuard;
     typedef ACE_Write_Guard<LockType>    WriteGuard;

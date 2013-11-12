@@ -671,14 +671,6 @@ TerrainInfo::TerrainInfo(uint32 mapid) : m_mapId(mapid)
             m_GridMaps[i][k] = GridMapPtr();
         }
     }
-
-    // clean up GridMap objects every minute
-    uint32 const iCleanUpInterval = 60;
-    // schedule start randlomly
-    uint32 const iRandomStart = urand(20, 40);
-
-    i_timer.SetInterval(iCleanUpInterval * 1000);
-    i_timer.SetCurrent(iRandomStart * 1000);
 }
 
 TerrainInfo::~TerrainInfo()
@@ -717,34 +709,29 @@ void TerrainInfo::Unload(uint32 const& x, uint32 const& y)
 // call this method only
 void TerrainInfo::CleanUpGrids(uint32 const diff)
 {
-    i_timer.Update(diff);
-    if (!i_timer.Passed())
-        return;
-
     for (int y = 0; y < MAX_NUMBER_OF_GRIDS; ++y)
     {
         for (int x = 0; x < MAX_NUMBER_OF_GRIDS; ++x)
         {
-            GridMapPtr pMap = GetGridMap(x,y);
-
-            // delete those GridMap objects which have refcount < 3 (1 - in current smartPtr, 1 - in matrix)
-            if (pMap && pMap.count() < 3 )
+            // delete those GridMap objects which have refcount == 0
+            if (m_GridMaps[x][y] && m_GridMaps[x][y].count() == 0)
             {
+                DEBUG_FILTER_LOG(LOG_FILTER_MAP_LOADING,"TerrainInfo::CleanUpGrids unload grid map:%u x:%d y:%d", GetMapId(), x, y);
                 WriteGuard Guard(GetLock(), true);
-                m_GridMaps[x][y] = GridMapPtr();
 
-                // pMap->unloadData();
+                GridMapPtr tmpPtr = m_GridMaps[x][y];
+                m_GridMaps[x][y] = GridMapPtr();
 
                 // unload VMAPS...
                 VMAP::VMapFactory::createOrGetVMapManager()->unloadMap(m_mapId, x, y);
 
                 // unload mmap...
                 MMAP::MMapFactory::createOrGetMMapManager()->unloadMap(m_mapId, x, y);
+
+                // tmpPtr be auto-erased after cycle end
             }
         }
     }
-
-    i_timer.Reset();
 }
 
 float TerrainInfo::GetHeightStatic(float x, float y, float z, bool useVmaps/*=true*/, float maxSearchDist/*=DEFAULT_HEIGHT_SEARCH*/) const

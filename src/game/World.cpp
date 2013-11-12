@@ -1621,9 +1621,8 @@ void World::SetInitialWorldSettings()
     m_timers[WUPDATE_WORLDSTATE].SetInterval(1*MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_CALENDAR].SetInterval(30*IN_MILLISECONDS);
     m_timers[WUPDATE_GROUPS].SetInterval(1*IN_MILLISECONDS);
-
-    // for AhBot
     m_timers[WUPDATE_AHBOT].SetInterval(20*IN_MILLISECONDS); // every 20 sec
+    m_timers[WUPDATE_TERRAIN].SetInterval(30*IN_MILLISECONDS);
 
     //to set mailtimer to return mails every day between 4 and 5 am
     //mailtimer is increased when updating auctions
@@ -1907,7 +1906,11 @@ void World::Update(uint32 diff)
     ProcessCliCommands();
 
     //cleanup unused GridMap objects as well as VMaps
-    sTerrainMgr.Update(diff);
+    if (m_timers[WUPDATE_TERRAIN].Passed())
+    {
+        sTerrainMgr.Update(diff);
+        m_timers[WUPDATE_TERRAIN].Reset();
+    }
 }
 
 /// Send a packet to all players (except self if mentioned)
