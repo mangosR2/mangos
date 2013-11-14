@@ -438,7 +438,7 @@ LogFilter_PlayerStats = 0
 LogFilter_Damage = 0
 LogFilter_Combat = 0
 LogFilter_SpellCast = 0
-WorldLogFile = ""
+WorldLogFile = "WorldErrors.log"
 WorldLogTimestamp = 0
 DBErrorLogFile = "DBErrors.log"
 EventAIErrorLogFile = "EventAIErrors.log"
@@ -616,7 +616,7 @@ LexicsCutInRaid = 1
 LexicsCutInBattleGround = 1
 LexicsCutterIgnoreSpaces = 1
 LexicsCutterIgnoreRepeats = 1
-LexicsCutterAction = 1
+LexicsCutterAction = 0
 LexicsCutterActionDuration = 60000
 LexicsCutterNoActionOnGM = 1
 
@@ -827,7 +827,7 @@ LexicsCutterNoActionOnGM = 1
 #        Max amount triggered spell casts in chain by one caster, prevent stack overflow crash
 #        Too Low value will make some correct triggered casts fail
 #                 0 (no limit)
-#        Default: 20
+#        Default: 255
 #
 #   BirthdayTime
 #        Set to birthday (date in unix time), By default 28th August 2005, when MaNGOS got it's name
@@ -1101,7 +1101,7 @@ CharactersCreatingDisabled = 0
 CharactersPerAccount = 50
 CharactersPerRealm = 10
 HeroicCharactersPerRealm = 1
-MinLevelForHeroicCharacterCreating = 1
+MinLevelForHeroicCharacterCreating = 55
 SkipCinematics = 0
 MaxPlayerLevel = 80
 StartPlayerLevel = 1
@@ -1119,7 +1119,7 @@ AllFlightPaths = 0
 AlwaysMaxSkillForLevel = 0
 ActivateWeather = 1
 CastUnstuck = 1
-MaxSpellCastsInChain = 20
+MaxSpellCastsInChain = 255
 BirthdayTime = 1125180000
 RabbitDay = 0
 Instance.IgnoreLevel = 0
@@ -1142,7 +1142,7 @@ TimerBar.Breath.GMLevel = 4
 TimerBar.Breath.Max = 180
 TimerBar.Fire.GMLevel = 4
 TimerBar.Fire.Max = 1
-MaxPrimaryTradeSkill = 9
+MaxPrimaryTradeSkill = 2
 TradeSkill.GMIgnore.MaxPrimarySkillsCount = 4
 TradeSkill.GMIgnore.Level = 4
 TradeSkill.GMIgnore.Skill = 4
@@ -1245,8 +1245,8 @@ TalentsInspecting = 1
 #
 ###################################################################################################################
 
-AutoBroadcast.On = 1
-AutoBroadcast.Center = 2
+AutoBroadcast.On = 0
+AutoBroadcast.Center = 0
 AutoBroadcast.Timer = 30000
 
 ###################################################################################################################
@@ -1812,7 +1812,7 @@ DurabilityLossChance.Block  = 0.05
 Death.SicknessLevel = 11
 Death.CorpseReclaimDelay.PvP = 1
 Death.CorpseReclaimDelay.PvE = 1
-Death.Bones.World = 0
+Death.Bones.World = 1
 Death.Bones.BattlegroundOrArena = 1
 Death.Ghost.RunSpeed.World = 1.0
 Death.Ghost.RunSpeed.Battleground = 1.0
