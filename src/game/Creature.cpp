@@ -38,7 +38,7 @@
 #include "CreatureEventAI.h"
 #include "PetAI.h"
 #include "Formulas.h"
-#include "WaypointMovementGenerator.h"
+#include "movementGenerators/WaypointMovementGenerator.h"
 #include "InstanceData.h"
 #include "MapPersistentStateMgr.h"
 #include "BattleGround/BattleGroundMgr.h"
@@ -592,7 +592,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
                 {
                     // do not allow the AI to be changed during update
                     LockAI(true);
-                    AI()->UpdateAI(diff);   // AI not react good at real update delays (while freeze in non-active part of map)
+                    AI()->UpdateAI((update_diff > 5 * diff) ? diff : update_diff);   // AI not react good at real update delays (while freeze in non-active part of map)
                     LockAI(false);
                 }
             }

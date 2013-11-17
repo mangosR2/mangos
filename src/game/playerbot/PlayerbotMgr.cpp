@@ -28,7 +28,7 @@
 #include "../GossipDef.h"
 #include "../Chat.h"
 #include "../Language.h"
-#include "../WaypointMovementGenerator.h"
+#include "../movementGenerators/WaypointMovementGenerator.h"
 #include "../Guild.h"
 #include "../World.h"
 

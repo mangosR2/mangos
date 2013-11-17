@@ -48,7 +48,7 @@
 #include "CellImpl.h"
 #include "Transports.h"
 #include "VMapFactory.h"
-#include "MovementGenerator.h"
+#include "movementGenerators/MovementGenerator.h"
 #include "movement/MoveSplineInit.h"
 #include "movement/MoveSpline.h"
 #include "CreatureLinkingMgr.h"

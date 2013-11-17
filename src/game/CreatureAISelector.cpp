@@ -21,7 +21,7 @@
 #include "CreatureAIImpl.h"
 #include "NullCreatureAI.h"
 #include "Policies/Singleton.h"
-#include "MovementGenerator.h"
+#include "movementGenerators/MovementGenerator.h"
 #include "ScriptMgr.h"
 #include "Pet.h"
 

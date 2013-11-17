@@ -29,8 +29,8 @@ static MTRandTSS mtRand;
 
 static ACE_Time_Value g_SystemTickTime = ACE_OS::gettimeofday();
 
-ACE_Atomic_Op<ACE_Thread_Mutex, uint32> WorldTimer::m_iTime = 0;
-ACE_Atomic_Op<ACE_Thread_Mutex, uint32> WorldTimer::m_iPrevTime = 0;
+ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL_2, uint32> WorldTimer::m_iTime = 0;
+ACE_Atomic_Op<MANGOSR2_MUTEX_MODEL_2, uint32> WorldTimer::m_iPrevTime = 0;
 
 uint32 WorldTimer::tickTime() { return m_iTime.value(); }
 uint32 WorldTimer::tickPrevTime() { return m_iPrevTime.value(); }

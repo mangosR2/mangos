@@ -17,10 +17,10 @@
  */
 /* StateMgr based on idea and part of code from SilverIce (http:://github.com/SilverIce
 */
-#include "ConfusedMovementGenerator.h"
-#include "TargetedMovementGenerator.h"
-#include "IdleMovementGenerator.h"
-#include "WaypointMovementGenerator.h"
+#include "movementGenerators/ConfusedMovementGenerator.h"
+#include "movementGenerators/TargetedMovementGenerator.h"
+#include "movementGenerators/IdleMovementGenerator.h"
+#include "movementGenerators/WaypointMovementGenerator.h"
 #include "Timer.h"
 #include "StateMgr.h"
 #include "Player.h"

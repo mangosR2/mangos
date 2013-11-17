@@ -24,7 +24,7 @@
 #include "Common.h"
 #include "MotionMaster.h"
 #include "StateMgrImpl.h"
-#include "MovementGenerator.h"
+#include "movementGenerators/MovementGenerator.h"
 #include "Log.h"
 #include <sstream>
 #include <algorithm>

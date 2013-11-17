@@ -30,7 +30,7 @@
 #include "SQLStorages.h"
 #include "BattleGround/BattleGround.h"
 #include "OutdoorPvP/OutdoorPvP.h"
-#include "WaypointMovementGenerator.h"
+#include "movementGenerators/WaypointMovementGenerator.h"
 
 #include "revision_nr.h"
 

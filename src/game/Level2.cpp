@@ -50,7 +50,7 @@
 #include <map>
 #include <typeinfo>
 
-#include "TargetedMovementGenerator.h"                      // for HandleNpcUnFollowCommand
+#include "movementGenerators/TargetedMovementGenerator.h"   // for HandleNpcUnFollowCommand
 #include "MoveMap.h"                                        // for mmap manager
 #include "PathFinder.h"                                     // for mmap commands
 #include "movement/MoveSplineInit.h"

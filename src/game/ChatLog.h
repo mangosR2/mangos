@@ -56,7 +56,7 @@ enum LexicsActions
     LEXICS_ACTION_SHEAR    = 8,
 };
 
-class ChatLog : public MaNGOS::Singleton<ChatLog, MaNGOS::ClassLevelLockable<ChatLog, ACE_Thread_Mutex> >
+class ChatLog : public MaNGOS::Singleton<ChatLog, MaNGOS::ClassLevelLockable<ChatLog, MANGOSR2_MUTEX_MODEL_2> >
 {
     public:
         ChatLog();

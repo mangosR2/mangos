@@ -56,8 +56,8 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
             if( t > MIN_MAP_UPDATE_DELAY )
                 t = MIN_MAP_UPDATE_DELAY;
 
-            i_timer.SetInterval(t);
-            i_timer.Reset();
+            m_timer.SetInterval(t);
+            m_timer.Reset();
         }
 
         //void LoadGrid(int mapid, int instId, float x, float y, const WorldObject* obj, bool no_unload = false);
@@ -109,10 +109,11 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 
         /* statistics */
         uint32 GetNumInstances();
+        std::string GetStrMaps();
         uint32 GetNumPlayersInInstances();
 
         //get list of all maps
-        const MapMapType& Maps() const { return i_maps; }
+        const MapMapType& Maps() const { return m_maps; }
 
         template<typename Do>
         void DoForAllMapsWithMapId(uint32 mapId, Do& _do);
@@ -133,17 +134,15 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         DungeonMap* CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save = NULL);
         BattleGroundMap* CreateBattleGroundMap(uint32 id, uint32 InstanceId, BattleGround* bg);
 
-        MapMapType i_maps;
-
-        MapUpdater m_updater;
-
-        IntervalTimer i_timer;
+        MapMapType    m_maps;
+        MapUpdater    m_updater;
+        IntervalTimer m_timer;
 };
 
 template<typename Do>
 inline void MapManager::DoForAllMapsWithMapId(uint32 mapId, Do& _do)
 {
-    for(MapMapType::const_iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    for(MapMapType::const_iterator itr = m_maps.begin(); itr != m_maps.end(); ++itr)
     {
         if (itr->first.nMapId == mapId)
             _do(&*(itr->second));

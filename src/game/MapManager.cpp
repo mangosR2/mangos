@@ -33,13 +33,13 @@ INSTANTIATE_CLASS_MUTEX(MapManager, ACE_Recursive_Thread_Mutex);
 
 MapManager::MapManager()
 {
-    i_timer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
+    m_timer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 }
 
 MapManager::~MapManager()
 {
     RemoveAllObjectsInRemoveList();
-    i_maps.clear();
+    m_maps.clear();
 }
 
 void MapManager::Initialize()
@@ -49,7 +49,7 @@ void MapManager::Initialize()
 void MapManager::InitializeVisibilityDistanceInfo()
 {
     Guard guard(*this);
-    for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for (MapMapType::iterator iter = m_maps.begin(); iter != m_maps.end(); ++iter)
         (*iter).second->InitVisibilityDistance();
 }
 
@@ -83,7 +83,7 @@ Map* MapManager::CreateMap(uint32 id, WorldObject const* obj)
         {
             map = new WorldMap(id, sWorld.getConfig(CONFIG_UINT32_INTERVAL_GRIDCLEAN));
             //add map into container
-            i_maps[MapID(id)] = MapPtr(map);
+            m_maps[MapID(id)] = MapPtr(map);
 
             // non-instanceable maps always expected have saved state
             map->CreateInstanceData(true);
@@ -107,8 +107,8 @@ Map* MapManager::FindMap(uint32 mapid, uint32 instanceId) const
         return NULL;
 
     Guard guard(*this);
-    MapMapType::const_iterator iter = i_maps.find(MapID(mapid, instanceId));
-    if (iter == i_maps.end())
+    MapMapType::const_iterator iter = m_maps.find(MapID(mapid, instanceId));
+    if (iter == m_maps.end())
         return NULL;
 
 
@@ -118,8 +118,8 @@ Map* MapManager::FindMap(uint32 mapid, uint32 instanceId) const
 MapPtr MapManager::GetMapPtr(uint32 mapid, uint32 instanceId)
 {
     Guard guard(*this);
-    MapMapType::const_iterator iter = i_maps.find(MapID(mapid, instanceId));
-    if (iter == i_maps.end())
+    MapMapType::const_iterator iter = m_maps.find(MapID(mapid, instanceId));
+    if (iter == m_maps.end())
         return MapPtr();
     return iter->second;
 }
@@ -132,7 +132,7 @@ Map* MapManager::FindFirstMap(uint32 mapid) const
 
     Guard guard(*this);
 
-    for (MapMapType::const_iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for (MapMapType::const_iterator iter = m_maps.begin(); iter != m_maps.end(); ++iter)
     {
         if (iter->first.GetId() == mapid)
             return &*(iter->second);
@@ -155,35 +155,35 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player)
 void MapManager::DeleteInstance(uint32 mapid, uint32 instanceId)
 {
     Guard guard(*this);
-    MapMapType::iterator iter = i_maps.find(MapID(mapid, instanceId));
-    if(iter != i_maps.end())
+    MapMapType::iterator iter = m_maps.find(MapID(mapid, instanceId));
+    if(iter != m_maps.end())
     {
         MapPtr pMap = iter->second;
         if (pMap->Instanceable())
         {
             pMap->UnloadAll(true);
-            i_maps.erase(iter);
+            m_maps.erase(iter);
         }
     }
 }
 
 void MapManager::Update(uint32 diff)
 {
-    i_timer.Update(diff);
-    if( !i_timer.Passed())
+    m_timer.Update(diff);
+    if (!m_timer.Passed())
         return;
 
     GetMapUpdater().ReactivateIfNeed();
     GetMapUpdater().UpdateLoadBalancer(true);
 
-    for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for (MapMapType::iterator iter = m_maps.begin(); iter != m_maps.end(); ++iter)
     {
         if (GetMapUpdater().activated())
         {
-            GetMapUpdater().schedule_update(*iter->second, (uint32)i_timer.GetCurrent());
+            GetMapUpdater().schedule_update(*iter->second, uint32(m_timer.GetCurrent()));
         }
         else
-            iter->second->Update((uint32)i_timer.GetCurrent());
+            iter->second->Update(uint32(m_timer.GetCurrent()));
 
         std::string updaterErr = GetMapUpdater().getLastError();
         if (!updaterErr.empty())
@@ -205,24 +205,24 @@ void MapManager::Update(uint32 diff)
     // check all maps which can be unloaded
     {
         Guard guard(*this);
-        for (MapMapType::const_iterator iter = i_maps.begin(); iter != i_maps.end();)
+        for (MapMapType::const_iterator iter = m_maps.begin(); iter != m_maps.end();)
         {
             MapPtr pMap = iter->second;
             //check if map can be unloaded
-            if (pMap->CanUnload((uint32)i_timer.GetCurrent()))
-                iter = i_maps.erase(iter);
+            if (pMap->CanUnload(uint32(m_timer.GetCurrent())))
+                iter = m_maps.erase(iter);
             else
                 ++iter;
             //map  class be auto-deleted in end of cycle
         }
     }
 
-    i_timer.SetCurrent(0);
+    m_timer.SetCurrent(0);
 }
 
 void MapManager::RemoveAllObjectsInRemoveList()
 {
-    for (MapMapType::iterator iter = i_maps.begin(); iter != i_maps.end(); ++iter)
+    for (MapMapType::iterator iter = m_maps.begin(); iter != m_maps.end(); ++iter)
         iter->second->RemoveAllObjectsInRemoveList();
 }
 
@@ -245,11 +245,11 @@ bool MapManager::IsValidMAP(uint32 mapid)
 
 void MapManager::UnloadAll()
 {
-    for(MapMapType::iterator iter=i_maps.begin(); iter != i_maps.end(); ++iter)
+    for(MapMapType::iterator iter = m_maps.begin(); iter != m_maps.end(); ++iter)
         iter->second->UnloadAll(true);
 
-    while(!i_maps.empty())
-        i_maps.erase(i_maps.begin());
+    while (!m_maps.empty())
+        m_maps.erase(m_maps.begin());
 
     sTerrainMgr.UnloadAll();
 
@@ -261,7 +261,7 @@ void MapManager::UnloadAll()
 uint32 MapManager::GetNumInstances()
 {
     uint32 ret = 0;
-    for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    for (MapMapType::iterator itr = m_maps.begin(); itr != m_maps.end(); ++itr)
     {
         MapPtr map = itr->second;
         if(!map->IsDungeon())
@@ -271,10 +271,40 @@ uint32 MapManager::GetNumInstances()
     return ret;
 }
 
+std::string MapManager::GetStrMaps()
+{
+    struct TMapInfo
+    {
+        TMapInfo() : m_mapName(NULL), m_mapCount(0), m_playerCount(0) {}
+        const char* m_mapName;
+        uint32 m_mapCount;
+        uint32 m_playerCount;
+    };
+
+    typedef std::map<uint32/*mapId*/, TMapInfo> TMapsInfo;
+
+    TMapsInfo mapsInfo;
+
+    for (MapMapType::const_iterator itr = m_maps.begin(); itr != m_maps.end(); ++itr)
+    {
+        TMapInfo& mapInfo = mapsInfo[itr->first.nMapId];
+        if (!mapInfo.m_mapName)
+            mapInfo.m_mapName = itr->second->GetMapName();
+        mapInfo.m_mapCount++;
+        mapInfo.m_playerCount += itr->second->GetPlayers().getSize();
+    }
+
+    std::ostringstream os; // [id:name:count:players]
+    for (TMapsInfo::const_iterator itr = mapsInfo.begin(); itr != mapsInfo.end(); ++itr)
+        os << " [" << itr->first << ":" << itr->second.m_mapName << ":" << itr->second.m_mapCount << ":" << itr->second.m_playerCount << "]";
+
+    return os.str();
+}
+
 uint32 MapManager::GetNumPlayersInInstances()
 {
     uint32 ret = 0;
-    for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
+    for (MapMapType::iterator itr = m_maps.begin(); itr != m_maps.end(); ++itr)
     {
         MapPtr map = itr->second;
         if(!map->IsDungeon())
@@ -323,7 +353,7 @@ Map* MapManager::CreateInstance(uint32 id, Player * player)
     //add a new map object into the registry
     if(pNewMap)
     {
-        i_maps[MapID(id, NewInstanceId)] = MapPtr(pNewMap);
+        m_maps[MapID(id, NewInstanceId)] = MapPtr(pNewMap);
         map = pNewMap;
     }
 
@@ -373,7 +403,7 @@ BattleGroundMap* MapManager::CreateBattleGroundMap(uint32 id, uint32 InstanceId,
     bg->SetBgMap(map);
 
     //add map into map container
-    i_maps[MapID(id, InstanceId)] = MapPtr(map);
+    m_maps[MapID(id, InstanceId)] = MapPtr(map);
 
     // BGs/Arenas not have saved instance data
     map->CreateInstanceData(false);

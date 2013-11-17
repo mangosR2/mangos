@@ -72,7 +72,6 @@ GameObjectModel::~GameObjectModel()
 {
     if (iModel)
     {
-        iModel = WorldModelPtr();
         ((VMAP::VMapManager2*)VMAP::VMapFactory::createOrGetVMapManager())->releaseModelInstance(name);
     }
 }
@@ -147,6 +146,10 @@ GameObjectModel* GameObjectModel::construct(const GameObject* const pGo)
 bool GameObjectModel::intersectRay(const G3D::Ray& ray, float& MaxDist, bool StopAtFirstHit, uint32 ph_mask) const
 {
     if (!(phasemask & ph_mask))
+        return false;
+
+    WorldModelPtr tModel = iModel;
+    if (!tModel)
         return false;
 
     float time = ray.intersectionTime(iBound);

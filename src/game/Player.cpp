@@ -1909,6 +1909,9 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
             // lets reset near teleport flag if it wasn't reset during chained teleports
             SetSemaphoreTeleportNear(false);
 
+/*
+temporarily disable precreate maps. need found reason double map creation
+
             // try create map before trying teleport on this map
             if (!map)
             {
@@ -1923,9 +1926,9 @@ bool Player::TeleportTo(WorldLocation const& loc, uint32 options)
                     return false;
                 }
             }
-
+*/
             // try preload grid, targeted for teleport
-            if (!(options & TELE_TO_NODELAY) && !map->PreloadGrid(loc.x, loc.y))
+            if (!(options & TELE_TO_NODELAY) && map && !map->PreloadGrid(loc.x, loc.y))
             {
                 // If loading grid not finished, delay teleport 5 map update ticks
                 AddEvent(new TeleportDelayEvent(*this, WorldLocation(loc.GetMapId(), loc.x, loc.y, loc.z, loc.orientation, GetPhaseMask(), map->GetInstanceId(), sWorld.getConfig(CONFIG_UINT32_REALMID)), options),

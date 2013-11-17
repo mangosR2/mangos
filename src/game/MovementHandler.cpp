@@ -28,7 +28,7 @@
 #include "MapManager.h"
 #include "Transports.h"
 #include "BattleGround/BattleGround.h"
-#include "WaypointMovementGenerator.h"
+#include "movementGenerators/WaypointMovementGenerator.h"
 #include "MapPersistentStateMgr.h"
 #include "ObjectMgr.h"
 

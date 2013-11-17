@@ -58,8 +58,6 @@ ChatLexicsCutter.h
 ChatLog.cpp
 ChatLog.h
 CombatHandler.cpp
-ConfusedMovementGenerator.cpp
-ConfusedMovementGenerator.h
 Corpse.cpp
 Corpse.h
 CreatureAI.cpp
@@ -87,8 +85,6 @@ debugcmds.cpp
 DuelHandler.cpp
 DynamicObject.cpp
 DynamicObject.h
-FleeingMovementGenerator.cpp
-FleeingMovementGenerator.h
 FollowerReference.cpp
 FollowerReference.h
 FollowerRefManager.h
@@ -121,12 +117,8 @@ Guild.h
 GuildHandler.cpp
 GuildMgr.cpp
 GuildMgr.h
-HomeMovementGenerator.cpp
-HomeMovementGenerator.h
 HostileRefManager.cpp
 HostileRefManager.h
-IdleMovementGenerator.cpp
-IdleMovementGenerator.h
 InstanceData.cpp
 InstanceData.h
 Item.cpp
@@ -169,9 +161,6 @@ MotionMaster.h
 MoveMap.cpp
 MoveMap.h
 MoveMapSharedDefines.h
-MovementGenerator.cpp
-MovementGenerator.h
-MovementGeneratorImpl.h
 MovementHandler.cpp
 NPCHandler.cpp
 NPCHandler.h
@@ -207,16 +196,12 @@ Player.cpp
 PlayerDump.cpp
 PlayerDump.h
 Player.h
-PointMovementGenerator.cpp
-PointMovementGenerator.h
 PoolManager.cpp
 PoolManager.h
 QueryHandler.cpp
 QuestDef.cpp
 QuestDef.h
 QuestHandler.cpp
-RandomMovementGenerator.cpp
-RandomMovementGenerator.h
 ReactorAI.cpp
 ReactorAI.h
 ReputationMgr.cpp
@@ -243,8 +228,6 @@ StateMgr.cpp
 StateMgr.h
 StateMgrImpl.h
 StatSystem.cpp
-TargetedMovementGenerator.cpp
-TargetedMovementGenerator.h
 TaxiHandler.cpp
 TemporarySummon.cpp
 TemporarySummon.h
@@ -275,8 +258,6 @@ VehicleHandler.cpp
 VoiceChatHandler.cpp
 WaypointManager.cpp
 WaypointManager.h
-WaypointMovementGenerator.cpp
-WaypointMovementGenerator.h
 Weather.cpp
 Weather.h
 World.cpp
@@ -364,6 +345,26 @@ movement/spline.impl.h
 movement/typedefs.h
 movement/util.cpp
 
+movementGenerators/ConfusedMovementGenerator.cpp
+movementGenerators/ConfusedMovementGenerator.h
+movementGenerators/FleeingMovementGenerator.cpp
+movementGenerators/FleeingMovementGenerator.h
+movementGenerators/HomeMovementGenerator.cpp
+movementGenerators/HomeMovementGenerator.h
+movementGenerators/IdleMovementGenerator.cpp
+movementGenerators/IdleMovementGenerator.h
+movementGenerators/MovementGenerator.cpp
+movementGenerators/MovementGenerator.h
+movementGenerators/MovementGeneratorImpl.h
+movementGenerators/PointMovementGenerator.cpp
+movementGenerators/PointMovementGenerator.h
+movementGenerators/RandomMovementGenerator.cpp
+movementGenerators/RandomMovementGenerator.h
+movementGenerators/TargetedMovementGenerator.cpp
+movementGenerators/TargetedMovementGenerator.h
+movementGenerators/WaypointMovementGenerator.cpp
+movementGenerators/WaypointMovementGenerator.h
+
 playerbot/PlayerbotAI.cpp
 playerbot/PlayerbotAI.h
 playerbot/PlayerbotClassAI.cpp
@@ -436,6 +437,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/warden
   ${CMAKE_CURRENT_SOURCE_DIR}/OutdoorPvP
   ${CMAKE_CURRENT_SOURCE_DIR}/BattleGround
+  ${CMAKE_CURRENT_SOURCE_DIR}/movementGenerators
   ${CMAKE_SOURCE_DIR}/dep/include/g3dlite
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/

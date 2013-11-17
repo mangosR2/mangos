@@ -33,8 +33,8 @@
 #include "MapManager.h"
 #include "Log.h"
 #include "Transports.h"
-#include "TargetedMovementGenerator.h"
-#include "WaypointMovementGenerator.h"
+#include "movementGenerators/TargetedMovementGenerator.h"
+#include "movementGenerators/WaypointMovementGenerator.h"
 #include "VMapFactory.h"
 #include "CellImpl.h"
 #include "GridNotifiers.h"
@@ -2417,7 +2417,7 @@ void WorldObject::UpdateHelper::Update(uint32 time_diff)
         return;
     }
     uint32 realDiff = m_obj.m_updateTracker.timeElapsed();
-    if (realDiff < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
+    if (realDiff < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)/2)
         return;
 
     m_obj.m_updateTracker.Reset();
