@@ -271,16 +271,16 @@ uint32 MapManager::GetNumInstances()
     return ret;
 }
 
+struct TMapInfo
+{
+    TMapInfo() : m_mapName(NULL), m_mapCount(0), m_playerCount(0) {}
+    const char* m_mapName;
+    uint32 m_mapCount;
+    uint32 m_playerCount;
+};
+
 std::string MapManager::GetStrMaps()
 {
-    struct TMapInfo
-    {
-        TMapInfo() : m_mapName(NULL), m_mapCount(0), m_playerCount(0) {}
-        const char* m_mapName;
-        uint32 m_mapCount;
-        uint32 m_playerCount;
-    };
-
     typedef std::map<uint32/*mapId*/, TMapInfo> TMapsInfo;
 
     TMapsInfo mapsInfo;
