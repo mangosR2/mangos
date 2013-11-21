@@ -77,7 +77,7 @@ bool Player::UpdateStats(Stats stat)
     uint32 mask = 0;
     AuraList const& modRatingFromStat = GetAurasByType(SPELL_AURA_MOD_RATING_FROM_STAT);
     for(AuraList::const_iterator i = modRatingFromStat.begin();i != modRatingFromStat.end(); ++i)
-        if (Stats((*i)->GetMiscBValue()) == stat)
+        if (Stats((*i)->GetMiscValueB()) == stat)
             mask |= (*i)->GetMiscValue();
     if (mask)
     {
@@ -178,7 +178,7 @@ void Player::UpdateArmor()
     {
         Modifier const* mod = (*i)->GetModifier();
         if(mod->m_miscvalue & SPELL_SCHOOL_MASK_NORMAL)
-            value += int32(GetStat(Stats((*i)->GetMiscBValue())) * mod->m_amount / 100.0f);
+            value += int32(GetStat(Stats((*i)->GetMiscValueB())) * mod->m_amount / 100.0f);
     }
 
     value *= GetModifierValue(unitMod, TOTAL_PCT);

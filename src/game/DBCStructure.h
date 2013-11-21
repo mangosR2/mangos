@@ -2239,6 +2239,7 @@ struct SpellEntry
     inline uint32 GetEffectImplicitTargetBByIndex(SpellEffectIndex j) const { return EffectImplicitTargetB[j];};
     inline uint32 GetEffectApplyAuraNameByIndex(SpellEffectIndex j) const   { return EffectApplyAuraName[j];};
     inline uint32 GetEffectMiscValue(SpellEffectIndex j) const              { return EffectMiscValue[j];};
+    inline uint32 GetEffectMiscValueB(SpellEffectIndex j) const              { return EffectMiscValueB[j];};
     inline ClassFamilyMask GetSpellFamilyFlags() const                      { return SpellFamilyFlags; };
 
     inline uint32 GetCastingTimeIndex() const        { return CastingTimeIndex; };
