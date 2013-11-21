@@ -491,6 +491,7 @@ class MANGOS_DLL_SPEC Map : public GridRefManager<NGridType>
         float m_VisibleDistance;
 
         MapRefManager m_mapRefManager;
+        MapRefManager::iterator m_mapRefIter;
 
         GuidSet m_activeObjects;
         GuidSet m_activeObjectsSafeCopy;
