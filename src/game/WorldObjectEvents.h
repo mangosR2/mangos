@@ -44,10 +44,6 @@ typedef std::queue<std::pair<uint64, BasicEvent*> > EventNewQueue;
 class MANGOS_DLL_SPEC WorldObjectEventProcessor : public EventProcessor
 {
     public:
-        typedef   MANGOSR2_MUTEX_MODEL_2       LockType;
-        typedef   ACE_Read_Guard<LockType>     ReadGuard;
-        typedef   ACE_Write_Guard<LockType>    WriteGuard;
-
         WorldObjectEventProcessor();
         ~WorldObjectEventProcessor() {};
 
@@ -57,18 +53,12 @@ class MANGOS_DLL_SPEC WorldObjectEventProcessor : public EventProcessor
         void AddEvent(BasicEvent* Event, uint64 e_time, bool set_addtime = true);
         void RenewEvents();
 
-        uint32 size(bool withQueue = false)  const { ReadGuard Guard(i_lock); return (withQueue ? (m_events.size() + m_queue.size()) :  m_events.size()); };
-        bool   empty() const { ReadGuard Guard(i_lock); return m_events.empty(); };
-
-    private:
-        void SetNeedKill(bool val) { bNeedKill = val; };
-        bool IsNeedKill() const { return bNeedKill; };
+        uint32 size(bool withQueue = false)  const { return (withQueue ? (m_events.size() + m_queue.size()) :  m_events.size()); };
+        bool   empty() const { return m_events.empty(); };
 
     protected:
+        void _AddEvents();
         EventNewQueue m_queue;
-        bool bNeedKill;
-        LockType& GetLock() { return i_lock; }
-        mutable LockType    i_lock;
 };
 
 // Spell events

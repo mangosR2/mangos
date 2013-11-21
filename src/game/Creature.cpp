@@ -792,6 +792,7 @@ bool Creature::AIM_Initialize()
 
     if (oldAI && oldAI != i_AI)
     {
+        MAPLOCK_WRITE(this, MAP_LOCK_TYPE_DEFAULT);
         GetEvents()->CleanupEventList();
         delete oldAI;
     }
