@@ -547,7 +547,6 @@ bool MOTransport::SetPosition(WorldLocation const& loc, bool teleport)
 
         if (oldMap != newMap)
         {
-            oldMap->Relocation((GameObject*)this, GetPosition());
             // Transport inserted in current map ActiveObjects list
             if (!GetTransportKit()->GetPassengers().empty())
             {

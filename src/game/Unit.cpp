@@ -7259,7 +7259,7 @@ bool Unit::Attack(Unit *victim, bool meleeAttack)
         if (VehicleKitPtr vehicle = GetVehicle())
         {
             if (VehicleSeatEntry const* seatInfo = vehicle->GetSeatInfo(this))
-                if (!seatInfo->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK))
+                if (!(seatInfo->m_flags & (SEAT_FLAG_CAN_CAST | SEAT_FLAG_CAN_ATTACK)))
                     return false;
         }
     }

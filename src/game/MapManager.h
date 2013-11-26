@@ -53,7 +53,7 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
 
         void SetMapUpdateInterval(uint32 t)
         {
-            if( t > MIN_MAP_UPDATE_DELAY )
+            if (t < MIN_MAP_UPDATE_DELAY)
                 t = MIN_MAP_UPDATE_DELAY;
 
             m_timer.SetInterval(t);
@@ -134,9 +134,9 @@ class MANGOS_DLL_DECL MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::
         DungeonMap* CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState *save = NULL);
         BattleGroundMap* CreateBattleGroundMap(uint32 id, uint32 InstanceId, BattleGround* bg);
 
-        MapMapType    m_maps;
-        MapUpdater    m_updater;
-        IntervalTimer m_timer;
+        MapMapType         m_maps;
+        MapUpdater         m_updater;
+        ShortIntervalTimer m_timer;
 };
 
 template<typename Do>

@@ -42,15 +42,16 @@ namespace VMAP { class WorldModel; };
     OBJECT_SAFE_HANDLER(GridMap,GridMapPtr);
     OBJECT_SAFE_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
     OBJECT_SAFE_HANDLER(VMAP::WorldModel, WorldModelPtr);
+    OBJECT_SAFE_HANDLER(VehicleKit,VehicleKitPtr);
 #else
     OBJECT_HANDLER(SpellAuraHolder,SpellAuraHolderPtr);
     OBJECT_HANDLER(TerrainInfo,TerrainInfoPtr);
     OBJECT_HANDLER(GridMap,GridMapPtr);
     OBJECT_HANDLER(VMAP::WorldModel, WorldModelPtr);
+    OBJECT_HANDLER(VehicleKit,VehicleKitPtr);
 #endif
 
 OBJECT_HANDLER(UnitAction,UnitActionPtr);
-OBJECT_HANDLER(VehicleKit,VehicleKitPtr);
 OBJECT_HANDLER(Map,MapPtr);
 
 #endif

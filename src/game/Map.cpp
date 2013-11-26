@@ -661,7 +661,7 @@ void Map::Update(const uint32 &t_diff)
         uint32 lastUpdateTime = obj->GetLastUpdateTime();
         uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
 
-        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE))
+        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)/2)
             continue;
 
         obj->SetLastUpdateTime();

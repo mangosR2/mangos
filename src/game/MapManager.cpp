@@ -33,7 +33,7 @@ INSTANTIATE_CLASS_MUTEX(MapManager, ACE_Recursive_Thread_Mutex);
 
 MapManager::MapManager()
 {
-    m_timer.SetInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
+    SetMapUpdateInterval(sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE));
 }
 
 MapManager::~MapManager()
@@ -180,10 +180,10 @@ void MapManager::Update(uint32 diff)
     {
         if (GetMapUpdater().activated())
         {
-            GetMapUpdater().schedule_update(*iter->second, uint32(m_timer.GetCurrent()));
+            GetMapUpdater().schedule_update(*iter->second, m_timer.GetCurrent());
         }
         else
-            iter->second->Update(uint32(m_timer.GetCurrent()));
+            iter->second->Update(m_timer.GetCurrent());
 
         std::string updaterErr = GetMapUpdater().getLastError();
         if (!updaterErr.empty())
@@ -209,7 +209,7 @@ void MapManager::Update(uint32 diff)
         {
             MapPtr pMap = iter->second;
             //check if map can be unloaded
-            if (pMap->CanUnload(uint32(m_timer.GetCurrent())))
+            if (pMap->CanUnload(m_timer.GetCurrent()))
                 iter = m_maps.erase(iter);
             else
                 ++iter;
