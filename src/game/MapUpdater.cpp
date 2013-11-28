@@ -26,7 +26,7 @@
 
 MapUpdater::MapUpdater() : ObjectUpdateTaskBase<class Map>()
 {
-    m_threadsCountPreferred = sWorld.getConfig(CONFIG_BOOL_THREADS_DYNAMIC) > 0 ? 1 : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
+    m_threadsCountPreferred = sWorld.getConfig(CONFIG_BOOL_THREADS_DYNAMIC) ? 1 : sWorld.getConfig(CONFIG_UINT32_NUMTHREADS);
 
     if (m_threadsCountPreferred > 0 && activate(m_threadsCountPreferred) == -1)
         abort();

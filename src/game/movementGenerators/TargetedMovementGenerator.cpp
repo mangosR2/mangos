@@ -205,7 +205,9 @@ bool TargetedMovementGeneratorMedium<T, D>::Update(T& owner, const uint32& time_
 
         G3D::Vector3 dest = owner.movespline->FinalDestination();
 
-        if (owner.GetTypeId() == TYPEID_UNIT && (((Creature*)&owner)->CanFly() || ((Creature*)&owner)->IsLevitating()))
+        if (dest == Vector3())
+            targetMoved = true;
+        else if (owner.GetTypeId() == TYPEID_UNIT && (((Creature*)&owner)->CanFly() || ((Creature*)&owner)->IsLevitating()))
             targetMoved = !i_target->IsWithinDist3d(dest.x, dest.y, dest.z, allowed_dist);
         else
             targetMoved = !i_target->IsWithinDist2d(dest.x, dest.y, allowed_dist);
@@ -272,7 +274,6 @@ void ChaseMovementGenerator<Creature>::Initialize(Creature& owner)
 {
     owner.SetWalk(false, false);                            // Chase movement is running
     owner.addUnitState(UNIT_STAT_CHASE | UNIT_STAT_CHASE_MOVE);
-    _setTargetLocation(owner, true);
 
     Unit* pVictim = owner.getVictim();
     if (pVictim && !owner.hasUnitState(UNIT_STAT_MELEE_ATTACKING))

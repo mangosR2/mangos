@@ -572,11 +572,11 @@ void WorldSession::HandlePlayerLoginOpcode(WorldPacket& recv_data)
     recv_data >> playerGuid;
 
     // check if character is currently a playerbot, if so then logout
-    Player *checkChar = sObjectMgr.GetPlayer(playerGuid);
-    if (checkChar && checkChar->GetPlayerbotAI())
+    Player* pPlayer = sObjectMgr.GetPlayer(playerGuid);
+    if (pPlayer && pPlayer->GetPlayerbotAI())
     {
-        checkChar->GetPlayerbotAI()->GetManager()->LogoutPlayerBot(playerGuid);
-        --checkChar->GetPlayerbotAI()->GetManager()->m_botCount;
+        --pPlayer->GetPlayerbotAI()->GetManager()->m_botCount;
+        pPlayer->GetPlayerbotAI()->GetManager()->LogoutPlayerBot(playerGuid);
     }
 
     if (PlayerLoading() || GetPlayer() != NULL)
