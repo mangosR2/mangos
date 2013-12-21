@@ -130,6 +130,8 @@ enum SpellFacingFlags
     SPELL_FACING_FLAG_INFRONT = 0x0001
 };
 
+#define DEFAULT_COMBAT_REACH   1.5f
+
 #define BASE_MELEERANGE_OFFSET 1.33f
 #define BASE_MINDAMAGE 1.0f
 #define BASE_MAXDAMAGE 2.0f
@@ -1345,8 +1347,10 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
             }
         }
 
-        float GetMeleeAttackDistance(Unit* pVictim = NULL) const;
-        bool CanReachWithMeleeAttack(Unit* pVictim, float flat_mod = 0.0f) const;
+        float GetCombatReach(Unit const* pVictim, bool forMeleeRange = true, float flat_mod = 0.0f) const;
+        float GetCombatDistance(Unit const* pVictim, bool forMeleeRange = true) const;
+        bool CanReachWithMeleeAttack(Unit const* pVictim, float flat_mod = 0.0f) const;
+
         uint32 m_extraAttacks;
 
         bool IsInCombat() const { return GetMap() ? GetMap()->IsInCombat(GetObjectGuid()) : false; }
@@ -1709,7 +1713,6 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
         bool IsCharmerOrOwnerPlayerOrPlayerItself() const;
         Player* GetCharmerOrOwnerPlayerOrPlayerItself();
         Player const* GetCharmerOrOwnerPlayerOrPlayerItself() const;
-        float GetCombatDistance( const Unit* target ) const;
 
         void SetPet(Pet* pet);
         void SetCharm(Unit* pet);

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2012 MaNGOS <http://getmangos.com/>
+ * Copyright (c) 2013 MangosR2 <http://github.com/MangosR2>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,105 +28,104 @@
 class MANGOS_DLL_SPEC TargetedMovementGeneratorBase
 {
     public:
-        TargetedMovementGeneratorBase(Unit &target) { i_target.link(&target, this); }
-        void stopFollowing() { }
-        virtual ~TargetedMovementGeneratorBase() {}
-
+        TargetedMovementGeneratorBase(Unit &target) { m_target.link(&target, this); }
+        void stopFollowing() {}
     protected:
-        FollowerReference i_target;
+        FollowerReference m_target;
 };
 
 template<class T, typename D>
-class MANGOS_DLL_SPEC TargetedMovementGeneratorMedium
-: public MovementGeneratorMedium< T, D >, public TargetedMovementGeneratorBase
+class MANGOS_DLL_SPEC TargetedMovementGeneratorMedium : public MovementGeneratorMedium< T, D >, public TargetedMovementGeneratorBase
 {
     protected:
         TargetedMovementGeneratorMedium(Unit& target, float offset, float angle) :
             TargetedMovementGeneratorBase(target),
-            i_recheckDistance(0), i_targetSearchingTimer(0),
-            i_offset(offset), i_angle(angle),
-            m_speedChanged(false), i_targetReached(false),
-            i_path(NULL)
-        {
-        }
-        virtual ~TargetedMovementGeneratorMedium() { delete i_path; }
+            m_recheckDistanceTimer(0), m_waitTargetTimer(0),
+            m_offset(offset), m_angle(angle),
+            m_speedChanged(false), m_targetReached(false),
+            m_path(NULL) {}
+        virtual ~TargetedMovementGeneratorMedium() { delete m_path; }
 
     public:
-        bool Update(T &, const uint32 &);
+        bool Update(T&, const uint32&);
 
         bool IsReachable() const
         {
-            return (i_path) ? (i_path->getPathType() & PATHFIND_NORMAL) : true;
+            return (m_path) ? (m_path->getPathType() & PATHFIND_NORMAL) : true;
         }
 
-        Unit* GetTarget() const { return i_target.getTarget(); }
+        Unit* GetTarget() const { return m_target.getTarget(); }
 
         void UnitSpeedChanged() { m_speedChanged = true; }
-        const char* Name() const { return "<TargetedMedium>"; }
+        char const* Name() const { return "<TargetedMedium>"; }
 
     protected:
         void _setTargetLocation(T&, bool updateDestination);
+        bool RequiresNewPosition(T& owner, float x, float y, float z);
 
-        ShortTimeTracker i_recheckDistance;
-        uint32 i_targetSearchingTimer;
-        float i_offset;
-        float i_angle;
+        ShortTimeTracker m_recheckDistanceTimer;
+        uint32 m_waitTargetTimer;
+        float m_offset;
+        float m_angle;
         bool m_speedChanged : 1;
-        bool i_targetReached : 1;
+        bool m_targetReached : 1;
 
-        PathFinder* i_path;
+        PathFinder* m_path;
 };
 
 template<class T>
 class MANGOS_DLL_SPEC ChaseMovementGenerator : public TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >
 {
     public:
-        ChaseMovementGenerator(Unit &target)
-            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, 0.f, 0.f) {}
-        ChaseMovementGenerator(Unit &target, float offset, float angle)
+        ChaseMovementGenerator(Unit& target)
+            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, 0.0f, 0.0f) {}
+        ChaseMovementGenerator(Unit& target, float offset, float angle)
             : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, offset, angle) {}
         ~ChaseMovementGenerator() {}
 
-        MovementGeneratorType GetMovementGeneratorType() const { return CHASE_MOTION_TYPE; }
+        MovementGeneratorType GetMovementGeneratorType() const override { return CHASE_MOTION_TYPE; }
 
-        void Initialize(T &);
-        void Finalize(T &);
-        void Interrupt(T &);
-        void Reset(T &);
-        const char* Name() const { return "<Chase>"; }
+        void Initialize(T&);
+        void Finalize(T&);
+        void Interrupt(T&);
+        void Reset(T&);
+        char const* Name() const { return "<Chase>"; }
 
-        static void _clearUnitStateMove(T &u) { u.clearUnitState(UNIT_STAT_CHASE_MOVE); }
-        static void _addUnitStateMove(T &u)  { u.addUnitState(UNIT_STAT_CHASE_MOVE); }
+        static void _clearUnitStateMove(T& u) { u.clearUnitState(UNIT_STAT_CHASE_MOVE); }
+        static void _addUnitStateMove(T& u)  { u.addUnitState(UNIT_STAT_CHASE_MOVE); }
         bool EnableWalking() const { return false;}
-        bool _lostTarget(T &u) const { return u.getVictim() != this->GetTarget(); }
-        void _reachTarget(T &);
+        bool _lostTarget(T& u) const { return u.getVictim() != this->GetTarget(); }
+        void _reachTarget(T&);
+        float GetDynamicTargetDistance(T& owner, bool forRangeCheck) const;
 };
 
 template<class T>
 class MANGOS_DLL_SPEC FollowMovementGenerator : public TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >
 {
     public:
-        FollowMovementGenerator(Unit &target)
-            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target){}
-        FollowMovementGenerator(Unit &target, float offset, float angle)
+        FollowMovementGenerator(Unit& target)
+            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target) {}
+        FollowMovementGenerator(Unit& target, float offset, float angle)
             : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target, offset, angle) {}
         ~FollowMovementGenerator() {}
 
-        MovementGeneratorType GetMovementGeneratorType() const { return FOLLOW_MOTION_TYPE; }
+        MovementGeneratorType GetMovementGeneratorType() const override { return FOLLOW_MOTION_TYPE; }
 
-        void Initialize(T &);
-        void Finalize(T &);
-        void Interrupt(T &);
-        void Reset(T &);
-        const char* Name() const { return "<Follow>"; }
+        void Initialize(T&);
+        void Finalize(T&);
+        void Interrupt(T&);
+        void Reset(T&);
+        char const* Name() const { return "<Follow>"; }
 
-        static void _clearUnitStateMove(T &u) { u.clearUnitState(UNIT_STAT_FOLLOW_MOVE); }
-        static void _addUnitStateMove(T &u)  { u.addUnitState(UNIT_STAT_FOLLOW_MOVE); }
+        static void _clearUnitStateMove(T& u) { u.clearUnitState(UNIT_STAT_FOLLOW_MOVE); }
+        static void _addUnitStateMove(T& u)  { u.addUnitState(UNIT_STAT_FOLLOW_MOVE); }
         bool EnableWalking() const;
-        bool _lostTarget(T &) const { return false; }
-        void _reachTarget(T &) {}
+        bool _lostTarget(T&) const { return false; }
+        void _reachTarget(T&);
+        float GetDynamicTargetDistance(T& owner, bool forRangeCheck) const;
+
     private:
-        void _updateSpeed(T &u);
+        void _updateSpeed(T& u);
 };
 
 #endif

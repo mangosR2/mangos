@@ -1,7 +1,7 @@
 /*
 * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
 * Copyright (C) 2010 Blueboy
-* Copyright (C) 2011 MangosR2 
+* Copyright (C) 2011 MangosR2
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ void PlayerbotMageAI::DoNextCombatManeuver(Unit *pTarget)
     // Damage Spells (primitive example)
     Player *m_bot = GetPlayerBot();
     Unit* pVictim = pTarget->getVictim();
-    float dist = m_bot->GetCombatDistance(pTarget);
+    float dist = m_bot->GetCombatDistance(pTarget, false);
 
     switch (SpellSequence)
     {

@@ -3711,15 +3711,13 @@ void Spell::cast(bool skipCheck)
             const_cast<SpellEntry*>(spellInfo)->AuraInterruptFlags = 0;
 
     // different triggered (for caster and main target after main cast) and pre-cast (casted before apply effect to each target) cases
-    switch(m_spellInfo->SpellFamilyName)
+    switch (m_spellInfo->SpellFamilyName)
     {
         case SPELLFAMILY_GENERIC:
         {
-            // Stoneskin
-            if (m_spellInfo->Id == 20594)
-                AddTriggeredSpell(65116);                   // Stoneskin - armor 10% for 8 sec
-            // Chaos Bane strength buff
-            else if (m_spellInfo->Id == 71904)
+            if (m_spellInfo->Id == 20594)                  // Stoneskin
+                AddTriggeredSpell(65116);                  // Stoneskin - armor 10% for 8 sec
+            else if (m_spellInfo->Id == 71904)             // Chaos Bane strength buff
                 AddTriggeredSpell(73422);
             else if (m_spellInfo->Id == 74607)
                 AddTriggeredSpell(74610);                  // Fiery combustion
@@ -3734,7 +3732,13 @@ void Spell::cast(bool skipCheck)
             else if (m_spellInfo->Id == 71265)             // Swarming Shadows DoT (Queen Lana'thel ICC)
                 AddPrecastSpell(71277);
             else if (m_spellInfo->Id == 70923)             // Uncontrollable Frenzy (Queen Lana'thel ICC)
-                AddTriggeredSpell(70924); // health buff etc.
+                AddTriggeredSpell(70924);                  // health buff etc.
+            else if (m_spellInfo->Mechanic == MECHANIC_MOUNT)
+            {
+               // Festive Holiday Mount
+               if (m_spellInfo->GetSpellIconID() != 1794 && m_caster->HasAura(62061, EFFECT_INDEX_0))
+                   AddTriggeredSpell(25860);               // Reindeer Transformation
+            }
             break;
         }
         case SPELLFAMILY_MAGE:
@@ -5565,6 +5569,10 @@ Unit* Spell::GetPrefilledUnitTargetOrUnitTarget(SpellEffectIndex effIndex) const
 
 SpellCastResult Spell::CheckCast(bool strict)
 {
+    // Festive Holiday Mount
+    if (m_spellInfo->Id == 62061 && m_caster->HasAura(62061, EFFECT_INDEX_0))
+        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
+
     // check cooldowns to prevent cheating (ignore passive spells, that client side visual only)
     if (!m_spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) && m_caster->HasSpellCooldown(m_spellInfo))
     {
@@ -7328,20 +7336,20 @@ SpellCastResult Spell::CanAutoCast(Unit* target)
     return result;                                           //target invalid
 }
 
-SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
+SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget /*=NULL*/)
 {
-    Unit* target = (checkTarget && checkTarget->GetObjectGuid().IsUnit()) ? (Unit*)checkTarget : m_targets.getUnitTarget();
+    Unit* pTarget = (checkTarget && checkTarget->GetObjectGuid().IsUnit()) ? (Unit*)checkTarget : m_targets.getUnitTarget();
     GameObject* pGoTarget = (checkTarget && checkTarget->GetObjectGuid().IsGameObject()) ? (GameObject*)checkTarget : m_targets.getGOTarget();
 
     SpellRangeEntry const* srange = sSpellRangeStore.LookupEntry(m_spellInfo->GetRangeIndex());
 
-    bool friendly = target ? target->IsFriendlyTo(m_caster) : false;
+    bool friendly = pTarget ? pTarget->IsFriendlyTo(m_caster) : false;
     float max_range = GetSpellMaxRange(srange, friendly);
     float min_range = GetSpellMinRange(srange, friendly);
     float add_range = bool(checkTarget) ? checkTarget->GetObjectBoundingRadius() : (strict ? 1.25f : 6.25f);
 
     // special range cases
-    switch(m_spellInfo->GetRangeIndex())
+    switch (m_spellInfo->GetRangeIndex())
     {
         // self cast doesn't need range checking -- also for Starshards fix
         // spells that can be cast anywhere also need no check
@@ -7351,17 +7359,16 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
         // combat range spells are treated differently
         case SPELL_RANGE_IDX_COMBAT:
         {
-            if (target)
+            if (pTarget)
             {
-                if (target == m_caster)
+                if (pTarget == m_caster)
                     return SPELL_CAST_OK;
 
                 if (m_caster->GetTypeId() == TYPEID_PLAYER &&
-                    (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, target))
+                    (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, pTarget))
                     return SPELL_FAILED_UNIT_NOT_INFRONT;
 
-                float combat_range = m_caster->GetMeleeAttackDistance(target);
-
+                float combat_range = m_caster->GetCombatDistance(pTarget, true);
                 float range_mod = combat_range + add_range;
 
                 if (Player* modOwner = m_caster->GetSpellModOwner())
@@ -7369,13 +7376,13 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
 
                 float range_delta = range_mod - combat_range;
 
-                // with additional 5 dist for non stricted case (some melee spells have delay in apply
-                return m_caster->CanReachWithMeleeAttack(target, range_delta) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
+                // with additional 5 dist for non stricted case (some melee spells have delay in apply)
+                return m_caster->CanReachWithMeleeAttack(pTarget, range_delta) ? SPELL_CAST_OK : SPELL_FAILED_OUT_OF_RANGE;
             }
             break;                                          // let continue in generic way for no target
         }
         default:
-            //add radius of caster and ~5 yds "give" for non stricred (landing) check
+            // add radius of caster and ~5 yds "give" for non stricred (landing) check
             max_range += add_range;
             break;
     }
@@ -7383,17 +7390,17 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
     if (Player* modOwner = m_caster->GetSpellModOwner())
         modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_RANGE, max_range);
 
-    if (target && target != m_caster)
+    if (pTarget && pTarget != m_caster)
     {
         // distance from target in checks
-        float dist = m_caster->GetCombatDistance(target);
+        float dist = m_caster->GetCombatDistance(pTarget, m_spellInfo->GetRangeIndex() == SPELL_RANGE_IDX_COMBAT);
 
-        if(dist > max_range)
+        if (dist > max_range)
             return SPELL_FAILED_OUT_OF_RANGE;
-        if(min_range && dist < min_range)
+        if (min_range && dist < min_range)
             return SPELL_FAILED_TOO_CLOSE;
-        if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
-            (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc( M_PI_F, target ) )
+        if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+            (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, pTarget))
             return SPELL_FAILED_UNIT_NOT_INFRONT;
     }
 
@@ -7406,17 +7413,19 @@ SpellCastResult Spell::CheckRange(bool strict, WorldObject* checkTarget)
             return SPELL_FAILED_OUT_OF_RANGE;
         if (min_range && dist < min_range)
             return SPELL_FAILED_TOO_CLOSE;
-        if ( m_caster->GetTypeId() == TYPEID_PLAYER &&
-            (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc( M_PI_F, pGoTarget ) )
+        if (m_caster->GetTypeId() == TYPEID_PLAYER &&
+            (m_spellInfo->FacingCasterFlags & SPELL_FACING_FLAG_INFRONT) && !m_caster->HasInArc(M_PI_F, pGoTarget))
             return SPELL_FAILED_NOT_INFRONT;
     }
 
     // TODO verify that such spells really use bounding radius
-    if (m_targets.HasLocation())
+    if ((max_range || min_range) && m_targets.HasLocation())
     {
-        if (max_range && !m_caster->IsWithinDist3d(m_targets.getDestination(), max_range))
+        WorldLocation const& loc = m_targets.GetLocation();
+
+        if (max_range && !m_caster->IsWithinDist3d(loc, max_range))
             return SPELL_FAILED_OUT_OF_RANGE;
-        if (min_range && m_caster->IsWithinDist3d(m_targets.getDestination(), min_range))
+        if (min_range && m_caster->IsWithinDist3d(loc, min_range))
             return SPELL_FAILED_TOO_CLOSE;
     }
 
@@ -9584,10 +9593,10 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList& targetUnitMap, uin
         }
         case 74960:                                     // Infrigidate
         {
-            UnitList tempTargetUnitMap;
-            FillAreaTargets(tempTargetUnitMap, 20.0f, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
-            tempTargetUnitMap.remove(m_caster);
-            if (!tempTargetUnitMap.empty())
+            FillAreaTargets(targetUnitMap, 20.0f, PUSH_SELF_CENTER, SPELL_TARGETS_FRIENDLY);
+            targetUnitMap.remove(m_caster);
+
+            if (!targetUnitMap.empty())
                 unMaxTargets = 1;
             else
                 return false;
@@ -9598,28 +9607,27 @@ bool Spell::FillCustomTargetMap(SpellEffectIndex i, UnitList& targetUnitMap, uin
             return false;
     }
 
-    // random targets
-    if (unMaxTargets)
-    {
-        if (!targetUnitMap.empty())
-        {
-            // remove random units from the map
-            while (targetUnitMap.size() > unMaxTargets)
-            {
-                uint32 poz = urand(0, targetUnitMap.size()-1);
-                for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end(); ++itr, --poz)
-                {
-                    if (!*itr)
-                        continue;
+    if (targetUnitMap.empty())
+        return true;
 
-                    if (!poz)
-                    {
-                        targetUnitMap.erase(itr);
-                        break;
-                    }
-                }
-            }
-        }
+    // remove NULL targets (weird, but...)
+    for (UnitList::iterator itr = targetUnitMap.begin(); itr != targetUnitMap.end();)
+    {
+        if (!*itr)
+            itr = targetUnitMap.erase(itr);
+        else
+            ++itr;
+    }
+
+    if (!unMaxTargets)
+        return true;
+
+    // random targets
+    while (targetUnitMap.size() > unMaxTargets)
+    {
+        UnitList::iterator itr = targetUnitMap.begin();
+        std::advance(itr, urand(0, targetUnitMap.size() - 1));
+        targetUnitMap.erase(itr);
     }
 
     return true;

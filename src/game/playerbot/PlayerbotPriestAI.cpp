@@ -126,7 +126,7 @@ void PlayerbotPriestAI::DoNextCombatManeuver(Unit *pTarget)
             (ai->HasAura(SCREAM, *pTarget) && ai->GetHealthPercent() < 60 && ai->CastSpell(HEAL)) ||
             ai->CastSpell(SHADOW_WORD_PAIN) ||
             (ai->GetHealthPercent() < 80 && ai->CastSpell(RENEW)) ||
-            (ai->GetPlayerBot()->GetCombatDistance(pTarget) <= 5 && ai->CastSpell(SCREAM)) ||
+            (ai->GetPlayerBot()->GetCombatDistance(pTarget, false) <= 5 && ai->CastSpell(SCREAM)) ||
             ai->CastSpell(MIND_BLAST) ||
             (ai->GetHealthPercent() < 20 && ai->CastSpell(GREATER_HEAL)) ||
             ai->CastSpell(SMITE);
@@ -193,7 +193,7 @@ void PlayerbotPriestAI::DoNextCombatManeuver(Unit *pTarget)
         SpellSequence = SPELL_HOLY;
 
     // Damage Spells
-    float dist = m_bot->GetCombatDistance(pTarget);
+    float dist = m_bot->GetCombatDistance(pTarget, false);
 
     switch (SpellSequence)
     {

@@ -1756,6 +1756,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     float flyspeed = m_caster->GetSpeedRate(MOVE_FLIGHT);
                     float speed = m_caster->GetSpeedRate(MOVE_RUN);
 
+                    m_caster->Unmount(true);
                     m_caster->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 
                     //5 different spells used depending on mounted speed and if mount can fly or not
@@ -3700,13 +3701,13 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     unitTarget->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_OOC_NOT_ATTACKABLE);
                     return;
                 }
-                case 62278:                                 // Lightning Orb Charger 
-                { 
-                    if (!unitTarget) 
-                        return; 
-                    unitTarget->CastSpell(m_caster, 62466, true); 
-                    unitTarget->CastSpell(unitTarget, 62279, true); 
-                    return; 
+                case 62278:                                 // Lightning Orb Charger
+                {
+                    if (!unitTarget)
+                        return;
+                    unitTarget->CastSpell(m_caster, 62466, true);
+                    unitTarget->CastSpell(unitTarget, 62279, true);
+                    return;
                 }
                 case 62301:                                 // Cosmic Smash (Ulduar - Algalon)
                 case 64598:
@@ -3738,8 +3739,8 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
                         return;
 
-                    m_caster->CastSpell(unitTarget, m_caster->GetMap()->IsRegularDifficulty() ? 65123 : 65133, true); 
-                    return; 
+                    m_caster->CastSpell(unitTarget, m_caster->GetMap()->IsRegularDifficulty() ? 65123 : 65133, true);
+                    return;
                 }
                 case 62907:                                 // Freya's Ward
                 {
@@ -3758,20 +3759,20 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                    m_caster->CastSpell(unitTarget, 62936, true);
                    return;
                 }
-                case 63499:                                 // Dispel Magic 
-                { 
-                    if (!unitTarget) 
-                        return; 
- 
-                    unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx)); 
-                    return; 
-                } 
-                case 63545:                                 // Icicle 
-                { 
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER) 
-                        return; 
- 
-                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true); 
+                case 63499:                                 // Dispel Magic
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->RemoveAurasDueToSpell(m_spellInfo->CalculateSimpleValue(eff_idx));
+                    return;
+                }
+                case 63545:                                 // Icicle
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                 }
                 case 63984:                                 // Hate to Zero (Ulduar - Yogg Saron)
                 {
@@ -3815,14 +3816,14 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     m_caster->CastSpell(unitTarget, 64496, true);
                     return;
                 }
-                case 64543:                                 // Melt Ice 
-                { 
-                    if (!unitTarget) 
-                        return; 
+                case 64543:                                 // Melt Ice
+                {
+                    if (!unitTarget)
+                        return;
 
-                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true); 
-                    m_caster->CastSpell(m_caster, 64540, true); 
-                    return; 
+                    m_caster->CastSpell(unitTarget, m_spellInfo->CalculateSimpleValue(eff_idx), true);
+                    m_caster->CastSpell(m_caster, 64540, true);
+                    return;
                 }
                 case 64673:                                 // Feral Rush (h)
                 {
@@ -9666,7 +9667,7 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     if (!unitTarget)
                         return;
 
-                    unitTarget->CastSpell(m_caster, 45626, true);
+                    unitTarget->CastSpell(m_caster, m_spellInfo->CalculateSimpleValue(eff_idx), true);
                     break;
                 }
 /*                case 46671:                                 // Cleansing Flames Exodar
@@ -10465,14 +10466,14 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     }
                     return;
                 }
-                case 62042:                                 // Stormhammer 
-                { 
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER) 
-                        return; 
- 
-                    unitTarget->CastSpell(unitTarget, 62470, true); 
-                    unitTarget->CastSpell(m_caster, 64909, true); 
-                    return; 
+                case 62042:                                 // Stormhammer
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 62470, true);
+                    unitTarget->CastSpell(m_caster, 64909, true);
+                    return;
                 }
                 case 62217:                                 // Unstable Energy
                 case 62922:                                 // Unstable Energy (h)
@@ -10950,18 +10951,18 @@ void Spell::EffectScriptEffect(SpellEffectIndex eff_idx)
                     return;
                 }
                 case 64767:                                 // Stormhammer
-                { 
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT) 
-                        return; 
- 
-                    if (Creature* target = (Creature*)unitTarget) 
-                    { 
-                        target->AI()->EnterEvadeMode(); 
-                        target->CastSpell(target, 62470, true); 
-                        target->CastSpell(m_caster, 64909, true); 
-                        target->CastSpell(target, 64778, true); 
-                        target->ForcedDespawn(10000); 
-                    } 
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                        return;
+
+                    if (Creature* target = (Creature*)unitTarget)
+                    {
+                        target->AI()->EnterEvadeMode();
+                        target->CastSpell(target, 62470, true);
+                        target->CastSpell(m_caster, 64909, true);
+                        target->CastSpell(target, 64778, true);
+                        target->ForcedDespawn(10000);
+                    }
                     return;
                 }
                 case 64841:                                 // Rapid Burst

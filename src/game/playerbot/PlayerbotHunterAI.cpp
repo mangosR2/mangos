@@ -1,7 +1,7 @@
 /*
 * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
 * Copyright (C) 2010 Blueboy
-* Copyright (C) 2011 MangosR2 
+* Copyright (C) 2011 MangosR2
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -160,7 +160,7 @@ void PlayerbotHunterAI::DoNextCombatManeuver(Unit *pTarget)
     //ai->TellMaster( "Berserking." );
 
     // check if ranged combat is possible (set m_rangedCombat and switch auras
-    float dist = m_bot->GetCombatDistance(pTarget);
+    float dist = m_bot->GetCombatDistance(pTarget, false);
     if ((dist <= ATTACK_DISTANCE || !m_bot->GetUInt32Value(PLAYER_AMMO_ID)) && m_rangedCombat)
     {
         // switch to melee combat (target in melee range, out of ammo)

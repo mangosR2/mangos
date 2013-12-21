@@ -1,7 +1,7 @@
 /*
 * Copyright (C) 2005-2011 MaNGOS <http://getmangos.com/>
 * Copyright (C) 2010 Blueboy
-* Copyright (C) 2011 MangosR2 
+* Copyright (C) 2011 MangosR2
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ bool PlayerbotWarriorAI::DoFirstCombatManeuver(Unit *pTarget)
     Player *m_bot = GetPlayerBot();
     PlayerbotAI *ai = GetAI();
     PlayerbotAI::CombatOrderType co = ai->GetCombatOrder();
-    float fTargetDist = m_bot->GetCombatDistance(pTarget);
+    float fTargetDist = m_bot->GetCombatDistance(pTarget, false);
 
     if ((co & PlayerbotAI::ORDERS_TANK) && DEFENSIVE_STANCE > 0 && !m_bot->HasAura(DEFENSIVE_STANCE, EFFECT_INDEX_0) && ai->CastSpell(DEFENSIVE_STANCE))
     {

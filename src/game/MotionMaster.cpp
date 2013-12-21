@@ -35,7 +35,7 @@
 
 #include <cassert>
 
-inline bool isStatic(MovementGenerator *mv)
+inline bool isStatic(MovementGenerator* mv)
 {
     return (mv == &si_idleMovement);
 }
@@ -45,7 +45,7 @@ void MotionMaster::Initialize()
     // stop current move
     m_owner->StopMoving();
 
-    Clear(false,false);
+    Clear(false, false);
 
     // set new default movement generator
     if (m_owner->GetTypeId() == TYPEID_UNIT /*&& !m_owner->hasUnitState(UNIT_STAT_CONTROLLED)*/)
@@ -68,8 +68,8 @@ void MotionMaster::MoveIdle()
 void MotionMaster::MoveRandom(float radius)
 {
     // Wrapper for MoveRandomAroundPoint for move around current point.
-    float x,y,z;
-    m_owner->GetPosition(x,y,z);
+    float x, y, z;
+    m_owner->GetPosition(x, y, z);
     MoveRandomAroundPoint(x, y, z, radius);
 }
 
@@ -106,8 +106,9 @@ void MotionMaster::MoveTargetedHome()
     {
         if (Unit* target = ((Creature*)m_owner)->GetCharmerOrOwner())
         {
-            float angle = ((Creature*)m_owner)->IsPet() ? ((Pet*)m_owner)->GetPetFollowAngle() : PET_FOLLOW_ANGLE;
             DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s follow to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
+
+            float angle = ((Creature*)m_owner)->IsPet() ? ((Pet*)m_owner)->GetPetFollowAngle() : PET_FOLLOW_ANGLE;
             switch (((Creature*)m_owner)->GetCharmState(CHARM_STATE_COMMAND))
             {
                 case COMMAND_STAY:
@@ -140,40 +141,40 @@ void MotionMaster::MoveConfused()
 
 void MotionMaster::MoveChase(Unit* target, float dist, float angle)
 {
-    // ignore movement request if target not exist
-    if (!target)
+    // ignore movement request if target not exist or owner has disable move flag
+    if (!target || target == m_owner || m_owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         return;
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s chase to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
 
     if (m_owner->GetTypeId() == TYPEID_PLAYER)
-        Mutate(new ChaseMovementGenerator<Player>(*target,dist,angle), UNIT_ACTION_CHASE);
+        Mutate(new ChaseMovementGenerator<Player>(*target, dist, angle), UNIT_ACTION_CHASE);
     else
-        Mutate(new ChaseMovementGenerator<Creature>(*target,dist,angle), UNIT_ACTION_CHASE);
+        Mutate(new ChaseMovementGenerator<Creature>(*target, dist, angle), UNIT_ACTION_CHASE);
 }
 
 void MotionMaster::MoveFollow(Unit* target, float dist, float angle)
 {
-    // ignore movement request if target not exist
-    if (!target)
+    // ignore movement request if target not exist or owner has disable move flag
+    if (!target || target == m_owner || m_owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         return;
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s follow to %s", m_owner->GetGuidStr().c_str(), target->GetGuidStr().c_str());
 
     if (m_owner->GetTypeId() == TYPEID_PLAYER)
-        Mutate(new FollowMovementGenerator<Player>(*target,dist,angle), UNIT_ACTION_DOWAYPOINTS);
+        Mutate(new FollowMovementGenerator<Player>(*target, dist, angle), UNIT_ACTION_DOWAYPOINTS);
     else
-        Mutate(new FollowMovementGenerator<Creature>(*target,dist,angle), UNIT_ACTION_DOWAYPOINTS);
+        Mutate(new FollowMovementGenerator<Creature>(*target, dist, angle), UNIT_ACTION_DOWAYPOINTS);
 }
 
 void MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool generatePath /*= true*/, bool lowPriority /*= false*/)
 {
-    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s targeted point (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), id, x, y, z );
+    DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s targeted point (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), id, x, y, z);
 
     if (m_owner->GetTypeId() == TYPEID_PLAYER)
-        Mutate(new PointMovementGenerator<Player>(id,x,y,z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
+        Mutate(new PointMovementGenerator<Player>(id, x, y, z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
     else
-        Mutate(new PointMovementGenerator<Creature>(id,x,y,z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
+        Mutate(new PointMovementGenerator<Creature>(id, x, y, z, generatePath), lowPriority ? UNIT_ACTION_DOWAYPOINTS : UNIT_ACTION_ASSISTANCE);
 }
 
 void MotionMaster::MoveSeekAssistance(float x, float y, float z)
@@ -185,7 +186,7 @@ void MotionMaster::MoveSeekAssistance(float x, float y, float z)
     else
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s seek assistance (X: %f Y: %f Z: %f)",
-            m_owner->GetGuidStr().c_str(), x, y, z );
+            m_owner->GetGuidStr().c_str(), x, y, z);
         Mutate(new AssistanceMovementGenerator(x,y,z), UNIT_ACTION_ASSISTANCE);
     }
 }
@@ -199,14 +200,15 @@ void MotionMaster::MoveSeekAssistanceDistract(uint32 time)
     else
     {
         DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s is distracted after assistance call (Time: %u)",
-            m_owner->GetGuidStr().c_str(), time );
+            m_owner->GetGuidStr().c_str(), time);
         Mutate(new AssistanceDistractMovementGenerator(time), UNIT_ACTION_ASSISTANCE);
     }
 }
 
 void MotionMaster::MoveFleeing(Unit* enemy, uint32 time)
 {
-    if (!enemy)
+    // ignore movement request if enemy not exist or owner has disable move flag
+    if (!enemy || enemy == m_owner || m_owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
         return;
 
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "MotionMaster: %s flee from %s", m_owner->GetGuidStr().c_str(), enemy->GetGuidStr().c_str());
@@ -284,7 +286,7 @@ bool MotionMaster::GetDestination(float &x, float &y, float &z)
     return true;
 }
 
-MotionMaster::MotionMaster(Unit *unit) : m_owner(unit)
+MotionMaster::MotionMaster(Unit* unit) : m_owner(unit)
 {
 }
 
@@ -331,7 +333,7 @@ bool MotionMaster::empty()
 void MotionMaster::MoveJump(float x, float y, float z, float horizontalSpeed, float max_height, uint32 id)
 {
     Movement::MoveSplineInit<Unit*> init(*m_owner);
-    init.MoveTo(x,y,z);
+    init.MoveTo(x, y, z);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(horizontalSpeed);
     init.Launch();
@@ -341,7 +343,7 @@ void MotionMaster::MoveJump(float x, float y, float z, float horizontalSpeed, fl
 void MotionMaster::MoveToDestination(float x, float y, float z, float o, Unit* target, float horizontalSpeed, float max_height, uint32 id)
 {
     Movement::MoveSplineInit<Unit*> init(*m_owner);
-    init.MoveTo(x,y,z, bool(target), bool(target));
+    init.MoveTo(x, y, z, bool(target), bool(target));
     if (max_height > M_NULL_F)
         init.SetParabolic(max_height, 0);
     init.SetVelocity(horizontalSpeed);
@@ -356,7 +358,7 @@ void MotionMaster::MoveToDestination(float x, float y, float z, float o, Unit* t
 void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horizontalSpeed, float max_height, bool eject)
 {
     Movement::MoveSplineInit<Unit*> init(*m_owner);
-    init.MoveTo(x,y,z,false, true);
+    init.MoveTo(x, y, z, false, true);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(horizontalSpeed);
     init.SetFacing(o);
@@ -369,7 +371,7 @@ void MotionMaster::MoveSkyDiving(float x, float y, float z, float o, float horiz
 void MotionMaster::MoveBoardVehicle(float x, float y, float z, float o, float horizontalSpeed, float max_height)
 {
     Movement::MoveSplineInit<Unit*> init(*m_owner);
-    init.MoveTo(x,y,z,false, true);
+    init.MoveTo(x, y, z, false, true);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(horizontalSpeed);
     init.SetFacing(o);
@@ -382,7 +384,7 @@ void MotionMaster::MoveBoardVehicle(float x, float y, float z, float o, float ho
 void MotionMaster::MoveWithSpeed(float x, float y, float z, float speed, bool generatePath, bool forceDestination)
 {
     Movement::MoveSplineInit<Unit*> init(*m_owner);
-    init.MoveTo(x,y,z, generatePath, forceDestination);
+    init.MoveTo(x, y, z, generatePath, forceDestination);
     init.SetVelocity(speed);
     init.Launch();
     Mutate(new EffectMovementGenerator(0), UNIT_ACTION_EFFECT);
@@ -418,4 +420,3 @@ void MotionMaster::MoveFlyOrLand(uint32 id, float x, float y, float z, bool lift
     DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "%s targeted point for %s (Id: %u X: %f Y: %f Z: %f)", m_owner->GetGuidStr().c_str(), liftOff ? "liftoff" : "landing", id, x, y, z);
     Mutate(new FlyOrLandMovementGenerator(id, x, y, z, liftOff), UNIT_ACTION_EFFECT);
 }
-

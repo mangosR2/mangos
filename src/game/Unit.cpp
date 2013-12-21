@@ -545,28 +545,40 @@ void Unit::resetAttackTimer(WeaponAttackType type)
     m_attackTimer[type] = uint32(GetAttackTime(type) * m_modAttackSpeedPct[type]);
 }
 
-float Unit::GetMeleeAttackDistance(Unit* pVictim /* NULL */) const
+float Unit::GetCombatReach(Unit const* pVictim, bool forMeleeRange /*=true*/, float flat_mod /*=0.0f*/) const
 {
-    // The measured values show BASE_MELEE_OFFSET in (1.3224, 1.342)
-    float sizefactor = GetObjectBoundingRadius() + pVictim->GetObjectBoundingRadius();
-    float dist = GetFloatValue(UNIT_FIELD_COMBATREACH) +
-        (pVictim ? pVictim->GetFloatValue(UNIT_FIELD_COMBATREACH) : 0.0f) +
-        sizefactor +
-        BASE_MELEERANGE_OFFSET;
+    float victimReach = (pVictim && pVictim->IsInWorld())
+        ? pVictim->GetFloatValue(UNIT_FIELD_COMBATREACH)
+        : 0.0f;
 
-    return (dist < ATTACK_DISTANCE) ? ATTACK_DISTANCE : dist;
+    float reach = GetFloatValue(UNIT_FIELD_COMBATREACH) + victimReach +
+        BASE_MELEERANGE_OFFSET + flat_mod; // The measured values show BASE_MELEE_OFFSET in (1.3224, 1.342)
+
+    if (forMeleeRange && reach < ATTACK_DISTANCE)
+        reach = ATTACK_DISTANCE;
+
+    return reach;
 }
 
-bool Unit::CanReachWithMeleeAttack(Unit* pVictim, float flat_mod /*= 0.0f*/) const
+float Unit::GetCombatDistance(Unit const* pVictim, bool forMeleeRange) const
 {
-    if (!pVictim || !pVictim->IsInWorld())
+    if (!pVictim)
+        return 0.0f;
+
+    float radius = GetCombatReach(pVictim, forMeleeRange);
+    float dist = GetPosition().GetDistance(pVictim->GetPosition()) - radius;
+    return (dist > M_NULL_F ? dist : 0.0f);
+}
+
+bool Unit::CanReachWithMeleeAttack(Unit const* pVictim, float flat_mod /*=0.0f*/) const
+{
+    if (!pVictim || !pVictim->IsInWorld() || !InSamePhase(pVictim))
         return false;
 
-    float reach = GetMeleeAttackDistance(pVictim) + flat_mod;
+    float reach = GetCombatReach(pVictim, true, flat_mod);
 
     // This check is not related to bounding radius of both units!
     return GetPosition().GetDistance(pVictim->GetPosition()) < reach;
-
 }
 
 void Unit::RemoveSpellsCausingAura(AuraType auraType)
@@ -7713,16 +7725,6 @@ void Unit::Uncharm()
     }
 }
 
-float Unit::GetCombatDistance( const Unit* target ) const
-{
-    if (!target)
-        return 0.0f;
-
-    float radius = GetFloatValue(UNIT_FIELD_COMBATREACH) + target->GetFloatValue(UNIT_FIELD_COMBATREACH);
-    float dist = GetPosition().GetDistance(target->GetPosition()) - radius;
-    return (dist > M_NULL_F ? dist : 0.0f);
-}
-
 void Unit::SetPet(Pet* pet)
 {
     if (pet)
@@ -12885,37 +12887,19 @@ void Unit::UpdateModelData()
 
     if (CreatureModelInfo const* modelInfo = sObjectMgr.GetCreatureModelInfo(GetDisplayId()))
     {
-        if (GetTypeId() == TYPEID_PLAYER)
-        {
-            // Bounding radius and combat reach is normally modified by scale, but player is always 1.0 scale by default so no need to modify values here.
-            boundingRadius = modelInfo->bounding_radius;
-            combatReach = modelInfo->combat_reach;
-        }
-        else
-        {
-            // We expect values in database to be relative to scale = 1.0
-            float scaled_radius = GetObjectScale() * modelInfo->bounding_radius;
-
-            boundingRadius = scaled_radius < 2.0f ? scaled_radius : 2.0f;
-            combatReach = GetObjectScale() * (modelInfo->bounding_radius < 2.0 ? modelInfo->combat_reach : modelInfo->combat_reach / modelInfo->bounding_radius);
-        }
+        boundingRadius = modelInfo->bounding_radius;
+        combatReach = modelInfo->combat_reach;
     }
     else
     {
-        if (GetTypeId() == TYPEID_PLAYER)
-        {
-            boundingRadius = DEFAULT_WORLD_OBJECT_SIZE;
-            combatReach = 1.5f;
-        }
-        else
-        {
-            boundingRadius = GetObjectScale() * DEFAULT_WORLD_OBJECT_SIZE;
-            combatReach = GetObjectScale() * BASE_MELEERANGE_OFFSET;
-        }
+        boundingRadius = DEFAULT_WORLD_OBJECT_SIZE;
+        combatReach = DEFAULT_COMBAT_REACH;
     }
 
-    SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, boundingRadius);
-    SetFloatValue(UNIT_FIELD_COMBATREACH, combatReach);
+    float scale = GetObjectScale();
+
+    SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, boundingRadius * scale);
+    SetFloatValue(UNIT_FIELD_COMBATREACH, combatReach * scale);
 }
 
 void Unit::ClearComboPointHolders()

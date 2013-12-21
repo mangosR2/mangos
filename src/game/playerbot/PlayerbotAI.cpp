@@ -2155,7 +2155,7 @@ void PlayerbotAI::DoCombatMovement()
 {
     if (!m_targetCombat) return;
 
-    float targetDist = m_bot->GetCombatDistance(m_targetCombat);
+    float targetDist = m_bot->GetCombatDistance(m_targetCombat, false);
 
     m_bot->SetFacingTo(m_bot->GetAngle(m_targetCombat));
 
