@@ -158,15 +158,19 @@ bool CreatureCreatePos::Relocate(Creature* cr) const
     return true;
 }
 
-Creature::Creature(CreatureSubtype subtype) :
-Unit(), i_AI(NULL), loot(this),
-lootForPickPocketed(false), lootForBody(false), lootForSkin(false),m_lootMoney(0),
-m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_respawnAggroDelay(0), m_respawnradius(5.0f),
-m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
-m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
-m_regenHealth(true), m_AI_locked(false), m_isDeadByDefault(false),
-m_temporaryFactionFlags(TEMPFACTION_NONE), m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
-m_creatureInfo(NULL), m_modelInhabitType(-1)
+Creature::Creature(CreatureSubtype subtype) : Unit(),
+    i_AI(NULL),
+    loot(this),
+    lootForPickPocketed(false), lootForBody(false), lootForSkin(false),
+    m_lootMoney(0),
+    m_corpseDecayTimer(0), m_respawnTime(0), m_respawnDelay(25), m_corpseDelay(60), m_respawnradius(5.0f), m_aggroDelay(0),
+    m_subtype(subtype), m_defaultMovementType(IDLE_MOTION_TYPE), m_equipmentId(0),
+    m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false),
+    m_regenHealth(true), m_AI_locked(false), m_isDeadByDefault(false),
+    m_temporaryFactionFlags(TEMPFACTION_NONE),
+    m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), m_originalEntry(0),
+    m_creatureInfo(NULL),
+    m_modelInhabitType(-1)
 {
     m_regenTimer = 200;
     m_valuesCount = UNIT_END;
@@ -486,7 +490,7 @@ void Creature::Update(uint32 update_diff, uint32 diff)
             {
                 DEBUG_FILTER_LOG(LOG_FILTER_AI_AND_MOVEGENSS, "Respawning...");
                 m_respawnTime = 0;
-                m_respawnAggroDelay = sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY) * IN_MILLISECONDS;
+                m_aggroDelay = sWorld.getConfig(CONFIG_UINT32_CREATURE_RESPAWN_AGGRO_DELAY);
                 lootForPickPocketed = false;
                 lootForBody         = false;
                 lootForSkin         = false;
@@ -560,13 +564,10 @@ void Creature::Update(uint32 update_diff, uint32 diff)
         }
         case ALIVE:
         {
-            if (m_respawnAggroDelay)
-            {
-                if (m_respawnAggroDelay <= update_diff)
-                    m_respawnAggroDelay = 0;
-                else
-                    m_respawnAggroDelay -= update_diff;
-            }
+            if (m_aggroDelay <= update_diff)
+                m_aggroDelay = 0;
+            else
+                m_aggroDelay -= update_diff;
 
             if (m_isDeadByDefault)
             {
@@ -1907,7 +1908,7 @@ bool Creature::CanInitiateAttack()
     if (isPassiveToHostile())
         return false;
 
-    if (m_respawnAggroDelay)
+    if (m_aggroDelay != 0)
         return false;
 
     return true;

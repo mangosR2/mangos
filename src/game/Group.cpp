@@ -166,6 +166,8 @@ bool Group::Create(ObjectGuid guid, const char* name)
     if (!GetObjectGuid())
         m_Guid = ObjectGuid(HIGHGUID_GROUP, sObjectMgr.GenerateGroupLowGuid());
 
+    sObjectMgr.AddGroup(this);
+
     if (!isBGGroup())
     {
         Player* leader = sObjectMgr.GetPlayer(guid);
@@ -337,6 +339,8 @@ bool Group::AddLeaderInvite(Player* player)
     // Group may be added without Create() call - need make ObjectGuid manually
     if (!GetObjectGuid())
         m_Guid = ObjectGuid(HIGHGUID_GROUP, sObjectMgr.GenerateGroupLowGuid());
+
+    sObjectMgr.AddGroup(this);
 
     m_leaderGuid = player->GetObjectGuid();
     m_leaderName = player->GetName();
