@@ -23,11 +23,11 @@
 #define _PACKAGENAME "MangosR2"
 #endif
 
-#include "../../config.h"
+//#include "../../config.h"
 #include "Platform/Define.h"
 
 #ifndef _VERSION
-# define _VERSION(REVN) MANGOS_VERSION " (Revision " REVN ")"
+# define _VERSION(REVD,REVT,REVN,REVH) "0.17" " (" REVD " " REVT " Revision " REVN " - " REVH ")"
 #endif
 
 #ifndef _R2VERSION
@@ -97,7 +97,9 @@
 #define _FULLVERSION(REVN) _PACKAGENAME "/" _VERSION(REVN)
 #define _R2FULLVERSION(REVD,REVT,REVN,REVH) _R2VERSION(REVD,REVT,REVN,REVH) " for " _ENDIAN_PLATFORM
 
-#define EXPECTED_MANGOSD_CLIENT_BUILD {CLIENT_VERSION, 0}
+#define EXPECTED_MANGOSD_CLIENT_BUILD {12340, 0}
+
+#define CLIENT_VERSION 12340
 
 #if CLIENT_VERSION >= 16057
     #define MAX_EXPANSION 4
