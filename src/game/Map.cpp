@@ -659,14 +659,6 @@ void Map::Update(const uint32 &t_diff)
         if (!obj || !obj->IsInWorld())
             continue;
 
-        uint32 lastUpdateTime = obj->GetLastUpdateTime();
-        uint32 diffTime = WorldTimer::getMSTimeDiff(lastUpdateTime, WorldTimer::getMSTime());
-
-        if (diffTime < sWorld.getConfig(CONFIG_UINT32_INTERVAL_MAPUPDATE)/2)
-            continue;
-
-        obj->SetLastUpdateTime();
-
         switch (guid.GetHigh())
         {
             case HIGHGUID_PLAYER:
@@ -681,7 +673,7 @@ void Map::Update(const uint32 &t_diff)
             }
             case HIGHGUID_MO_TRANSPORT:
             {
-                // FIXME - temphack for update active MO_TRANSPORT objects
+                // update active MO_TRANSPORT objects
                 if (obj->isActiveObject() && obj->IsPositionValid())
                 {
                     WorldObject::UpdateHelper helper(*obj);
@@ -690,8 +682,9 @@ void Map::Update(const uint32 &t_diff)
                 break;
             }
             case HIGHGUID_TRANSPORT:
-            // do something
+            // updating regular transports (after fully implementing Transport:: (NOT MOTransport!) class)
             default:
+            // All another objects (active and not active) be updated in TypeContainerVisitor<> expressions
                 break;
         }
     }
