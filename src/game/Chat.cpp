@@ -3643,9 +3643,8 @@ void ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg msgtype, char const
             isAchievement = true;
             break;
         default:
-            if (isGM)
+            if (isGM && senderName)
             {
-                MANGOS_ASSERT(senderName);
                 data << uint32(strlen(senderName) + 1);
                 data << senderName;
             }
